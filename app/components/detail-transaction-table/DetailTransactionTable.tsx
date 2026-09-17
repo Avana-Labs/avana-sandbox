@@ -28,6 +28,13 @@ type Props = {
   kindConfig: TransactionKindConfig
   context?: Record<string, string>
   title?: string
+  /**
+   * Debt/asset feed only: re-derive each row's token quantity from its recorded USD at the live
+   * price and show that recorded USD, so the two cells reconcile with the transaction record (a
+   * single borrowed token's quantity is otherwise reconstructed at a frozen seed price and drifts
+   * from the live-priced USD). Off for pool/lend/multiply, which carry real recorded amounts.
+   */
+  reconcileTokenToLiveUsd?: boolean
 }
 
 const COLUMN_WIDTHS: Record<DetailTransactionPreset, string[]> = {
@@ -41,6 +48,7 @@ export function DetailTransactionTable({
   kindConfig,
   context = {},
   title = "Transactions",
+  reconcileTokenToLiveUsd = false,
 }: Props) {
   const { t, language } = useTranslation()
   const { ctx } = useCurrency()
@@ -135,7 +143,11 @@ export function DetailTransactionTable({
                       if (column.id === "for") {
                         return (
                           <td key={column.id} className={cellClass}>
-                            <TransactionTokenCell row={row} priceContext={priceContext} />
+                            <TransactionTokenCell
+                              row={row}
+                              priceContext={priceContext}
+                              reconcileToLiveUsd={reconcileTokenToLiveUsd}
+                            />
                           </td>
                         )
                       }
@@ -143,7 +155,12 @@ export function DetailTransactionTable({
                       if (column.id === "usd") {
                         return (
                           <td key={column.id} className={cellClass}>
-                            <TransactionUsdCell row={row} priceContext={priceContext} poolSymbols={poolSymbols} />
+                            <TransactionUsdCell
+                              row={row}
+                              priceContext={priceContext}
+                              poolSymbols={poolSymbols}
+                              reconcileToLiveUsd={reconcileTokenToLiveUsd}
+                            />
                           </td>
                         )
                       }

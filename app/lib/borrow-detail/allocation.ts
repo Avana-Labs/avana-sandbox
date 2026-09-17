@@ -47,13 +47,10 @@ export function riskScoreFromBps(bps: number): number {
 }
 
 /**
- * Allocation row that still carries its source `pool`. This is the shared core
- * used by both the UI builder (`computeAssetAllocation`) and the Convex seed
- * (`build-seed.ts`), which needs the pool's catalog id (slug) to key the
- * `assetPoolAllocationDaily` rows. Keeping one computation means the seeded
- * allocation is identical to the procedural fallback.
+ * Allocation row that keeps its source `pool` — the seed needs the pool slug to key
+ * `assetPoolAllocationDaily`, and sharing this shape keeps seeded and fallback allocations equal.
  */
-export type AssetAllocationRow = {
+type AssetAllocationRow = {
   pool: BorrowPoolRow
   sharePct: number
   valueUsd: number
@@ -62,10 +59,8 @@ export type AssetAllocationRow = {
 }
 
 /**
- * Finds the pools that expose a given borrowable asset and computes each pool's
- * share-of-asset-TVL, utilization, and apr. The produced percentages always sum
- * to 100 (the top-N rows are re-scaled so rounding drift doesn't leave the UI
- * showing 99.7%).
+ * Per-pool share-of-asset-TVL, utilization and APR for a borrowable asset.
+ * The top-N rows are re-scaled so the percentages sum to exactly 100.
  */
 export function computeAssetAllocationRows(
   asset: SpokeBorrowableRecord,

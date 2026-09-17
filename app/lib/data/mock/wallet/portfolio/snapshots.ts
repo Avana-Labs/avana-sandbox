@@ -1,6 +1,6 @@
 import type { PortfolioSnapshotRecord } from "@/app/lib/data/providers/portfolio/source"
 
-export const PORTFOLIO_SNAPSHOTS: PortfolioSnapshotRecord[] = [
+const PORTFOLIO_SNAPSHOTS: PortfolioSnapshotRecord[] = [
   {
     walletProfileId: "demo-wallet",
     timestamp: "2026-04-04T12:00:00.000Z",

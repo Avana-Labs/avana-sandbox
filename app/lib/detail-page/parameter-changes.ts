@@ -1,16 +1,8 @@
 /**
- * Deterministic generator for a market's Parameter changelog.
- *
- * Detail pages show a governance changelog of risk-parameter changes (Supply Cap,
- * Collateral Factor, Liquidation Bonus, Reserve Factor, …). Hand-authoring these
- * across ~174 markets is not tractable, so this builds a realistic, reproducible
- * history from each market's CURRENT risk parameters: the newest change to a given
- * parameter lands exactly on the value shown in the Risk Parameters grid, and older
- * entries walk backward along a plausible chain. Same slug in → same changelog out,
- * so it seeds Convex deterministically and keeps tests stable.
- *
- * The parameter groups mirror the Aave-style role/action taxonomy the protocol uses
- * (Risk Management, Domain Admin, Listing, Emergency).
+ * Deterministic generator for a market's governance parameter changelog, built backward from
+ * the market's CURRENT risk parameters: the newest entry for a parameter lands exactly on the
+ * value shown in the Risk Parameters grid. Same slug in → same changelog out, so it seeds
+ * Convex deterministically and keeps tests stable.
  */
 
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
@@ -18,7 +10,7 @@ import { hashString, prngFromString } from "@/app/lib/borrow-detail/prng"
 
 export type ParameterChangeCategory = "Risk Management" | "Domain Admin" | "Listing" | "Emergency"
 
-export type ParameterChangeEntry = {
+type ParameterChangeEntry = {
   id: string
   parameter: string
   previous: string

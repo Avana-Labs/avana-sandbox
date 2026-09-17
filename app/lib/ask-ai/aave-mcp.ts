@@ -2,7 +2,7 @@
  * JSON-RPC POSTs; no session, background SSE connection, or polling is needed.
  * https://aave.com/docs/mcp/getting-started
  */
-export const AAVE_MCP_URL = "https://mcp.aave.com"
+const AAVE_MCP_URL = "https://mcp.aave.com"
 export const AAVE_READ_TOOLS = [
   "get_chains",
   "get_markets",
@@ -23,7 +23,7 @@ export const AAVE_READ_TOOLS = [
   "get_hub_assets",
   "get_protocol_history",
 ] as const
-export type AaveReadTool = (typeof AAVE_READ_TOOLS)[number]
+type AaveReadTool = (typeof AAVE_READ_TOOLS)[number]
 export type AaveObject = Record<string, unknown>
 export const aaveObject = (value: unknown): AaveObject =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? (value as AaveObject) : {}
@@ -179,7 +179,7 @@ export function aaveEnvelope(data: unknown) {
   }
 }
 
-export type AaveReserve = {
+type AaveReserve = {
   version: "v3" | "v4"
   chainId: number
   market: string

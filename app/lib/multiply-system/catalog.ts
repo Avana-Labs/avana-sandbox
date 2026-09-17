@@ -3,6 +3,7 @@ import { calculateSafeMaxMultiplier, calculateTheoreticalMaxMultiplier } from "@
 import { MULTIPLY_CATALOG_LEVERAGE_SCALE } from "@/app/lib/multiply-system/leverage-limits"
 import { MULTIPLY_COLLATERAL_FACTORS } from "@/app/lib/multiply-sim"
 import { SANDBOX_BASELINE_PRICES_USD as ASSET_PRICES_USD } from "@/app/lib/prices/sandbox-baseline-prices"
+import { canonicalTokenSymbol } from "@/app/lib/tokens/canonical-symbol"
 
 type CatalogSeed = {
   id: string
@@ -50,7 +51,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbbtc-wbtc",
     rank: 2,
-    collateral: "CBBTC",
+    collateral: "cbBTC",
     collateralName: "Coinbase Wrapped BTC",
     borrow: "WBTC",
     borrowName: "Wrapped BTC",
@@ -70,7 +71,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbbtc-usdt",
     rank: 3,
-    collateral: "CBBTC",
+    collateral: "cbBTC",
     collateralName: "Coinbase Wrapped BTC",
     borrow: "USDT",
     borrowName: "Tether",
@@ -90,7 +91,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbeth-eth",
     rank: 4,
-    collateral: "CBETH",
+    collateral: "cbETH",
     collateralName: "Coinbase Wrapped Staked ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -192,7 +193,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
     rank: 9,
     collateral: "ETH",
     collateralName: "Ether",
-    borrow: "WSTETH",
+    borrow: "wstETH",
     borrowName: "Wrapped stETH",
     supplyApy: 0.0382,
     borrowApy: 0.034,
@@ -271,7 +272,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "reth-eth",
     rank: 13,
-    collateral: "RETH",
+    collateral: "rETH",
     collateralName: "Rocket Pool ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -291,7 +292,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "steth-eth",
     rank: 14,
-    collateral: "STETH",
+    collateral: "stETH",
     collateralName: "Lido Staked ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -374,7 +375,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
     rank: 18,
     collateral: "WBTC",
     collateralName: "Wrapped BTC",
-    borrow: "CBBTC",
+    borrow: "cbBTC",
     borrowName: "Coinbase Wrapped BTC",
     supplyApy: 0.0348,
     borrowApy: 0.039,
@@ -412,7 +413,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "wsteth-eth",
     rank: 20,
-    collateral: "WSTETH",
+    collateral: "wstETH",
     collateralName: "Wrapped stETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -445,12 +446,15 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
     minHealthFactor: seed.minHealthFactor,
     liquidationThreshold: seed.liquidationThreshold,
   })
-  const collateralKey = seed.collateral as keyof typeof MULTIPLY_COLLATERAL_FACTORS
+  // Normalize the declared collateral symbol to its canonical map key so the per-token factor resolves
+  // regardless of the seed's casing (STETH → stETH, CBBTC → cbBTC). The old `as` cast silently let a
+  // cased mismatch fall through to seed.maxLtv for the 5 mixed-case symbols (stETH/wstETH/rETH/cbBTC/cbETH).
+  const collateralKey = canonicalTokenSymbol(seed.collateral)
   // The collateral factor (max borrow ratio) must sit strictly below the
   // liquidation threshold — a market can't let you borrow up to the point it
   // liquidates. The per-token MULTIPLY_COLLATERAL_FACTORS override could exceed a
   // market's LT (e.g. AAVE CF 70% vs GHO LT 65%), so clamp it below LT.
-  const rawCollateralFactor = MULTIPLY_COLLATERAL_FACTORS[collateralKey] ?? seed.maxLtv
+  const rawCollateralFactor = (collateralKey ? MULTIPLY_COLLATERAL_FACTORS[collateralKey] : undefined) ?? seed.maxLtv
   const collateralFactor = Math.min(rawCollateralFactor, seed.liquidationThreshold - 0.01)
 
   return {

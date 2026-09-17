@@ -1,6 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_WIDGET_TYPES, type AskAiWidget } from "../app/lib/ask-ai/widgets"
+import { consumeWriteBudget } from "./writeRateLimit"
 
 /**
  * Persistence for Ask AI mode-runs (Phase 2).
@@ -47,6 +48,8 @@ export const record = mutation({
   },
   handler: async (ctx, args) => {
     const ownerSubject = await requireOwnerSubject(ctx)
+    // Append-only + publicly exported (guests included): throttle per owner so it can't be sprayed.
+    await consumeWriteBudget(ctx, `subject:${ownerSubject}`)
     assertWidgetShape(args.widgets)
     return ctx.db.insert("askAiRuns", {
       ownerSubject,

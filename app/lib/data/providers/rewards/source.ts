@@ -29,13 +29,13 @@ export type RewardsPageSource = {
   ): Promise<DataSourceResponse<RewardsPageData>>
 }
 
-export const liveRewardsPageAdapter = createDataSourceAdapter({
+const liveRewardsPageAdapter = createDataSourceAdapter({
   id: "rewards-live",
   label: "Rewards page live source",
   mode: "live",
 })
 
-export const mockRewardsPageAdapter = createDataSourceAdapter({
+const mockRewardsPageAdapter = createDataSourceAdapter({
   id: "rewards-mock",
   label: "Rewards page mock source",
   mode: "mock",

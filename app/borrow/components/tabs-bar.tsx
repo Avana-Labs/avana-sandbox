@@ -16,7 +16,7 @@ export function isPoolTab(tab: BorrowTabId): tab is PoolTabId {
   return POOL_TAB_IDS.includes(tab as PoolTabId)
 }
 
-export type TabsBarProps = {
+type TabsBarProps = {
   currentTab: BorrowTabId
   onTabChange: (tab: BorrowTabId) => void
   search: string
@@ -36,7 +36,7 @@ export function TabsBar({ currentTab, onTabChange, search, onSearchChange }: Tab
         onTabChange={(id) => onTabChange(id as BorrowTabId)}
         search={search}
         onSearchChange={onSearchChange}
-        searchPlaceholder={t("Search markets")}
+        searchPlaceholder={t("Filter markets")}
       />
     </div>
   )

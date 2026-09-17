@@ -28,11 +28,7 @@ export type UmbrellaMarket = {
   currentDeficitUsd: number
   deficitOffsetUsd: number
   amountInCooldownUsd: number
-  /**
-   * Cumulative slashed USD from `umbrellaMarketState.totalSlashedUsd`. Optional
-   * because the fallback (default) markets have no live overlay row and the
-   * catalog doesn't carry this field.
-   */
+  /** Cumulative slashed USD. Optional: fallback markets have no live overlay row. */
   totalSlashedUsd?: number
 }
 
@@ -40,10 +36,9 @@ export type UmbrellaMarket = {
 export type UmbrellaCooldownStatus = "idle" | "cooling" | "ready" | "expired"
 
 /**
- * Local mirror of the server tranche shape. Every startCooldown appends one
- * of these; unstake consumes them FIFO across the "ready" bucket. Local
- * status is derived from Date.now() every time the offline path enforces a
- * rule, so idle time doesn't need a background sweep.
+ * Local mirror of the server tranche shape. startCooldown appends one; unstake consumes them FIFO
+ * across the "ready" bucket. Status is re-derived from Date.now() on every rule check, so idle
+ * time needs no background sweep.
  */
 export type UmbrellaTranche = {
   id: string
@@ -72,17 +67,13 @@ export type UmbrellaPosition = {
   /** True when at least one tranche is past its withdrawal window with cooling USD still on it. */
   withdrawalWindowExpired: boolean
   /**
-   * Cumulative USD principal removed by slashes on this position; 0 when never slashed.
-   * Slashing is Convex-driven and persisted — applied by the `simulateSlash` mutation
-   * (convex/sandbox/umbrella.ts) writing `slashedAmountUsd6`, then hydrated here via
-   * stateFromConvex. "simulate" = sandbox has no chain, NOT a client-synthetic figure.
+   * Cumulative USD principal removed by slashes; 0 when never slashed. Convex-driven and
+   * persisted by the `simulateSlash` mutation — "simulate" means no chain, not client-synthetic.
    */
   slashedValueUsd: number
   /**
-   * Per-tranche breakdown — sorted by endsAt ascending. `cooldownAmount` /
-   * `cooldownValueUsd` are the sum. `cooldownStatus` is the worst live status
-   * across tranches (expired > ready > cooling > idle). Never contains an
-   * `"idle"` tranche.
+   * Per-tranche breakdown, sorted by endsAt ascending and never containing an `"idle"` tranche.
+   * `cooldownAmount`/`cooldownValueUsd` are the sum; `cooldownStatus` is the worst live status.
    */
   tranches: UmbrellaTranche[]
   updatedAt: number
@@ -101,7 +92,7 @@ export type UmbrellaTransaction = {
   timestamp: number
 }
 
-export type UmbrellaState = {
+type UmbrellaState = {
   walletId: string
   walletBalances: Record<UmbrellaMarketId, number>
   markets: Record<UmbrellaMarketId, UmbrellaMarket>
@@ -131,9 +122,8 @@ export type ConvexUmbrellaSessionState = {
     status: "open" | "closed"
     lastUpdatedAt: number
     /**
-     * Per-tranche cooldown breakdown. Optional so pre-tranche seeds and older
-     * server payloads still hydrate; when absent the aggregate cooldownUsd
-     * drives a synthetic single-tranche view.
+     * Optional so pre-tranche seeds and older server payloads still hydrate; when absent the
+     * aggregate cooldownUsd drives a synthetic single-tranche view.
      */
     tranches?: Array<{
       _id: string
@@ -407,11 +397,7 @@ function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPositio
   }
 }
 
-/**
- * Derive the worst live status across an array of tranches: expired > ready
- * > cooling > idle. Mirrors the server rule so the offline path and the Convex
- * path agree on the CTA state.
- */
+/** Worst live tranche status (expired > ready > cooling > idle). Mirrors the server rule. */
 function statusFromTranches(tranches: UmbrellaTranche[]): UmbrellaCooldownStatus {
   if (tranches.length === 0) return "idle"
   if (tranches.some((t) => t.status === "expired" && t.amountUsd > 0)) return "expired"
@@ -420,11 +406,7 @@ function statusFromTranches(tranches: UmbrellaTranche[]): UmbrellaCooldownStatus
   return "idle"
 }
 
-/**
- * Refresh each tranche's status against `now` and produce cooldown labels.
- * Kept small so both the offline execute path and stateFromConvex use the
- * same derivation.
- */
+/** Refresh tranche statuses against `now`; shared by the offline path and stateFromConvex. */
 function refreshTranches(tranches: UmbrellaTranche[], now: number): UmbrellaTranche[] {
   return tranches
     .filter((t) => t.amountUsd > 0)
@@ -441,11 +423,7 @@ function formatRemaining(ms: number) {
   return `${days}d ${hours}h`
 }
 
-/**
- * Derive the aggregate cooldown labels from a set of tranches. The status
- * label follows the worst-status rule so the CTA matches what the Convex
- * server would return.
- */
+/** Aggregate cooldown labels; the status follows the worst-status rule so the CTA matches Convex. */
 function trancheLabels(
   tranches: UmbrellaTranche[],
   now: number,
@@ -497,10 +475,9 @@ function trancheLabels(
 
 function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): UmbrellaState {
   const fallback = buildDefaultUmbrellaState(walletId)
-  // Convex deployments can briefly return an older market shape while the
-  // client and server roll forward independently. Merge each remote row over
-  // the local catalog so newly added surface metadata remains available without
-  // changing any live wallet or risk values from Convex.
+  // Convex can briefly return an older market shape while client and server roll forward
+  // independently, so merge each remote row over the local catalog: new surface metadata stays
+  // available and Convex still owns every live wallet/risk value.
   const markets = Object.fromEntries(
     UMBRELLA_MARKET_ORDER.map((marketId) => [
       marketId,
@@ -621,11 +598,8 @@ export function useUmbrellaSession({
   )
   const stateRef = useRef(state)
   stateRef.current = state
-  // Hydration semantics (mirrors lend/borrow):
-  //  - true once `remoteState` has been non-undefined at least once (Convex responded).
-  //  - true when `persistState === false` and no remoteState is expected
-  //    (test / SSR-only use — nothing to wait on).
-  //  - false otherwise (still fetching).
+  // Hydrated (mirrors lend/borrow) once Convex has responded at least once, or immediately when
+  // no remoteState is expected (test / SSR-only); otherwise still fetching.
   const remoteSettledRef = useRef(false)
   const [isHydrated, setIsHydrated] = useState(() => !expectsRemoteState && !persistState && remoteState === undefined)
 
@@ -664,11 +638,9 @@ export function useUmbrellaSession({
       const amount = clampAmount(rawAmount)
       if (kind !== "claim" && amount <= 0) throw new Error("Amount must be positive")
 
-      // When Convex is the source of truth, Convex owns validation, accrual, and
-      // withdrawal-window checks. The old local setState re-implemented those
-      // rules but skipped reward accrual + the expired-window state, so between
-      // persistAction resolving and the Convex reactivity round-trip the UI
-      // could disagree with the server. Trust Convex; don't lie for a beat.
+      // Convex owns validation, accrual and withdrawal-window checks when it is the source of
+      // truth. Do NOT re-apply those rules locally here — a partial local copy makes the UI
+      // disagree with the server for the round-trip.
       if (persistAction) {
         const currentState = stateRef.current
         const market = currentState.markets[marketId]
@@ -701,12 +673,8 @@ export function useUmbrellaSession({
         }
       }
 
-      // Local-only (tests / offline): mirror the Convex `recordAction` rules
-      // exactly, including the multi-tranche cooldown model — a user can hold
-      // multiple concurrent tranches per market, each with its own 20-day /
-      // 2-day clock. Every mutation re-derives tranche status from Date.now()
-      // so idle time promotes cooling → ready → expired without a background
-      // sweep.
+      // Local-only (tests / offline): must mirror the Convex `recordAction` rules exactly,
+      // including multiple concurrent tranches per market each on its own 20-day / 2-day clock.
       let result: UmbrellaTransaction | null = null
       setState((current) => {
         const market = current.markets[marketId]
@@ -715,12 +683,9 @@ export function useUmbrellaSession({
         const amountUsd = amount * market.priceUsd
         const timestamp = Date.now()
         const liveTranches = refreshTranches(position.tranches, timestamp)
-        // Expired tranches (past their 2-day withdrawal window) release their stake
-        // back to the active pool — the withdrawal never happened, so the funds are
-        // still staked and can be re-cooled. Only cooling/ready tranches lock stake,
-        // so only they count against the "active supplied" budget. Without this, an
-        // expired tranche was summed as cooling forever and its stake could never be
-        // re-cooldownable. Mirrors the Convex read model (active ends exclude expired).
+        // Expired tranches (past the 2-day withdrawal window) release their stake back to the
+        // active pool — the withdrawal never happened — so only cooling/ready tranches lock stake
+        // against the "active supplied" budget. Mirrors the Convex read model.
         const activeCoolingUsd = liveTranches
           .filter((t) => t.status !== "expired")
           .reduce((sum, t) => sum + t.amountUsd, 0)

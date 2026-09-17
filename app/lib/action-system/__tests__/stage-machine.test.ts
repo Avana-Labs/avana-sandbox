@@ -3,6 +3,7 @@ import {
   isConfigureVisibleStage,
   isProcessingStage,
   isReviewStage,
+  isSubmittingStage,
   nextActionStage,
   primaryCtaLabel,
   reviewStageTitle,
@@ -45,11 +46,12 @@ describe("nextActionStage", () => {
 })
 
 describe("configure visibility", () => {
-  it("keeps configure UI visible during wallet and allowance stages", () => {
+  it("shows the configure UI only for the configure and error stages", () => {
     expect(isConfigureVisibleStage("configure")).toBe(true)
-    expect(isConfigureVisibleStage("approve_allowance")).toBe(true)
-    expect(isConfigureVisibleStage("wallet_sign")).toBe(true)
     expect(isConfigureVisibleStage("error")).toBe(true)
+    // Post-review signing stages hand the screen to the pending view, not the amount card.
+    expect(isConfigureVisibleStage("approve_allowance")).toBe(false)
+    expect(isConfigureVisibleStage("wallet_sign")).toBe(false)
     expect(isConfigureVisibleStage("review")).toBe(false)
     expect(isConfigureVisibleStage("processing")).toBe(false)
     expect(isConfigureVisibleStage("success")).toBe(false)
@@ -67,6 +69,21 @@ describe("configure visibility", () => {
     expect(isProcessingStage("refreshing_position")).toBe(true)
     expect(isProcessingStage("reconciled")).toBe(true)
     expect(isProcessingStage("success")).toBe(false)
+  })
+
+  it("treats signing and processing as submitting stages the amount card yields to", () => {
+    // Signing stages join the processing lifecycle: the pending view owns the screen and
+    // the editable amount card must not render, so the two predicates are mutually exclusive.
+    for (const stage of ["approve_allowance", "wallet_sign"] as const) {
+      expect(isSubmittingStage(stage)).toBe(true)
+      expect(isConfigureVisibleStage(stage)).toBe(false)
+    }
+    expect(isSubmittingStage("processing")).toBe(true)
+    expect(isSubmittingStage("reconciled")).toBe(true)
+    expect(isSubmittingStage("configure")).toBe(false)
+    expect(isSubmittingStage("review")).toBe(false)
+    expect(isSubmittingStage("success")).toBe(false)
+    expect(isSubmittingStage("error")).toBe(false)
   })
 })
 

@@ -44,7 +44,7 @@ const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
   wallet: Wallet,
 }
 
-export function AvaCoin({ size = 20 }: { size?: number }) {
+function AvaCoin({ size = 20 }: { size?: number }) {
   return (
     <Image
       src="/asset-icons/ava.png"

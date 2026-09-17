@@ -61,6 +61,29 @@ export function formatTokenQuantity(value: number, symbol: string): string {
   return `${formatNumber(value, { maximumFractionDigits: 2 })} ${symbol}`
 }
 
+/**
+ * Token quantity for the Activity feed. The executed token amount is not persisted — the durable
+ * transaction records only USD — so the amount shown here is reconstructed as `amountUsd / price`.
+ * Its low-order digits are oracle-drift noise, not real precision (a 100 USDC supply reconstructs
+ * to 100.0035). Round to a magnitude-appropriate scale so a round-number action reads cleanly
+ * ("100 USDC", "1 GHO") while a genuinely fractional balance stays legible ("0.4932 cbBTC").
+ */
+export function formatActivityTokenAmount(amount: number, symbol: string): string {
+  if (!Number.isFinite(amount)) return `0 ${symbol}`
+  const abs = Math.abs(amount)
+  // The executed token amount is reconstructed from the transaction's USD value, so its low-order
+  // digits are oracle-drift noise (~1% relative), not real precision. Below 1,000 units round to 3
+  // significant figures — enough to hide that noise, so a round-number action reads cleanly
+  // ("100.0135 USDC" → "100", "50.01 USDC" → "50", "1.0004 GHO" → "1") while a fractional balance
+  // stays legible ("0.492 cbBTC"). At/above 1,000 units keep the integer so a large deposit still
+  // reads naturally ("12,513 GHO") instead of collapsing to 3 figures.
+  const rounded =
+    abs >= 1_000
+      ? formatNumber(amount, { maximumFractionDigits: 0 })
+      : formatNumber(amount, { maximumSignificantDigits: 3 })
+  return `${rounded} ${symbol}`
+}
+
 /** Exact currency formatting from a USD value, with currency-appropriate decimals. */
 export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   const value = convertFromUsd(usd, ctx)
@@ -68,6 +91,24 @@ export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   return `${value < 0 ? "-" : ""}${ctx.symbol}${formatNumber(Math.abs(value), {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
+  })}`
+}
+
+/**
+ * Per-unit price with adaptive precision, so `amount × displayed price` reconciles with the
+ * displayed value instead of rounding a near-$1 token to a flat "$1.00" (13,349.72 USDC @ "$1.00"
+ * would read "$13,343.63"). Large prices keep two decimals (unchanged for blue-chips), mid prices
+ * show up to four, and sub-$1 prices up to six — capped so nothing runs long, and never fewer than
+ * the currency's usual decimals.
+ */
+export function formatPriceCurrency(usd: number, ctx: CurrencyContext): string {
+  const value = convertFromUsd(usd, ctx)
+  const abs = Math.abs(value)
+  const minDecimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 2
+  const maxDecimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : abs >= 100 ? 2 : abs >= 1 ? 4 : 6
+  return `${value < 0 ? "-" : ""}${ctx.symbol}${formatNumber(abs, {
+    minimumFractionDigits: Math.min(minDecimals, maxDecimals),
+    maximumFractionDigits: maxDecimals,
   })}`
 }
 

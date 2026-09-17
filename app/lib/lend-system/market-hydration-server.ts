@@ -1,23 +1,20 @@
 import "server-only"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
-import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
 import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
 
 /**
- * Server-side Convex fetchers for the lend (single-asset supply) detail page.
- * Mirrors `borrow-system/market-hydration-server.ts` but scoped to `"lend"`.
- * Every fetcher degrades to `null`/`[]` when no Convex deployment is configured
- * or it's unreachable, so the page always renders off the catalog/mock fallback.
+ * Server-side Convex fetchers for the lend detail page. Every fetcher degrades to `null`/`[]`
+ * when Convex is unconfigured or unreachable, so the page renders off the catalog fallback.
  */
 
 export type { ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 export { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 
 /** Latest-day reference snapshot for a single lend market. */
-export type LendMarketSnapshot = {
+type LendMarketSnapshot = {
   slug: string
   suppliedUsd: number
   borrowedUsd: number
@@ -27,8 +24,8 @@ export type LendMarketSnapshot = {
   borrowAprPct: number
 }
 
-// One client per request (request-scoped via React.cache); a fresh client per call
-// in the non-RSC test runtime, matching prior behavior.
+// One client per request (request-scoped via React.cache); a fresh client per call in the
+// non-RSC test runtime.
 const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
@@ -76,7 +73,7 @@ export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> 
   }
 }
 
-/** Latest-day reference snapshot for one lend market (slug-scoped; C04). */
+/** Latest-day reference snapshot for one lend market (slug-scoped). */
 export async function fetchLendMarketSnapshot(slug: string): Promise<LendMarketSnapshot | null> {
   const client = convexClient()
   if (!client) return null
@@ -97,35 +94,12 @@ export async function fetchLendMarketSnapshot(slug: string): Promise<LendMarketS
   }
 }
 
-/** Lend hero series = total supplied over the full window. */
-export async function fetchLendSupplySeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getLendHeroSeries, { slug, metric: "supply", range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-/** Supply/borrow/utilization series for lend hero secondary tabs (C05 — no PRNG). */
+/** Supply/borrow/utilization series for lend hero secondary tabs. */
 export async function fetchLendSupplyBorrow(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.markets.getLendSupplyBorrow, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Cashflow breakdown card (rows + monthly bars) for a lend market. */
-export async function fetchLendCashflowBreakdown(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.lend.cashflow.getBreakdown, { slug })
   } catch {
     return null
   }
@@ -143,25 +117,12 @@ export async function fetchLendRecentTransactions(slug: string) {
   }
 }
 
-/** Latest risk assessment (premium + breakdown + metrics) for a lend market. */
 /** Latest risk assessment (Risk Premium card) from product-siloed `lendRiskAssessments`. */
 export async function fetchLendRisk(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.lend.riskAssessment.getRisk, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Calibrated Market-overview quick stats for a lend market. Null when unseeded. */
-export async function fetchLendQuickStats(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const rows = await client.query(api.markets.getQuickStats, { scope: "lend", slug })
-    return rows && rows.length > 0 ? rows : null
   } catch {
     return null
   }

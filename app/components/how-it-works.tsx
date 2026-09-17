@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
-export type HowItWorksTopic = "umbrella" | "lend" | "borrow" | "multiply"
+type HowItWorksTopic = "umbrella" | "lend" | "borrow" | "multiply"
 
 type HowItWorksSection = { heading: string; body: string }
 type HowItWorksContent = {

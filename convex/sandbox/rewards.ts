@@ -1,6 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 
 const MAX_REWARD_EVENTS = 10_000
@@ -90,14 +91,31 @@ export const saveState = mutation({
     expectedRevision: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     if (args.stateJson.length > 1_000_000) throw new Error("REWARDS_STATE_TOO_LARGE")
     const parsed = parseRewardsState(args.stateJson, wallet)
     const existing = await ctx.db
       .query("sandboxRewards")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .unique()
-    if (parsed.claims.length > 0) {
+    // Claims already in the stored row were checked against a successful rewards
+    // transaction by the write that first persisted them, so re-checking them re-reads up
+    // to 500 transaction rows on EVERY save. That scan is the dominant database-I/O cost
+    // of this mutation (~458 MB across ~38k calls, ~12 KB each) and it re-proves something
+    // already proven, so only the delta is verified. A stored row we cannot parse proves
+    // nothing, so it falls back to verifying every incoming claim.
+    let alreadyPersisted = new Set<string>()
+    if (existing) {
+      try {
+        alreadyPersisted = new Set(
+          parseRewardsState(existing.stateJson, wallet).claims.map((claim) => claim.taskId as string),
+        )
+      } catch {
+        // Leave the set empty — every incoming claim is verified below.
+      }
+    }
+    const unverifiedClaims = parsed.claims.filter((claim) => !alreadyPersisted.has(claim.taskId as string))
+    if (unverifiedClaims.length > 0) {
       const authorizedClaims = new Set<string>()
       const rewardTransactions = await ctx.db
         .query("transactions")
@@ -108,7 +126,7 @@ export const saveState = mutation({
         if (transaction.product !== "rewards" || transaction.status !== "success") continue
         for (const taskId of transaction.claimedTaskIds ?? []) authorizedClaims.add(taskId)
       }
-      for (const claim of parsed.claims) {
+      for (const claim of unverifiedClaims) {
         if (!authorizedClaims.has(claim.taskId as string)) throw new Error("UNAUTHORIZED_REWARD_CLAIM")
       }
     }

@@ -96,9 +96,9 @@ const UMBRELLA_MARKETS = {
     baseApy: 2.65,
     liquidationRecaptureApy: 1.2,
     incentiveApy: 1.2,
-    // Must equal the app-wide baseline (app/lib/prices/sandbox-baseline-prices.ts → WETH:1934).
-    // Convex can't import app/, so this is hand-synced; it previously drifted to 2240, valuing
-    // the same WETH ~16% higher in Umbrella than everywhere else.
+    // MUST equal the app-wide baseline (app/lib/prices/sandbox-baseline-prices.ts → WETH:1934).
+    // Convex cannot import app/, so this is hand-synced; a past drift to 2240 valued WETH ~16%
+    // higher in Umbrella than everywhere else.
     priceUsd: 1934,
     targetCoverageUsd: 6_250_000,
     localDeductibleUsd: 150_000,
@@ -113,9 +113,8 @@ const UMBRELLA_MARKETS = {
 type UmbrellaMarketId = keyof typeof UMBRELLA_MARKETS
 
 /**
- * Single source of truth for the onboarding wallet seed's per-token prices.
- * Onboarding and ensureTestWalletFixtures reference these instead of hard-coding
- * a divergent price (weth previously drifted: 1934 in onboarding, 2240 here). Consistency with
+ * Single source of truth for the onboarding wallet seed's per-token prices — onboarding and
+ * ensureTestWalletFixtures must reference these, never hard-code their own. Consistency with
  * the app fixture is enforced by convex/__tests__/price-copy-drift.test.ts.
  */
 export const UMBRELLA_ONBOARDING_TOKEN_PRICES: Record<UmbrellaMarketId, number> = {
@@ -142,25 +141,18 @@ function rewardAccruedUsd(position: Doc<"positions">, now: number) {
   const market = UMBRELLA_MARKETS[position.marketSlug as UmbrellaMarketId]
   if (!market) return 0
   const principalUsd = numberFromUsd6(position.suppliedUsd6)
-  // Use `rewardCheckpointAt` as the accrual clock. Every non-checkpointing
-  // patch (balance sync, deficit sim, dev advance) touches `lastUpdatedAt`,
-  // so relying on lastUpdatedAt made rewards silently reset on every action.
-  // Fall back to lastUpdatedAt for pre-existing rows that predate the field.
+  // `rewardCheckpointAt` is the accrual clock, NOT `lastUpdatedAt` — every non-checkpointing
+  // patch (balance sync, deficit sim, dev advance) touches the latter, which silently resets
+  // rewards. Falls back to lastUpdatedAt only for rows predating the field.
   const checkpoint = position.rewardCheckpointAt ?? position.lastUpdatedAt
   const elapsedSeconds = Math.max(0, (now - checkpoint) / 1000)
   return principalUsd * (market.rewardApy / 100) * (elapsedSeconds / SECONDS_PER_YEAR)
 }
 
 /**
- * Umbrella liquid-balance writer. Every umbrella stake/unstake mutates the
- * user's spendable balance for the market's underlying token (gho / usdc /
- * usdt / weth). `walletLiquidBalances` is the spendable source of truth and
- * `walletBalances` is its shared aggregate projection.
- *
- * The two retained ledgers are kept in lockstep here so umbrella's post-stake
- * spendable balance is indistinguishable from what every other product would
- * see: staking 100 GHO decrements the GHO row in each store by the same
- * amount, in the same mutation.
+ * Umbrella liquid-balance writer. `walletLiquidBalances` is the spendable source of truth and
+ * `walletBalances` its aggregate projection; both MUST move by the same amount in the same
+ * mutation, so umbrella's post-stake balance is indistinguishable from any other product's.
  */
 async function upsertLiquidBalance(
   ctx: MutationCtx,
@@ -197,9 +189,8 @@ async function readUmbrellaPosition(ctx: QueryCtx | MutationCtx, wallet: string,
 }
 
 /**
- * Fetch every active tranche (not "consumed") for a (wallet, market). The
- * caller re-derives status vs. `now` at read time — the persisted `status`
- * only matters to filter out consumed rows without a table scan.
+ * Every active (non-"consumed") tranche for a (wallet, market). Callers re-derive status
+ * against `now`; the persisted `status` only exists to filter consumed rows without a scan.
  */
 async function listActiveTranches(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
   const [cooling, ready, expired] = await Promise.all([
@@ -225,10 +216,8 @@ async function listActiveTranches(ctx: QueryCtx | MutationCtx, wallet: string, m
   return [...cooling, ...ready, ...expired]
 }
 
-/**
- * Derive live status by comparing `now` to a tranche's endsAt / windowEndsAt.
- * Never returns "consumed" — callers pre-filter those.
- */
+/** Live status from `now` vs endsAt / windowEndsAt. Never returns "consumed" — callers
+ *  pre-filter those. */
 function deriveTrancheStatus(tranche: Doc<"umbrellaCooldownTranches">, now: number): "cooling" | "ready" | "expired" {
   if (now < tranche.endsAt) return "cooling"
   if (now < tranche.windowEndsAt) return "ready"
@@ -236,10 +225,8 @@ function deriveTrancheStatus(tranche: Doc<"umbrellaCooldownTranches">, now: numb
 }
 
 /**
- * Recompute position.cooldownAmountUsd6 + timestamp rollups from the active
- * tranches. Called after every startCooldown / unstake / slash tranche
- * mutation so backwards-compat callers (portfolio snapshots, older UI) see a
- * coherent aggregate.
+ * Recompute the `positions.cooldown*` rollups from the active tranches. MUST run after every
+ * startCooldown / unstake / slash so aggregate readers stay coherent.
  */
 async function recomputePositionAggregate(
   ctx: MutationCtx,
@@ -269,10 +256,8 @@ async function recomputePositionAggregate(
 }
 
 /**
- * Read the live umbrella market-state overlay (deficit + slash counters) from
- * `umbrellaMarketState`, falling back to the frozen catalog values when a
- * market has no row yet. Used by getSessionState to fold live values into the
- * markets map, and by simulateDeficit / simulateSlash for read-modify-write.
+ * Live umbrella market-state overlay (deficit + slash counters) from `umbrellaMarketState`,
+ * falling back to the frozen catalog when a market has no row yet.
  */
 async function readUmbrellaMarketOverlay(ctx: QueryCtx | MutationCtx, marketId: UmbrellaMarketId) {
   const row = await ctx.db
@@ -289,15 +274,10 @@ async function readUmbrellaMarketOverlay(ctx: QueryCtx | MutationCtx, marketId: 
 }
 
 /**
- * Shared dev-controls guard. `simulateDeficit`, `simulateSlash`, and
- * `dev.advanceCooldown` all check this so production wallets can never trigger
- * time-warp / stress mutations. The env var is set only in `.env.local`.
- *
- * Production floor: even if `SANDBOX_DEV_CONTROLS` is somehow "true" in a deploy
- * (a mis-set Convex env var), the guard FAILS CLOSED when the deployment runs as
- * production — mirroring the app-side `isProductionBuild()` floor in
- * app/lib/test-mode.ts. The opt-in flag can only ever unlock these mutations in a
- * non-production (local dev) deployment.
+ * Dev-controls guard for the time-warp / stress mutations (`simulateDeficit`,
+ * `simulateSlash`, `dev.advanceCooldown`). Opt-in via `SANDBOX_DEV_CONTROLS` in `.env.local`,
+ * with a production FLOOR: a production deployment fails closed even if the flag is set,
+ * mirroring `isProductionBuild()` in app/lib/test-mode.ts.
  */
 export function assertSandboxDevControlsEnabled() {
   if (process.env.NODE_ENV === "production") throw new Error("DEV_CONTROLS_DISABLED")
@@ -322,10 +302,9 @@ export const getSessionState = query({
           .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
           .order("desc")
           .collect(),
-        // Live market-level aggregates: sum every wallet's suppliedUsd6 and
-        // cooldownAmountUsd6 for each umbrella market so Coverage and Amount in
-        // cooldown move as users stake / cool / unstake. Added on top of the
-        // catalog baseline (which represents pre-existing external liquidity).
+        // Sum every wallet's suppliedUsd6 / cooldownAmountUsd6 per market so Coverage and
+        // Amount-in-cooldown move with activity, added on top of the catalog baseline (which
+        // stands for pre-existing external liquidity).
         Promise.all(
           marketIds.map(async (marketId) => {
             const rows = await ctx.db
@@ -342,8 +321,7 @@ export const getSessionState = query({
           }),
         ),
         Promise.all(marketIds.map((marketId) => readUmbrellaMarketOverlay(ctx, marketId))),
-        // Every active tranche for this wallet, folded per market below. Reads
-        // the by_wallet index once — cheaper than per-position round-trips.
+        // One by_wallet index read, folded per market below — cheaper than per-position reads.
         ctx.db
           .query("umbrellaCooldownTranches")
           .withIndex("by_wallet", (q) => q.eq("wallet", authed))
@@ -361,21 +339,16 @@ export const getSessionState = query({
         )
         .map((row) => [row.symbol.toLowerCase(), row.priceUsd]),
     )
-    // Fold each per-wallet aggregate + the live umbrellaMarketState overlay
-    // into the catalog baseline. The catalog holds Target / APY / priceUsd as
-    // static config; totalStakedUsd / amountInCooldownUsd move live from the
-    // aggregate, and currentDeficitUsd / deficitOffsetUsd / totalSlashedUsd
-    // come from the overlay (with catalog fallback).
+    // The catalog holds Target / APY / priceUsd as static config; totalStakedUsd /
+    // amountInCooldownUsd come from the live aggregate, and the deficit/slash counters from
+    // the umbrellaMarketState overlay (catalog fallback).
     const liveMarkets = Object.fromEntries(
       marketIds.map((marketId, index) => {
         const base = UMBRELLA_MARKETS[marketId]
         const agg = aggregatesPerMarket.find((row) => row.marketId === marketId)
         const overlay = overlays[index]
-        // `agg.stakedUsd` and `agg.cooldownUsd` are sums over
-        // `positions.suppliedUsd6` / `cooldownAmountUsd6`, both non-negative
-        // by construction (usd6() clamps to Math.max(0, …) on every write in
-        // recordAction / simulateSlash). So `base + agg` stays >= base >= 0
-        // and no guard against a negative fold is needed here.
+        // No negative-fold guard needed: usd6() clamps every write to >= 0, so the summed
+        // aggregates are non-negative by construction and `base + agg` >= base >= 0.
         return [
           marketId,
           {
@@ -396,8 +369,7 @@ export const getSessionState = query({
       walletBalances: Object.fromEntries(marketIds.map((marketId, index) => [marketId, balances[index] ?? 0])),
       positions: positions.map((position) => {
         const marketId = position.marketSlug as UmbrellaMarketId
-        // Fold this wallet's active tranches for this market into the
-        // aggregate + the per-tranche list the UI can render. Consumed
+        // Fold this wallet's active tranches into the aggregate + the UI list; consumed
         // tranches never surface.
         const positionTranches = tranchesByWallet
           .filter((row) => row.positionId === position._id && row.status !== "consumed")
@@ -412,8 +384,8 @@ export const getSessionState = query({
           .sort((a, b) => a.endsAt - b.endsAt)
         const anyExpiredWithCooling = positionTranches.some((t) => t.status === "expired" && t.amountUsd > 0)
         const withdrawalWindowExpired = anyExpiredWithCooling
-        // Aggregate rollups from tranches (source of truth); fall back to the
-        // stored aggregate for pre-tranche seed rows.
+        // Rollups come from the tranches (source of truth); the stored aggregate is only a
+        // fallback for pre-tranche seed rows.
         const trancheTotalUsd = positionTranches.reduce((sum, t) => sum + t.amountUsd, 0)
         const cooldownUsd = positionTranches.length > 0 ? trancheTotalUsd : numberFromUsd6(position.cooldownAmountUsd6)
         const activeEndsCandidates = positionTranches.filter((t) => t.status !== "expired").map((t) => t.endsAt)
@@ -526,8 +498,7 @@ export const recordAction = mutation({
         cooldownAmountUsd6: usd6(cooldownUsd),
         openedAt: position?.openedAt ?? now,
         lastUpdatedAt: now,
-        // Re-checkpoint reward accrual on stake — earnedUsd already folded
-        // in the accrual up to `now`, so restart the clock from here.
+        // earnedUsd already folded accrual up to `now`, so restart the reward clock here.
         rewardCheckpointAt: now,
         openTxSynthetic: position?.openTxSynthetic,
         revision: (position?.revision ?? 0) + 1,
@@ -549,28 +520,19 @@ export const recordAction = mutation({
       })
     } else if (args.kind === "startCooldown") {
       if (!position) throw new Error("INVALID_COOLDOWN_AMOUNT")
-      // Fold every active tranche to enforce "can only cool the active portion,
-      // not a portion already cooling". The user can now hold multiple concurrent
-      // tranches per market — each with its own 20-day / 2-day clock — as long
-      // as the total cooling <= supplied.
-      //
-      // EXPIRED tranches are excluded from the active-cooling budget. Once a
-      // tranche's 2-day withdrawal window lapses its stake is no longer
-      // withdrawable via that tranche, but the principal was never removed from
-      // `suppliedUsd` — it has effectively returned to the active pool. Counting
-      // it as "cooling" here left the funds stuck forever (neither withdrawable
-      // nor re-coolable). So the budget is `supplied - (cooling + ready)`, and
-      // the expired amount is re-coolable.
+      // A wallet may hold several concurrent tranches per market, each on its own 20-day /
+      // 2-day clock, as long as total cooling <= supplied. The budget is
+      // `supplied - (cooling + ready)`: EXPIRED tranches are excluded, because a lapsed
+      // window never removed the principal from `suppliedUsd` — counting it as cooling
+      // stranded the funds as neither withdrawable nor re-coolable.
       const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
       const expiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) === "expired")
       const nonExpiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) !== "expired")
       const activeCoolingUsd6 = nonExpiredTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
       const activeCoolingUsd = Number(activeCoolingUsd6) / 1_000_000
       if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw new Error("INVALID_COOLDOWN_AMOUNT")
-      // Budget check passed — retire the now-recovered expired tranches so they
-      // stop lingering in the aggregate (recomputePositionAggregate folds only
-      // non-consumed tranches) and can never be double-counted against the new
-      // tranche. This is the "restart cooldown" recovery path the UI promises.
+      // Retire the recovered expired tranches so they leave the aggregate and can never be
+      // double-counted against the new one. This is the UI's "restart cooldown" path.
       for (const tranche of expiredTranches) {
         await ctx.db.patch(tranche._id, { amountUsd6: "0", status: "consumed", updatedAt: now })
       }
@@ -595,10 +557,9 @@ export const recordAction = mutation({
       await recomputePositionAggregate(ctx, wallet, args.marketId, position._id, now)
     } else {
       if (!position) throw new Error("COOLDOWN_NOT_READY")
-      // Fold tranches into ready / expired buckets. Unstake consumes ready
-      // tranches FIFO (earliest endsAt first). An expired tranche with cooling
-      // USD still on it means "user let the window lapse — must restart";
-      // don't silently swallow it.
+      // Unstake consumes ready tranches FIFO (earliest endsAt first). An expired tranche
+      // still carrying cooling USD means the window lapsed and must be restarted — never
+      // silently swallowed.
       const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
       const readyTranches = activeTranches
         .filter((t) => now >= t.endsAt && now < t.windowEndsAt)
@@ -676,16 +637,10 @@ export const recordAction = mutation({
 })
 
 /**
- * Fixture seed for the open-gate test wallet (0x0000…0a11). Populates the four
- * umbrella markets with staked positions, cooldown state, pending rewards, and
- * a matching set of wallet balances so /umbrella has content to demo against
- * without walking through the full onboarding flow.
- *
- * Guardrails:
- *  - Requires an authenticated sandbox wallet.
- *  - Only the canonical test wallet address is allowed to call this — production
- *    users always run through the real onboarding claim.
- *  - Idempotent: exits early if the wallet already has any umbrella positions.
+ * Fixture seed for the open-gate test wallet (0x0000…0a11): staked positions, cooldown state,
+ * pending rewards and matching wallet balances, so /umbrella demos without full onboarding.
+ * Requires an authenticated sandbox wallet, accepts ONLY the canonical test wallet address,
+ * and is idempotent (exits early if any umbrella position exists).
  */
 const TEST_WALLET_ADDRESS = "0x0000000000000000000000000000000000000a11"
 
@@ -711,13 +666,10 @@ const UMBRELLA_TEST_FIXTURE = {
 } as const
 
 /**
- * Shared umbrella-seed helper. Seeds walletLiquidBalances + walletBalances via
- * upsertLiquidBalance and open umbrella positions,
- * plus one `sandboxActivity` row per seeded position matching the shape
- * `recordAction` produces (`umbrella_stake`). Both `ensureTestWalletFixtures`
- * and the onboarding claim call this so onboarding parity is by construction.
- *
- * Idempotency is the caller's job: this helper unconditionally writes.
+ * Shared umbrella-seed helper: liquid/aggregate balances, open positions, and one
+ * `sandboxActivity` row per position in the shape `recordAction` produces. Both
+ * `ensureTestWalletFixtures` and the onboarding claim go through it, so parity is by
+ * construction. WRITES UNCONDITIONALLY — idempotency is the caller's job.
  */
 export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: number) {
   const receiptHashes: string[] = []
@@ -753,10 +705,8 @@ export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: 
       openTxSynthetic: hash,
       revision: 1,
     })
-    // Fixture positions with cooldownUsd > 0 seed exactly ONE tranche so the
-    // per-tranche source of truth stays consistent with the aggregate. Never
-    // splits into multiple rows — that's a startCooldown behaviour, not a
-    // seeding behaviour.
+    // A fixture position with cooldownUsd > 0 seeds exactly ONE tranche, keeping the
+    // per-tranche truth consistent with the aggregate; splitting is startCooldown's job.
     if (
       position.cooldownUsd > 0 &&
       cooldownStartedAt !== undefined &&
@@ -794,9 +744,8 @@ export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: 
       simulated: true,
       at: now,
     })
-    // Onboarding parity with `recordAction`: every umbrella action writes a
-    // sandboxActivity row (`umbrella_stake`), so the seed must too or the
-    // sandbox activity feed misses the initial stakes.
+    // Parity with `recordAction`: every umbrella action writes a sandboxActivity row, so the
+    // seed must too or the activity feed misses the initial stakes.
     await ctx.db.insert("sandboxActivity", {
       wallet,
       kind: "umbrella_stake",
@@ -828,10 +777,8 @@ export const ensureTestWalletFixtures = mutation({
   },
 })
 
-/**
- * Dev-only: overwrite the live deficit for a market so the stress view can
- * demo a realized loss > deficit offset. Gated by `SANDBOX_DEV_CONTROLS=true`.
- */
+/** Dev-only: overwrite a market's live deficit so the stress view can demo a realized loss
+ *  above the deficit offset. Gated by `SANDBOX_DEV_CONTROLS=true`. */
 export const simulateDeficit = mutation({
   args: { wallet: v.string(), marketId: umbrellaMarketId, realizedUsd: v.number() },
   handler: async (ctx, args) => {
@@ -853,10 +800,9 @@ export const simulateDeficit = mutation({
 })
 
 /**
- * Dev-only: apply pro-rata slashing across every open position for a market
- * when the live deficit exceeds the deficit offset. Active stake and cooling
- * stake are both eligible (matches umbrella spec: slashing applies until the
- * withdrawal window closes); closed positions are exempt.
+ * Dev-only: pro-rata slash across every open position for a market when the live deficit
+ * exceeds the deficit offset. Active AND cooling stake are eligible — slashing applies until
+ * the withdrawal window closes — while closed positions are exempt.
  */
 export const simulateSlash = mutation({
   args: { wallet: v.string(), marketId: umbrellaMarketId },
@@ -891,9 +837,8 @@ export const simulateSlash = mutation({
       const totalSeized = seizeStake + seizeCooldown
       realized += totalSeized
       const priorSlashed = numberFromUsd6(row.slashedAmountUsd6)
-      // Distribute the cooling seizure pro-rata across every active tranche
-      // for this (wallet, market). A tranche driven to zero becomes
-      // "consumed"; we still fold the aggregate below.
+      // Spread the cooling seizure pro-rata across the wallet's active tranches; a tranche
+      // driven to zero becomes "consumed" and the aggregate is refolded below.
       const tranches = await listActiveTranches(ctx, row.wallet, args.marketId)
       for (const tranche of tranches) {
         const trancheUsd = Number(BigInt(tranche.amountUsd6)) / 1_000_000

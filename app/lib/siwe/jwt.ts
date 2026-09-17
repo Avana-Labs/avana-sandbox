@@ -3,13 +3,10 @@ import crypto from "node:crypto"
 import { isIsolatedE2EStaging } from "./e2e-policy"
 
 /**
- * Minimal RS256 JWT mint + JWK publication for the SIWE → JWT bridge, using Node's
- * built-in crypto (no external dep). The private JWK is a DEV-only throwaway key in
- * `.env.local` (SIWE_JWT_PRIVATE_JWK); production supplies its own via the same var.
- *
- * Convex verifies these tokens itself: convex/auth.config.ts registers the issuer,
- * and Convex fetches `${issuer}/.well-known/jwks.json` (this app) to get the public
- * key. So we only MINT here; we never verify our own tokens server-side.
+ * RS256 JWT mint + JWK publication for the SIWE → JWT bridge, on Node crypto. The private JWK
+ * comes from SIWE_JWT_PRIVATE_JWK (a throwaway key in `.env.local`; production supplies its
+ * own). Convex verifies these itself by fetching `${issuer}/.well-known/jwks.json`, so this
+ * module only MINTS — it never verifies its own tokens for authorization.
  */
 
 type Jwk = JsonWebKey & { kid?: string; alg?: string; use?: string }
@@ -39,20 +36,12 @@ export function getPublicJwk(): Jwk {
   return { ...pub, alg: "RS256", use: "sig" }
 }
 
-export function getSigningKid(): string {
-  return privateJwk().kid ?? "avana-dev"
-}
-
 /**
- * Resolve the token issuer. Convex matches the token `iss` against the `domain` in
- * convex/auth.config.ts by EXACT string, and must be able to fetch `${iss}/.well-known/jwks.json`.
- *
- * Prefer the pinned env var so `iss` is DETERMINISTIC regardless of which host the request
- * arrived on — otherwise a user landing on a preview URL or a secondary Vercel alias mints a
- * token whose `iss` (the request origin) won't match the Convex-registered issuer, and sign-in
- * fails with UNAUTHENTICATED. Only fall back to the request origin for local dev; in a deployed
- * environment an unset issuer is a misconfiguration, so surface it loudly. The trailing slash is
- * stripped so a stray "…app/" here can never mismatch a "…app" registered on the Convex side.
+ * Resolve the token issuer. Convex matches `iss` against convex/auth.config.ts by EXACT string,
+ * so it must be pinned via env: deriving it from the request origin makes a preview URL or
+ * secondary Vercel alias mint a token that fails UNAUTHENTICATED. Request-origin fallback is
+ * for local dev only; unset in a deploy is a misconfiguration and warns loudly. The trailing
+ * slash is stripped so "…app/" can't mismatch a registered "…app".
  */
 export function resolveIssuer(requestOrigin: string): string {
   const configured = process.env.NEXT_PUBLIC_SIWE_ISSUER?.trim()

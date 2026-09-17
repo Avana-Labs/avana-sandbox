@@ -9,11 +9,11 @@ import type {
   UserDebtPosition,
 } from "./types"
 
-export function tokenAmountToUsd6(tokenAmount: bigint, priceUsd6: bigint) {
+function tokenAmountToUsd6(tokenAmount: bigint, priceUsd6: bigint) {
   return mulDiv(tokenAmount, priceUsd6, TOKEN_SCALE)
 }
 
-export function currentCollateralTokenAmount(position: UserCollateralPosition, market: BorrowMarketRecord) {
+function currentCollateralTokenAmount(position: UserCollateralPosition, market: BorrowMarketRecord) {
   return sharesToAssets(position.collateralShares, market.snapshot.supplyIndexRay)
 }
 
@@ -29,9 +29,8 @@ export function collateralInterestEarnedUsd6(position: UserCollateralPosition, m
 }
 
 /**
- * Current USD6 debt for a position. Fixed-USD (principal + accrued interest) by default; when a
- * `currentPriceUsd6` for the borrowed asset is supplied, the value is repriced to that spot price
- * (§7 / D2). Passing no price — every legacy caller — keeps the exact prior behavior.
+ * Current USD6 debt for a position: fixed-USD (principal + accrued interest) unless
+ * `currentPriceUsd6` is supplied, in which case it is repriced to that spot price.
  */
 export function currentDebtValueUsd6(position: UserDebtPosition, currentPriceUsd6?: bigint) {
   const atBorrow = sharesToAssets(position.debtSharesUsd6, position.debtIndexRay)
@@ -60,9 +59,8 @@ export function totalInterestEarnedUsd6(account: BorrowAccountState, markets: Re
 }
 
 /**
- * Canonical TotalBorrowedUSD (§7) = Σ over borrowed single-token positions. Pass `assets` to
- * reprice each position to its borrowed asset's current spot price; omit it to keep the fixed-USD
- * total (identical under a constant price). Debt is never LP-valued.
+ * Σ over borrowed single-token positions. Pass `assets` to reprice each position to its
+ * asset's current spot price. Debt is never LP-valued.
  */
 export function totalDebtValueUsd6(account: BorrowAccountState, assets?: Record<string, BorrowAssetRecord>) {
   return account.debtPositions.reduce((sum, position) => {
@@ -75,11 +73,7 @@ export function totalInterestOwedUsd6(account: BorrowAccountState) {
   return account.debtPositions.reduce((sum, position) => sum + debtInterestOwedUsd6(position), 0n)
 }
 
-export function totalPrincipalBorrowedUsd6(account: BorrowAccountState) {
-  return account.debtPositions.reduce((sum, position) => sum + position.principalBorrowedUsd6, 0n)
-}
-
-export function resolveAccount(state: BorrowSystemState, walletId: string) {
+function resolveAccount(state: BorrowSystemState, walletId: string) {
   return state.accounts[walletId]
 }
 
@@ -87,10 +81,4 @@ export function calculateCollateralValueUsd6(state: BorrowSystemState, walletId:
   const account = resolveAccount(state, walletId)
   if (!account) throw new Error(`Unknown wallet ${walletId}`)
   return totalCollateralValueUsd6(account, state.markets)
-}
-
-export function resolveDebtAsset(state: BorrowSystemState, position: UserDebtPosition): BorrowAssetRecord {
-  const asset = state.assets[position.assetId]
-  if (!asset) throw new Error(`Unknown asset ${position.assetId}`)
-  return asset
 }

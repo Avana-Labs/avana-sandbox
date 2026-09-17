@@ -32,9 +32,8 @@ export function formatActionApproxUsd(value: number) {
 
 export function formatActionPercent(value: number, digits = 2) {
   if (!Number.isFinite(value)) return "—"
-  // Fixed decimals (matching formatActionRatioPercent) so a given LTV/APY reads identically on
-  // every surface. The old round-then-stringify dropped trailing zeros (80 -> "80%", 5.3 ->
-  // "5.3%") while the ratio formatter emitted "80.00%"/"5.30%" for the same value.
+  // Fixed decimals, matching formatActionRatioPercent, so a given LTV/APY reads identically on
+  // every surface (80 -> "80.00%", not "80%").
   return `${value.toFixed(digits)}%`
 }
 
@@ -65,23 +64,14 @@ export function formatActionNetworkFee(value: number) {
 }
 
 /**
- * The single canonical sandbox network-fee estimate (USD).
- *
- * The sandbox engines do NOT deduct a real gas fee, so both the review/preview
- * summary and the confirmed receipt must read this one number. Otherwise the
- * estimate and the recorded fee drift apart — a "~$0.03" review estimate that
- * confirmed as "$0.89" was the symptom this constant fixes. (#F1)
+ * The single canonical sandbox network-fee estimate (USD). Preview and receipt must both read
+ * this one number, or the estimate and the recorded fee drift apart.
  */
 export const SANDBOX_NETWORK_FEE_USD = 0.03
 
-/** Avana protocol fee (bps) plus estimated network gas for action summaries. */
 /**
- * One honest fee story: the sandbox engines do NOT deduct a protocol/Avana fee,
- * so the only real cost is the network fee. Every action preview reads the single
- * SANDBOX_NETWORK_FEE_USD constant — the same value the receipt records — so the
- * estimate always equals the recorded fee instead of a fabricated per-product
- * guess. The amount/networkFee/bps params are retained for call-site
- * compatibility but unused. (#30, #F1)
+ * The sandbox engines deduct no protocol fee, so the network fee is the only cost. Params are
+ * kept for call-site compatibility but unused.
  */
 export function formatActionFeeSummary(_amountUsd: number, _networkFeeUsd = SANDBOX_NETWORK_FEE_USD, _bps = 30) {
   return formatActionNetworkFee(SANDBOX_NETWORK_FEE_USD)
@@ -96,8 +86,4 @@ export function formatActionAmount(assetAmount: number, symbol: string, digits =
       ? assetAmount.toFixed(2).replace(/\.?0+$/, "")
       : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
   return `${rounded} ${symbol}`
-}
-
-export function formatActionWalletConfirmMessage(symbol: string, amountLabel: string) {
-  return `To continue, confirm ${amountLabel} in your wallet.`
 }

@@ -54,7 +54,12 @@ import {
   resolveClaimMarketId,
   supplySelectItemsForWallet,
 } from "@/app/lib/action-system/resolve-borrow-context"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import {
+  isConfigureVisibleStage,
+  isProcessingStage,
+  isSubmittingStage,
+  reviewStageTitle,
+} from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { resolveClaimPositions, selectionsFromPositions } from "./borrow-action-selection"
 
@@ -343,6 +348,19 @@ export function BorrowActionPageClient({
       })
     return options.length > 1 ? options : undefined
   }, [debtPosition, debtPositions, kind, session.state.assets])
+
+  // Outstanding debt for the selected repay position, resolved off the state (not the
+  // async preview) so the "Outstanding debt" hint and Max show on the empty step too.
+  const repayDebtHint = useMemo(() => {
+    if (kind !== "repay" || !debtPosition) return null
+    const priceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+    const debtUsd = usd6ToNumber(currentDebtValueUsd6(debtPosition))
+    return {
+      debtUsd,
+      valueLabel: formatActionUsd(debtUsd, { exact: true }),
+      maxTokens: priceUsd > 0 ? debtUsd / priceUsd : debtUsd,
+    }
+  }, [kind, debtPosition, session.state.assets])
 
   const claimAssetOptions = useMemo(() => {
     if (kind !== "claim") return undefined
@@ -1077,12 +1095,15 @@ export function BorrowActionPageClient({
   // Borrow fills the safe credit cap; Repay fills the selected debt exactly.
   const showActionMax = kind === "borrow" || kind === "repay"
   const handleActionMax = useCallback(() => {
-    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    // Borrow's max is now a TOKEN quantity (capacity ÷ price); floor to 6 dp so it
-    // never rounds above the available capacity. Repay stays an exact 6-dp fill.
-    const next = kind === "repay" ? Number(previewUi.maxAmount.toFixed(6)) : Math.floor(previewUi.maxAmount * 1e6) / 1e6
+    // Repay can fill Max before a preview exists, so fall back to the outstanding debt.
+    const max = previewUi?.maxAmount ?? repayDebtHint?.maxTokens ?? null
+    if (max == null || max <= 0) return
+    // Borrow's max is a TOKEN quantity (capacity ÷ price) and repay's is the exact
+    // debt; floor both to 6 dp so the fill never rounds above the available
+    // capacity/debt and trips "insufficient".
+    const next = Math.floor(max * 1e6) / 1e6
     setAmount(String(next))
-  }, [kind, previewUi?.maxAmount])
+  }, [previewUi?.maxAmount, repayDebtHint?.maxTokens])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
@@ -1112,10 +1133,10 @@ export function BorrowActionPageClient({
             : kind === "supply"
               ? "Choose the LP pool you want to pledge."
               : "Choose the asset to borrow."
-      : stage === "success" || isProcessingStage(stage) || stage === "review"
+      : stage === "success" || isSubmittingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // Require a collateral pool before the borrow-asset picker opens, so the asset
@@ -1185,6 +1206,8 @@ export function BorrowActionPageClient({
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
           assetPickerDisabled={borrowNeedsCollateral}
           showBalance={showActionMax}
+          balanceLabel={repayDebtHint ? "Outstanding debt" : undefined}
+          balanceValue={previewUi ? undefined : repayDebtHint?.valueLabel}
           onMax={showActionMax ? handleActionMax : undefined}
         />
       )
@@ -1311,7 +1334,7 @@ export function BorrowActionPageClient({
         />
       ) : null}
 
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage
           verb={descriptor.primaryVerb}
           preview={reviewPreviewUi ?? previewUi}
@@ -1344,6 +1367,7 @@ export function BorrowActionPageClient({
           onAmountChange={kind === "remove" ? setPercent : setAmount}
           inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
           preview={previewUi}
+          emptyReason={kind === "repay" && !debtPosition ? "Nothing to repay" : undefined}
           // Pass the base COLLATERAL symbol (visuals[0]) for the ICON — not the pool display
           // name ("WETH / USDC"), which made the left bubble render pair-initials ("WU") instead
           // of the WETH icon on the Pledge/supply amount card. The pill TEXT keeps the pair
@@ -1414,6 +1438,8 @@ export function BorrowActionPageClient({
             kind === "remove" && previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined
           }
           showBalance={showActionMax}
+          balanceLabel={repayDebtHint ? "Outstanding debt" : undefined}
+          balanceValue={previewUi ? undefined : repayDebtHint?.valueLabel}
           onMax={showActionMax ? handleActionMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}

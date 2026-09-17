@@ -1,24 +1,14 @@
 import type { CurrencyCode } from "@/app/components/display-preferences"
 
 /**
- * Dispatched (window Event) after live FX rates are applied — by the client poll
- * (exchange-rates.fetchLiveRates) OR by the validated Convex FX subscription
- * (app/lib/prices/convex-token-prices). DisplayPreferencesProvider listens and bumps its rate
- * version so currency consumers re-render with the new rates. Defined here (a module no test
- * mocks) so importing it never trips a strict module mock.
+ * Window event fired after live FX rates are applied; DisplayPreferencesProvider listens and
+ * bumps its rate version. Lives in this module because no test mocks it.
  */
 export const FX_RATES_UPDATED_EVENT = "avana:fx-rates-updated"
 
 /**
- * Approximate FX rates expressed as "units of the currency per 1 USD". The app's
- * economy is computed and stored in USD (the oracle prices are USD); these rates
- * convert that USD figure for display when the user picks a non-USD currency.
- *
- * These are a static baseline so the switcher works deterministically offline and
- * on the server (where no live fetch runs). `app/lib/currency/exchange-rates`
- * refreshes them from a live source on the client and overrides at runtime via
- * `applyLiveRates`; anything not covered by a live rate falls back to the
- * baseline (and USD is always 1).
+ * Units of currency per 1 USD. A static baseline so the switcher works on the server and
+ * offline; `applyLiveRates` overrides per-currency at runtime and unlisted rates fall back here.
  */
 export const USD_PER_UNIT_BASELINE: Record<CurrencyCode, number> = {
   USD: 1,
@@ -38,7 +28,7 @@ export const USD_PER_UNIT_BASELINE: Record<CurrencyCode, number> = {
 }
 
 /** Display symbol/prefix for each currency. */
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
   ARS: "AR$",
   AUD: "A$",
@@ -65,17 +55,16 @@ export const ZERO_DECIMAL_CURRENCIES: ReadonlySet<CurrencyCode> = new Set<Curren
 ])
 
 /**
- * Live FX overlay: "units of currency per 1 USD". Seeded on the server from the
- * same source as `/api/fx-rates` (see `app/lib/currency/server-hydrate.ts`) so
- * SSR and the first client render share one map; the client may refresh later.
+ * Live FX overlay, units per 1 USD. Seeded on the server from the same source as
+ * `/api/fx-rates` so SSR and the first client render share one map.
  */
 const liveRates: Partial<Record<CurrencyCode, number>> = {}
 
 /** Overlay live rates on top of the baseline. Ignores non-positive/NaN values. */
 export function applyLiveRates(rates: Partial<Record<CurrencyCode, number>>): void {
   for (const code of Object.keys(rates) as CurrencyCode[]) {
-    // USD is the accounting base unit, not a market FX quote. Never allow a stale,
-    // duplicated, or malformed Convex/cache row to turn $1 of USD into anything else.
+    // USD is the accounting base unit, not a market quote: pin it to 1 so a malformed
+    // upstream row can never revalue $1.
     if (code === "USD") {
       liveRates.USD = 1
       continue

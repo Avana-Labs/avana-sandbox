@@ -5,13 +5,11 @@ import { ArrowLeft, ArrowRight } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
-export const TABLE_PAGE_SIZE = 10
+const TABLE_PAGE_SIZE = 10
 
 /**
- * Client-side pagination for a fixed list. Returns the slice for the current
- * page plus the controls the sibling <TablePager /> needs. The page clamps
- * itself when the list shrinks (e.g. a live feed drops rows) so it never points
- * past the end.
+ * Client-side pagination for a fixed list. The page clamps itself when the list
+ * shrinks (e.g. a live feed drops rows) so it never points past the end.
  */
 export function useTablePagination<T>(items: T[], pageSize: number = TABLE_PAGE_SIZE) {
   const [page, setPage] = React.useState(0)

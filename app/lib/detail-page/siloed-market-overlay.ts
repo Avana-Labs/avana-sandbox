@@ -3,20 +3,20 @@
  * (reserve factor, rewards APY, available) onto Dual detail objects.
  */
 
-export type SiloedMarketIdentity = {
+type SiloedMarketIdentity = {
   name: string
   symbol: string
   venueLabel?: string
   explorerUrl?: string
   description?: string
-  category?: "stable" | "crypto"
+  category?: "stable" | "crypto" | "stock"
   feeTier?: string
   iconUrl?: string
   reserveFactorPct?: number
   rewardsApyPct?: number
 }
 
-export type OverlayQuickStat = {
+type OverlayQuickStat = {
   id: string
   value: string
 }

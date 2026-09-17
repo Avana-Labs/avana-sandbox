@@ -1,13 +1,7 @@
 /**
- * Public data seam for the lend (single-asset supply) detail page.
- *
- * UI imports from this module only. The deterministic mock implementation lives
- * in `./mock.ts`; the server-only Convex builder (`./convex-detail.ts`, kept out
- * of this barrel so client components don't pull in `server-only`) overlays
- * seeded/live data per section and falls back to the mock when Convex is
- * unreachable — so the swap from mock → Convex is invisible to the UI.
- *
- * Contract test: `./__tests__/contract.test.ts`.
+ * Public data seam for the lend detail page — UI imports only from here. `./convex-detail.ts`
+ * overlays seeded/live data over the `./mock.ts` baseline and stays OUT of this barrel so
+ * client components don't pull in `server-only`.
  */
 
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
@@ -17,11 +11,6 @@ import type { LendMarketDetail } from "./types"
 export type { LendMarketDetail, LendMarketHero, LendTokenVisual } from "./types"
 export { buildLendMarketDetail, resolveLendMarket, getLendAboutCard } from "./mock"
 export type { LendDetailOverrides } from "./mock"
-
-/** Detail path for a lend market id. */
-export function lendMarketDetailPath(marketId: string): string {
-  return `/lend/markets/${marketId}`
-}
 
 /**
  * Returns the (mock) detail view-model for a lend market route id.

@@ -1,12 +1,8 @@
 /**
- * Wallet-scoped sandbox onboarding + allocation.
- *
- * Caps (user count + total granted USD) are enforced SERVER-SIDE in `claim`
- * inside a single transactional mutation, so concurrent claims can never push
- * past the cap (Convex OCC serializes the increments). The client cannot bypass
- * this; it only displays the result.
- *
- * Balances/prices here are SYNTHETIC sandbox values, not a source of truth.
+ * Wallet-scoped sandbox onboarding + allocation. Caps (user count + total granted USD) are
+ * enforced SERVER-SIDE inside `claim`'s single transactional mutation, so concurrent claims
+ * cannot push past them; the client only displays the result. Balances/prices here are
+ * SYNTHETIC, never a source of truth.
  */
 
 import { v } from "convex/values"
@@ -17,6 +13,7 @@ import { replaceProductBalanceRows } from "../wallet/productBalances"
 import { readWalletSession, upsertWalletSession } from "../wallet/sessions"
 import { upsertPortfolioCurrent } from "./transactions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertCatalogCanSatisfyStarter,
   buildStarterAllocationPlan,
@@ -64,16 +61,12 @@ const DEFAULT_CONFIG = {
   ],
 }
 
-// Sandbox fallback prices, keyed by lowercase token symbol. The live oracle (`tokenPrices`,
-// refreshed hourly from DefiLlama) is preferred at runtime; this is the cold-cache safety net so
-// onboarding NEVER depends on the price cron having run. It must cover every token the starter
-// buckets can select whose price isn't seeded on the market row — i.e. all ASSET-market base
-// tokens (pool/lend/multiply carry their own `markets.priceUsd`). Values mirror the app's static
-// catalog prices. These MUST mirror the single client fixture in app/lib/prices/price-fixture.ts
-// (Convex can't import app/ modules, so they're hand-copied) — the drift is now ENFORCED by
-// convex/__tests__/price-copy-drift.test.ts, which fails CI if any value here diverges from the
-// fixture. Without full coverage here, a fresh deployment (empty `tokenPrices`) resolves those
-// asset legs to $0 and the claim gate rejects every wallet.
+// Cold-cache fallback prices by lowercase symbol, so onboarding NEVER depends on the price cron
+// having run (the live `tokenPrices` oracle is preferred at runtime). MUST cover every ASSET-market
+// base token the starter buckets can select — pool/lend/multiply carry their own
+// `markets.priceUsd` — or a fresh deployment resolves those legs to $0 and the claim gate rejects
+// every wallet. MUST also mirror app/lib/prices/price-fixture.ts (Convex cannot import app/, so
+// these are hand-copied); convex/__tests__/price-copy-drift.test.ts fails CI on any divergence.
 export const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
   usdc: 1,
   usdt: 1,
@@ -128,11 +121,9 @@ async function getOrSeedConfig(ctx: MutationCtx) {
 }
 
 /**
- * Version of the cached starter grant manifest. BUMP THIS whenever the set of markets a wallet
- * can be granted changes (new lend assets, new collateral pools) — the cached singleton is
- * otherwise kept forever and newly seeded markets never become grantable.
- * v2: include the tokenized stock lend markets (AAPL/GOOGL/NVDA/TSLA) and the stock collateral
- * pools (Uniswap Robinhood Stocks, Aerodrome Concentrated Stocks).
+ * Version of the cached starter grant manifest. BUMP THIS whenever the grantable market set
+ * changes (new lend assets, new collateral pools) — the cached singleton is otherwise kept
+ * forever and newly seeded markets never become grantable.
  */
 export const STARTER_CATALOG_VERSION = 2
 
@@ -142,16 +133,11 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
     .withIndex("by_singleton", (q) => q.eq("singleton", "starter"))
     .first()
 
-  // Steady-state fast path: a fully-priced catalog is a fixed grant manifest, so once it is
-  // populated every claim just READS it — no per-claim full tokenPrices+markets scan and no
-  // write to the shared singleton (which serialized concurrent claims and was the onboarding-
-  // burst hotspot). Only (re)build below when the catalog is missing or still partial from a
-  // cold-start seed (any unpriced row), preserving the late-seed recovery. (#13/S1)
-  // …and only while the cached manifest is still the CURRENT version. The cache previously
-  // rebuilt only when missing or unpriced, so any market added to `markets` after the singleton
-  // was first written (the tokenized stock lend markets and stock pools) never entered the grant
-  // pool and could never be handed out. Bump STARTER_CATALOG_VERSION whenever the eligible market
-  // set changes and the next claim rebuilds from the canonical tables.
+  // Steady-state fast path: a fully-priced, current-version catalog is READ, never rebuilt, so a
+  // claim does no full tokenPrices+markets scan and no write to the shared singleton (that write
+  // serialized concurrent claims and was the onboarding-burst hotspot). Rebuild only when the
+  // catalog is missing, still partial from a cold-start seed, or on an older
+  // STARTER_CATALOG_VERSION — otherwise markets added after the first write never become grantable.
   if (
     existing &&
     existing.version === STARTER_CATALOG_VERSION &&
@@ -172,19 +158,16 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
       slug: market.slug,
       scope: market.scope,
       symbol: market.symbol,
-      // Live oracle first (fresh bluechip prices), then the small static fallback, then the
-      // market's own seeded price. pool markets carry LP-pair symbols ("cbBTC/USDC") and
-      // long-tail lend markets carry chain-name symbols ("OP") that are NOT single-token
-      // oracle keys — without `markets.priceUsd` they resolve to 0 and the fail-closed claim
-      // gate (assertCatalogCanSatisfyStarter) rejects EVERY wallet. build-seed seeds priceUsd
-      // per scope (pool = USD-denominated 1; lend/multiply = their asset price).
+      // Order: live oracle, static fallback, then the market's own seeded price. Pool markets
+      // carry LP-pair symbols ("cbBTC/USDC") and long-tail lend markets chain-name symbols
+      // ("OP"), neither of which is a single-token oracle key — without `markets.priceUsd` they
+      // resolve to 0 and the fail-closed claim gate rejects EVERY wallet.
       priceUsd: livePrice.get(symbol) ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? market.priceUsd ?? 0,
     }
   })
 
-  // The market seed can land after the first onboarding attempt. Never keep the
-  // cold-start catalog forever: refresh the singleton from the canonical market tables
-  // so a previously empty/partial deployment becomes claimable after it is seeded.
+  // The market seed can land after the first onboarding attempt, so never keep a cold-start
+  // catalog forever: refresh from the canonical tables once seeded.
   if (existing) {
     await ctx.db.patch(existing._id, { rows, updatedAt: Date.now(), version: STARTER_CATALOG_VERSION })
     return rows
@@ -306,13 +289,9 @@ export const getState = query({
 })
 
 /**
- * Wallet-only onboarding state — the STEADY-STATE gate subscription.
- *
- * Unlike `getState`, this deliberately does NOT read `sandboxEconomyShards`, so a signed-in
- * wallet does not subscribe to the global economy counters. That subscription was the main
- * 10k-concurrency hazard: every `claim` writes a shard, which invalidated every authed
- * wallet's `getState` subscription and forced a re-run. Post-onboarding the gate only needs
- * this wallet's own profile/step, which changes only when THIS wallet acts.
+ * Steady-state gate subscription. Unlike `getState` it deliberately does NOT read
+ * `sandboxEconomyShards`: every `claim` writes a shard, which would invalidate every authed
+ * wallet's subscription. Post-onboarding the gate only needs this wallet's own profile/step.
  */
 async function walletOnboardingView(ctx: QueryCtx, wallet: string) {
   const [profile, config] = await Promise.all([profileForWallet(ctx, wallet), ctx.db.query("sandboxConfig").first()])
@@ -360,10 +339,9 @@ export const getWalletOnboardingState = query({
 })
 
 /**
- * Global economy status (seats left / open|closed) — reads the sharded counters, so it is
- * invalidated by every claim. Subscribe to this ONLY while onboarding is actually in progress
- * (the waitlist/claim UI), never for every authed user forever. `wallet` is required purely to
- * authenticate the caller; the result is global.
+ * Global economy status (seats left / open|closed). Reads the sharded counters, so EVERY claim
+ * invalidates it — subscribe only while onboarding is in progress, never for every authed user.
+ * `wallet` authenticates the caller; the result is global.
  */
 export const getEconomyStatus = query({
   args: { wallet: v.string() },
@@ -374,9 +352,9 @@ export const getEconomyStatus = query({
 })
 
 /**
- * One round-trip for the signed-in gate: wallet state always, economy ONLY while the
- * wallet is still onboarding. Once `onboardingStep === "done"` this query does not read
- * `sandboxEconomyShards`, so other users' claims cannot invalidate a finished wallet.
+ * One round-trip for the signed-in gate: wallet state always, economy ONLY while onboarding.
+ * Once `onboardingStep === "done"` it stops reading `sandboxEconomyShards`, so other users'
+ * claims cannot invalidate a finished wallet.
  */
 export const getOnboardingGateState = query({
   args: { wallet: v.string() },
@@ -394,7 +372,7 @@ export const getOnboardingGateState = query({
 export const beginAnalysis = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const existing = await profileForWallet(ctx, wallet)
     if (existing) {
       if (existing.onboardingStep === "done" || existing.onboardingStep === "waitlisted") return existing.onboardingStep
@@ -415,7 +393,7 @@ export const beginAnalysis = mutation({
 export const startAnalysis = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
     const { tier, seed } = deriveTier(wallet, economy.minMultiplier, economy.maxMultiplier)
 
@@ -438,14 +416,12 @@ export const startAnalysis = mutation({
   },
 })
 
-/**
- * Optional X/tweet sub-flow (eligible → xPending). The user has signalled intent to
- * share; no tweet is recorded yet. Idempotent; never regresses a finished profile.
- */
+/** Optional X/tweet sub-flow (eligible → xPending); no tweet recorded yet. Idempotent, and
+ *  never regresses a finished profile. */
 export const startTweet = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -455,14 +431,12 @@ export const startTweet = mutation({
   },
 })
 
-/**
- * Confirm the share (xPending|eligible → xConfirmed), recording handle + tweet URL.
- * This is a sandbox attestation — there is no server-side tweet verification.
- */
+/** Confirm the share (xPending|eligible → xConfirmed) with handle + tweet URL. Sandbox
+ *  attestation only — there is no server-side tweet verification. */
 export const confirmTweet = mutation({
   args: { wallet: v.string(), xHandle: v.optional(v.string()), tweetUrl: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -480,7 +454,7 @@ export const confirmTweet = mutation({
 export const skipTweet = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before continuing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -493,7 +467,7 @@ export const skipTweet = mutation({
 export const beginClaim = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -506,7 +480,7 @@ export const beginClaim = mutation({
 export const claim = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
     await getOrSeedConfig(ctx)
     const profile = await profileForWallet(ctx, wallet)
@@ -515,7 +489,7 @@ export const claim = mutation({
 
     const allocatedUsd = STARTER_EQUITY_USD
 
-    // Server-side caps — re-read live counts (summed across shards), never trust the client.
+    // Caps re-read live (summed across shards); never trusted from the client.
     const counts = await readEconomyCounts(ctx, economy)
     const capReached =
       economy.status !== "open" ||
@@ -537,13 +511,10 @@ export const claim = mutation({
     const marketBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
     const catalogBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
 
-    // The grant is a fixed USD amount, so every token quantity must be `grantUsd / price` at the
-    // price the position is actually valued with — the LIVE oracle, read at claim time. The
-    // starter catalog caches a price captured when the singleton was written, and
-    // SANDBOX_TOKEN_PRICE_USD is a static fallback; seeding off either sized positions against a
-    // different number than the app displays (AAVE seeded $91.74 vs valued $105 → ~$20k of
-    // phantom gain the moment the grant rendered). tokenPrices is small, so this is one extra
-    // read per claim rather than the full markets scan the catalog cache exists to avoid.
+    // The grant is a fixed USD amount, so every token quantity MUST be `grantUsd / price` at the
+    // price the position is later valued with — the LIVE oracle, read at claim time. The cached
+    // catalog price and the static fallback both size positions against a different number than
+    // the app displays (AAVE seeded $91.74 vs valued $105 → ~$20k of phantom gain on render).
     const livePriceRows = await ctx.db.query("tokenPrices").collect()
     const livePriceBySymbol = new Map(livePriceRows.map((row) => [row.symbol.toLowerCase(), row.priceUsd]))
     const resolveGrantPriceUsd = (symbol: string, fallbackUsd?: number) => {
@@ -554,21 +525,18 @@ export const claim = mutation({
       return fallback && Number.isFinite(fallback) && fallback > 0 ? fallback : 1
     }
 
-    // Fail closed on an incomplete catalog: never mark a wallet "done" with a partial or
-    // empty starter portfolio (that permanently locks it out of a real $1M allocation).
-    // We resolve each market's price the SAME way the seed does — live oracle first, then
-    // the known sandbox fallback — but WITHOUT the blanket `?? 1` used below, so a market
-    // whose price truly cannot be resolved is treated as incomplete rather than seeded at
-    // $1/token. Throws ONBOARDING_CATALOG_INCOMPLETE; the claim aborts before any write and
-    // the profile stays on its current (non-"done") step, so the wallet can retry once seeded.
+    // FAIL CLOSED on an incomplete catalog: marking a wallet "done" with a partial portfolio
+    // locks it out of its real $1M allocation permanently. Prices resolve as the seed does but
+    // WITHOUT the blanket `?? 1`, so an unresolvable market counts as incomplete instead of being
+    // seeded at $1/token. Throws ONBOARDING_CATALOG_INCOMPLETE before any write, so the profile
+    // stays on its current step and the wallet can retry once seeded.
     assertCatalogCanSatisfyStarter(wallet, starterCatalog)
 
     const allocation = buildStarterAllocationPlan(wallet, starterCatalog)
-    // The liquid (wallet) bucket seeds REAL swap-catalog tokens instead of the spoke-borrowable
-    // `scope:"asset"` markets the planner selects — those composite slugs ("uni-v2:wbtc",
-    // "bal-boosted:usdc"…) are not in the swap catalog, so they showed as "Unsupported asset".
-    // Preserve the EXACT dollar total the planner assigned to liquid so the $1M grand total and
-    // every other bucket are unchanged.
+    // The liquid bucket must seed REAL swap-catalog tokens, not the planner's spoke-borrowable
+    // `scope:"asset"` markets — those composite slugs ("uni-v2:wbtc") are absent from the swap
+    // catalog and render as "Unsupported asset". Preserve the planner's EXACT liquid dollar total
+    // so the $1M grand total and the other buckets are unchanged.
     const liquidTargetUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const liquidTokens = SWAP_ENGINE_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
     const liquidLegs = buildStarterLiquidTokenLegs(
@@ -646,10 +614,9 @@ export const claim = mutation({
         lastUpdatedAt: now,
         openTxSynthetic: hash,
       })
-      // Store the intended USD in collateralValueUsd6 and leave shares at 0: the client
-      // hydration derives real LP-token shares from this USD using the LIVE market price.
-      // The seed can't compute shares here because Convex has no access to the client's
-      // catalog LP prices, and storing the raw USD as shares made the engine read ~$0.
+      // Store intended USD in collateralValueUsd6 and leave shares at 0; client hydration
+      // derives real LP shares from it at the LIVE price. Convex has no access to the catalog
+      // LP prices, and storing raw USD as shares makes the engine read ~$0.
       await ctx.db.insert("positionCollateral", {
         wallet,
         positionId,
@@ -726,25 +693,24 @@ export const claim = mutation({
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-multiply-${index}`
       receiptHashes.push(hash)
-      // `collateralAmount` is a TOKEN QUANTITY, not USD: the multiply engine values a
-      // position as `collateralValueUsd = collateralAmount * collateralPriceUsd` and
-      // derives the liquidation price from it (app/lib/multiply-engine/simulation.ts,
-      // actions.ts). For a multiply market the catalog stores the COLLATERAL asset's
-      // symbol as `markets.symbol` (build-seed.ts), so its live price resolves exactly
-      // like the liquid legs above. Storing USD here made the engine read a bogus
-      // ~$2/token price and a garbage liquidation level. The stored quantity is the GROSS
-      // (leveraged) collateral so `collateralValueUsd (gross) ≈ collateralAmount * price`.
+      // `collateralAmount` is a TOKEN QUANTITY, not USD: the multiply engine computes
+      // `collateralValueUsd = collateralAmount * collateralPriceUsd` and derives the liquidation
+      // price from it, so USD here yields a bogus ~$2/token price and a garbage liquidation
+      // level. The quantity stored is the GROSS (leveraged) collateral. For multiply markets
+      // `markets.symbol` is the COLLATERAL asset, so its live price resolves as the liquid legs do.
       const multiplyMarket = marketBySlug.get(leg.marketSlug)
       const multiplySymbol = multiplyMarket?.symbol.toLowerCase() ?? leg.marketSlug
-      // Size the position off the COLLATERAL TOKEN's price — the same source the liquid legs use
-      // above, and the same basis every valuation path later prices it at. Preferring the multiply
-      // MARKET's catalog `priceUsd` sized the grant against a DIFFERENT price than it is displayed
-      // with (AAVE seeded at $91.74, valued at $105.02; stETH $1,754 vs $1,930), minting ~$20k of
-      // phantom gain the instant the grant rendered and leaving the headline out of step with the
-      // Multiply tab. The grant is a fixed USD amount, so the token quantity must be
-      // grantUSD / price-at-grant using the price the token is actually valued with.
+      // Size off the COLLATERAL TOKEN's price — the same basis every later valuation uses. The
+      // multiply MARKET's catalog `priceUsd` is a different number than the position is displayed
+      // with (AAVE $91.74 vs $105.02), minting ~$20k of phantom gain on render.
       const collateralPriceUsd = resolveGrantPriceUsd(multiplySymbol, catalogBySlug.get(leg.marketSlug)?.priceUsd)
       const collateralAmount = grossExposureUsd / collateralPriceUsd
+      // `amount` is a TOKEN QUANTITY, derived from the same grant price the other legs use, so a
+      // non-$1 debt asset can never be repriced by the dashboard's `amount × livePrice`. USD stays
+      // on `valueUsd`, mirroring the executed multiply debt path in transactions.ts.
+      const multiplyDebtAssetId = liquidAssetIdForMultiplyDebt(leg.marketSlug)
+      const multiplyDebtPriceUsd = resolveGrantPriceUsd(multiplyDebtAssetId)
+      const multiplyDebtAmount = multiplyDebtPriceUsd > 0 ? debtValueUsd / multiplyDebtPriceUsd : debtValueUsd
       productMultiplyRows.push(
         {
           marketId: leg.marketSlug,
@@ -764,9 +730,9 @@ export const claim = mutation({
         },
         {
           marketId: leg.marketSlug,
-          assetId: liquidAssetIdForMultiplyDebt(leg.marketSlug),
-          symbol: liquidAssetIdForMultiplyDebt(leg.marketSlug).toUpperCase(),
-          amount: debtValueUsd,
+          assetId: multiplyDebtAssetId,
+          symbol: multiplyDebtAssetId.toUpperCase(),
+          amount: multiplyDebtAmount,
           valueUsd: debtValueUsd,
           state: "debt",
         },
@@ -805,27 +771,20 @@ export const claim = mutation({
       })
     }
 
-    // Umbrella onboarding seed. Two idempotency gates so a repeat claim (or a
-    // restore/reset that clears positions) does NOT double-write:
-    //   1. No existing umbrella positions for this wallet, AND
-    //   2. No previous `umbrellaSeeded` flag on walletSessions.
-    // Reuse `seedUmbrellaWallet` (single source of truth in convex/sandbox/umbrella.ts)
-    // so onboarding produces IDENTICAL walletLiquidBalances / walletBalances /
-    // sandboxActivity as if the user had done four `stake 0` actions for
-    // GHO/USDC/USDT/WETH. Previously this block wrote positions + a bespoke
-    // sandbox-balance upsert but skipped walletLiquidBalances (breaking the
-    // wallet tab) AND skipped sandboxActivity (breaking the activity feed).
-    // Uses UMBRELLA_ONBOARDING_TOKEN_PRICES so WETH doesn't diverge from
-    // the umbrella catalog (was 1934 here vs 2240 there).
+    // Umbrella onboarding seed, behind TWO idempotency gates so a repeat claim (or a reset that
+    // clears positions) cannot double-write: no existing umbrella positions AND no
+    // `umbrellaSeeded` flag on walletSessions. Must go through `seedUmbrellaWallet` (the single
+    // source of truth) so onboarding writes IDENTICAL walletLiquidBalances / walletBalances /
+    // sandboxActivity to four real `stake 0` actions, and must price with
+    // UMBRELLA_ONBOARDING_TOKEN_PRICES so WETH does not diverge from the umbrella catalog.
     const existingUmbrella = await ctx.db
       .query("positions")
       .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
       .collect()
     const existingSession = await readWalletSession(ctx, wallet)
     const shouldSeedUmbrella = existingUmbrella.length === 0 && !existingSession?.umbrellaSeeded
-    // Reference UMBRELLA_ONBOARDING_TOKEN_PRICES so a stale import gets flagged
-    // if the constant is renamed. seedUmbrellaWallet reads UMBRELLA_MARKETS
-    // internally — this line documents the price-source contract.
+    // Referenced so a rename flags the stale import; seedUmbrellaWallet reads UMBRELLA_MARKETS
+    // internally.
     void UMBRELLA_ONBOARDING_TOKEN_PRICES
 
     await ctx.db.insert("starterAllocations", {
@@ -845,11 +804,9 @@ export const claim = mutation({
       borrow: productBorrowRows,
       multiply: productMultiplyRows,
     })
-    // Seed umbrella AFTER replaceProductBalanceRows: that helper wipes
-    // walletLiquidBalances for the whole wallet before re-inserting only the
-    // starter-basket productLiquidRows, so umbrella's walletLiquidBalances
-    // writes must land after it or they get silently deleted (bug found by
-    // the umbrella onboarding property test).
+    // Must run AFTER replaceProductBalanceRows: that helper wipes the wallet's
+    // walletLiquidBalances before re-inserting only the starter basket, so umbrella's writes are
+    // silently deleted if they land first.
     if (shouldSeedUmbrella) {
       const seedResult = await seedUmbrellaWallet(ctx, wallet, now)
       receiptHashes.push(...seedResult.receiptHashes)
@@ -883,13 +840,12 @@ export const claim = mutation({
       totalEarnedUsd: 0,
     }
     await ctx.db.insert("portfolioSnapshots", initialPortfolio)
-    // Idempotent write (never a bare insert): the dashboard's ensurePortfolioSnapshot may have
-    // already written a portfolioCurrent row, and a second row makes every `.unique()` read
-    // throw — which previously rolled this whole claim back, leaving the wallet stuck.
+    // NEVER a bare insert: the dashboard's ensurePortfolioSnapshot may already have written a
+    // portfolioCurrent row, and a second row makes every `.unique()` read throw, which rolls the
+    // whole claim back and leaves the wallet stuck.
     await upsertPortfolioCurrent(ctx, wallet, initialPortfolio)
-    // Set umbrellaSeeded so a second onboarding claim (or a wallet reset that
-    // wipes positions) doesn't re-run seedUmbrellaWallet against a wallet that
-    // still has walletLiquidBalances/sandboxActivity from the first seed.
+    // Marks the wallet seeded so a second claim (or a reset that wipes positions) cannot re-run
+    // seedUmbrellaWallet over balances/activity the first seed already wrote.
     await upsertWalletSession(ctx, {
       wallet,
       authSubject: (await getAuthSubject(ctx)) ?? undefined,
@@ -906,8 +862,7 @@ export const claim = mutation({
       basketSnapshot,
       claimTxSynthetic: syntheticTxHash,
     })
-    // Increment a random shard instead of the hot singleton row so concurrent
-    // claims write disjoint documents (no OCC contention on the counter).
+    // Random shard, never the hot singleton row, so concurrent claims write disjoint documents.
     await incrementEconomyShard(ctx, allocatedUsd)
     if (
       counts.userCount + 1 >= economy.userCap ||

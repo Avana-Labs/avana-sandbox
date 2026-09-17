@@ -39,31 +39,23 @@ async function readRunningTurnWallet(ctx: Pick<QueryCtx, "db">, turnId: Id<"askA
   return turn.wallet
 }
 
-// Scheduled actions have no client auth. The queue stamped this wallet from the
-// authenticated identity; a model can only supply the running turn ID internally.
+// Scheduled actions have no client auth: the queue stamped this wallet from the authenticated
+// identity, and a model can only supply the running turn ID internally.
 export const aaveWalletForTurn = internalQuery({
   args: { turnId: v.id("askAITurns") },
   handler: async (ctx, { turnId }) => (await readRunningTurnWallet(ctx, turnId)) ?? null,
 })
 
 /**
- * Provenance of the financial figures every Ask AI portfolio/risk tool returns.
- * Lane B passes this straight through into `richParts.financialResults[].dataProvenance`.
+ * Provenance of the financial figures every Ask AI portfolio/risk tool returns, passed
+ * through into `richParts.financialResults[].dataProvenance`.
  *
- * This is a sandbox-first app. All portfolio, borrow, risk, and position data read
- * by these tools is written by the synthetic sandbox onboarding/transaction flow
- * (see convex/sandbox/onboarding.ts: "Balances/prices here are SYNTHETIC sandbox
- * values, not a source of truth"). No table (positions, walletLendBalances,
- * riskSnapshots, sandboxProfiles, ...) carries a per-record signal that would
- * distinguish a synthetic sandbox balance from a real connected-wallet balance or
- * an on-chain read, and there is no on-chain/connected-wallet read path feeding
- * these tables today. The authed wallet is derived from the SIWE/Privy identity but
- * only scopes access — it does not imply the data is real holdings. So the only
- * honest value we can return is "sandbox".
+ * Every figure these tools read is written by the synthetic sandbox flow, and no table
+ * carries a per-record origin signal, so "sandbox" is the only honest value. The authed
+ * wallet scopes access; it does not imply the data is real holdings.
  *
- * TODO: when a real connected-wallet or on-chain data path lands, thread the true
- * source through here — e.g. a per-record origin flag stamped by the writer — and
- * return "connected_wallet" / "onchain" per record instead of this constant.
+ * TODO: when a real connected-wallet or on-chain path lands, stamp a per-record origin at
+ * write time and return "connected_wallet" / "onchain" per record instead of this constant.
  */
 const ASK_AI_DATA_PROVENANCE: "sandbox" | "connected_wallet" | "onchain" = "sandbox"
 
@@ -112,17 +104,13 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   const umbrella = allPositions.filter((position) => position.product === "umbrella")
 
   const sumUsd = (rows: readonly { valueUsd: number }[]) => rows.reduce((sum, row) => sum + row.valueUsd, 0)
-  // These tables store debt with a POSITIVE valueUsd and mark it only with
-  // `state: "debt"` (convex/sandbox/onboarding.ts, transactions.ts), so a plain
-  // sum counts borrowed value as if it were an asset. Anything presented as a
-  // net must subtract those rows.
+  // Debt is stored with a POSITIVE valueUsd and marked only by `state: "debt"`, so a plain
+  // sum counts borrowed value as an asset. Any net figure MUST subtract these rows.
   const netUsd = (rows: readonly { valueUsd: number; state?: string }[]) =>
     rows.reduce((sum, row) => sum + (row.state === "debt" ? -row.valueUsd : row.valueUsd), 0)
-  // walletMultiplyBalances records the SAME collateral twice, once as
-  // `state:"position"` and once as `state:"collateral"` (convex/sandbox/
-  // transactions.ts), so any sum over the raw rows counts it twice. The
-  // dashboard drops the duplicate (`if (row.state === "collateral") continue`
-  // in app/lib/swap-system/use-convex-wallet-balances.ts); mirror that here.
+  // walletMultiplyBalances records the SAME collateral twice, as `state:"position"` and
+  // `state:"collateral"`, so a raw sum double-counts it. Drop the "collateral" row, exactly as
+  // the dashboard does in app/lib/swap-system/use-convex-wallet-balances.ts.
   const multiplyRows = multiply.filter((row) => row.state !== "collateral")
   const sumState = (rows: readonly { valueUsd: number; state: string }[], ...states: string[]) =>
     sumUsd(rows.filter((row) => states.includes(row.state)))
@@ -144,8 +132,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     ...position,
     suppliedUsd: Number(position.suppliedUsd6 ?? "0") / 1_000_000,
     cooldownUsd: Number(position.cooldownAmountUsd6 ?? "0") / 1_000_000,
-    // "How much have I earned staking?" and "have I been slashed?" — decoded
-    // here because the raw doc carries these only as usd6 strings.
+    // Decoded here; the raw doc carries these only as usd6 strings.
     earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
     slashedUsd: Number(position.slashedAmountUsd6 ?? "0") / 1_000_000,
     lifecycleStatus: deriveAskAIUmbrellaStatus({ ...position, now }),
@@ -184,8 +171,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
     totals: {
-      // Gross exposure per product (collateral + debt), kept for callers that
-      // want position size rather than equity.
+      // Gross exposure per product (collateral + debt), for callers wanting position size.
       lendUsd: sumUsd(lend),
       borrowUsd: sumUsd(borrow),
       multiplyUsd: sumUsd(multiplyRows),
@@ -196,28 +182,22 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       borrowNetUsd: netUsd(borrow),
       multiplyNetUsd: netUsd(multiplyRows),
       liquidNetUsd: netUsd(liquid),
-      // Canonical Net Value, following the dashboard hero
-      // (app/dashboard/use-dashboard-portfolio-summary.ts aggregateNetValueUsd):
-      // the signed sum of liquid + lend + borrow + multiply with debt negative.
-      // Umbrella is excluded there by construction — it is not part of
-      // productBalances and lives on its own page — so it is excluded here too
-      // and reported separately as umbrellaUsd.
+      // Canonical Net Value, matching the dashboard hero (aggregateNetValueUsd): signed sum of
+      // liquid + lend + borrow + multiply with debt negative. Umbrella is EXCLUDED there, so it
+      // is excluded here too and reported separately as umbrellaUsd.
       netValueUsd: netUsd(liquid) + netUsd(lend) + netUsd(borrow) + netUsd(multiplyRows),
-      // "How much have I earned?" — cumulative, not derivable from balances.
+      // Cumulative; not derivable from the balances above.
       totalEarnedUsd: current?.totalEarnedUsd ?? 0,
-      // State-resolved answers. The gross totals above deliberately mix states
-      // (walletLendBalances holds undeposited "available" next to "deposited";
-      // walletBorrowBalances holds pledged collateral, debt and claimable fees),
-      // so each of these questions needs its own figure rather than the model
-      // filtering rows and adding money itself.
+      // The gross totals above deliberately mix states (lend "available" beside "deposited";
+      // borrow collateral beside debt and claimable fees), so each state gets its own figure
+      // rather than leaving the model to filter rows and add money itself.
       suppliedUsd: sumState(lend, "deposited"),
       idleLendUsd: sumState(lend, "available"),
       debtUsd: sumState(borrow, "debt") + sumState(multiplyRows, "debt"),
       collateralUsd: sumState(borrow, "collateral") + sumState(multiplyRows, "position"),
       unpledgedCollateralUsd: sumState(borrow, "poolAvailable"),
       claimableUsd: sumState(borrow, "claimableFees"),
-      // Blended Net APY from the same helper the dashboard uses, so the two
-      // surfaces cannot drift. Umbrella is excluded there as it is here.
+      // Same helper the dashboard uses, so the two surfaces cannot drift.
       netApyPct: await computePortfolioNetApyPct(ctx, allPositions, walletCollateral),
       openPositionCount: allPositions.filter((position) => position.status === "open").length,
       umbrellaEarnedUsd: umbrellaPositions.reduce((sum, position) => sum + position.earnedUsd, 0),
@@ -316,9 +296,7 @@ export async function readAskAIEngineSnapshot(
         collateralValueUsd,
         debtValueUsd: position.debtValueUsd ?? 0,
         equityUsd: collateralValueUsd - (position.debtValueUsd ?? 0),
-        // "What's my leverage?", "what's my loop's net APY?", "what's my
-        // liquidation price?", "how far can it fall?" — all were on the doc and
-        // none reached the model.
+        // Leverage / net APY / liquidation price were on the doc but never reached the model.
         multiplier: position.multiplier ?? null,
         netApyPct: position.netApyPct ?? null,
         liquidationPrice: position.liquidationPrice ?? null,
@@ -351,8 +329,7 @@ export async function readAskAIEngineSnapshot(
       status: deriveAskAIUmbrellaStatus({ ...position, now }),
     }))
   const total = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0)
-  // Health factors across several positions have no meaningful average; the
-  // honest single answer to "am I safe?" is the weakest one.
+  // Health factors have no meaningful average across positions; report the WEAKEST one.
   const multiplyHealthFactors = multiplyPositions
     .map((position) => position.persistedHealthFactor)
     .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
@@ -364,8 +341,8 @@ export async function readAskAIEngineSnapshot(
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
-    // One scalar per question, computed here so the model never does money
-    // arithmetic itself. Health factors report the weakest position, not a mean.
+    // One scalar per question, computed here so the model never does money arithmetic.
+    // Health factor is the weakest position, not a mean.
     summary: {
       lendPositionCount: lendPositions.length,
       lendPrincipalUsd: total(lendPositions.map((position) => position.principalUsd)),
@@ -438,9 +415,8 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
           source: "portfolio_current" as const,
         }
       : null
-  // The raw spoke rows are usd6 strings and a wad health factor. Handing those
-  // to the model made it divide by 1e6/1e18 next to already-decoded numbers in
-  // the same payload, so decode them here.
+  // Decode the usd6 strings and wad health factor here: mixed with already-decoded numbers in
+  // the same payload, the model divides by 1e6/1e18 itself.
   const spokes = (snapshot?.spokes ?? []).map((spoke) => ({
     spokeId: spoke.spokeId,
     availableCreditUsd: Number(spoke.availableCreditUsd6) / 1_000_000,
@@ -458,8 +434,7 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
     capacity: capacity
       ? {
           ...capacity,
-          // "How much buffer do I have?" / "am I safe?" — the tool description
-          // already promised a liquidation buffer, but only raw spokes had it.
+          // The tool description promises a liquidation buffer, but only the raw spokes had it.
           liquidationBufferUsd: spokes.reduce((sum, spoke) => sum + spoke.liquidationBufferUsd, 0),
           ...askAIHealthFactorValue(capacityHealthFactor),
         }
@@ -498,9 +473,9 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
   if (positionId && !selected) throw new Error("Position not found")
   const relevant = selected ? [selected] : positions.filter((position) => position.status === "open")
   const engine = await readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20 })
-  // Raw position docs carry usd6 STRINGS and a health factor that can be the
-  // literal "infinity", sitting beside already-decoded numbers in `engine`.
-  // Decode here so the model never converts money units itself.
+  // Raw position docs carry usd6 STRINGS and a health factor that can be the literal
+  // "infinity", beside already-decoded numbers in `engine`. Decode here so the model never
+  // converts money units itself.
   const decoded = relevant.map((position) => {
     const usd6 = (value: string | undefined) => Number(value ?? "0") / 1_000_000
     const collateralValueUsd = position.collateralValueUsd ?? usd6(position.collateralValueUsd6)
@@ -625,9 +600,7 @@ async function readAskAISimulateBorrow(
     borrowAsset: borrowAsset.trim().toUpperCase(),
     additionalBorrowAmount,
     simulation,
-    // "What will this borrow cost me over time?" — projected on the debt the
-    // position would carry AFTER the new borrow, so the figure answers the
-    // question that was actually asked.
+    // Projected on the debt the position would carry AFTER the new borrow.
     interestProjection:
       typeof pool?.pairAprPct === "number"
         ? {
@@ -777,8 +750,8 @@ export function marketFreshness(kind: "token_price" | "dex_pool" | "lending_mark
   return now - at <= threshold ? ("fresh" as const) : ("stale" as const)
 }
 
-// Filler words that would otherwise match everything (e.g. "on" is a substring
-// of many payloads) and drown out the meaningful terms in a natural question.
+// Filler words that match everything ("on" is a substring of many payloads) and drown out the
+// meaningful terms in a natural question.
 const ASK_AI_SEARCH_STOPWORDS = new Set([
   "the",
   "is",
@@ -878,9 +851,8 @@ const ASK_AI_PRICE_TERM_SYMBOLS = new Map<string, string[]>([
   ["eth", ["eth", "weth", "steth", "wsteth", "reth", "weeth", "cbeth"]],
 ])
 
-// The provider payloads store the human-searchable names (project, symbol,
-// chain) — the snapshot `key` is often an opaque hash (e.g. "defillama:0x…"),
-// so matching on key+source alone never finds a Uniswap/ETH pool by name.
+// Match on the payload's project/symbol/chain: the snapshot `key` is often an opaque hash
+// ("defillama:0x…"), so key+source alone never finds a pool by name.
 function askAISnapshotHaystack(snapshot: { source: string; kind: string; key: string; payload: unknown }): string {
   const payload = (snapshot.payload ?? {}) as Record<string, unknown>
   const fields = [
@@ -967,16 +939,14 @@ export const searchMarkets = query({
     if (!queryText || queryText.length > 200) throw new Error("Market query must contain 1 to 200 characters")
     const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 20)
     const terms = queryText.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
-    // Drop filler words so a natural question ("best ETH pools on Uniswap")
-    // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
-    // the query was entirely stopwords.
+    // Drop filler words so "best ETH pools on Uniswap" matches "eth"/"uniswap", falling back
+    // to the raw terms when the query is entirely stopwords.
     const meaningfulTerms = terms.filter((term) => term.length >= 3 && !ASK_AI_SEARCH_STOPWORDS.has(term))
     const searchTerms = (meaningfulTerms.length > 0 ? meaningfulTerms : terms).map(
       (term) => ASK_AI_SEARCH_TERM_ALIASES.get(term) ?? term,
     )
-    // Nudge the ranking toward what the question is about, so a "pools" question
-    // surfaces pools and a "price" question surfaces token prices even when both
-    // match the same asset term.
+    // Bias the ranking by question kind, so a "pools" question surfaces pools and a "price"
+    // question token prices even when both match the same asset term.
     const wantsPools = /\b(pool|pools|liquidity|tvl|lp)\b/.test(queryText)
     const wantsYield = /\b(yield|yields|apr|apy|rate|rates|lend|lending|supply|borrow)\b/.test(queryText)
     const wantsPrice = /\b(price|prices|worth|cost|value|quote)\b/.test(queryText)
@@ -994,10 +964,9 @@ export const searchMarkets = query({
       (wantsYield && kind === "lending_market" ? 2 : wantsYield && kind === "dex_pool" ? 1 : 0) +
       (wantsPrice && kind === "token_price" ? 1 : 0)
 
-    // Exact price questions are the highest-volume Ask AI read. Resolve only the
-    // symbols named in the prompt through indexes instead of collecting every
-    // price and every historical point on every request. This keeps one lookup
-    // O(symbols requested) even when the cache grows and many users ask at once.
+    // Price questions are the highest-volume Ask AI read, so resolve ONLY the symbols named in
+    // the prompt through indexes — collecting every price and history point per request does
+    // not stay O(symbols requested) as the cache grows.
     const requestedSymbols = [
       ...new Set(
         searchTerms
@@ -1033,10 +1002,8 @@ export const searchMarkets = query({
       ]),
     )
 
-    // 90 days of history are fetched above and then stripped from the model
-    // context (convex/askAIAgent.ts compacts provider rows), which left
-    // "is ETH up today?" and "how much has it moved this week?" unanswerable.
-    // Derive the moves here instead of shipping the raw series.
+    // The 90 days fetched above are stripped from the model context (askAIAgent.ts compacts
+    // provider rows), so derive the moves here rather than shipping the raw series.
     const priceChangePct = (history: ReadonlyArray<{ priceUsd: number }>, daysBack: number, current: number) => {
       if (!Number.isFinite(current) || current <= 0 || history.length === 0) return undefined
       const past = history[history.length - 1 - daysBack]?.priceUsd
@@ -1106,8 +1073,7 @@ export const searchMarkets = query({
               .take(250)
           : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(250),
     ])
-    // Tests and a brand-new deployment can briefly precede the scheduled cache
-    // build. Keep a bounded cold fallback, while production reads one singleton.
+    // Bounded cold fallback for tests and a brand-new deployment; production reads the singleton.
     const markets = marketCache?.rows ?? (await ctx.db.query("markets").take(200))
     const matchingMarkets = (wantsAaveProtocol || wantsAaveOnly ? [] : markets)
       .filter((market) => {
@@ -1116,8 +1082,8 @@ export const searchMarkets = query({
       })
       .slice(0, boundedLimit)
 
-    // Score canonical prices and cached snapshots on the SAME scale, then rank the
-    // combined list — otherwise token prices (added first) crowd out deep pools.
+    // Score canonical prices and cached snapshots on the SAME scale before ranking, or token
+    // prices (added first) crowd out deep pools.
     const scoredSnapshots = (wantsAvanaOnly ? [] : snapshots)
       .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .map((snapshot) => {
@@ -1177,8 +1143,8 @@ export const poolMetrics = query({
     const normalizedId = marketId.trim().toLowerCase()
     if (!normalizedId || normalizedId.length > 160) throw new Error("Market ID is invalid")
     const snapshots = await ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100)
-    // Slug is a lowercase URL-safe id, so the common lookup is a point read.
-    // Fall back to a symbol point read (symbols are typically upper-case).
+    // Slug is a lowercase URL-safe id, so the common case is a point read; symbols are
+    // typically upper-case, so they need the second lookup.
     const market =
       (await ctx.db
         .query("markets")

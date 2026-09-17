@@ -1,9 +1,6 @@
-/**
- * Lend landing hero aggregates — same math the UI uses so tests can assert
- * Σ markets without mounting React.
- */
+/** Lend landing hero aggregates — the same math the UI uses, so tests need no React mount. */
 
-export type LendHeroMarketInput = {
+type LendHeroMarketInput = {
   soon?: boolean
   tvlUsd?: number
   tvl?: string
@@ -12,7 +9,7 @@ export type LendHeroMarketInput = {
   apyChange24h?: number
 }
 
-export type LendHeroAggregates = {
+type LendHeroAggregates = {
   totalTvl: number
   weightedApy: number
   weightedUtilization: number

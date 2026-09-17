@@ -30,7 +30,7 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
 import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
@@ -55,6 +55,7 @@ export function LendActionPageClient({
   embedded = false,
   sidebar = false,
   layout = "default",
+  initialAssetId,
   initialMarketId,
   initialAmount = "",
 }: {
@@ -63,6 +64,7 @@ export function LendActionPageClient({
   embedded?: boolean
   sidebar?: boolean
   layout?: "default" | "home"
+  initialAssetId?: string
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -84,11 +86,14 @@ export function LendActionPageClient({
   // A lend market is "available" whenever it exists in the catalog or session. An
   // unknown initial id (stale link) is treated as "no initial market" so the user
   // lands on the picker instead of a "Market unavailable" dead-end.
+  // A lend market is keyed by its asset id, so ?asset=usdc resolves the same as ?market=.
+  // Prefer an explicit market id, then fall back to the asset id from the deep link.
+  const requestedMarketId = initialMarketId ?? initialAssetId
   const validInitialMarketId =
-    initialMarketId && (session.state.markets[initialMarketId] ?? getLendMarketById(initialMarketId))
-      ? initialMarketId
+    requestedMarketId && (session.state.markets[requestedMarketId] ?? getLendMarketById(requestedMarketId))
+      ? requestedMarketId
       : undefined
-  const hasInvalidInitialMarket = Boolean(initialMarketId) && !validInitialMarketId
+  const hasInvalidInitialMarket = Boolean(requestedMarketId) && !validInitialMarketId
   const [marketId, setMarketId] = useState(() => validInitialMarketId ?? (kind === "deposit" ? "gho" : ""))
   const [stage, setStage] = useState<ActionStage>(() => {
     if (embedded) return "configure"
@@ -292,7 +297,8 @@ export function LendActionPageClient({
   const handleMax = useCallback(() => {
     const max = previewUi?.maxAmount ?? spendableBalanceAmount
     if (max == null || max <= 0) return
-    setAmount(String(Number(max.toFixed(6))))
+    // Floor to 6 dp so the fill never rounds above the balance and trips "insufficient".
+    setAmount(String(Math.floor(max * 1e6) / 1e6))
   }, [previewUi?.maxAmount, spendableBalanceAmount])
 
   const handleBack = useCallback(() => {
@@ -449,14 +455,14 @@ export function LendActionPageClient({
   // case and renders nothing rather than an error card.
   if (!market && stage !== "select") return null
 
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? t("Choose the market to withdraw from.")
       : stage === "select" && kind === "deposit"
         ? t("Choose the asset to deposit.")
-        : stage === "success" || isProcessingStage(stage) || stage === "review"
+        : stage === "success" || isSubmittingStage(stage) || stage === "review"
           ? undefined
           : descriptor.subtitle
 
@@ -488,7 +494,7 @@ export function LendActionPageClient({
         />
       ) : null}
 
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
@@ -514,6 +520,7 @@ export function LendActionPageClient({
           amount={amount}
           onAmountChange={setAmount}
           preview={previewUi}
+          emptyReason={kind === "withdraw" && withdrawItems.length === 0 ? "Nothing to withdraw" : undefined}
           assetSymbol={market.asset.symbol}
           assetOptions={depositAssetOptions}
           selectedAssetId={market.marketId}

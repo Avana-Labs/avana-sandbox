@@ -41,17 +41,15 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
     rate: ASK_AI_CONFIG.limits.globalMessagesPerDay,
     period: 24 * 60 * 60 * 1_000,
   },
-  // Shared, cross-instance cap on minting NEW guest identities per client IP.
-  // Backs the /api/ask-ai/session route so clearing the guest cookie can't yield
-  // an unlimited supply of fresh quotas across serverless instances.
+  // Cross-instance cap on minting NEW guest identities per client IP, so clearing the guest
+  // cookie cannot yield unlimited fresh quotas across serverless instances.
   guestMintPerIp: { kind: "fixed window", rate: 30, period: 60 * 60 * 1_000 },
   threadCreatePerSubject: { kind: "fixed window", rate: 30, period: 60 * 60 * 1_000 },
   threadCreateGlobal: { kind: "fixed window", rate: 5_000, period: 60 * 60 * 1_000 },
 })
 
-// User-facing throws use ConvexError so the friendly message survives Convex's
-// production error redaction and Lane C can render error.data.message with a
-// code -> copy fallback map.
+// User-facing throws MUST be ConvexError: the friendly message then survives Convex's
+// production error redaction and the client renders error.data.message.
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
 
 const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
@@ -73,9 +71,8 @@ function askAIError(code: AskAIErrorCode, message: string): ConvexError<{ code: 
   return new ConvexError({ code, message })
 }
 
-// The rate limiter throws its own ConvexError ({ kind: "RateLimited", ... }).
-// Re-map it to the shared Ask AI error shape so the client sees a friendly,
-// redaction-safe message instead of the raw limiter payload.
+// The rate limiter throws its own ConvexError ({ kind: "RateLimited", … }); re-map it to the
+// shared Ask AI error shape so the client gets a friendly, redaction-safe message.
 async function enforceAskAIRateLimit<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run()
@@ -90,10 +87,9 @@ async function enforceAskAIRateLimit<T>(run: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Single atomic Ask AI cost gate for every turn submission entry point.
- * Enforces daily subject/global message caps, burst spacing, optional concurrent
- * generation caps, and the daily token budget — before any message or turn
- * row is persisted.
+ * The single atomic cost gate for EVERY turn submission entry point: daily subject/global
+ * message caps, burst spacing, optional concurrent-generation caps and the daily token budget,
+ * all enforced before any message or turn row is persisted.
  */
 async function enforceAskAICostGate(
   ctx: MutationCtx,
@@ -128,7 +124,7 @@ async function enforceAskAICostGate(
     )
   }
   await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
-  // Global allocation is conservative: settled turns do not replenish this daily cap.
+  // Conservative: settled turns do NOT replenish this daily cap.
   await enforceAskAIRateLimit(() =>
     askAIRateLimiter.limit(ctx, "globalDailyTokens", {
       count: ASK_AI_CONFIG.limits.reservedTokensPerTurn,
@@ -267,11 +263,9 @@ export const messages = query({
   args: { threadId: v.string(), paginationOpts: paginationOptsValidator, streamArgs: vStreamArgs },
   handler: async (ctx, args) => {
     await requireOwnedThread(ctx, args.threadId)
-    // Hot path: this query re-runs on every stream delta (throttled). Keep it to
-    // just the streamed message text — rich parts (cards, sources) are fetched by
-    // the separate `messageParts` query below so they are NOT re-collected per
-    // token. Rich parts are written once at turn completion and never change while
-    // streaming.
+    // Hot path: re-runs on every (throttled) stream delta, so it must return ONLY the
+    // streamed text. Rich parts are written once at turn completion and fetched by the
+    // separate `messageParts` query, never re-collected per token.
     const [result, streams] = await Promise.all([
       listUIMessages(ctx, components.agent, args),
       syncStreams(ctx, components.agent, args),
@@ -281,10 +275,8 @@ export const messages = query({
 })
 
 /**
- * Cold companion to `messages`: the persisted rich assistant parts (financial
- * result cards, retrieval chunks, sources) keyed by messageId. Not subscribed to
- * streams, so it only re-runs when a turn completes and inserts parts — never on
- * every streamed token.
+ * Cold companion to `messages`: persisted rich assistant parts (cards, retrieval chunks,
+ * sources) by messageId. Not stream-subscribed, so it re-runs only when a turn completes.
  */
 export const messageParts = query({
   args: { threadId: v.string() },
@@ -328,10 +320,9 @@ export const quota = query({
   },
 })
 
-// Shared, cross-instance guest-mint throttle used by /api/ask-ai/session. The
-// route is pre-auth, so no identity is required. `ip` is derived server-side by
-// the route; passing a forged ip only spends that key's own budget and cannot
-// mint a JWT (minting stays in the route), so a public mutation is safe here.
+// Cross-instance guest-mint throttle for the pre-auth /api/ask-ai/session route, so no
+// identity is required. `ip` is derived server-side; a forged ip only spends that key's own
+// budget and cannot mint a JWT (minting stays in the route), so a public mutation is safe.
 export const recordGuestMint = mutation({
   args: { ip: v.string(), secret: v.string() },
   handler: async (ctx, { ip, secret }) => {
@@ -462,10 +453,9 @@ export const enqueueTurn = mutation({
     if (threadTurns.length >= MAX_TURNS_PER_THREAD) {
       throw askAIError("ASK_AI_RATE_LIMITED", "This chat is full. Start a new chat to continue.")
     }
-    // Atomic cost gate before any message/turn persistence. Concurrent generation
-    // is enforced at claim time so queued turns can still stack safely. Burst is
-    // enforced on beginTurn (immediate generation); enqueue relies on queue depth
-    // plus daily/global/token caps so a short intentional stack still works.
+    // Atomic cost gate before any message/turn persistence. Concurrency is enforced at claim
+    // time so queued turns can stack safely; burst is enforced on beginTurn only, and enqueue
+    // relies on queue depth plus the daily/global/token caps.
     const budgetReservationId = await enforceAskAICostGate(ctx, ownerSubject, {
       enforceBurst: false,
       enforceConcurrent: false,
@@ -568,9 +558,8 @@ export const turnQueue = query({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
     await requireOwnedThread(ctx, threadId)
-    // Scope to this thread's turns via the threadId prefix index. The previous
-    // by_owner_updated scan collected every turn of every user on a live
-    // subscription, so any user's turn write invalidated every open queue.
+    // MUST scope to this thread via the threadId prefix index: an owner-wide scan on a live
+    // subscription let any user's turn write invalidate every open queue.
     const rows = (
       await Promise.all([
         ctx.db
@@ -659,8 +648,7 @@ export const completeGeneratedTurn = internalMutation({
     budgetReservationId: v.optional(v.id("askAIBudgetReservations")),
     model: v.string(),
     usage: v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() }),
-    // Explicit shape (was v.any()) so the rich parts the UI renders are
-    // validated at the trust boundary.
+    // Explicit shape so the rich parts the UI renders are validated at the trust boundary.
     richParts: v.optional(
       v.object({
         sources: v.optional(
@@ -728,9 +716,8 @@ export const completeGeneratedTurn = internalMutation({
             asOf: v.optional(v.number()),
           }),
         ),
-        // Deterministic mode-run (Risk / Stress / Returns). Stored structurally like
-        // financialResults.payload; the typed AskAiRun is produced by the engine builders
-        // and rendered by AskAiRunCards. Only written when the mode-runs flag is on.
+        // Deterministic mode-run (Risk / Stress / Returns), stored structurally like
+        // financialResults.payload. Only written when the mode-runs flag is on.
         modeRun: v.optional(v.any()),
       }),
     ),
@@ -743,9 +730,8 @@ export const completeGeneratedTurn = internalMutation({
       .withIndex("by_thread", (q) => q.eq("threadId", turn.threadId))
       .unique()
     if (!thread || thread.ownerSubject !== turn.ownerSubject) throw new Error("Ask AI turn not found")
-    // The user cancelled while the stream was finishing. cancelRunningTurn already
-    // set the terminal status and aborted the stream; do not resurrect it as a
-    // completed answer. Mirrors the guard in failTurn.
+    // Cancelled while the stream was finishing: cancelRunningTurn already set the terminal
+    // status, so never resurrect it as a completed answer. Mirrors the guard in failTurn.
     if (turn.status !== "running" || (budgetReservationId && turn.budgetReservationId !== budgetReservationId)) return
     const existingParts = await ctx.db
       .query("askAIMessageParts")
@@ -779,11 +765,9 @@ export const completeGeneratedTurn = internalMutation({
   },
 })
 
-// On a failed turn, saveStreamDeltas can leave a partial or empty assistant
-// message persisted that the list query would otherwise return as a normal,
-// complete answer — so Lane C would show Copy / feedback controls beside an
-// error card. Remove any assistant message for this thread that never settled
-// (status !== "success") or has no visible text. Robust when none exists.
+// A failed turn can leave saveStreamDeltas' partial/empty assistant message persisted, which
+// the list query would return as a normal answer (Copy / feedback controls beside an error
+// card). Remove any assistant message that never settled or has no visible text.
 async function discardStrayAssistantMessage(ctx: MutationCtx, threadId: string) {
   const { page } = await listMessages(ctx, components.agent, {
     threadId,
@@ -953,7 +937,7 @@ export const settleBudgetReservation = internalMutation({
       ...usage,
       createdAt: reservation.createdAt,
     })
-    // Failed streams can omit the final provider usage. Keep the unobserved allocation charged.
+    // A failed stream can omit the final provider usage; keep the allocation charged.
     await ctx.db.patch(reservationId, {
       tokens: complete ? 0 : Math.max(0, reservation.tokens - usage.totalTokens),
       settled: true,

@@ -4,7 +4,7 @@
  * server verify route.
  */
 
-export type SiweMessageParams = {
+type SiweMessageParams = {
   address: string
   domain: string
   uri: string

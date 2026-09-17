@@ -1,5 +1,6 @@
 import {
   applyMultiplyAction,
+  revalueMultiplyPosition,
   simulateDeleverage,
   simulateMultiply,
   type MultiplyAction,
@@ -145,6 +146,9 @@ function toPreview(
   if (!market) throw new Error(`Unknown market ${position.marketId}`)
 
   if (action.type === "close") {
+    // Reprice at the live collateral price before reading it — see simulateMultiply's
+    // repricedExisting. The stored position can still be at a stale catalog fixture price.
+    const repriced = revalueMultiplyPosition(position, market, action.collateralPriceUsd)
     // A full exit is always allowed: repay remaining debt, withdraw collateral,
     // and remove the position. The "after" state is the empty (closed) position.
     return {
@@ -154,12 +158,12 @@ function toPreview(
       validationErrors: [],
       riskLabel: "safe",
       before: {
-        collateralValueUsd: position.collateralValueUsd,
-        debtValueUsd: position.debtValueUsd,
-        multiplier: position.multiplier,
-        ltv: position.ltv,
-        healthFactor: position.healthFactor,
-        netApy: netApyForPositionState(market, position.collateralValueUsd, position.debtValueUsd, false),
+        collateralValueUsd: repriced.collateralValueUsd,
+        debtValueUsd: repriced.debtValueUsd,
+        multiplier: repriced.multiplier,
+        ltv: repriced.ltv,
+        healthFactor: repriced.healthFactor,
+        netApy: netApyForPositionState(market, repriced.collateralValueUsd, repriced.debtValueUsd, false),
       },
       after: {
         collateralValueUsd: 0,
@@ -181,6 +185,7 @@ function toPreview(
     position,
     targetMultiplier: action.targetMultiplier,
     repayAmountUsd: action.type === "deleverage" ? action.repayAmountUsd : undefined,
+    collateralPriceOverrideUsd: action.type === "deleverage" ? action.collateralPriceUsd : undefined,
   })
 
   return {

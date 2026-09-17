@@ -25,12 +25,12 @@ describe("risk parameter normalization", () => {
     expect(about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual(RISK_PARAMETER_LABELS)
     expect(about.governanceParameters?.parameters.map((parameter) => parameter.value)).toEqual([
       "63.5%",
-      "5.00%",
+      "10.00%",
       "$25.0M",
       "5.00% - 5.55%",
       "$10.0M",
       "1.57",
-      "68.50%",
+      "73.50%",
       "Chainlink",
     ])
   })

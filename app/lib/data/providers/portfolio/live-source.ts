@@ -14,7 +14,7 @@ import type {
 import type { PortfolioPageSource } from "./source"
 import { allocateDebtByCollateral, calculateLiveBorrowDebt, calculateLiveMultiplyPosition } from "./live-accounting"
 
-export const livePortfolioPageAdapter = createDataSourceAdapter({
+const livePortfolioPageAdapter = createDataSourceAdapter({
   id: "portfolio-live",
   label: "Portfolio page live source",
   mode: "live",
@@ -91,10 +91,9 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           const collateralUsd = toUsd(collateral.collateralValueUsd6)
           const borrowedUsd = allocateDebtByCollateral(positionBorrowedUsd, collateralUsd, totalCollateralUsd)
           const maxLtv = pool?.maxLtvPct ?? 0
-          // Liquidation threshold = explicit LT if set, else maxLtv + 10pp (capped 95%) — the
-          // same basis as the credit engine + Convex persist gate, NOT the raw maxLtv/CF, which
-          // understated HF and disagreed with the action preview (#12). maxLtv 0 (unknown pool)
-          // stays 0 so we never fabricate capacity.
+          // Liquidation threshold = explicit LT, else maxLtv + 10pp (capped 95%) — the same
+          // basis as the credit engine and Convex persist gate. Raw maxLtv/CF understates HF and
+          // disagrees with the action preview. maxLtv 0 (unknown pool) stays 0, never fabricated.
           const thresholdPct =
             pool?.liquidationThresholdPct ?? (maxLtv > 0 ? liquidationThresholdPctFromMaxLtvPct(maxLtv) : 0)
           const liquidationUsd = collateralUsd * (thresholdPct / 100)

@@ -3,7 +3,7 @@
 import { memo, useState, type ButtonHTMLAttributes } from "react"
 import Image from "next/image"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
-import type { BorrowAssetVisual, DexChip } from "@/app/lib/data/borrow-domain"
+import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 
@@ -34,9 +34,8 @@ export function TokenBubble({
   const { box, text, px } = BUBBLE_DIMENSIONS[size]
   const [imgFailed, setImgFailed] = useState(false)
   const showIcon = Boolean(visual.iconUrl) && !imgFailed
-  // Stock brand icons are exported edge-to-edge (100% of the frame), while the crypto
-  // coin PNGs carry ~9% transparent margin — so an unscaled stock icon reads ~10% larger
-  // beside them. Inset the stock icons to match the coins' visible size.
+  // Stock icons are edge-to-edge while coin PNGs carry ~9% transparent margin, so an
+  // unscaled stock icon reads ~10% larger beside them — inset it to match.
   const isStockIcon = typeof visual.iconUrl === "string" && visual.iconUrl.includes("/stock-Icons/")
 
   return (
@@ -44,8 +43,8 @@ export function TokenBubble({
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center font-medium",
         box,
-        // A real token icon renders as a bare transparent PNG — no circular plate, card
-        // background, ring or clip. Only the initials fallback keeps the colored avatar circle.
+        // A real token icon renders bare — no plate, background, ring or clip.
+        // Only the initials fallback keeps the colored avatar circle.
         showIcon
           ? null
           : cn(
@@ -65,9 +64,8 @@ export function TokenBubble({
           width={px}
           height={px}
           className={cn("h-full w-full object-contain", isStockIcon && "scale-[0.91]")}
-          // Logos are local SVGs (see getLocalAssetIcon). Lazy-load + async-decode so a
-          // long market list doesn't decode every off-screen icon up front, and fall back
-          // to the token's colored initials if an icon is ever missing.
+          // Lazy-load + async-decode so a long market list doesn't decode every
+          // off-screen icon up front.
           loading={eager ? "eager" : "lazy"}
           fetchPriority={eager ? "high" : undefined}
           decoding="async"
@@ -149,15 +147,6 @@ export function TokenSingleCell({
   )
 }
 
-export function DexPill({ dex }: { dex: DexChip }) {
-  return (
-    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-      {dex.label}
-      {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
-    </span>
-  )
-}
-
 export const TrendSpark = memo(function TrendSpark({
   isPositive,
   seed,
@@ -193,7 +182,7 @@ export function HfNumber({
   return <span className={cn("font-data tabular-nums", weight, textSize, tone)}>{value}</span>
 }
 
-export type PillVariant = "primary" | "ghost" | "danger" | "success"
+type PillVariant = "primary" | "ghost" | "danger" | "success"
 
 export function PillButton({
   variant = "primary",
@@ -216,14 +205,5 @@ export function PillButton({
     <button type="button" {...props} className={cn(base, sizeCls, variantCls, className)}>
       {children}
     </button>
-  )
-}
-
-export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-[11px] font-normal uppercase leading-4 tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 font-data text-[15px] font-normal tabular-nums text-foreground", tone)}>{value}</div>
-    </div>
   )
 }

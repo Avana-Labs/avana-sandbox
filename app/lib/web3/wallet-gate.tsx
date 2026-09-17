@@ -6,15 +6,12 @@ import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { scheduleIdle } from "./schedule-idle"
 
 /**
- * The wallet gate keeps the heavy wallet SDK (wagmi + viem + connectkit + walletconnect +
- * coinbase — ~1MB+ of JS) off the critical path. It is a tiny, wagmi-free context that is
- * always mounted; the SDK itself is only loaded/mounted when this gate goes `active`:
- *   - a guest clicks "Connect" (explicit intent), or
- *   - a returning session is detected (a persisted SIWE token), just after first paint.
- *
- * Guests who never connect never download the SDK. See `web3-provider-boundary.tsx`.
+ * Keeps the ~1MB wallet SDK off the critical path: a tiny wagmi-free context that is always
+ * mounted, while the SDK loads only once this gate goes `active` (explicit "Connect" click, or
+ * a persisted SIWE token detected just after first paint). Guests who never connect never
+ * download it. See `web3-provider-boundary.tsx`.
  */
-export type WalletGate = {
+type WalletGate = {
   /** Whether the wallet SDK is (being) mounted. When false, no wagmi context exists. */
   active: boolean
   /** Mount the SDK and auto-open the connect modal once it is ready (used by "Connect"). */

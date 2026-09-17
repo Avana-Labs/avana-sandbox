@@ -1114,6 +1114,11 @@ const dict: TranslationDictionary = {
   Market: "Piyasa",
   successful: "başarılı",
   processed: "işlendi",
+  "Fund your wallet or switch accounts to continue.":
+    "Devam etmek için cüzdanınıza bakiye yükleyin veya hesap değiştirin.",
+  "Amount exceeds your available balance. Max {amount}.": "Tutar kullanılabilir bakiyenizi aşıyor. Maksimum {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "Tutar bakiye borcunu aşıyor. Maksimum geri ödeme {amount}.",
   Repay: "Geri ödeme",
   Supply: "Tedarik et",
   Remove: "Kaldırma",
@@ -1738,6 +1743,9 @@ const dict: TranslationDictionary = {
   "Support request": "Destek talebi",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Bir şey yanlış görünüyorsa ayrıntıları gönderin; ekibimiz sorunu sınıflandırmanıza yardımcı olabilir.",
+  "Avana Platform Fee": "Avana Platform Ücreti",
+  "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
+    "Avana platformu üzerinden başlatılan işlemlere önceden %0,15 (15 baz puan) tutarında Avana arayüz ücreti uygulanır. Faiz oranları, getiriler ve diğer işlem maliyetleri piyasaya, pozisyona ve işlem rotasına göre değişebilir.",
 }
 
 export default dict

@@ -77,7 +77,7 @@ import {
  * under Lucide-compatible component names so call sites keep the <Icon className=…/>
  * API. Generated to drop the lucide-react dependency.
  */
-export type IconProps = SVGProps<SVGSVGElement> & { size?: string | number }
+type IconProps = SVGProps<SVGSVGElement> & { size?: string | number }
 export type IconComponent = ComponentType<IconProps>
 // Back-compat alias for the old lucide type name.
 export type LucideIcon = IconComponent

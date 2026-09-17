@@ -119,7 +119,7 @@ describe("MultiplyCollateralTable", () => {
     // Loop identity is now a compact "COLLATERAL / BORROW" pair (desktop + mobile),
     // with leverage on the caption line below it — no "Supply …"/"Borrow …" verbs.
     expect(screen.getAllByText("ETH / USDT")).toHaveLength(2)
-    expect(screen.getAllByText(/2\.00× leverage/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/2\.00x leverage/).length).toBeGreaterThan(0)
     // Value cell = equity primary + exposure ("Exp.") subtitle; debt is gone.
     expect(screen.getAllByText("$3.5K").length).toBeGreaterThan(0)
     expect(screen.getAllByText(/\$7\.0K/).length).toBeGreaterThan(0)

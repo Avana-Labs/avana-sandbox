@@ -1,11 +1,7 @@
 /**
- * Real token price oracle. A scheduled action pulls spot prices from DefiLlama
- * (free, no key) into the `tokenPrices` table; queries read them. This is the only
- * live-market data in the sandbox — supply/borrow/TVL stay simulated, but the
- * "Price" a user sees is the real production price, so the sandbox mimics prod.
- *
- * Flow: cron → refreshPrices (action, fetch) → upsertPrices (mutation) → getPrices (query).
- * Curve/Balancer pool-level depth would need a The Graph key; token prices don't.
+ * Real token price oracle — the ONLY live-market data in the sandbox (supply/borrow/TVL stay
+ * simulated). Flow: cron → refreshPrices (action, fetch from DefiLlama) → upsertPrices
+ * (mutation) → getPrices (query).
  */
 
 import { v } from "convex/values"
@@ -13,12 +9,10 @@ import { internalAction, internalMutation, query, type MutationCtx, type QueryCt
 import { internal } from "./_generated/api"
 
 /**
- * Base symbol (lowercase, = SpokeBorrowableRecord.baseAssetId) → DefiLlama coin id.
- * Must cover EVERY symbol the sandbox catalogs can display — any symbol missing here falls
- * back to the deterministic PRICE_FIXTURE, which drifts badly from reality for volatile
- * governance tokens (ARB, GNO, LDO, OP, BAL, AERO…). All ids verified to resolve at
- * confidence ≥ 0.99 (mainnet contract where the token lives on Ethereum, coingecko slug for
- * L2-native or non-ERC20 assets like BTC).
+ * Base symbol (lowercase, = SpokeBorrowableRecord.baseAssetId) → DefiLlama coin id. MUST cover
+ * every symbol the catalogs can display: a missing symbol falls back to the deterministic
+ * PRICE_FIXTURE, which drifts badly for volatile governance tokens. Ids use the mainnet
+ * contract where the token lives on Ethereum, a coingecko slug for L2-native/non-ERC20 assets.
  */
 export const TOKEN_LLAMA_IDS: Record<string, string> = {
   usdc: "ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -40,7 +34,8 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   aave: "coingecko:aave",
   uni: "coingecko:uniswap",
   crv: "coingecko:curve-dao-token",
-  // Governance / L2 tokens — fixture values here are wildly stale, so live coverage matters.
+  // Governance / L2 tokens — the fixture values are wildly stale, so live coverage matters.
+  link: "ethereum:0x514910771AF9Ca656af840dff83E8264EcF986CA",
   arb: "coingecko:arbitrum",
   op: "coingecko:optimism",
   gno: "ethereum:0x6810e776880C02933D47DB1b9fc05908e5386b96",
@@ -55,10 +50,9 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
 }
 
 /**
- * Freshness thresholds. The refresh cron runs every 10 minutes (see crons.ts): a row older than
- * one missed run (20m) is `stale`, and older than several (45m) is `invalid` — a wedged cron
- * surfaces quickly without false positives from a single network blip. A failed refresh writes
- * nothing, so old rows keep their old timestamp and age past these thresholds honestly.
+ * Freshness thresholds against the 10-minute refresh cron: one missed run (20m) is `stale`,
+ * several (45m) `invalid`, so a wedged cron surfaces without tripping on one network blip. A
+ * failed refresh writes nothing, so rows age past these honestly.
  */
 export const PRICE_REFRESH_INTERVAL_MS = 10 * 60 * 1000
 export const PRICE_STALE_AFTER_MS = 20 * 60 * 1000
@@ -90,9 +84,9 @@ export function classifyPriceStatus(ageMs: number): "fresh" | "stale" | "invalid
 }
 
 /**
- * Minimum DefiLlama `confidence` (0–1 scale) to accept a quote. Our tracked coins normally
- * resolve at 0.99; a value under this is a thin/unreliable quote we'd rather drop (and flag as
- * stale) than store as the authoritative price. Missing confidence is treated as acceptable.
+ * Minimum DefiLlama `confidence` (0–1) to accept a quote; tracked coins normally resolve at
+ * 0.99. Below it the quote is dropped and flagged stale rather than stored as authoritative.
+ * Missing confidence counts as acceptable.
  */
 export const PRICE_MIN_CONFIDENCE = 0.8
 
@@ -184,20 +178,15 @@ function quoteUnchanged(
 }
 
 /**
- * Price freshness signal for the UI. If the refresh cron fails, `getPrices` keeps serving
- * the last-known values silently; this exposes the OLDEST row's last-refresh time so the UI
- * can warn ("prices may be stale") instead of presenting stale numbers as live.
+ * Price freshness signal: the OLDEST row's last-refresh time, so the UI can warn instead of
+ * presenting stale numbers as live. `oracleProviderHealth` advances on every successful
+ * refresh even when quotes are unchanged, keeping identical responses observable without
+ * rewriting every tokenPrices document.
  *
- * Provider health (`oracleProviderHealth`) advances on successful refreshes even when quote
- * rows are unchanged, so identical provider responses stay observable without rewriting
- * every tokenPrices document.
- *
- * IMPORTANT: this returns only the raw `updatedAt` — it does NOT compute ageMs/stale from
- * Date.now(). A Convex query result is cached and only recomputed when a document it read
- * changes; a wall-clock-derived value would freeze the instant a client subscribed and never
- * flip fresh→stale until an unrelated `tokenPrices` write occurred (so a wedged cron would
- * never surface). The client derives ageMs/stale from `updatedAt` against a ticking clock
- * (see token-prices-context), so freshness advances with real time for connected clients.
+ * MUST return raw `updatedAt` only, never an ageMs/stale computed from Date.now(): a Convex
+ * query is recomputed only when a document it read changes, so a wall-clock value would
+ * freeze when the client subscribed and never flip fresh→stale. The client derives age
+ * against its own ticking clock (token-prices-context).
  */
 export const getPriceStatus = query({
   args: {},
@@ -355,13 +344,11 @@ export const getTokenPriceHistory = query({
 })
 
 /**
- * Recompute POOL-market LP prices live from the token oracle: LPPriceUSD = Σ(weightᵢ × priceᵢ) over
- * the market's stored constituents. Keeps the server-side LP valuation (assertBorrowSolvent reads
- * markets.priceUsd) tracking the underlying token prices instead of a frozen seed value, so the
- * client preview (which values LP collateral live) and the server solvency check stay consistent.
- *
- * A pool with ANY unpriced/stale/invalid leg is SKIPPED (its priceUsd is left unchanged rather than
- * derived from incomplete data) — unavailable over wrong. Internal-only; run by the 10-min cron.
+ * Recompute POOL-market LP prices from the token oracle: LPPriceUSD = Σ(weightᵢ × priceᵢ) over the
+ * market's stored constituents, so the server-side LP valuation (assertBorrowSolvent reads
+ * markets.priceUsd) tracks the underlying tokens and stays consistent with the client preview.
+ * A pool with ANY unpriced/stale/invalid leg is SKIPPED, leaving its priceUsd unchanged —
+ * unavailable over wrong. Internal-only, run by the 10-min cron.
  */
 export const refreshPoolLpPrices = internalMutation({
   args: {},
@@ -437,18 +424,16 @@ export const refreshPrices = internalAction({
         .map(([symbol, llamaId]) => {
           const coin = json.coins[llamaId]
           if (!coin) return null
-          // Guard the STORED value: `typeof NaN === "number"` (and 0 / negatives are numbers),
-          // so a plain type check lets insane quotes through to be stored as authoritative and
-          // divided by downstream. Require a finite, strictly-positive USD price.
+          // Require a finite, strictly-positive USD price: `typeof NaN === "number"` (as are 0
+          // and negatives), so a plain type check would store an insane quote as authoritative
+          // and divide by it downstream.
           if (!isPlausibleTokenPrice(symbol, coin.price)) return null
-          // Reject shaky quotes. DefiLlama reports `confidence` on a 0–1 scale (our tracked
-          // coins normally resolve at 0.99); anything under the threshold is too unreliable to
-          // treat as the real price. Missing confidence is treated as acceptable so an omitted
-          // field never empties the whole batch.
+          // Reject quotes below the confidence threshold as too unreliable to treat as real.
+          // Missing confidence is acceptable, so an omitted field never empties the batch.
           if (typeof coin.confidence === "number" && coin.confidence < PRICE_MIN_CONFIDENCE) return null
           const { chainId, contractAddress } = parseLlamaId(llamaId)
-          // DefiLlama returns per-coin `timestamp` in SECONDS; fall back to now when absent so a
-          // provider that omits it never looks artificially ancient.
+          // DefiLlama's per-coin `timestamp` is in SECONDS; absent → now, so an omitted field
+          // never looks artificially ancient.
           const sourceUpdatedAt = typeof coin.timestamp === "number" ? coin.timestamp * 1000 : now
           return {
             symbol,
@@ -468,14 +453,22 @@ export const refreshPrices = internalAction({
         })
         .filter((r): r is NonNullable<typeof r> => r !== null)
       if (rows.length === 0) {
-        // Fetch succeeded but yielded no usable prices — treat as a failure so the run is
-        // flagged and the UI doesn't keep serving stale values as if the refresh worked.
+        // Fetched but nothing usable: fail the run so the UI does not serve stale values as
+        // though the refresh worked.
         throw new Error("DefiLlama returned no usable prices")
       }
-      await ctx.runMutation(internal.prices.upsertPrices, { rows })
-      // Recompute pool LP prices from the freshly-written token prices × pool weights so the
-      // server-side LP valuation tracks the oracle instead of a frozen seed value.
-      await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
+      const { written: quotesWritten } = await ctx.runMutation(internal.prices.upsertPrices, { rows })
+      // Reprice pool LP tokens from the fresh quotes, but ONLY when a quote actually moved:
+      // `upsertPrices` counts a write only on a priceUsd/status/confidence/source/llamaId
+      // change, so `quotesWritten === 0` means no input to Σ(weight × priceUsd) changed and
+      // this scan — which reads every pool market document in full and is the deployment's
+      // largest database-I/O consumer — could not produce a patch.
+      //
+      // GOTCHA: a newly seeded pool market is therefore repriced only on the next run where
+      // some quote moves. Run `refreshPoolLpPrices` manually after a reseed.
+      if (quotesWritten > 0) {
+        await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
+      }
       return { written: rows.length, fetched: Object.keys(json.coins).length }
     } catch (err) {
       console.error("[prices] refreshPrices failed; UI will surface staleness via getPriceStatus:", err)

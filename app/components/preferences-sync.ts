@@ -28,15 +28,15 @@ export type PreferenceSetters = {
   setShowDollarAmounts: (value: boolean) => void
 }
 
-export function isTheme(value: string | undefined): value is Theme {
+function isTheme(value: string | undefined): value is Theme {
   return value === "light" || value === "dark" || value === "system"
 }
 
-export function isLanguage(value: string | undefined): value is LanguageCode {
+function isLanguage(value: string | undefined): value is LanguageCode {
   return LANGUAGE_OPTIONS.some((option) => option.code === value)
 }
 
-export function isCurrency(value: string | undefined): value is CurrencyCode {
+function isCurrency(value: string | undefined): value is CurrencyCode {
   return CURRENCY_OPTIONS.some((option) => option.code === value)
 }
 

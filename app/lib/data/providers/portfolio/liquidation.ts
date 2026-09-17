@@ -1,10 +1,10 @@
-export type LiquidationSnapshotRow = {
+type LiquidationSnapshotRow = {
   borrowedUsd: number
   referenceBorrowedUsd: number
   referenceLiquidationUsd: number
 }
 
-export function calculateLiquidationThresholdUsd({
+function calculateLiquidationThresholdUsd({
   borrowedUsd,
   referenceBorrowedUsd,
   referenceLiquidationUsd,

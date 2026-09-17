@@ -1,22 +1,17 @@
 /**
- * Shared multi-user market liquidity ledger.
+ * Shared multi-user market liquidity ledger. Appends to `marketLiquidityDeltas` put every
+ * action on its OWN document, so concurrent writers never contend under Convex OCC.
  *
- * Append-only writes to `marketLiquidityDeltas` keep every action on its OWN document so
- * concurrent writers never contend under Convex OCC. The app-wide subscription reads
- * `listDeltaSnapshot` — a single precomputed cache document.
+ * COALESCED AGGREGATE: an append queues at most one `liquidityDeltasCache` rebuild per
+ * `SNAPSHOT_REBUILD_DEBOUNCE_MS` window (immediately when the cache is cold). That document is
+ * read by every authenticated client, so each write re-runs the app-wide subscriptions for
+ * every session — debouncing bounds the fan-out by the window, not by write volume. The
+ * aggregate is eventually consistent within one window; wallet-owned reads are unaffected.
  *
- * AGGREGATE UPDATES are action-triggered: each successful append bumps the cache for the
- * affected market (or schedules a full rebuild when the cache is cold). COMPACTION is
- * scheduled only after the un-compacted raw-row count crosses `COMPACTION_DIRTY_THRESHOLD`,
- * so idle hours produce zero liquidity jobs.
- *
- * BOUNDED FOLD (compaction). A naive `collect()` over the append table grows without bound.
- * Instead the fold is split in two:
- *   - `marketLiquidityBaseline` — one cumulative row per market, the sum of every
- *     already-compacted delta.
- *   - the raw `marketLiquidityDeltas` rows that have NOT yet been compacted.
- * `compactDeltas` folds the oldest raw rows into the baseline and deletes them, so the fold
- * input is `#markets + #recent-deltas`. Every row is counted exactly once.
+ * BOUNDED FOLD: `compactDeltas` folds the oldest raw rows into the cumulative
+ * `marketLiquidityBaseline` (one row per market) and deletes them, so the fold input is
+ * `#markets + #recent-deltas` rather than every action ever taken, and each row is counted
+ * exactly once. It is scheduled only past `COMPACTION_DIRTY_THRESHOLD`, so idle hours run no jobs.
  */
 
 import { v } from "convex/values"
@@ -28,15 +23,19 @@ import { getAuthedWallet } from "./sandbox/auth"
 /** Single cache row discriminator (see `liquidityDeltasCache` in schema.ts). */
 const DELTAS_SINGLETON = "deltas"
 
-/**
- * Max raw delta rows compacted into the baseline per `compactDeltas` run. Bounds the
- * compaction transaction's own read/write/delete set so a large backlog drains over several
- * runs instead of one oversized scan.
- */
+/** Max raw rows folded per `compactDeltas` run; bounds the transaction's read/write set so a
+ *  large backlog drains over several runs instead of one oversized scan. */
 const COMPACTION_BATCH = 4_096
 
 /** Schedule compaction once the un-compacted raw table reaches this size. */
 export const COMPACTION_DIRTY_THRESHOLD = 512
+
+/**
+ * Minimum spacing between `liquidityDeltasCache` rebuilds. Every rebuild re-runs the app-wide
+ * liquidity subscriptions for every session, so this — not the append rate — bounds that
+ * fan-out. Lower = fresher aggregates, more re-runs per session.
+ */
+export const SNAPSHOT_REBUILD_DEBOUNCE_MS = 5_000
 
 type FoldedDelta = { marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }
 
@@ -47,10 +46,8 @@ async function requireLiquidityReader(ctx: QueryCtx) {
   }
 }
 
-/**
- * Fold the compacted baseline plus the un-compacted raw delta rows into one net aggregate
- * per market. Bounded by `#markets + #un-compacted rows`, not the total number of actions.
- */
+/** Fold baseline + un-compacted raw rows into one net aggregate per market. Bounded by
+ *  `#markets + #un-compacted rows`, not the total number of actions. */
 export async function foldDeltas(ctx: QueryCtx | MutationCtx): Promise<FoldedDelta[]> {
   const byMarket = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>()
 
@@ -127,59 +124,50 @@ function selectCanonicalSnapshot<T extends { updatedAt: number }>(rows: T[]) {
   return rows.reduce((latest, row) => (row.updatedAt >= latest.updatedAt ? row : latest))
 }
 
-/** Patch the aggregate cache for one market, or schedule a full rebuild when cold. */
-async function bumpDeltaSnapshot(
-  ctx: MutationCtx,
-  marketSlug: string,
-  borrowedDeltaUsd: number,
-  suppliedDeltaUsd: number,
-  updatedAt: number,
-) {
-  const existingRows = await readDeltaSnapshotRows(ctx)
-  const canonical = selectCanonicalSnapshot(existingRows)
-  if (!canonical) {
-    await ctx.scheduler.runAfter(0, internal.liquidity.rebuildDeltaSnapshot, {})
-    return
-  }
+async function readRebuildState(ctx: MutationCtx) {
+  return ctx.db
+    .query("liquidityRebuildState")
+    .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
+    .unique()
+}
 
-  const rows = canonical.rows.map((row) => ({ ...row }))
-  const index = rows.findIndex((row) => row.marketSlug === marketSlug)
-  if (index >= 0) {
-    const current = rows[index]!
-    rows[index] = {
-      marketSlug,
-      borrowedDeltaUsd: current.borrowedDeltaUsd + borrowedDeltaUsd,
-      suppliedDeltaUsd: current.suppliedDeltaUsd + suppliedDeltaUsd,
-      updatedAt: Math.max(current.updatedAt, updatedAt),
-    }
-  } else {
-    rows.push({ marketSlug, borrowedDeltaUsd, suppliedDeltaUsd, updatedAt })
-  }
+/** Record when the queued rebuild is due (0 clears the marker). */
+async function markRebuildScheduled(ctx: MutationCtx, scheduledFor: number) {
+  const state = await readRebuildState(ctx)
+  if (state) await ctx.db.patch(state._id, { scheduledFor })
+  else await ctx.db.insert("liquidityRebuildState", { singleton: DELTAS_SINGLETON, scheduledFor })
+}
 
-  await ctx.db.replace(canonical._id, {
-    singleton: DELTAS_SINGLETON,
-    rows,
-    updatedAt,
-  })
+/**
+ * Queue at most ONE aggregate rebuild per debounce window. `liquidityDeltasCache` is read by
+ * every authenticated client — directly and through `markets.listMarketSnapshots`'s overlay —
+ * so writing it inline per append made one wallet's action invalidate every other subscriber,
+ * with re-run volume scaling as (appends × concurrent sessions). The raw append stays
+ * immediate; only the aggregate is eventually consistent, within one window.
+ */
+async function scheduleSnapshotRebuild(ctx: MutationCtx, now: number) {
+  const state = await readRebuildState(ctx)
+  if (state && state.scheduledFor > now) return // a rebuild is already queued for this window
 
-  for (const row of existingRows) {
-    if (row._id !== canonical._id) await ctx.db.delete(row._id)
-  }
+  // Cold cache: every reader folds raw events until the first build lands, so build at once.
+  const cold = selectCanonicalSnapshot(await readDeltaSnapshotRows(ctx)) === null
+  const delay = cold ? 0 : SNAPSHOT_REBUILD_DEBOUNCE_MS
+
+  await ctx.scheduler.runAfter(delay, internal.liquidity.rebuildDeltaSnapshot, {})
+  // Mark a full window either way so a burst of appends cannot queue a rebuild each.
+  await markRebuildScheduled(ctx, now + SNAPSHOT_REBUILD_DEBOUNCE_MS)
 }
 
 async function maybeScheduleCompaction(ctx: MutationCtx) {
-  // take(threshold) is always `threshold` once we are at-or-above it, so peek one past
-  // to detect the exact crossing write and avoid scheduling compaction on every subsequent
-  // append while a drain is already queued.
+  // Peek one past the threshold to detect the exact crossing write; take(threshold) saturates,
+  // which would schedule compaction on every later append while a drain is already queued.
   const sample = await ctx.db.query("marketLiquidityDeltas").take(COMPACTION_DIRTY_THRESHOLD + 1)
   if (sample.length !== COMPACTION_DIRTY_THRESHOLD) return
   await ctx.scheduler.runAfter(0, internal.liquidity.compactDeltas, {})
 }
 
-/**
- * Append a ledger delta, bump the aggregate cache, and schedule compaction past the dirty
- * threshold. Shared by wallet liquidation, internal recorders, and daily rollup rebases.
- */
+/** Append a ledger delta, queue a coalesced rebuild, and schedule compaction past the dirty
+ *  threshold. Shared by liquidation, internal recorders and daily rollup rebases. */
 export async function appendLiquidityDelta(
   ctx: MutationCtx,
   args: { marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt?: number },
@@ -195,12 +183,13 @@ export async function appendLiquidityDelta(
     suppliedDeltaUsd,
     updatedAt,
   })
-  await bumpDeltaSnapshot(ctx, args.marketSlug, borrowedDeltaUsd, suppliedDeltaUsd, updatedAt)
+  // Debounce off the wall clock, not `updatedAt` — rollup rebases backdate that.
+  await scheduleSnapshotRebuild(ctx, Date.now())
   await maybeScheduleCompaction(ctx)
 }
 
-// Protocol / test recorder. Wallet product actions intentionally do not call this — they
-// update wallet-owned buckets only. Liquidation and rollup use `appendLiquidityDelta`.
+// Protocol / test recorder. Wallet product actions deliberately do NOT call this (they touch
+// wallet-owned buckets only); liquidation and rollup use `appendLiquidityDelta`.
 export const recordDelta = internalMutation({
   args: {
     marketSlug: v.string(),
@@ -216,10 +205,8 @@ export const recordDelta = internalMutation({
   },
 })
 
-/**
- * Direct fold of the compacted baseline + un-compacted deltas. Do NOT use as the app-wide
- * subscription (use `listDeltaSnapshot`). Kept for rebuilds and ledger assertions.
- */
+/** Direct fold of baseline + un-compacted deltas, for rebuilds and ledger assertions. NOT for
+ *  the app-wide subscription — use `listDeltaSnapshot`. */
 export const listDeltas = query({
   args: {},
   handler: async (ctx) => {
@@ -228,10 +215,8 @@ export const listDeltas = query({
   },
 })
 
-/**
- * App-wide liquidity subscription. Reads the precomputed `liquidityDeltasCache` document.
- * Cold-cache fallback folds raw events until the first action-triggered rebuild lands.
- */
+/** App-wide liquidity subscription: reads the precomputed `liquidityDeltasCache`, falling back
+ *  to folding raw events until the first rebuild lands. */
 export const listDeltaSnapshot = query({
   args: {},
   handler: async (ctx) => {
@@ -258,14 +243,14 @@ export const rebuildDeltaSnapshot = internalMutation({
         await ctx.db.delete(row._id)
       }
     }
+    // Release the debounce so the next append can queue the following window.
+    await markRebuildScheduled(ctx, 0)
     return { markets: rows.length }
   },
 })
 
-/**
- * Threshold-triggered compaction. Folds the OLDEST raw rows into per-market baselines and
- * deletes them. Idempotent on the total: `baseline + remaining raw` is invariant.
- */
+/** Threshold-triggered compaction: folds the OLDEST raw rows into per-market baselines and
+ *  deletes them. INVARIANT: `baseline + remaining raw` is unchanged. */
 export const compactDeltas = internalMutation({
   args: {},
   handler: async (ctx) => {

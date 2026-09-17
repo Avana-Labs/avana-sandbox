@@ -8,7 +8,7 @@ export const TOKEN_ICON_TABLE_PAIR_WIDTH_PX = 58
 export const TOKEN_ICON_TRENDING_PX = 64
 
 /** Borrow icon is always 66% of the collateral icon in paired-loop layouts. */
-export const PAIRED_LOOP_BORROW_SIZE_RATIO = 0.66
+const PAIRED_LOOP_BORROW_SIZE_RATIO = 0.66
 
 export function pairedLoopBorrowPx(collateralPx: number) {
   return Math.round(collateralPx * PAIRED_LOOP_BORROW_SIZE_RATIO)

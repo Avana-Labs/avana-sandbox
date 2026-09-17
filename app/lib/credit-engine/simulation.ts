@@ -11,7 +11,7 @@ import { calculateCollateralValueUsd6, currentCollateralValueUsd6 } from "./valu
 
 export type SimulationRiskLabel = "safe" | "warning" | "danger"
 
-export type SimulationMetrics = {
+type SimulationMetrics = {
   collateralValueUsd6: bigint
   borrowCapacityUsd6: bigint
   availableBorrowCapacityUsd6: bigint

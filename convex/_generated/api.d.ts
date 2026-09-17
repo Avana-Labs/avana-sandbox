@@ -72,6 +72,7 @@ import type * as sandbox_swapQuoteEngine from "../sandbox/swapQuoteEngine.js";
 import type * as sandbox_transactionInvariants from "../sandbox/transactionInvariants.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as sandbox_umbrella from "../sandbox/umbrella.js";
+import type * as sandbox_writeBackPrice from "../sandbox/writeBackPrice.js";
 import type * as seed from "../seed.js";
 import type * as seedAdmin from "../seedAdmin.js";
 import type * as starterTestMarkets from "../starterTestMarkets.js";
@@ -85,6 +86,7 @@ import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
 import type * as wallet_productBalances from "../wallet/productBalances.js";
 import type * as wallet_profiles from "../wallet/profiles.js";
 import type * as wallet_sessions from "../wallet/sessions.js";
+import type * as writeRateLimit from "../writeRateLimit.js";
 
 import type {
   ApiFromModules,
@@ -157,6 +159,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/transactionInvariants": typeof sandbox_transactionInvariants;
   "sandbox/transactions": typeof sandbox_transactions;
   "sandbox/umbrella": typeof sandbox_umbrella;
+  "sandbox/writeBackPrice": typeof sandbox_writeBackPrice;
   seed: typeof seed;
   seedAdmin: typeof seedAdmin;
   starterTestMarkets: typeof starterTestMarkets;
@@ -170,6 +173,7 @@ declare const fullApi: ApiFromModules<{
   "wallet/productBalances": typeof wallet_productBalances;
   "wallet/profiles": typeof wallet_profiles;
   "wallet/sessions": typeof wallet_sessions;
+  writeRateLimit: typeof writeRateLimit;
 }>;
 
 /**

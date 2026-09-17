@@ -6,12 +6,28 @@ const DECIMAL_INPUT_PATTERN = /^(?:\d+(?:\.\d*)?|\.\d+)$/
 // rather than crashing the preview.
 const MAX_ACTION_AMOUNT = 1e15
 
-/** Keep only digits and a single decimal point while the user types. */
+/**
+ * Validate a decimal amount as the user types, without silently rewriting it. A comma is accepted
+ * as the decimal separator (the app ships comma-decimal locales like de/fr/es), so "1,5" normalizes
+ * to "1.5" rather than "15". Only the first separator is kept; a stray second separator or any other
+ * invalid character stops parsing rather than concatenating the digits around it ("1.2.3"→"1.2",
+ * "1e9"→"1", "-5"→""). A trailing "." is preserved so incremental typing stays fluid.
+ */
 export function sanitizeDecimalInput(value: string): string {
-  const cleaned = value.replace(/[^\d.]/g, "")
-  const [whole = "", ...fraction] = cleaned.split(".")
-  if (fraction.length === 0) return whole
-  return `${whole}.${fraction.join("")}`
+  let result = ""
+  let hasSeparator = false
+  for (const char of value.trim()) {
+    if (char >= "0" && char <= "9") {
+      result += char
+    } else if (char === "." || char === ",") {
+      if (hasSeparator) break
+      result += "."
+      hasSeparator = true
+    } else {
+      break
+    }
+  }
+  return result
 }
 
 export function parsePositiveActionAmount(value: string): number | null {

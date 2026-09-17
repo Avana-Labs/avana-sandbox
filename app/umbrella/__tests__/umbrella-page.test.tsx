@@ -131,7 +131,7 @@ describe("Umbrella page", () => {
 
     expect(screen.queryByText("APY breakdown")).not.toBeInTheDocument()
     expect(screen.queryByText("Slashable stake")).not.toBeInTheDocument()
-    expect(screen.queryByText("Network fee")).not.toBeInTheDocument()
+    expect(screen.queryByText("Avana Platform Fee")).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByRole("textbox", { name: /amount/i }), { target: { value: "1000" } })
 
@@ -139,7 +139,7 @@ describe("Umbrella page", () => {
     expect(screen.getByText("Est. annual rewards")).toBeInTheDocument()
     expect(screen.getByText("Based on amount entered")).toBeInTheDocument()
     expect(screen.getByText("Slashable stake")).toBeInTheDocument()
-    expect(screen.getByText("Network fee")).toBeInTheDocument()
+    expect(screen.getByText("Avana Platform Fee")).toBeInTheDocument()
   })
 
   it("places cooldown immediately after positions and before market-level risk", () => {

@@ -6,6 +6,7 @@ import {
   resolvePoolUsdDisplay,
   resolveTransactionTokenDisplay,
   resolveTransactionUsdDisplay,
+  resolveTransactionUsdValue,
 } from "@/app/lib/detail-page/transaction-display"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
 
@@ -97,6 +98,33 @@ describe("transaction-display", () => {
     setCanonicalPrices({ WETH: 1934, USDC: 1 })
     expect(resolveTransactionUsdDisplay(row)).toBe("$50.0K")
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "25.8521", symbol: "WETH" })
+    resetCanonicalPrices()
+  })
+
+  it("reconciles a debt row's token quantity to the recorded USD at the live price", () => {
+    // A $2,471 WETH borrow. The record stores only USD, so the token amount was bootstrapped from
+    // a frozen seed price (WETH 1934 → 2471/1934 = 1.2776) — which then re-values at the live
+    // price (~2450) to ~$3.1K, disagreeing with the record and the dashboard debt row.
+    const row = baseRow({
+      kind: "borrow",
+      amountLabel: "$2.5K",
+      amountUsd: 2_471,
+      tokenAmountLabel: "1.2776",
+      tokenSymbol: "WETH",
+    })
+    setCanonicalPrices({ WETH: 2450 })
+
+    // Default (pool/lend/multiply): frozen seed quantity, USD re-valued at live → over-values.
+    expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "1.2776", symbol: "WETH" })
+    expect(resolveTransactionUsdValue(row)).toBeCloseTo(1.2776 * 2450, 0)
+
+    // Reconciled (asset/debt feed): quantity = recorded USD / live price (~1.0086 WETH), and the
+    // USD is the record ($2,471) — so token qty × price === recorded USD (~1.01 WETH, not 1.2776).
+    const token = resolveTransactionTokenDisplay(row, undefined, true)
+    expect(token?.symbol).toBe("WETH")
+    expect(Number(token?.amount)).toBeCloseTo(2471 / 2450, 3)
+    expect(resolveTransactionUsdValue(row, undefined, true)).toBe(2471)
+
     resetCanonicalPrices()
   })
 

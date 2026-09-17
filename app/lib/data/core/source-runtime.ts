@@ -42,7 +42,7 @@ export type DataSourceAdapter = {
   supportsFallback: boolean
 }
 
-export type DataSourceErrorCode =
+type DataSourceErrorCode =
   | "aborted"
   | "auth"
   | "invalid_response"
@@ -108,7 +108,7 @@ export function createDataSourceAdapter({
   }
 }
 
-export function ensureRequestNotAborted(signal?: AbortSignal) {
+function ensureRequestNotAborted(signal?: AbortSignal) {
   if (signal?.aborted) {
     throw new DataSourceError({
       code: "aborted",
@@ -186,7 +186,7 @@ export function normalizeDataSourceError(
   })
 }
 
-export function shouldFallbackFromError(error: DataSourceError) {
+function shouldFallbackFromError(error: DataSourceError) {
   return (
     error.code === "unsupported" ||
     error.code === "unavailable" ||

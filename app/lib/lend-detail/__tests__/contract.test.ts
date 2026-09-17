@@ -103,6 +103,17 @@ describe("lend detail contract", () => {
     expect(supplyApy?.value).toBe("7.25%")
   })
 
+  it("single-sources Supply APY: the risk metric matches the headline quick stat", () => {
+    // Key Statistics reflects the (overridden) live rate; the risk card must not strand the
+    // frozen catalog rate beside it — both read the same value.
+    const market = getLendMarketById("usdc")!
+    const overridden = buildLendMarketDetail(market, { supplyApyPct: 7.25 })
+    const headline = overridden.quickStats.find((s) => s.id === "supplyApy")?.value
+    const riskMetric = overridden.risk.metrics.find((metric) => metric.id === "supplyApy")?.value
+    expect(headline).toBe("7.25%")
+    expect(riskMetric).toBe(headline)
+  })
+
   it("resolveLendMarket returns the underlying catalog market", () => {
     const market = resolveLendMarket("usdc")
     expect(market?.asset.symbol).toBe("USDC")

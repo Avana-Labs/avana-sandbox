@@ -1,34 +1,21 @@
 /**
- * Dev "open gate" shortcut — auto-injects TEST_MODE_WALLET_ADDRESS and skips the onboarding/auth
- * gate, so you can iterate on the app without connecting a wallet. Dev open-gate uses live
- * Convex; Playwright separately selects deterministic mock data and a local-only session.
+ * Dev "open gate" — injects TEST_MODE_WALLET_ADDRESS and skips onboarding/auth so you can
+ * iterate without connecting a wallet (live Convex; Playwright uses its own mock + session).
  *
- * ── SAFETY: it can NEVER activate in a production build ──────────────────────────────────────
- * Every `next build` (local `npm run start`, Vercel, and every deploy) runs with
- * NODE_ENV="production". `isProductionBuild()` below makes `shouldUseOpenGateSession()`
- * hard-return `false` there, REGARDLESS of any env flag. So the open gate is structurally
- * impossible to ship — there is nothing to remember to "comment out" before deploying, and no
- * env var (even if mis-set in Vercel) can force it on in production.
- *
- * ── ENABLE IT (local only) ───────────────────────────────────────────────────────────────────
- * Set `NEXT_PUBLIC_DEV_OPEN_GATE=1` in `.env.local` (gitignored → never committed, never on
- * GitHub). Every `npm run dev` then opens the gate. Set it to `0` (or comment the line) to
- * exercise the REAL onboarding/auth flow on the dev server. The Playwright e2e suite opts in
- * separately via `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1` on its own dev server.
+ * Enable locally with `NEXT_PUBLIC_DEV_OPEN_GATE=1` in `.env.local`; `0` exercises the real
+ * auth flow. It can NEVER activate in a deploy: `isProductionBuild()` hard-returns false
+ * under NODE_ENV="production" regardless of any env flag.
  */
 
 /**
- * A local production-equivalent audit artifact is isolated in its own output directory
- * and rejected in CI/Vercel. It exists solely for Lighthouse to measure product routes
- * without onboarding; deployment builds cannot opt into it.
+ * Local-only Lighthouse audit build (isolated output dir, rejected in CI/Vercel) so audits can
+ * measure product routes without onboarding.
  *
- * SECURITY: this must NEVER be reachable in a real production runtime. The audit vars are
- * NEXT_PUBLIC_ (baked into the client bundle), so without the NODE_ENV guard a bundle built
- * with them and deployed to a host that doesn't set VERCEL/CI (self-hosted Node, Docker) could
- * flip `isProductionBuild()` to false and auto-open the dev gate. The audit build/serve run under
- * NODE_ENV="production", so requiring NODE_ENV !== "production" here does NOT affect the local
- * audit — its routes render the static LighthouseAuditSurface via `isLighthouseAuditMode()`,
- * which is independent of the open-gate session.
+ * SECURITY: the NODE_ENV !== "production" guard is load-bearing. The audit vars are
+ * NEXT_PUBLIC_, so a bundle built with them and deployed to a host that sets neither VERCEL
+ * nor CI (self-hosted Node, Docker) would otherwise flip `isProductionBuild()` false and
+ * auto-open the dev gate. It does not affect the local audit, which renders
+ * LighthouseAuditSurface via the independent `isLighthouseAuditMode()`.
  */
 function isLocalLighthouseAuditBuild(): boolean {
   return (
@@ -46,7 +33,7 @@ function isProductionBuild(): boolean {
 }
 
 /** Explicit local opt-in for day-to-day coding. Set in `.env.local` (gitignored). */
-export function isDevOpenGateEnabled(): boolean {
+function isDevOpenGateEnabled(): boolean {
   return process.env.NEXT_PUBLIC_DEV_OPEN_GATE === "1"
 }
 

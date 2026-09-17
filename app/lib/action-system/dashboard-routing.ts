@@ -1,6 +1,6 @@
 import type { ActionProduct } from "./contracts"
 
-export type DashboardTabKey = "wallet" | "lend" | "borrow" | "multiply" | "referrals" | "rewards"
+type DashboardTabKey = "wallet" | "lend" | "borrow" | "multiply" | "referrals" | "rewards"
 
 const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   borrow: "borrow",

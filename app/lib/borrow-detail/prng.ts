@@ -1,19 +1,12 @@
 /**
- * Deterministic pseudo-random helpers used by the mock data layer.
- *
- * Everything the detail pages render must be reproducible: same id in,
- * same chart out. We use a small 32-bit mulberry32 PRNG seeded from a
- * string hash so pool/asset ids map to stable number sequences, which
- * keeps tests deterministic and avoids flaky snapshots.
+ * Deterministic PRNG helpers for the mock data layer: same id in, same chart out.
+ * mulberry32 seeded from a string hash, so charts never flake between runs.
  */
 
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import type { Point, Series, TimeRangeId } from "./types"
 
-/**
- * Hashes a string into a 32-bit unsigned integer (FNV-1a).
- * Deterministic across environments — do not swap for `Math.random`.
- */
+/** FNV-1a string → 32-bit uint. Deterministic across environments; never use `Math.random`. */
 export function hashString(input: string): number {
   let h = 0x811c9dc5
   for (let i = 0; i < input.length; i++) {
@@ -40,11 +33,7 @@ export function prngFromString(seed: string): () => number {
   return createPrng(hashString(seed))
 }
 
-// -------------------------------------------------------------------------
-// Time range sampling
-// -------------------------------------------------------------------------
-
-/** Number of samples we render for each range. Kept small for perf. */
+/** Samples rendered per range. Kept small for perf. */
 const SAMPLES_BY_RANGE: Record<TimeRangeId, number> = {
   "1D": 24,
   "1W": 28,
@@ -62,15 +51,6 @@ const DAYS_BY_RANGE: Record<TimeRangeId, number> = {
   "3M": 90,
   "1Y": 365,
   ALL: 720,
-}
-
-/** Public accessor so tests can assert the sample counts. */
-export function samplesForRange(range: TimeRangeId): number {
-  return SAMPLES_BY_RANGE[range]
-}
-
-export function daysForRange(range: TimeRangeId): number {
-  return DAYS_BY_RANGE[range]
 }
 
 type SeriesShape = {

@@ -242,6 +242,7 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
         <MarketHeroChart
           feed={feed}
           defaultRange="1M"
+          hideIntradayRange
           gradientId={`assetHeroFill-${detail.id}`}
           height={310}
           showMeta={false}

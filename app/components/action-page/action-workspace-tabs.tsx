@@ -4,7 +4,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { PillTabStrip } from "@/app/components/tab-primitives"
 import { ActionIcon } from "@/app/components/action-icon"
 
-export type ActionWorkspaceTabItem = {
+type ActionWorkspaceTabItem = {
   id: string
   label: string
   action?: string

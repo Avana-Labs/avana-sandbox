@@ -17,10 +17,21 @@ describe("action amount parsing", () => {
     expect(parsePositiveActionAmount("1.")).toBe(1)
   })
 
-  it("strips non-numeric characters while typing", () => {
+  it("validates decimal input non-destructively while typing", () => {
     expect(sanitizeDecimalInput("qqqqqq")).toBe("")
-    expect(sanitizeDecimalInput("12a3.4b5")).toBe("123.45")
-    expect(sanitizeDecimalInput("1.2.3")).toBe("1.23")
+    // Comma is the decimal separator in de/fr/es/…: "1,5" is 1.5, never 15.
+    expect(sanitizeDecimalInput("1,5")).toBe("1.5")
+    // An invalid character stops parsing instead of concatenating the digits around it.
+    expect(sanitizeDecimalInput("12a3.4b5")).toBe("12")
+    expect(sanitizeDecimalInput("1e9")).toBe("1")
+    expect(sanitizeDecimalInput("-5")).toBe("")
+    // A stray second separator is dropped rather than merging the fraction groups.
+    expect(sanitizeDecimalInput("1.2.3")).toBe("1.2")
+    expect(sanitizeDecimalInput("12.34.56")).toBe("12.34")
+    // Stays incremental-typing friendly: a trailing/leading separator is preserved.
+    expect(sanitizeDecimalInput("1.")).toBe("1.")
+    expect(sanitizeDecimalInput(".5")).toBe(".5")
+    expect(sanitizeDecimalInput("12.34")).toBe("12.34")
   })
 
   it("converts percentages to integer basis points within 0-100%", () => {

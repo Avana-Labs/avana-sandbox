@@ -1,19 +1,15 @@
 /**
- * Wallet-scoped sandbox transaction persistence + reads.
+ * Wallet-scoped sandbox transaction persistence + reads. Previews stay pure client-side
+ * simulation; on execute the adapter calls `recordTransaction`, the SINGLE Convex write
+ * path for a balance change. Convex is source of truth for SANDBOX state only.
  *
- * The Credit/Lend/Multiply engines stay client-side simulation/analytics (preview is
- * pure, no writes). When the user *executes*, the adapter calls `recordTransaction`,
- * which is the single Convex write path for a balance change. Per the brief, Convex is
- * the source of truth for SANDBOX state only — these synthetic numbers are never the
- * production source of truth (in prod, truth is contracts + indexed onchain data).
- *
- * Server-side guarantees (never trusted from the client):
+ * Server-side guarantees, never trusted from the client:
  *   - ownership   — `requireSandboxWallet` derives the wallet from ctx.auth.
  *   - idempotency — a replayed `intentId` returns the existing row (no double-apply).
  *   - rate limit  — at most `MAX_TX_PER_HOUR` per wallet per trailing hour.
  *   - one row     — exactly one `transactions` row per balance-changing action.
- *   - transition  — fixed-point amounts, product/action compatibility, lend deltas,
- *                   multiply LTV/multiplier and aggregate ledger deltas are recomputed.
+ *   - transition  — amounts, product/action compatibility, lend deltas, multiply
+ *                   LTV/multiplier and aggregate ledger deltas are all recomputed.
  *
  * Fixed-point amounts cross the wire as decimal strings (see schema encoding contract).
  */
@@ -29,6 +25,9 @@ import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
+import { resolveWriteBackPriceUsd } from "./writeBackPrice"
+import { canonicalTokenSymbolOrUpper } from "../../app/lib/tokens/canonical-symbol"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertClose,
   BORROW_FALLBACK_LIQUIDATION_PCT,
@@ -125,6 +124,7 @@ async function upsertProductBalanceValue(
     state: string
   },
 ) {
+  const now = Date.now()
   const rows = await ctx.db
     .query(table)
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -136,7 +136,19 @@ async function upsertProductBalanceValue(
       ("assetId" in candidate ? candidate.assetId : undefined) === row.assetId &&
       ("poolId" in candidate ? candidate.poolId : undefined) === row.poolId,
   )
-  const next = { ...row, amount: Math.max(0, row.amount), valueUsd: Math.max(0, row.valueUsd), updatedAt: Date.now() }
+  const valueUsd = Math.max(0, row.valueUsd)
+  // `amount` is a TOKEN QUANTITY. A real (non-$1) implied unit price is trusted directly, so the
+  // healthy path stays oracle-free; an implied price of ≈1 means a caller wrote USD into `amount`,
+  // so it is re-checked against the oracle and healed back to a real token quantity.
+  const candidateAmount = Math.max(0, row.amount)
+  const impliedPriceUsd = candidateAmount > 0 && valueUsd > 0 ? valueUsd / candidateAmount : null
+  let amount = candidateAmount
+  if (valueUsd > 0 && (impliedPriceUsd == null || Math.abs(impliedPriceUsd - 1) < 1e-4)) {
+    const oraclePriceUsd = await validatedTokenPriceUsd(ctx, row.assetId ?? row.symbol, now)
+    const resolvedPriceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd)
+    if (resolvedPriceUsd && resolvedPriceUsd > 0) amount = valueUsd / resolvedPriceUsd
+  }
+  const next = { ...row, amount, valueUsd, updatedAt: now }
   if (existing) {
     await ctx.db.patch(existing._id, next as never)
     return
@@ -176,23 +188,29 @@ export async function adjustProductBalanceUsd(
         (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId),
     )
   const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
-  // `amount` is a TOKEN QUANTITY, so it must be derived with a real unit price. Falling back to
-  // $1 whenever no row exists yet wrote the USD figure straight into `amount` for every first
-  // deposit/borrow into a market with no prior row — and the dashboard reprices non-LP rows as
-  // `amount × livePrice`, so a verified 1 AAVE ($120.18) deposit landed `amount: 120.18` and
-  // contributed $14,443 to Net Value. Prefer an explicit override, then the unit price implied
-  // by an existing/sibling row, then the server oracle. $1 is only reached for a symbol the
-  // oracle does not cover (where amount == valueUsd is the best available answer anyway).
+  // `amount` is a TOKEN QUANTITY and must be derived with a real unit price: prefer an explicit
+  // override, then the price implied by an existing/sibling row, then the server oracle. A $1
+  // fallback writes the USD figure into `amount`, and the dashboard reprices non-LP rows as
+  // `amount × livePrice` — a 1 AAVE ($120.18) deposit then read as $14,443 of Net Value. $1 is
+  // only reached for a symbol the oracle does not cover, where amount == valueUsd anyway.
   const impliedPriceUsd =
     existing && existing.amount > 0 && existing.valueUsd > 0
       ? existing.valueUsd / existing.amount
       : sibling && sibling.amount > 0 && sibling.valueUsd > 0
         ? sibling.valueUsd / sibling.amount
         : null
-  const resolvedPriceUsd =
-    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
-      ? priceUsdOverride
-      : (impliedPriceUsd ?? (await validatedTokenPriceUsd(ctx, match.assetId ?? symbol, now)))
+  let resolvedPriceUsd: number | null
+  if (priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0) {
+    resolvedPriceUsd = priceUsdOverride
+  } else if (impliedPriceUsd != null && impliedPriceUsd > 0 && Math.abs(impliedPriceUsd - 1) >= 1e-4) {
+    // A real (non-$1) unit price from the row's own history; trusted without an oracle read.
+    resolvedPriceUsd = impliedPriceUsd
+  } else {
+    // New row, or a USD-in-amount row (implied ≈ 1): consult the oracle so a corrupt `amount`
+    // heals instead of re-deriving valueUsd / 1 = valueUsd forever.
+    const oraclePriceUsd = await validatedTokenPriceUsd(ctx, match.assetId ?? symbol, now)
+    resolvedPriceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd)
+  }
   const priceUsd = resolvedPriceUsd && resolvedPriceUsd > 0 ? resolvedPriceUsd : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
   if (existing) {
@@ -247,7 +265,7 @@ async function syncBorrowProductCollateralRows(
   )
   const availableUsd = Math.max(0, totalPoolUsd - pledgedUsd)
   const poolId = sibling?.poolId ?? marketSlug
-  const symbol = sibling?.symbol ?? marketSlug.toUpperCase()
+  const symbol = sibling?.symbol ?? canonicalTokenSymbolOrUpper(marketSlug)
   const [pool, market] = sibling
     ? [null, null]
     : await Promise.all([
@@ -321,13 +339,11 @@ const MAX_RISK_HISTORY_ROWS = 365
  *  derive one from. Conservative. */
 
 /**
- * Derive a liquidation threshold from a pool's max-LTV / collateral factor when the pool has
- * no explicit `liquidationThresholdPct`. Kept in lockstep with the client credit engine's
- * `estimateLiquidationThresholdWad` (borrow-system/mock.ts): LT = maxLtv + 10pp, capped at
- * 95%. Convex can't import app/, so this is hand-synced (like the price baseline). Using the
- * raw maxLtv (collateral factor) here instead — as the old fallback did — understated the
- * liquidation value and rejected borrows the client preview had shown as solvent (HF ≥ 1),
- * breaking confirm==persist parity. (#12)
+ * Liquidation threshold for a pool with no explicit `liquidationThresholdPct`:
+ * LT = maxLtv + 10pp, capped at 95%. MUST stay in lockstep with the client engine's
+ * `estimateLiquidationThresholdWad` (borrow-system/mock.ts) — Convex cannot import app/, so
+ * this is hand-synced. Using the raw maxLtv understates liquidation value and rejects borrows
+ * the client preview showed as solvent, breaking confirm==persist parity.
  */
 /** Optional position upsert payload carried by a transaction. */
 const positionPayload = v.object({
@@ -412,11 +428,9 @@ function validateTransactionTransition(
     position?: Infer<typeof positionPayload>
   },
   existing?: Doc<"positions">,
-  // Authoritative pre-transaction lend supplied for this market, read from the product-balance
-  // ledger (walletLendBalances) — the same source the client computes its new balance from. The
-  // `positions` row can lag behind it (a stale/closed row after an earlier desync), so preferring
-  // the ledger keeps a legitimate deposit/withdraw from tripping the transition check. The write
-  // that follows rewrites both to the new value, re-syncing them.
+  // Read pre-transaction lend supplied from the product-balance ledger (walletLendBalances), the
+  // same source the client computes against — the `positions` row can lag it after a desync and
+  // trip the transition check on a legitimate deposit. The following write re-syncs both.
   lendSuppliedBeforeUsd?: number,
 ) {
   requireUnsignedInteger(args.requestedAmountUsd6, "requestedAmountUsd6")
@@ -462,9 +476,8 @@ function validateTransactionTransition(
     const expectedLtv = collateral > 0 ? debt / collateral : 0
     assertClose(args.position.multiplier ?? 1, expectedMultiplier, "multiply multiplier", 0.0001)
     assertClose(args.position.ltv ?? 0, expectedLtv, "multiply LTV", 0.0001)
-    // Cap enforcement: the client slider tops out at MULTIPLY_ACTION_MAX_LEVERAGE, but a
-    // tampered client could submit an internally-consistent position above it. Reject so
-    // leverage caps are enforced server-side, not just in the UI.
+    // Leverage caps must be enforced here, not just by the UI slider: a tampered client can
+    // submit an internally-consistent position above MULTIPLY_ACTION_MAX_LEVERAGE.
     if ((args.position.multiplier ?? 1) > MAX_MULTIPLIER + 0.01) {
       throw new Error("INVALID_TRANSITION: multiplier exceeds the protocol maximum.")
     }
@@ -472,12 +485,10 @@ function validateTransactionTransition(
 }
 
 /**
- * Revalue a collateral leg from shares/principal + server oracle — never from the
- * client-supplied `collateralValueUsd6` (that field is display-only and spoofable).
- *
- * Sandbox writes historically store usd6 microdollars in shares/principal (tests +
- * persistence). Real engine positions store 18-decimal LP token amounts; those are
- * converted with `pools.lpTokenPriceUsd` / `markets.priceUsd` when present.
+ * Revalue a collateral leg from shares/principal + server oracle — NEVER from the
+ * client-supplied `collateralValueUsd6`, which is display-only and spoofable. Sandbox writes
+ * store usd6 microdollars in shares/principal; real engine positions store 18-decimal LP
+ * token amounts, converted via `pools.lpTokenPriceUsd` / `markets.priceUsd`.
  */
 async function serverCollateralValueUsd(
   ctx: MutationCtx,
@@ -519,12 +530,11 @@ async function serverCollateralValueUsd(
 }
 
 /**
- * Server-side borrow solvency re-derivation. The Credit Engine runs in the browser, so
- * the server must independently confirm a borrow/withdraw write does not persist an
- * underwater (HF < 1) or unbacked position — otherwise a tampered client could record
- * arbitrary debt against arbitrary (or zero) collateral. We re-derive collateral USD
- * from shares/principal + oracle and apply pool liquidation thresholds (NOT any
- * client-supplied HF or collateralValueUsd6) and reject when debt exceeds it.
+ * Server-side borrow solvency re-derivation. The Credit Engine runs in the browser, so the
+ * server must independently confirm no borrow/withdraw persists an underwater (HF < 1) or
+ * unbacked position — otherwise a tampered client could record arbitrary debt against zero
+ * collateral. Collateral USD comes from shares/principal + oracle and pool liquidation
+ * thresholds, never from a client-supplied HF or collateralValueUsd6.
  */
 async function assertBorrowSolvent(
   ctx: MutationCtx,
@@ -542,10 +552,8 @@ async function assertBorrowSolvent(
   let liquidationValueUsd = 0
   for (const row of collateralRows) {
     const { valueUsd, pool } = await serverCollateralValueUsd(ctx, row)
-    // Match the client credit engine's HF basis: explicit LT if the pool has one, otherwise
-    // maxLtv + 10pp (capped 95%) — NOT the raw maxLtv, which is the borrow-capacity collateral
-    // factor and understates the liquidation value, causing server rejections of borrows the
-    // preview allowed (#12).
+    // Must match the client engine's HF basis: explicit LT, else maxLtv + 10pp (capped 95%).
+    // The raw maxLtv is the borrow-capacity collateral factor and understates liquidation value.
     const thresholdPct =
       pool?.liquidationThresholdPct ??
       (pool?.maxLtvPct != null ? liquidationThresholdFromMaxLtv(pool.maxLtvPct) : BORROW_FALLBACK_LIQUIDATION_PCT)
@@ -756,11 +764,9 @@ type PortfolioSnapshotValue = {
 }
 
 /**
- * Read the wallet's single current-portfolio row tolerantly. A race between the onboarding
- * claim's insert and the dashboard's first snapshot write (or two concurrent snapshot
- * writers) can leave >1 row — `.unique()` then THROWS and bricks EVERY read (getPortfolio)
- * and the claim's own snapshot step (rolling the whole claim back). Collect and return the
- * newest instead; a following `upsertPortfolioCurrent` self-heals the duplicates.
+ * Read the wallet's current-portfolio row tolerantly. Concurrent snapshot writers can leave
+ * >1 row, and `.unique()` would then throw and brick every portfolio read plus the onboarding
+ * claim. Returns the newest; `upsertPortfolioCurrent` self-heals the duplicates.
  */
 async function latestPortfolioCurrent(ctx: QueryCtx | MutationCtx, wallet: string) {
   const rows = await ctx.db
@@ -772,10 +778,9 @@ async function latestPortfolioCurrent(ctx: QueryCtx | MutationCtx, wallet: strin
 }
 
 /**
- * Write the wallet's current-portfolio row idempotently: replace the newest existing row and
- * delete any duplicates a prior race left behind (self-heal), or insert when none exist. This
- * is the ONLY safe way to write portfolioCurrent — a bare `insert` (as the onboarding claim
- * used) creates a second row whenever the dashboard already wrote one, bricking `.unique()`.
+ * The ONLY safe way to write portfolioCurrent: replace the newest row, delete duplicates a
+ * prior race left behind, insert when none exist. A bare `insert` creates a second row
+ * whenever the dashboard already wrote one, which bricks `.unique()`.
  */
 export async function upsertPortfolioCurrent(ctx: MutationCtx, wallet: string, snapshot: PortfolioSnapshotValue) {
   const rows = await ctx.db
@@ -838,10 +843,9 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const multiplyDebt = open
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
-  // Umbrella is intentionally NOT part of portfolio value here — it lives on its own page and
-  // is excluded from the dashboard headline, the Net APY blend, and the onboarding snapshot
-  // (convex/sandbox/onboarding.ts). Folding it in only here made stored history diverge from
-  // the live headline by the staked amount, tripping the hero chart's basis-tolerance gate.
+  // Umbrella is deliberately EXCLUDED from portfolio value, as it is from the dashboard
+  // headline, the Net APY blend and the onboarding snapshot. Folding it in only here made
+  // stored history diverge from the live headline and tripped the chart's basis-tolerance gate.
 
   // ATB from per-pool collateral factors — never a hardcoded *0.7.
   const borrowSlugs = [
@@ -931,10 +935,9 @@ export async function applyLedgerDelta(
 }
 
 /**
- * Persist the remaining claimable on each borrow LP-fee reward position after a claim.
- * Stored as an absolute per-(wallet, rewardPositionId) value so hydration can reduce the
- * seeded claimable to it. Idempotent by construction: replaying the same claim writes the
- * same remaining value. (Top-level intentId short-circuit already prevents replays.)
+ * Persist the remaining claimable per borrow LP-fee reward position. Stored as an ABSOLUTE
+ * per-(wallet, rewardPositionId) value, so hydration reduces the seeded claimable to it and
+ * replaying the same claim is idempotent by construction.
  */
 async function applyRewardClaims(
   ctx: MutationCtx,
@@ -1100,17 +1103,16 @@ export const recordTransaction = mutation({
     multiplierAfter: v.optional(v.number()),
     position: v.optional(positionPayload),
     /**
-     * Optimistic-concurrency token: the `positions.revision` the client read before it
-     * computed this write. When supplied and the stored position has since advanced, the
-     * write is rejected (STALE_WRITE) instead of overwriting the concurrent change.
+     * The `positions.revision` the client read before computing this write. If the stored
+     * position has since advanced, the write is rejected (STALE_WRITE) rather than
+     * overwriting the concurrent change.
      */
     expectedRevision: v.optional(v.number()),
     /** Remaining claimable per borrow LP-fee reward position after this claim (usd6 decimal
      *  strings). Sent only for a borrow "claim"; persisted so claimable survives reload. */
     rewardClaims: v.optional(v.array(v.object({ rewardPositionId: v.string(), remainingUsd6: v.string() }))),
-    // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
-    // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
-    // the shared ledger.
+    // Deliberately no client `ledger` arg: the aggregate market-liquidity delta is recomputed
+    // server-side (canonicalLedgerDelta) so a client can never dictate the shared ledger.
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
@@ -1132,10 +1134,9 @@ export const recordTransaction = mutation({
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
       .first()
     if (prior) {
-      // Return the position's CURRENT revision so a client whose original response was lost can
-      // seed its optimistic-concurrency map from the replay. Without it, an idempotent CREATE
-      // replay left the client's map empty and its next write to this position sent no
-      // expectedRevision → REVISION_REQUIRED (M-12).
+      // Return the position's CURRENT revision so a client whose original response was lost
+      // seeds its concurrency map from the replay; without it the next write sends no
+      // expectedRevision and fails REVISION_REQUIRED.
       const priorPosition = prior.positionId ? await ctx.db.get(prior.positionId) : null
       return {
         idempotent: true,
@@ -1168,9 +1169,8 @@ export const recordTransaction = mutation({
     const marketSlug = args.position?.marketSlug ?? args.marketSlug
     const hash = `sim-${args.product}-${args.kind}-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
-    // Authoritative pre-transaction lend supplied for this market, from the product-balance
-    // ledger (walletLendBalances) — the same source the client derives its new balance from. Used
-    // by the transition check instead of the positions row, which can lag out of sync.
+    // Pre-transaction lend supplied from the product-balance ledger, which the transition check
+    // must use instead of the positions row — that row can lag out of sync.
     let lendSuppliedBeforeUsd: number | undefined
     if (args.product === "lend" && marketSlug && args.kind !== "claim") {
       const lendRows = await ctx.db
@@ -1182,11 +1182,10 @@ export const recordTransaction = mutation({
         .reduce((sum, row) => sum + row.valueUsd, 0)
     }
 
-    // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
     let existingPosition: Doc<"positions"> | undefined
-    // Revision actually written to the position this call, returned so the client seeds its
-    // optimistic-concurrency map from the server truth instead of inferring it (M-12).
+    // Revision actually written, returned so the client seeds its concurrency map from server
+    // truth instead of inferring it.
     let writtenRevision: number | undefined
     let multiplyDebit: { assetId: string; symbol: string; tokenAmount: number } | null = null
     if (args.position && status === "success" && marketSlug) {
@@ -1332,7 +1331,7 @@ export const recordTransaction = mutation({
         if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
-        await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
+        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now)
       }
       if (multiplyDebit) {
         await applyLiquidAssetDelta(
@@ -1363,20 +1362,17 @@ export const recordRewardsClaim = mutation({
   args: {
     wallet: v.string(),
     intentId: v.string(),
-    // Server-authoritative path (current client): the concrete quest ids being
-    // claimed. The payout is derived on-server from these, so a forged amount
-    // can't inflate totals.
+    // The quest ids being claimed. Payout is derived on-server from these, so a forged
+    // amount cannot inflate totals.
     taskIds: v.array(v.string()),
     syntheticTxHash: v.string(),
-    // Optional per-task receipt hashes, parallel to `taskIds`. When present (and
-    // length-matched), each quest is written as its own transaction row carrying
-    // the hash the client engine also stamps on its seed activity row, so the
-    // dashboard Activity feed dedups the durable row into the quest-titled one.
-    // Absent → the legacy single summed row (older clients, direct callers).
+    // Per-task receipt hashes, parallel to `taskIds`. When present and length-matched, each
+    // quest gets its own transaction row carrying the same hash the client engine stamps on
+    // its seed activity row, so the Activity feed dedups the two. Absent → one summed row.
     syntheticTxHashes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     requireBoundedIdentifier(args.intentId, "intentId")
     requireBoundedIdentifier(args.syntheticTxHash, "syntheticTxHash")
     if (args.taskIds.length > 32) throw new Error("INVALID_CLAIM: at most 32 task ids may be claimed at once")
@@ -1458,11 +1454,10 @@ export const recordRewardsClaim = mutation({
       if (!isEligible(id)) throw new Error(`TASK_NOT_ELIGIBLE: ${id}`)
     }
 
-    // Server-authoritative single-claim guard: reject a claim that re-uses any
-    // task id already paid out on a prior successful rewards-claim row for this
-    // wallet. This is durable — the client's rewards state blob can go stale
-    // (multi-device, cold reload) without opening a double-claim window. Only
-    // enforceable on the catalog path (legacy claims carry no task ids).
+    // Single-claim guard: reject any task id already paid out on a prior successful claim row
+    // for this wallet. Durable, so a stale client rewards blob (multi-device, cold reload)
+    // opens no double-claim window. Only enforceable on the catalog path — legacy claims
+    // carry no task ids.
     const alreadyClaimed = new Set<string>()
     for (const row of walletTransactions) {
       if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
@@ -1477,9 +1472,8 @@ export const recordRewardsClaim = mutation({
 
     const now = Date.now()
 
-    // Per-task rows: one transaction per claimed quest so each durable row can
-    // dedup against its quest-titled seed activity row (see the arg comment).
-    // Payout is still catalog-derived per task, never trusted from the client.
+    // One transaction per claimed quest so each durable row dedups against its quest-titled
+    // seed activity row. Payout stays catalog-derived per task, never trusted from the client.
     const perTaskHashes = args.syntheticTxHashes
     if (perTaskHashes && perTaskHashes.length === taskIds.length) {
       for (const hash of perTaskHashes) requireBoundedIdentifier(hash, "syntheticTxHash")
@@ -1553,7 +1547,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "available" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         -args.amountUsd,
         now,
       )
@@ -1562,7 +1556,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "deposited" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         args.amountUsd,
         now,
       )
@@ -1572,7 +1566,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "deposited" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         -args.amountUsd,
         now,
       )
@@ -1581,7 +1575,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "available" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         args.amountUsd,
         now,
       )
@@ -1600,7 +1594,7 @@ async function applyProductBucketDelta(
           "walletBorrowBalances",
           wallet,
           { marketId: marketSlug, state: "poolAvailable" },
-          marketSlug.toUpperCase(),
+          canonicalTokenSymbolOrUpper(marketSlug),
           -signed,
           now,
         )
@@ -1609,7 +1603,7 @@ async function applyProductBucketDelta(
           "walletBorrowBalances",
           wallet,
           { marketId: marketSlug, state: "collateral" },
-          marketSlug.toUpperCase(),
+          canonicalTokenSymbolOrUpper(marketSlug),
           signed,
           now,
         )
@@ -1622,7 +1616,7 @@ async function applyProductBucketDelta(
         "walletBorrowBalances",
         wallet,
         { marketId: marketSlug, assetId: debtAssetId, state: "debt" },
-        debtAssetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(debtAssetId),
         args.kind === "borrow" ? args.amountUsd : -args.amountUsd,
         now,
       )
@@ -1651,12 +1645,10 @@ async function applyProductBucketDelta(
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
     const previousEquityUsd = Math.max(0, (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0))
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
-    // `deltaUsd` is a USD ledger change, but walletMultiplyBalances.amount is a
-    // token quantity. A missing price used to make a newly-created available row
-    // default to $1/token, so closing a $41,666.67 WSTETH position persisted
-    // 41,666.67 WSTETH and the dashboard valued it at over $123M. Prefer the
-    // market's canonical collateral-token price; fall back to the wallet's live
-    // holding price only when the market row is unavailable.
+    // `deltaUsd` is USD but walletMultiplyBalances.amount is a TOKEN QUANTITY, so a real
+    // price is required — a $1/token default once persisted 41,666 WSTETH for a $41.6K
+    // position ($123M on the dashboard). Prefer the market's canonical collateral-token
+    // price, falling back to the wallet's live holding price only if the market row is gone.
     const [multiplyMarket, liquid] = await Promise.all([
       ctx.db
         .query("markets")
@@ -1675,7 +1667,7 @@ async function applyProductBucketDelta(
       "walletMultiplyBalances",
       wallet,
       { marketId: marketSlug, assetId: baseAsset, state: "available" },
-      baseAsset.toUpperCase(),
+      canonicalTokenSymbolOrUpper(baseAsset),
       previousEquityUsd - nextEquityUsd,
       now,
       multiplyPriceUsd,
@@ -1683,7 +1675,7 @@ async function applyProductBucketDelta(
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
-      symbol: baseAsset.toUpperCase(),
+      symbol: canonicalTokenSymbolOrUpper(baseAsset),
       amount: collateralAmount,
       valueUsd: collateralValueUsd,
       state: "position",
@@ -1691,18 +1683,16 @@ async function applyProductBucketDelta(
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
-      symbol: baseAsset.toUpperCase(),
+      symbol: canonicalTokenSymbolOrUpper(baseAsset),
       amount: collateralAmount,
       valueUsd: collateralValueUsd,
       state: "collateral",
     })
-    // The borrowed (debt) asset is not encoded in every market slug — reth-eth / wsteth-eth /
-    // steth-eth multiply positions borrow USDC, but `liquidAssetIdFromArgs` guesses "eth" from the
-    // slug's last segment. A wrong guess makes this upsert miss the real debt row: on close it writes
-    // a $0 row under the wrong asset (pruned by upsertProductBalanceValue) and leaves the genuine debt
-    // ORPHANED — collateral/position go to 0 while the debt lingers forever, permanently inflating
-    // portfolio debt for that wallet. Anchor to whatever asset the stored debt row actually uses so
-    // close/repay always hit it; fall back to the slug-derived id only when opening a brand-new row.
+    // Anchor to whatever asset the STORED debt row uses; only fall back to the slug-derived id
+    // when opening a brand-new row. The debt asset is not encoded in every slug (reth-eth /
+    // wsteth-eth / steth-eth borrow USDC, but `liquidAssetIdFromArgs` guesses "eth"), and a
+    // wrong guess makes close write a $0 row under the wrong asset and ORPHAN the real debt —
+    // collateral goes to 0 while the debt inflates portfolio debt forever.
     const existingMultiplyDebt = (
       await ctx.db
         .query("walletMultiplyBalances")
@@ -1710,16 +1700,15 @@ async function applyProductBucketDelta(
         .collect()
     ).find((row) => row.marketId === marketSlug && row.state === "debt")
     const debtAssetId = existingMultiplyDebt?.assetId ?? assetId
-    // `amount` is a token quantity, not USD. Writing `amount: debtValueUsd` was harmless only
-    // while every debt asset was a ~$1 stablecoin; for an ETH/WBTC-denominated debt the
-    // dashboard's `amount × livePrice` repricing inflated the debt by the token price. Derive
-    // the token amount from the server oracle, keeping USD as the canonical `valueUsd`.
+    // `amount` is a TOKEN QUANTITY, derived from the server oracle, with USD kept as the
+    // canonical `valueUsd`. Writing `amount: debtValueUsd` only works for ~$1 stablecoins; for
+    // ETH/WBTC debt the dashboard's `amount × livePrice` inflates it by the token price.
     const debtPriceUsd = await validatedTokenPriceUsd(ctx, debtAssetId, now)
     const debtAmount = debtPriceUsd && debtPriceUsd > 0 ? debtValueUsd / debtPriceUsd : debtValueUsd
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: debtAssetId,
-      symbol: existingMultiplyDebt?.symbol ?? assetId.toUpperCase(),
+      symbol: existingMultiplyDebt?.symbol ?? canonicalTokenSymbolOrUpper(assetId),
       amount: debtAmount,
       valueUsd: debtValueUsd,
       state: "debt",
@@ -1728,20 +1717,15 @@ async function applyProductBucketDelta(
 }
 
 /**
- * Persist an executed Express/standalone swap as a durable, server-owned transaction.
- *
- * A swap is a pure liquid-balance move (debit input token, credit output token) with no
- * position, so it takes the dedicated path here instead of `recordTransaction`'s
- * position-oriented transition validation. Same ownership + idempotency + rate-limit
- * guarantees. On success, walletLiquidBalances + walletBalances are updated so the dashboard
- * Wallet tab and portfolio liquid legs stay durable. Swaps are USD-neutral at the
- * portfolio-net level, so no portfolio snapshot is appended.
+ * Persist an executed swap. A swap is a pure liquid-balance move (debit input, credit output)
+ * with no position, so it takes this path rather than `recordTransaction`'s position-oriented
+ * transition validation, with the same ownership / idempotency / rate-limit guarantees.
+ * Swaps are USD-neutral at the portfolio-net level, so no portfolio snapshot is appended.
  */
 /**
- * Server-side USD price for a swap leg: the live token oracle (tokenPrices, keyed by lowercase
- * symbol). Returns null when no current, trustworthy server price exists. A successful swap
- * fails closed when either leg is unpriced; otherwise a caller could choose two unknown symbols
- * and mint an arbitrary output from client-supplied values.
+ * Server-side USD price for a swap leg, from the live `tokenPrices` oracle; null when no
+ * trustworthy price exists. A successful swap FAILS CLOSED on an unpriced leg — otherwise a
+ * caller could pick two unknown symbols and mint an arbitrary output from client values.
  */
 export const recordSwap = mutation({
   args: {
@@ -1823,11 +1807,9 @@ export const recordSwap = mutation({
     if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
       throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
     }
-    // Server-authoritative execution: recompute the output + USD from the LIVE oracle via the
-    // shared swap engine, so the client's quoted values never determine the result (no minting,
-    // no client-computed swap). When both legs are priced the engine's output is used for the
-    // balance delta AND the persisted row. Both legs must be priced and the input must exist in
-    // the authenticated wallet; there is no client-valued or missing-balance success path.
+    // Server-authoritative: the output + USD are recomputed from the LIVE oracle via the shared
+    // swap engine and used for both the balance delta and the persisted row, so client quotes
+    // never determine the result. There is no client-valued or missing-balance success path.
     let executedOutputAmount = args.outputAmount
     let executedAmountUsd = args.amountUsd
     if (status === "success") {
@@ -1851,7 +1833,6 @@ export const recordSwap = mutation({
       executedOutputAmount = math.estimatedOutputAmount
       executedAmountUsd = math.amountUsd
     }
-    // Only a successful swap moved value; failed/expired executed nothing.
     const executedUsd6 = status === "success" ? String(Math.round(executedAmountUsd * 1_000_000)) : "0"
     const requestedUsd6 = String(Math.round(args.amountUsd * 1_000_000))
     const hash = args.syntheticTxHash ?? `sim-swap-${args.intentId.slice(0, 8)}-${now.toString(36)}`
@@ -1979,8 +1960,7 @@ export const getTransactionByHash = query({
   args: { wallet: v.string(), hash: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    // Indexed point lookup by (wallet, hash) instead of scanning the wallet's whole
-    // transaction history and post-filtering by hash.
+    // Indexed point lookup by (wallet, hash), never a full history scan + filter.
     const transaction = await ctx.db
       .query("transactions")
       .withIndex("by_wallet_hash", (q) => q.eq("wallet", wallet).eq("syntheticTxHash", args.hash))
@@ -2056,7 +2036,7 @@ async function readSessionBalances(ctx: QueryCtx, wallet: string) {
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect(),
   ])
-  // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
+  // Hydrate collateral/debt in parallel, not in a per-position await loop.
   const hydratedPositions = await Promise.all(
     positions.map(async (position) => {
       const [collateral, debt] = await Promise.all([
@@ -2124,7 +2104,7 @@ export const getPortfolioPageState = query({
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect()
 
-    // Hydrate collateral/debt in parallel (was a sequential per-position loop).
+    // Hydrate collateral/debt in parallel, not in a per-position await loop.
     const hydratedPositions = await Promise.all(
       positions.map(async (position) => {
         const [collateral, debt] = await Promise.all([
@@ -2141,9 +2121,9 @@ export const getPortfolioPageState = query({
       }),
     )
 
-    // Fetch ONLY the catalog rows this wallet's positions reference (the mapper just needs
-    // them for labels), not the entire 173-market / all-pools catalog per authenticated
-    // subscriber. Borrow collateral joins to `pools`; lend/multiply join to `markets`.
+    // Fetch ONLY the catalog rows this wallet's positions reference, not the whole
+    // 173-market catalog per subscriber. Borrow collateral joins `pools`; lend/multiply
+    // join `markets`.
     const poolSlugs = new Set<string>()
     const marketRefs = new Map<string, { scope: "lend" | "multiply"; slug: string }>()
     for (const position of hydratedPositions) {
@@ -2207,10 +2187,8 @@ export const getPortfolioPageState = query({
     const pools = poolRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const markets = marketRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const snapshots = snapshotRows.reverse()
-    // portfolioCurrent and portfolioSnapshots share identical value fields; only the branded _id
-    // differs. Appending the live "current" point to the historical series is intended, so cast
-    // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
-    // green, which CI gates on).
+    // portfolioCurrent and portfolioSnapshots carry identical value fields; only the branded
+    // _id differs, so appending the live "current" point casts past that nominal mismatch.
     if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
     return {
       positions: hydratedPositions,
@@ -2228,11 +2206,10 @@ export const getPortfolioPageState = query({
 
 /** Wallet-scoped portfolio: the snapshot time series + position summary. */
 /**
- * Historical health-factor series for a wallet. `riskSnapshots` are written on
- * every account-touching action (see recordTransaction / recordDeleverage), so the
- * chart resolution matches action density rather than a fixed cadence. Values are
- * shipped as decimal-WAD strings — the dashboard converts them to plain numbers
- * once (WAD → hf) and skips null rows so a debt-free window doesn't render as 0.
+ * Historical health-factor series. `riskSnapshots` are written on every account-touching
+ * action, so resolution follows action density, not a fixed cadence. Values ship as
+ * decimal-WAD strings; the dashboard converts WAD → hf once and skips null rows so a
+ * debt-free window does not render as 0.
  */
 export const getRiskSeries = query({
   args: { wallet: v.string() },
@@ -2271,10 +2248,8 @@ export const getPortfolio = query({
     ])
     const snapshots = snapshotRows.reverse()
     const latest = current ?? snapshots.at(-1) ?? null
-    // portfolioCurrent and portfolioSnapshots share identical value fields; only the branded _id
-    // differs. Appending the live "current" point to the historical series is intended, so cast
-    // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
-    // green, which CI gates on).
+    // portfolioCurrent and portfolioSnapshots carry identical value fields; only the branded
+    // _id differs, so appending the live "current" point casts past that nominal mismatch.
     if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
 
     const netApyPct = await computePortfolioNetApyPct(ctx, positions, walletCollateral)
@@ -2290,15 +2265,13 @@ export const getPortfolio = query({
 })
 
 /**
- * Blended portfolio Net APY for the dashboard, value-weighted by NET equity across the
- * wallet's productive legs — lend (`supplyApyPct`), multiply (`netApyPct`), and borrow
- * (collateral pair APR from `pools`). Home-seed borrow collateral with no live `positions`
- * row is folded in on the same basis. UMBRELLA IS EXCLUDED (own page, not a dashboard
- * figure). Computed read-time, so it always reflects current rates without a stored field.
+ * Blended portfolio Net APY, value-weighted by NET equity across lend (`supplyApyPct`),
+ * multiply (`netApyPct`) and borrow (collateral pair APR from `pools`); home-seed borrow
+ * collateral with no live `positions` row folds in on the same basis. UMBRELLA IS EXCLUDED.
+ * Computed at read time, so it always reflects current rates rather than a stored field.
  */
 export async function computePortfolioNetApyPct(
-  // Only reads `ctx.db`, so it accepts any read context (Ask AI passes a
-  // turn-scoped one).
+  // Only reads `ctx.db`, so it accepts any read context (Ask AI passes a turn-scoped one).
   ctx: Pick<QueryCtx, "db">,
   positions: Array<Doc<"positions">>,
   walletCollateral: Array<Doc<"walletCollateralPositions">>,
@@ -2329,9 +2302,8 @@ export async function computePortfolioNetApyPct(
       .map((pool) => [pool.slug, pool.pairAprPct] as const),
   )
 
-  // Value-weighted by NET equity (collateral − debt), matching how Net Value is built, so the
-  // two headlines tell the same story. UMBRELLA IS EXCLUDED — it is not part of the dashboard
-  // (it has its own page), so it must not contribute to the global Net APY.
+  // Weight by NET equity (collateral − debt), matching how Net Value is built, so the two
+  // headlines agree. UMBRELLA must not contribute to the global Net APY.
   const legs: Array<{ weight: number; rate: number }> = []
   for (const position of open) {
     if (position.product === "lend") {
@@ -2348,14 +2320,14 @@ export async function computePortfolioNetApyPct(
     } else if (position.product === "borrow") {
       const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
       const rate = pairAprBySlug.get(position.marketSlug)
-      // Skip when the pool rate is unknown rather than blending in a fake 0% — an
-      // unresolved slug would otherwise add a large 0%-rate weight and crush the blend.
+      // Skip an unknown pool rate rather than blending a fake 0%, which would add a large
+      // zero-rate weight and crush the blend.
       if (base > 0 && rate != null) legs.push({ weight: base, rate })
     }
     // product === "umbrella": intentionally skipped.
   }
-  // Home-seed borrow collateral not yet represented by a live position — only when its
-  // pool rate resolves (stale/unmatched seed slugs must not drag the blend toward 0%).
+  // Home-seed borrow collateral with no live position, only when its pool rate resolves
+  // (unmatched seed slugs must not drag the blend toward 0%).
   for (const row of walletCollateral) {
     if (liveBorrowSlugs.has(row.marketId)) continue
     const rate = pairAprBySlug.get(row.marketId)
@@ -2368,9 +2340,9 @@ export async function computePortfolioNetApyPct(
 }
 
 /**
- * Open-gate helper: write the first portfolioCurrent/snapshot when home seeds + liquid
- * balances exist but no action has fired appendPortfolioSnapshot yet — so the dashboard
- * chart can read Convex history instead of a synthetic series.
+ * Write the first portfolioCurrent/snapshot when home seeds + liquid balances exist but no
+ * action has fired appendPortfolioSnapshot, so the chart reads Convex history, not a
+ * synthetic series.
  */
 export const ensurePortfolioSnapshot = mutation({
   args: { wallet: v.string() },

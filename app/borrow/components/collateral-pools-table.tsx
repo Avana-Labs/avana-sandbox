@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -28,7 +29,9 @@ import {
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { formatApy } from "@/app/lib/format"
@@ -173,12 +176,12 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   )
 }
 
-// Borrow pools store a single risk ratio (max LTV, which is the collateral
-// factor). Real lending markets sit the liquidation threshold a few points above
-// the collateral factor, so derive a display LT that way — this lets the CF column
-// read like the multiply table's (CF on top, small "LT:" below).
+// Borrow pools store a single risk ratio (max LTV, which is the collateral factor). The
+// liquidation threshold sits a fixed spread above it — derive the display LT through the
+// canonical helper so it matches the credit engine's enforced threshold. This lets the CF
+// column read like the multiply table's (CF on top, small "LT:" below).
 function poolLiquidationThresholdPct(pool: BorrowPoolRow) {
-  return Math.min(97, Math.round(pool.ltv) + 5)
+  return liquidationThresholdPctFromMaxLtvPct(pool.ltv)
 }
 
 // Memoized pool row: router/currency/translation are read from hooks internally, so the
@@ -206,7 +209,15 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         {index + 1}
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CollateralAssetCell pool={pool} />
+        {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
+            navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
+        <Link
+          href={borrowMarketDetailPath(pool.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="block rounded-radius-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <CollateralAssetCell pool={pool} />
+        </Link>
       </td>
       <td
         className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
@@ -223,7 +234,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
           {formatLtvPct(pool.ltv)}
         </div>
         <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
-          {t("LT")}: {poolLiquidationThresholdPct(pool)}%
+          {t("LT")}: {formatLtvPct(poolLiquidationThresholdPct(pool))}
         </div>
       </td>
       <td

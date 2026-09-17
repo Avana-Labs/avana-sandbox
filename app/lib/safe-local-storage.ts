@@ -4,7 +4,7 @@
  * error must degrade gracefully instead of crashing the page.
  */
 
-export function safeGetItem(key: string): string | null {
+function safeGetItem(key: string): string | null {
   if (typeof window === "undefined") return null
   try {
     return window.localStorage.getItem(key)
@@ -31,11 +31,7 @@ export function safeRemoveItem(key: string): void {
   }
 }
 
-/**
- * Read a persisted value and parse it with `parse`. If the stored value is
- * missing or fails to parse (corrupt / outdated schema), drop the bad key and
- * fall back to `fallback()`.
- */
+/** Parse a persisted value; a missing or corrupt one is dropped and `fallback()` used. */
 export function safeReadParsed<T>(key: string, parse: (raw: string) => T, fallback: () => T): T {
   const raw = safeGetItem(key)
   if (raw == null) return fallback()

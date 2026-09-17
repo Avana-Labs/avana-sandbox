@@ -64,7 +64,7 @@ export async function assertSandboxActionContract(
   return { intent, preview, result }
 }
 
-export function assertSandboxExecutionResult(result: SandboxActionResult, intent: TransactionIntent, walletId: string) {
+function assertSandboxExecutionResult(result: SandboxActionResult, intent: TransactionIntent, walletId: string) {
   expect(result.receipt.simulated).toBe(true)
   expect(result.receipt.hash).toMatch(/^sim/)
   expect(result.receipt.status).toBe("success")

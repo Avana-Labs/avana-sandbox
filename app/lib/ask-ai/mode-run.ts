@@ -21,15 +21,9 @@ import {
 } from "./widgets"
 
 /**
- * Deterministic Ask AI mode-run assembly (Phase 2 contract / Phase 3 backend).
- *
- * A "mode" is not a prompt string — it is this: a mode + the run's single snapshot +
- * a typed list of widgets + a typed list of actions. Each `build*Run` composes the
- * widgets and defensive actions for one mode off a single {@link PositionContext}, so
- * the whole answer is reproducible and testable. The model fills `narrative`; every
- * number lives in the widgets/actions, which come only from the engine.
- *
- * Unwired: no Convex table or UI imports this yet.
+ * A "mode" is not a prompt string: it is a mode + the run's single snapshot + typed widgets +
+ * typed actions. Each `build*Run` composes those off one {@link PositionContext}, so the answer
+ * is reproducible. The model fills only `narrative`; every number comes from the engine.
  */
 
 export type AskAiMode = "risk" | "returns" | "stress"
@@ -160,7 +154,7 @@ export function buildReturnsRun(
 // leverage is dominated by liquidation risk, so a Returns run would be misleading.
 const LEVERAGE_PATTERN = /\b(leverage|leveraged|lever|loop|looping|multiply|fold(?:ing)?|recursive)\b/i
 
-export type ModeRoute = { mode: AskAiMode; rerouted: boolean }
+type ModeRoute = { mode: AskAiMode; rerouted: boolean }
 
 /** Deterministically resolve the mode, rerouting leverage questions asked in Returns mode to Risk. */
 export function routeAskAiMode(queryText: string, requestedMode: AskAiMode): ModeRoute {

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { floating, ghostButton, mono, paper } from "@/lib/surfaces"
 import { clamp, pct } from "@/lib/range"
 
-export interface ComposerUsage {
+interface ComposerUsage {
   input: number
   output: number
   total: number

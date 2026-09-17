@@ -7,17 +7,11 @@ import { cn } from "@/lib/utils"
 
 const Dialog = DialogPrimitive.Root
 
-const DialogTrigger = DialogPrimitive.Trigger
-
 const DialogPortal = DialogPrimitive.Portal
 
-const DialogClose = DialogPrimitive.Close
-
-// The one standard scrim for every popup/overlay in the app: a light, see-through
-// tint with a small blur. Keep this the single source of truth — reuse it anywhere
-// a full-screen backdrop is rendered (e.g. the mobile menu sheet) so blurs stay
-// consistent instead of each surface picking its own tint/blur strength.
-export const overlayClassName =
+// The single scrim for every popup/overlay. Reuse it for any full-screen backdrop
+// so tint and blur strength stay consistent across surfaces.
+const overlayClassName =
   "fixed inset-0 z-50 bg-black/25 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
 
 const DialogOverlay = React.forwardRef<
@@ -205,15 +199,4 @@ const DialogDescription = React.forwardRef<
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
-export {
-  Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-}
+export { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription }

@@ -184,6 +184,7 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
         <MarketHeroChart
           feed={feed}
           defaultRange="1M"
+          hideIntradayRange
           gradientId={`multiplyHeroFill-${detail.id}`}
           height={310}
           showMeta={false}

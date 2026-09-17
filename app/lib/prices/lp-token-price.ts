@@ -1,18 +1,11 @@
 /**
- * Canonical Avana LP-collateral valuation: an LP token is worth the weighted sum of its
- * constituent token USD prices.
+ * The SINGLE LP-collateral valuation model: LPPriceUSD = Σ (weightᵢ × TokenPriceUSDᵢ), with
+ * Σ weightᵢ = 1 and any number of constituents. Deliberately NOT the constant-product
+ * 2·√(P0·P1), and no reserves / LP-total-supply derivation.
  *
- *   LPPriceUSD  = Σ (weightᵢ × TokenPriceUSDᵢ)      with  Σ weightᵢ = 1
- *   SuppliedUSD = SuppliedLPAmount × LPPriceUSD
- *
- * This is the SINGLE LP-collateral model for the app. It intentionally does NOT use the
- * constant-product "fair value" 2·√(P0·P1), nor any reserves / LP-total-supply derivation —
- * those were intentionally removed. Weights are the
- * configured pool weights (equal-weight or explicitly weighted), supporting 2, 3, 4+ tokens.
- *
- * If ANY constituent has no valid price, the LP price is `unavailable` — we never emit a
- * number derived from incomplete data. Pricing here is float (a displayed/collateral USD
- * figure); on-chain position math stays in bigint fixed-point (see credit-engine/units.ts).
+ * One unpriced constituent makes the whole LP price `unavailable` — never a number derived
+ * from incomplete data. Float here (display/collateral USD); position math stays bigint
+ * fixed-point (credit-engine/units.ts).
  */
 
 /** A pool constituent with its NORMALIZED weight (fraction of 1). */
@@ -21,7 +14,7 @@ export type WeightedConstituent = { symbol: string; weight: number }
 /** Weights must sum to 1 within this tolerance (float thirds never land exactly on 1). */
 export const WEIGHT_SUM_TOLERANCE = 1e-6
 
-export type LpPriceResult =
+type LpPriceResult =
   { ok: true; priceUsd: number } | { ok: false; reason: "empty" | "weights" | "unpriced"; detail?: string }
 
 /**

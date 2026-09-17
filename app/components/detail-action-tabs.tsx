@@ -3,7 +3,7 @@
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
-export type DetailActionTabItem<T extends string = string> = {
+type DetailActionTabItem<T extends string = string> = {
   id: T
   label: string
 }

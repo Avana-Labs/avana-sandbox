@@ -180,7 +180,9 @@ function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; market
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+          <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>
+            {row.name}
+          </div>
           <div className={TABLE_CELL_SECONDARY}>{detail.protocol}</div>
         </div>
       </div>
@@ -369,7 +371,7 @@ export function sumWalletValueUsd(rows: ReadonlyArray<{ valueUsd: number; source
 
 export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { exact } = useCurrency()
+  const { exact, price } = useCurrency()
   const { t } = useTranslation()
   const borrowSession = useBorrowSessionContextOptional()
   // The Wallet tab shows unallocated/free funds plus product buckets that are available again
@@ -437,6 +439,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
         title={t("Tokens")}
         rows={tokens}
         exact={exact}
+        price={price}
         t={t}
         showBalance={showDollarAmounts}
         basisFor={basisFor}
@@ -457,6 +460,7 @@ function WalletBalanceSection({
   title,
   rows,
   exact,
+  price,
   t,
   showBalance,
   basisFor,
@@ -464,6 +468,7 @@ function WalletBalanceSection({
   title: string
   rows: DashboardWalletBalanceRow[]
   exact: (usd: number) => string
+  price: (usd: number) => string
   t: (key: string) => string
   showBalance: boolean
   basisFor: (assetId: string) => number | undefined
@@ -479,10 +484,10 @@ function WalletBalanceSection({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[27%]" />
-            <col className="w-[20%]" />
-            <col className="w-[27%]" />
+            <col className="w-[33%]" />
+            <col className="w-[19%]" />
             <col className="w-[26%]" />
+            <col className="w-[22%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -513,9 +518,11 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>
+                        {row.name}
+                      </div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                        {row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
+                        {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                       </div>
                     </div>
                   </div>
@@ -558,7 +565,7 @@ function WalletBalanceSection({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <MarketMobileIdentityText
                       title={row.name}
-                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
+                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                     />
                   </div>
                 }

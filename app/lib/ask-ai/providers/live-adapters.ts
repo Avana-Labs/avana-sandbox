@@ -29,7 +29,7 @@ abstract class LiveProvider implements AskAIMarketProvider {
   }
 }
 
-export class DefiLlamaProvider extends LiveProvider {
+class DefiLlamaProvider extends LiveProvider {
   readonly source = "defillama" as const
 
   async fetch(): Promise<AskAIMarketRecord[]> {

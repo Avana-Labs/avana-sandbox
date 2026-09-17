@@ -34,8 +34,8 @@ const catalogSources = createCatalogPageSources({
   mockWalletId: "catalog",
 })
 
-export const mockMultiplyPageAdapter = catalogSources.mockAdapter
-export const liveMultiplyPageAdapter = catalogSources.liveAdapter
+const mockMultiplyPageAdapter = catalogSources.mockAdapter
+const liveMultiplyPageAdapter = catalogSources.liveAdapter
 
 export const mockMultiplyPageSource: MultiplyPageSource = {
   adapter: mockMultiplyPageAdapter,

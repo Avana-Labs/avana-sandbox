@@ -109,6 +109,9 @@ type ActionConfigureStageProps = {
   animateDetails?: boolean
   /** Keep the asset picker interactive even when the amount is read-only (Claim). */
   allowAssetSwitchWhenReadOnly?: boolean
+  /** Reason shown on the CTA when there is no position to act on and the preview is therefore
+   *  null (e.g. "Nothing to repay"). Mapped to a short label via blockedCtaLabel. */
+  emptyReason?: string | null
 }
 
 export function ActionConfigureAmountSection({
@@ -265,6 +268,7 @@ export function ActionConfigureStage({
   deferDetailsUntilAmount = false,
   animateDetails = true,
   allowAssetSwitchWhenReadOnly = false,
+  emptyReason,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
   const configureStage = stage === "error" ? "configure" : stage
@@ -272,7 +276,10 @@ export function ActionConfigureStage({
   // Progressive disclosure (opt-in): keep the risk banner + network-fee row hidden
   // until an amount is entered, so the empty state stays clean.
   const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
-  const blockedReason = preview?.blockedReason ?? null
+  // When there is no position to reduce (e.g. repay with no debt, withdraw with nothing
+  // supplied), the preview is null — surface the caller's reason ("Nothing to repay") on the
+  // CTA instead of the generic "Enter a valid amount", which reads like a bug.
+  const blockedReason = preview?.blockedReason ?? emptyReason ?? null
   const amountEntered = parsePositiveActionAmount(amount) != null
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
@@ -448,7 +455,7 @@ export function ActionConfigureStage({
 
       {preview && showHomeDetails && showDeferredDetails ? (
         <ActionCard>
-          <ActionInfoRow label="Network fee" value={preview.networkFeeLabel} tooltip="fee" />
+          <ActionInfoRow label="Avana Platform Fee" value={preview.networkFeeLabel} tooltip="fee" />
         </ActionCard>
       ) : null}
 
@@ -470,14 +477,12 @@ export function ActionConfigureStage({
             disabled={primaryDisabled}
             className={primaryCtaClass({
               disabled: primaryDisabled,
-              pending: isPending || stage === "wallet_sign" || stage === "approve_allowance",
+              pending: isPending,
               className: "mt-1",
             })}
             data-testid="action-footer-primary"
           >
-            {isPending || stage === "wallet_sign" || stage === "approve_allowance"
-              ? t("Processing…")
-              : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
+            {isPending ? t("Processing…") : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
           </button>
         ) : (
           <ActionFooter
@@ -488,7 +493,7 @@ export function ActionConfigureStage({
             onSecondary={onSecondary}
             secondaryHref={secondaryHref}
             primaryDisabled={primaryDisabled}
-            primaryPending={isPending || stage === "wallet_sign" || stage === "approve_allowance"}
+            primaryPending={isPending}
             sticky
           />
         )

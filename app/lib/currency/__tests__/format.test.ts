@@ -2,10 +2,33 @@ import { describe, expect, it } from "vitest"
 import {
   currencyContext,
   convertFromUsd,
+  formatActivityTokenAmount,
   formatCompactCurrency,
   formatExactCurrency,
   redenominateCompactUsd,
 } from "@/app/lib/currency/format"
+
+describe("formatActivityTokenAmount", () => {
+  it("de-fuzzes reconstructed round-number amounts to a clean value (no false precision)", () => {
+    // A 100 USDC supply reconstructs from USD to 100.0135; a 50 USDC withdraw to 50.01; a 1 GHO
+    // withdraw to 1.0004 — all must read clean, not with a trailing cent of drift.
+    expect(formatActivityTokenAmount(100.0135, "USDC")).toBe("100 USDC")
+    expect(formatActivityTokenAmount(50.01, "USDC")).toBe("50 USDC")
+    expect(formatActivityTokenAmount(1.0004, "GHO")).toBe("1 GHO")
+    expect(formatActivityTokenAmount(37_503.9557, "USDG")).toBe("37,504 USDG")
+  })
+
+  it("keeps genuinely fractional balances legible (3 significant figures under 1,000)", () => {
+    expect(formatActivityTokenAmount(0.493175, "cbBTC")).toBe("0.493 cbBTC")
+    expect(formatActivityTokenAmount(15.5215, "ETH")).toBe("15.5 ETH")
+    // A large deposit keeps its full integer part rather than collapsing to 3 figures.
+    expect(formatActivityTokenAmount(229_254.31, "ARB")).toBe("229,254 ARB")
+  })
+
+  it("handles non-finite input", () => {
+    expect(formatActivityTokenAmount(Number.NaN, "ETH")).toBe("0 ETH")
+  })
+})
 
 describe("currency formatting", () => {
   it("USD is identity", () => {

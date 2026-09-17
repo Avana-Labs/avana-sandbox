@@ -1,10 +1,7 @@
 /**
- * Maps an in-browser sandbox transaction (the Credit Engine's result, surfaced as a
- * `TransactionHistoryItem`) onto the args for the Convex `recordTransaction` mutation.
- *
- * Per the phase-2 brief: the Credit Engine stays the simulation; Convex *persists* the
- * result. Money crosses the wire as a decimal usd6 string (see the schema encoding
- * contract). This module is pure so the mapping is unit-tested without a Convex client.
+ * Maps a sandbox `TransactionHistoryItem` onto Convex `recordTransaction` args: the Credit
+ * Engine simulates, Convex persists. Money crosses the wire as a decimal usd6 string per the
+ * schema encoding contract. Pure, so the mapping is unit-tested without a Convex client.
  */
 
 import type { SandboxActionResult, TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
@@ -14,7 +11,7 @@ import { RAY, TOKEN_SCALE } from "@/app/lib/credit-engine/units"
 import { getSwapAsset } from "@/app/lib/swap-system/catalog"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 
-export type RecordTransactionArgs = {
+type RecordTransactionArgs = {
   wallet: string
   intentId: string
   product: "borrow" | "lend" | "multiply"
@@ -113,12 +110,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     ? result.state.markets?.[marketSlug]?.collateralAsset.symbol.toLowerCase()
     : undefined
 
-  // A successful close DELETES the position from engine state (multiply-engine/actions.ts), so
-  // it can no longer be read back here. Without an explicit payload, recordTransaction skips its
-  // position-close branch and the server row stays status:"open" forever — a closed position
-  // that resurrects on reload / in a second tab, carrying stale debt and a phantom liquidation
-  // price. Emit an explicit closed payload so the server marks the row closed (sets closedAt)
-  // and releases the position's liquidity.
+  // A successful close DELETES the position from engine state, so it can't be read back here.
+  // Without an explicit closed payload recordTransaction skips its close branch and the server
+  // row stays status:"open" forever — the position resurrects on reload with stale debt.
   const closedByDelete = !position && item.status === "success" && item.kind === "close" && Boolean(marketSlug)
   const amountUsd =
     item.kind === "deleverage" && result.preview
@@ -140,12 +134,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     multiplierAfter: item.multiplierAfter,
     position: position
       ? {
-          // A multiply position that still exists in engine state is OPEN — including a fully
-          // deleveraged 1x/$0 position, which the engine intentionally keeps (see
-          // multiply-system sequence-consistency test). "Closed" is signalled by DELETION (the
-          // close action → closedByDelete above). Inferring "closed" from multiplier<=1 here
-          // diverged from local state: the dashboard showed an open 1x position while the server
-          // row was marked closed, flip-flopping on reload.
+          // A position still present in engine state is OPEN, including a fully deleveraged
+          // 1x/$0 one the engine deliberately keeps. "Closed" is signalled ONLY by deletion
+          // (closedByDelete above); inferring it from multiplier <= 1 diverges from local state.
           status: "open",
           marketSlug: position.marketId,
           assetId: collateralAssetId,
@@ -186,7 +177,7 @@ function usd6ToNumber(value: bigint): number {
  * idempotency key is the item's intentId, so replays (reloads, double sends) collapse
  * onto one row server-side.
  */
-export function borrowHistoryItemToRecordArgs(item: TransactionHistoryItem, wallet: string): RecordTransactionArgs {
+function borrowHistoryItemToRecordArgs(item: TransactionHistoryItem, wallet: string): RecordTransactionArgs {
   return {
     wallet,
     intentId: item.intentId,
@@ -270,7 +261,7 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
   }
 }
 
-export type RecordSwapArgs = {
+type RecordSwapArgs = {
   wallet: string
   intentId: string
   status: "success" | "failed" | "pending"
@@ -295,7 +286,7 @@ export type RecordSwapArgs = {
  * Map an executed swap onto the Convex `recordSwap` args, or `null` for a non-terminal
  * record (approval gate / in-flight) that isn't a persistable outcome. The idempotency key
  * is the client swap id, so a replay returns the existing row. amountUsd is the input leg's
- * USD value (the server zeroes it for a non-success status). (#15)
+ * USD value (the server zeroes it for a non-success status).
  */
 export function swapRecordToRecordSwapArgs(record: SwapTransactionRecord, wallet: string): RecordSwapArgs | null {
   const status: RecordSwapArgs["status"] | null =

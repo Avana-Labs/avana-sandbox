@@ -16,10 +16,6 @@ export function calculateSafeMaxMultiplier(params: {
   return Math.min(params.publicMaxMultiplier, params.theoreticalMaxMultiplier, hfBased)
 }
 
-export function calculateTotalExposure(initialCollateralValueUsd: number, selectedMultiplier: number): number {
-  return initialCollateralValueUsd * selectedMultiplier
-}
-
 export function calculateMultiplyLtv(debtValueUsd: number, collateralValueUsd: number): number {
   if (collateralValueUsd <= 0) return 0
   return debtValueUsd / collateralValueUsd
@@ -74,9 +70,8 @@ export function calculatePriceImpact(params: {
   collateralValueUsd: number
 }): number {
   const multiplierImpact = Math.max(0, params.multiplier - 1) * 0.0005
-  // Clamp the whole liquidity term, not just the ratio: a position that is a large
-  // fraction of available liquidity should add up to ~1% impact, not a value capped
-  // at 0.01 * 0.002 = 0.002% regardless of size.
+  // Clamp the whole liquidity term, not just the ratio, so a position that is a large
+  // fraction of available liquidity reaches ~1% impact instead of capping at 0.002%.
   const liquidityImpact =
     params.availableLiquidityUsd > 0
       ? Math.min(0.01, (params.collateralValueUsd / params.availableLiquidityUsd) * 0.002)
@@ -99,7 +94,7 @@ export function calculateLoopSteps(maxLtv: number, targetMultiplier: number): nu
   return Math.max(1, Math.ceil(Math.log(targetMultiplier) / Math.log(stepFactor)))
 }
 
-export type CollateralLoopResult = {
+type CollateralLoopResult = {
   collateralUsd: number
   debtUsd: number
   loops: number
@@ -181,10 +176,8 @@ export function simulateDeleverageToTarget(params: {
 
   const equity = collateral - debt
   if (targetMultiplier <= 1) {
-    // A full deleverage repays debt by selling collateral. Leaving collateral unchanged
-    // while setting debt to zero falsely increases equity by the debt amount; the Convex
-    // ledger then (correctly) interprets that as a new wallet-funded Multiply deposit and
-    // rejects the write when no extra wallet balance exists.
+    // A full deleverage must sell collateral to repay. Zeroing debt without reducing collateral
+    // inflates equity, which the Convex ledger reads as a wallet-funded deposit and rejects.
     const repayUsd = Math.min(debt, collateral * Math.max(swapEfficiency, 0.0001))
     const collateralUnwoundUsd = repayUsd / Math.max(swapEfficiency, 0.0001)
     return {
@@ -215,16 +208,4 @@ export function simulateDeleverageToTarget(params: {
     debtRepaidUsd,
     collateralUnwoundUsd,
   }
-}
-
-export function isCorrelatedPair(collateralSymbol: string, borrowSymbol: string): boolean {
-  const ethFamily = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH"])
-  const btcFamily = new Set(["WBTC", "CBBTC", "BTC"])
-  const stableFamily = new Set(["USDC", "USDT", "DAI", "GHO", "CRVUSD", "EURC"])
-  const collateral = collateralSymbol.toUpperCase()
-  const borrow = borrowSymbol.toUpperCase()
-  if (ethFamily.has(collateral) && ethFamily.has(borrow)) return true
-  if (btcFamily.has(collateral) && btcFamily.has(borrow)) return true
-  if (stableFamily.has(collateral) && stableFamily.has(borrow)) return true
-  return false
 }

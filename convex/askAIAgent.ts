@@ -31,16 +31,14 @@ export { ASK_AI_AGENT_INSTRUCTIONS }
 
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-// Model tiers. The fast tier serves greetings, prices, pools, and education;
-// the reasoning tier is reserved for risk/borrow/stress analysis. FAST_MODEL
-// defaults explicitly to Luna when ASK_AI_FAST_MODEL is not configured.
+// Model tiers: fast serves greetings, prices, pools and education; reasoning is reserved for
+// risk/borrow/stress analysis. FAST_MODEL defaults to Luna when ASK_AI_FAST_MODEL is unset.
 const REASONING_MODEL = process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel
 const FAST_MODEL = process.env.ASK_AI_FAST_MODEL?.trim() || ASK_AI_CONFIG.fastModel
 
 const ASK_AI_TOOLS = {
-  // Provider-executed tools do not have a local execute handler; the Agent's
-  // ToolSet constraint currently assumes one even though the Responses model
-  // accepts this tool directly.
+  // Provider-executed tools have no local execute handler, but the Agent's ToolSet constraint
+  // assumes one even though the Responses model accepts this tool directly.
   web_search: openai.tools.webSearch({ searchContextSize: "low" }) as never,
   search_avana_knowledge: searchAvanaKnowledgeTool,
   read_portfolio: readPortfolioTool,
@@ -58,8 +56,7 @@ function createAskAIAgent(model: string): Agent {
     name: ASK_AI_CONFIG.agentName,
     languageModel: openai(model),
     instructions: ASK_AI_AGENT_INSTRUCTIONS,
-    // Per-turn `stopWhen` (see generateTurn) overrides this ceiling downward;
-    // it stays here as the safety cap for any other caller.
+    // Per-turn `stopWhen` overrides this downward; it remains the cap for other callers.
     stopWhen: stepCountIs(ASK_AI_CONFIG.maxToolSteps),
     tools: ASK_AI_TOOLS,
   })
@@ -178,8 +175,7 @@ function compactPortfolioContext(payload: unknown) {
             assetId,
             suppliedUsd,
             cooldownUsd,
-            // Dropping these made "how much have I earned staking?" and
-            // "have I been slashed?" unanswerable from the model context.
+            // Dropping these makes earnings and slash questions unanswerable from context.
             earnedUsd,
             slashedUsd,
             supplyApyPct,
@@ -209,9 +205,8 @@ export function focusPortfolioPayload<T>(payload: T, prompt: string): T {
     dataProvenance: record.dataProvenance,
     wallet: record.wallet,
     focus: "umbrella",
-    // Keep the portfolio-wide figures: a staking question is still often
-    // "how much do I have in total, including staking", and dropping
-    // netValueUsd here left that unanswerable.
+    // Keep the portfolio-wide figures: a staking question often also asks for the total,
+    // which is unanswerable without netValueUsd.
     totals: {
       umbrellaUsd: totals.umbrellaUsd,
       umbrellaEarnedUsd: totals.umbrellaEarnedUsd,
@@ -280,9 +275,8 @@ function askAIWebSourceDomain(url: string): string {
   }
 }
 
-// Web-search citations (from the provider-executed openai.tools.webSearch tool) arrive on each
-// step's `sources` as { sourceType: 'url', url, title }. Map them into the Sources-card shape so
-// a user can follow where a web-grounded answer came from — these were previously discarded.
+// Web-search citations arrive on each step's `sources` as { sourceType: 'url', url, title };
+// map them into the Sources-card shape so a web-grounded answer is traceable.
 function askAIWebSources(steps: readonly unknown[]): AskAISource[] {
   return steps.flatMap((step) => {
     const stepSources = (step as { sources?: unknown }).sources
@@ -301,8 +295,7 @@ function askAIWebSources(steps: readonly unknown[]): AskAISource[] {
   })
 }
 
-// Collapse repeated citations (web search can return the same URL more than once, and a web hit
-// can coincide with a knowledge source) so the card shows each source once.
+// Collapse repeats: web search can return a URL twice, or coincide with a knowledge source.
 function dedupeAskAISources(sources: AskAISource[]): AskAISource[] {
   const seen = new Set<string>()
   return sources.filter((source) => {
@@ -316,9 +309,8 @@ function dedupeAskAISources(sources: AskAISource[]): AskAISource[] {
 const ASK_AI_ERROR_CODES = ["ASK_AI_GENERATION_FAILED", "ASK_AI_RATE_LIMITED", "ASK_AI_UNAVAILABLE"] as const
 type AskAIErrorCode = (typeof ASK_AI_ERROR_CODES)[number]
 
-// Only ConvexErrors carrying our { code, message } contract are user-safe to
-// re-throw verbatim; everything else is classified and sanitized below so no
-// function name, request id, or stack leaks to the client.
+// ONLY a ConvexError carrying our { code, message } contract is user-safe to re-throw verbatim;
+// everything else is classified and sanitized so no function name, request id or stack leaks.
 function isCodedAskAIError(error: unknown): error is ConvexError<{ code: AskAIErrorCode; message: string }> {
   return (
     error instanceof ConvexError &&
@@ -370,9 +362,9 @@ export const generateTurn = internalAction({
     } catch (error) {
       throw toClientAskAIError(error)
     }
-    // Route the turn to the smallest capable tool subset + model tier + step
-    // budget. Classified server-side from the prompt (never a client arg) so a
-    // simple price question can't be coerced into loading every tool.
+    // Route to the smallest capable tool subset + model tier + step budget. Classified
+    // SERVER-SIDE from the prompt, never a client arg, so a simple price question cannot be
+    // coerced into loading every tool.
     const route = routeAskAITurn(turn.prompt)
     const { model: turnModel } = ASK_AI_AGENTS[route.modelTier]
     let prefetched: PrefetchedTurnData | undefined
@@ -412,12 +404,10 @@ export const generateTurn = internalAction({
     })
     try {
       if (aaveTool) {
-        // Resolve the routed read's arguments from the prompt and execute it
-        // here, so the turn answers in ONE model call like every other data
-        // intent (see the borrow_simulation note below). Without this the model
-        // spends a step choosing arguments and a second step writing the answer,
-        // and it is the model that sends unusable values such as a chain name as
-        // `marketName`. Falls back to the model when arguments can't be resolved.
+        // Resolve the routed read's arguments from the prompt and run it here so the turn
+        // answers in ONE model call. Letting the model choose arguments costs an extra step
+        // and produces unusable values (a chain name as `marketName`). Falls back to the model
+        // when the arguments cannot be resolved.
         const aaveArgs = aaveToolArgsFromPrompt(aaveTool, turn.prompt)
         if (aaveArgs) {
           const aaveRead = turnTools[aaveTool] as unknown as {
@@ -427,8 +417,8 @@ export const generateTurn = internalAction({
             toolCallId: `prefetch-${aaveTool}`,
             messages: [],
           })
-          // The chart's raw points stay out of the model context; the envelope
-          // already carries first/last/min/max for the sentence it writes.
+          // Raw chart points stay out of the model context; the envelope carries
+          // first/last/min/max for the sentence it writes.
           const { visual: _visual, ...modelContext } = (payload ?? {}) as Record<string, unknown>
           const provenance = (payload as { dataProvenance?: unknown } | null)?.dataProvenance
           prefetched = {
@@ -460,8 +450,7 @@ export const generateTurn = internalAction({
           modelContext: compactMarketContext(payload),
         }
       } else if (route.tools.includes("read_engine_snapshot")) {
-        // Keep the single-call shape: resolve the projection window from the
-        // prompt rather than spending a model step on it.
+        // Resolve the projection window from the prompt rather than spending a model step.
         const lendProjectionDays = /\bweek\b/i.test(turn.prompt) ? 7 : /\bmonth\b/i.test(turn.prompt) ? 30 : 365
         const payload = await ctx.runQuery(internal.askAITools.engineSnapshotForTurn, {
           turnId: turn.turnId,
@@ -525,9 +514,8 @@ export const generateTurn = internalAction({
         }
       } else if (route.intent === "borrow_simulation") {
         const payload = await ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId: turn.turnId })
-        // A guest cannot run a position simulation. Resolve that before the
-        // model so it returns one helpful answer instead of a read tool call,
-        // another model step, a simulation call, and a final model step.
+        // A guest cannot run a position simulation; resolve that before the model so it
+        // returns one answer instead of four steps.
         if (payload.walletRequired) {
           prefetched = {
             toolName: "read_borrow_capacity",
@@ -538,8 +526,8 @@ export const generateTurn = internalAction({
         }
       } else if (route.intent === "stress_test") {
         const payload = await ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId: turn.turnId })
-        // As above, fail fast for a guest before exposing the multi-step stress
-        // tool path. Authenticated users still reach the deterministic engine.
+        // Fail fast for a guest before the multi-step stress path; authed users still reach
+        // the deterministic engine.
         if (payload.walletRequired) {
           prefetched = {
             toolName: "read_position_risk",
@@ -584,10 +572,9 @@ export const generateTurn = internalAction({
               ...askAIRequestPolicy(),
             },
           },
-          // Force the selected read only for the first model step. Keeping a
-          // named tool forced after its result makes Responses models continue
-          // producing commentary instead of completing the answer, eventually
-          // stopping at the output limit. Later steps must be free to answer.
+          // Force the selected read for the FIRST step only. A named tool left forced after
+          // its result makes Responses models keep producing commentary until the output
+          // limit instead of completing the answer.
           toolChoice: prefetched ? "none" : route.tools.length > 0 ? "auto" : "none",
           prepareStep: ({ stepNumber }) => ({
             toolChoice: prefetched ? "none" : toolChoiceForAskAIStep(route, stepNumber),
@@ -648,9 +635,8 @@ export const generateTurn = internalAction({
             ]
           : []),
       ])
-      // One entry per financial tool call the model actually made. `payload` is
-      // the tool's structured result verbatim; `dataProvenance` is read
-      // defensively because Lane D adds it to the tool output separately.
+      // One entry per financial tool call made. `payload` is the tool's result verbatim;
+      // `dataProvenance` is read defensively because it is added separately.
       const financialResults = [
         ...(prefetched?.financialKind
           ? [
@@ -678,9 +664,8 @@ export const generateTurn = internalAction({
           }),
         ),
       ]
-      // Retrieval passages for the RetrievalChunks card. The RAG tool output
-      // exposes per-passage `sources` (title + locator); read `entries`/`text`/
-      // `score` defensively so richer output populates them without inventing.
+      // Retrieval passages for the RetrievalChunks card. `entries`/`text`/`score` are read
+      // defensively so richer tool output populates them without inventing values.
       const retrievalChunks = ragResults.flatMap((ragResult) => {
         const rows = Array.isArray(ragResult.entries)
           ? ragResult.entries
@@ -698,8 +683,8 @@ export const generateTurn = internalAction({
           return [{ title, locator, text, ...(score !== undefined ? { score } : {}) }]
         })
       })
-      // Only surface the price chart when the user actually asked about price,
-      // value, or a trend/chart, never for a question that merely named a token.
+      // Surface the price chart only for a price/value/trend question, never one that merely
+      // named a token.
       const wantsPriceVisual =
         /\b(price|prices|worth|cost|value|quote|chart|charts|graph|graphs|trend|trends|history|historical|over time|performance|movement|1d|24h|7d|30d)\b/i.test(
           turn.prompt,
@@ -745,9 +730,8 @@ export const generateTurn = internalAction({
             },
           ]
         })[0]
-      // Deterministic mode-run (flag-gated). buildModeRunForTurn returns null on any miss
-      // (feature off, no mode intent, no wallet/position); the try/catch guarantees a
-      // mode-run can never break the chat answer.
+      // Flag-gated deterministic mode-run. buildModeRunForTurn returns null on any miss, and
+      // the try/catch guarantees a mode-run can never break the chat answer.
       let modeRun: AskAiRun | null = null
       if (askAiModeRunsEnabled()) {
         try {

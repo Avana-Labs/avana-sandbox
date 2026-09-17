@@ -213,6 +213,7 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
         <MarketHeroChart
           feed={feed}
           defaultRange="1M"
+          hideIntradayRange
           gradientId={`poolHeroFill-${detail.id}`}
           height={310}
           showMeta={false}

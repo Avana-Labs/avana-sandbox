@@ -1,44 +1,31 @@
 /**
- * Guard for the reactive WalletHydrator (H19).
+ * Guard for the reactive WalletHydrator.
  *
- * The Convex `getSessionState` query re-emits on every write, and each emit fully
- * REPLACES the local position/history set in every session. A user's just-submitted
- * (optimistic) edit lives locally the instant it executes, but its Convex write only
- * shows up in a LATER re-emit. A re-emit that arrived in between — i.e. one that
- * predates the optimistic write — would clobber that in-flight edit (flicker / lost
- * state) if applied.
- *
- * This is the intent-keyed equivalent of the borrow session's `persistedAt` cross-tab
- * guard: an incoming snapshot is only safe to apply once it contains every optimistic
- * intent the client already knows about. If any locally-known intent is still missing,
- * the snapshot is stale for this client and must be skipped until it catches up.
+ * `getSessionState` re-emits on every write and each emit fully REPLACES the local
+ * position/history set. A snapshot that predates a just-submitted optimistic edit would clobber
+ * it, so a snapshot is only safe to apply once it contains every optimistic intent the client
+ * knows about. Intent-keyed equivalent of the borrow session's `persistedAt` cross-tab guard.
  */
 
 /** Snapshot shape we need from `getSessionState` — just the intent ids of its rows. */
-export type HydrationSnapshot = {
+type HydrationSnapshot = {
   transactions: ReadonlyArray<{ intentId?: string | null }>
 }
 
 /**
- * How long an optimistic intent may gate hydration before it is assumed never-landing.
- *
- * A write round-trips through Convex in well under a second, so any intent still missing from
- * a re-emit after this window is treated as rejected/lost (STALE_WRITE, RATE_LIMITED, dropped
- * persist, …) rather than in-flight. This bounds a "poison" intent's blast radius to a brief,
- * self-correcting flicker instead of a PERMANENT hydration freeze that pins the tab on stale
- * positions/balances forever.
+ * How long an optimistic intent may gate hydration before it is assumed never-landing. A write
+ * round-trips well under a second, so anything still missing after this window is treated as
+ * rejected/lost — bounding a poison intent to a brief flicker instead of a permanent freeze.
  */
 export const HYDRATION_GATE_TTL_MS = 30_000
 
 /** Local history item shape the gate needs: its intent id, status, and submit time. */
-export type PendingHydrationItem = { intentId: string; status: string; timestamp: number }
+type PendingHydrationItem = { intentId: string; status: string; timestamp: number }
 
 /**
- * The subset of local intent ids that should gate hydration: RECENT, non-failed optimistic
- * writes. Failed/rejected actions never keep a durable server row, so they must not gate (a
- * best-effort-persisted failure or an unpersisted one would otherwise block every future
- * re-emit). Intents older than `ttlMs` are dropped for the same reason. This is what keeps a
- * never-persisted intent from freezing the WalletHydrator (see the effect that calls it).
+ * The local intent ids that should gate hydration: recent, non-failed optimistic writes. Failed
+ * actions keep no durable server row and intents older than `ttlMs` may never land, so neither
+ * may gate — otherwise they freeze the WalletHydrator permanently.
  */
 export function pendingHydrationIntentIds(
   items: Iterable<PendingHydrationItem>,

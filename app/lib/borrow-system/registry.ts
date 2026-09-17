@@ -9,7 +9,7 @@ import {
   type BorrowableAssetCategory,
 } from "@/app/lib/borrow-sim"
 
-export type BorrowBaseAssetDefinition = {
+type BorrowBaseAssetDefinition = {
   id: string
   symbol: string
   name: string
@@ -20,7 +20,7 @@ export type BorrowBaseAssetDefinition = {
   hasWalletBalance: boolean
 }
 
-export type BorrowSpokeRecord = BorrowSpoke & {
+type BorrowSpokeRecord = BorrowSpoke & {
   slug: string
   collateralMarketIds: string[]
   borrowableIds: string[]
@@ -202,10 +202,6 @@ function buildRegistry() {
 }
 
 const registry = buildRegistry()
-
-export function listBaseBorrowAssets() {
-  return [...registry.baseAssets]
-}
 
 export function listBorrowSpokes() {
   return [...registry.spokes]

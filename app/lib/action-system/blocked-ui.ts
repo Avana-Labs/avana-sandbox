@@ -1,13 +1,11 @@
-export type BlockedCta = {
+type BlockedCta = {
   /** Short, button-sized label describing why the action can't proceed. */
   label: string
 }
 
 /**
- * Map a block reason — raw engine text or a humanized string from
- * `humanizeBlockedReason` — to a short primary-button label (Uniswap-style).
- * The gate lives on the CTA (disabled + short reason) plus an inline
- * ActionOutcomeBanner. Redirect CTAs for prerequisites were removed.
+ * Map a block reason (raw engine text or a `humanizeBlockedReason` string) to a short
+ * primary-button label. The gate lives on the CTA itself, not a dialog.
  *
  * `symbol` is the asset the action spends, used for balance messages.
  */
@@ -56,6 +54,9 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
   if (r.includes("no deposited position") || r.includes("position does not exist")) {
     return { label: "Nothing to withdraw" }
   }
+  if (r.includes("nothing to repay") || r.includes("no debt")) return { label: "Nothing to repay" }
+  if (r.includes("nothing to remove")) return { label: "Nothing to remove" }
+  if (r.includes("nothing to withdraw")) return { label: "Nothing to withdraw" }
   if (r.includes("positive") || r.includes("greater than zero")) return { label: "Enter an amount" }
 
   // Non-alarming catch-all — most remaining blocks are "amount is too big".

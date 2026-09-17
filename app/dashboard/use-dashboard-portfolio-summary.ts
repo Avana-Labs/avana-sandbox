@@ -24,7 +24,7 @@ import {
 import { sumWalletValueUsd } from "@/app/dashboard/dashboard-wallet-tab"
 import { blendEquityWeightedNetApyPct, resolveDashboardNetApyPct } from "@/app/dashboard/portfolio-headline-metrics"
 
-export type DashboardPortfolioSummary = {
+type DashboardPortfolioSummary = {
   /** Net Portfolio Value (Assets − Debt), aggregated across products. Umbrella excluded. */
   netValueUsd: number
   /** Value-weighted blended Net APY. Umbrella excluded. */
@@ -34,44 +34,44 @@ export type DashboardPortfolioSummary = {
 }
 
 /**
- * Global Net Value = the signed sum of the wallet's canonical product balances
- * (walletLiquid + lend + borrow + multiply buckets), with debt rows negative.
- * Non-LP tokens are valued off the live oracle (`priceFor`); LP rows carry the
- * live-repriced basis productBalances now returns (convex/wallet/productBalances.ts
- * reprices collateral LP at the pool's live price). Umbrella is NEVER part of
- * productBalances, so it is excluded by construction — Umbrella lives on its own page.
- *
- * Reconciliation, precisely: the Wallet card + Wallet tab read this exact
- * `productBalances` source. The Lend / Borrow / Multiply tabs compute their own net
- * figures from the client session read-models (credit-engine / multiply / lend state)
- * — which are HYDRATED from this same productBalances query (see
- * ConvexAvanaSessionsProvider), so they share an origin but re-derive on the client.
- * They should reconcile, but are NOT identical by construction; the aggregation
- * invariant (hero == Σ product nets) is pinned by dashboard-net-value-parity.test.ts.
+ * Global Net Value = signed sum of the wallet's product balances, debt rows negative.
+ * Umbrella is never in productBalances, so it is excluded by construction. The product
+ * tabs re-derive their own nets client-side from the same source, so they reconcile but
+ * are not identical; the `hero == Σ product nets` invariant is pinned by
+ * dashboard-net-value-parity.test.ts.
  */
-/**
- * Widest gap tolerated between a row's IMPLIED unit price (`valueUsd / amount`) and the live
- * oracle price before we stop trusting `amount` as a token quantity. Mirrors the LP reprice
- * drift band in convex/wallet/productBalances.ts: a genuine intra-session price move is
- * bounded, while a units mismatch is orders of magnitude off.
- */
-export const AMOUNT_TRUST_DRIFT_BAND = { min: 0.1, max: 10 } as const
 
 /**
- * True when `row.amount` can be trusted as a TOKEN QUANTITY and repriced live.
+ * Widest gap tolerated between a row's implied unit price (`valueUsd / amount`) and the
+ * live oracle price before `amount` stops being trusted as a token quantity. A real
+ * intra-session price move is bounded; a units mismatch is orders of magnitude off.
+ */
+const AMOUNT_TRUST_DRIFT_BAND = { min: 0.1, max: 10 } as const
+
+/** How far a live price may sit from $1 and still count as peg-like (reprice is harmless). */
+const AMOUNT_USD_PEG_TOLERANCE = 0.05
+
+/**
+ * True when `row.amount` can be trusted as a token quantity and repriced live.
  *
- * Several writers store a USD figure in `amount` instead of a token count — the multiply debt
- * row writes `amount: debtValueUsd` outright, and `adjustProductBalanceUsd` falls back to
- * `priceUsd = 1` whenever it CREATES a row, so the first deposit/borrow into a market with no
- * existing row lands USD in `amount`. Repricing those as `amount × livePrice` multiplies the
- * position by the token price: a verified 1 AAVE ($120.18) lend deposit contributed $14,443 to
- * Net Value. The stored `valueUsd` is correct in every one of those cases, so fall back to it
- * whenever the implied unit price and the live price disagree beyond a plausible drift band.
+ * Some writers store USD in `amount` instead of a token count: the multiply debt row
+ * writes `amount: debtValueUsd`, and `adjustProductBalanceUsd` uses `priceUsd = 1` when it
+ * CREATES a row, so a first deposit into a market lands USD there. Repricing those as
+ * `amount × livePrice` multiplies the position by the token price (1 AAVE lend deposit
+ * contributed $14,443). The stored `valueUsd` is correct in those cases, so fall back to it.
+ *
+ * Detection: such rows have an implied unit price of exactly 1. A real token implies its
+ * own price, and a ~$1 token's live price is also ≈1 (harmless). So implied ≈1 with live
+ * NOT ≈1 means USD-in-amount for any token — this catches sub-$10 tokens whose price sits
+ * inside the drift band, which the band alone let through.
  */
 function amountIsTokenDenominated(amount: number, valueUsd: number, livePriceUsd: number): boolean {
   if (!(amount > 0) || !(valueUsd > 0)) return false
   const impliedPriceUsd = valueUsd / amount
   if (!Number.isFinite(impliedPriceUsd) || impliedPriceUsd <= 0) return false
+  const impliedIsUsdLike = Math.abs(impliedPriceUsd - 1) < 1e-4
+  const liveIsUsdLike = Math.abs(livePriceUsd - 1) <= AMOUNT_USD_PEG_TOLERANCE
+  if (impliedIsUsdLike && !liveIsUsdLike) return false
   const scale = livePriceUsd / impliedPriceUsd
   if (!Number.isFinite(scale)) return false
   return scale >= AMOUNT_TRUST_DRIFT_BAND.min && scale <= AMOUNT_TRUST_DRIFT_BAND.max

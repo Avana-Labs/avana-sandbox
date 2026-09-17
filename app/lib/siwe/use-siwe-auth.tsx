@@ -5,11 +5,9 @@ import { fetchSiweAccessToken, getSiweSession, hydrateSiweSession, subscribeSiwe
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 /**
- * The session the SERVER verified from the `avana_siwe` cookie for this request (root layout).
- * It is the store's server/hydration snapshot: SSR and the first client render already read
- * "signed in as X" instead of "unknown", so signed-in users never hydrate through a signed-out
- * frame and guests get the guest tree from the first byte. Context (not module state) because
- * the server renders many requests in one process.
+ * The session the SERVER verified from the `avana_siwe` cookie, used as the store's hydration
+ * snapshot so signed-in users never hydrate through a signed-out frame. MUST be context, not
+ * module state — the server renders many requests in one process.
  */
 const ServerSiweSessionContext = createContext<SiweSession | null>(null)
 
@@ -27,16 +25,10 @@ export function useSiweToken(): SiweSession | null {
 const noopSubscribe = () => () => {}
 
 /**
- * `false` on the server and on the FIRST client (hydration) render, then `true`.
- * SIWE session metadata is read from a client store whose server snapshot is `null`,
- * so during hydration every gate reads as "signed out". This flag lets the gate
- * hold a neutral placeholder in that window instead of flashing the onboarding
- * screen at an already-signed-in user before their session resolves.
- *
- * Unlike a `useState`+`useEffect` mounted flag, this returns `true` immediately on
- * any later remount (only the true hydration pass uses the server snapshot), so it
- * does NOT re-introduce a placeholder flash when a parent boundary remounts the
- * gate (e.g. the currency switcher).
+ * `false` on the server and the FIRST client render, then `true`. Gates hold a neutral
+ * placeholder in that window instead of flashing onboarding at a signed-in user, since the
+ * session store's server snapshot is `null`. Unlike a `useState`+`useEffect` mounted flag this
+ * returns `true` immediately on any later remount, so a remounting parent can't reflash.
  */
 export function useHydrated(): boolean {
   return useSyncExternalStore(
@@ -66,8 +58,6 @@ export function useConvexSiweAuth() {
   )
   return { isLoading: false, isAuthenticated: session != null, fetchAccessToken }
 }
-
-export type SiweAuthStatus = "signed-out" | "signing" | "signed-in"
 
 /**
  * Read-only auth state, derived from the server-owned SIWE session — NO wagmi. This is

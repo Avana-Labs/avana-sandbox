@@ -5,7 +5,7 @@ import { useState } from "react"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
-import type { HomeAssetVisual, HomeSuccessRowTone } from "@/app/lib/home-sim"
+import type { HomeAssetVisual } from "@/app/lib/home-sim"
 
 type TokenBubbleProps = {
   visual: HomeAssetVisual
@@ -15,19 +15,6 @@ type TokenBubbleProps = {
 type PairVisualProps = {
   visuals: [HomeAssetVisual, HomeAssetVisual]
   className?: string
-}
-
-export function getToneClasses(tone: HomeSuccessRowTone = "default") {
-  switch (tone) {
-    case "positive":
-      return "text-success"
-    case "warning":
-      return "text-amber-600 dark:text-amber-400"
-    case "danger":
-      return "text-rose-600 dark:text-rose-400"
-    default:
-      return "text-foreground"
-  }
 }
 
 export function TokenBubble({ visual, className }: TokenBubbleProps) {

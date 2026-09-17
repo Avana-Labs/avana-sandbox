@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api"
 export const ASK_AI_GUEST_COOKIE = "avana_ask_guest"
 const GUEST_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 export const MINT_THROTTLE_MAX = 30
-export const MINT_THROTTLE_WINDOW_MS = 60 * 60 * 1_000
+const MINT_THROTTLE_WINDOW_MS = 60 * 60 * 1_000
 const mintHits = new Map<string, number[]>()
 
 function guestCookieSecret(): string | null {

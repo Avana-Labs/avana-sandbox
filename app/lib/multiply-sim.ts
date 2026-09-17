@@ -117,7 +117,7 @@ export const MULTIPLY_LIQUIDATION_THRESHOLDS: Partial<Record<keyof typeof MULTIP
   CRV: 0.68,
 }
 
-export const MULTIPLY_LOOP_DEFINITIONS: Array<{
+const MULTIPLY_LOOP_DEFINITIONS: Array<{
   collateral: keyof typeof MULTIPLY_TOKEN_LOGOS
   borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS
 }> = [
@@ -182,12 +182,9 @@ function formatFactor(value: number) {
 }
 
 /**
- * Largest looped leverage a liquidation threshold theoretically supports, `1/(1−LT)`,
- * guarded so a degenerate LT (≥ 1 → divide-by-zero → Infinity, or ≤ 0) collapses to the
- * global action ceiling instead of a non-finite value. This legacy per-token path is only a
- * fallback for markets absent from the catalog; every catalog market renders the
- * publicMaxMultiplier-based figure via read-model, keeping the table and the trending card
- * on one number. (E3)
+ * Largest looped leverage an LT theoretically supports, `1/(1−LT)`, with a degenerate LT
+ * (≥ 1 or ≤ 0) collapsing to the global action ceiling instead of a non-finite value. Only a
+ * fallback for markets absent from the catalog — catalog markets use publicMaxMultiplier.
  */
 function safeTheoreticalMaxLeverage(liquidationThreshold: number): number {
   if (!Number.isFinite(liquidationThreshold) || liquidationThreshold <= 0 || liquidationThreshold >= 1) {
@@ -243,11 +240,3 @@ export function buildMultiplyMarketRow(
 export const MULTIPLY_MARKET_ROWS: MultiplyMarketRow[] = MULTIPLY_LOOP_DEFINITIONS.map(({ collateral, borrowable }) =>
   buildMultiplyMarketRow(collateral, borrowable),
 ).filter((row): row is MultiplyMarketRow => Boolean(row))
-
-export function getMultiplyMarketRow(id: string): MultiplyMarketRow | null {
-  return (
-    MULTIPLY_MARKET_ROWS.find(
-      (row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id,
-    ) ?? null
-  )
-}

@@ -28,6 +28,9 @@ describe("buildPortfolioLendData rewards", () => {
     const investment = portfolio.investments[0]!
 
     expect(investment.earnedUsd).toBeCloseTo(0.5 * market.assetPriceUsd + 42, 6)
-    expect(investment.dailyEarnedUsd).toBeCloseTo((investment.suppliedUsd * 0.06) / 365, 6)
+    // The dashboard lend row shows the canonical SUPPLY APY (0.04), matching /lend and the deposit
+    // action — not totalApy (supply + rewards); the daily projection follows that same rate.
+    expect(investment.apyPct).toBeCloseTo(4, 6)
+    expect(investment.dailyEarnedUsd).toBeCloseTo((investment.suppliedUsd * 0.04) / 365, 6)
   })
 })

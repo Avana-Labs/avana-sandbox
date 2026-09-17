@@ -25,7 +25,7 @@ import {
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
@@ -257,7 +257,12 @@ export function MultiplyActionPageClient({
         })
         return
       }
-      const intent = session.createIntent({ type: "close", walletId, positionId: position.id })
+      const intent = session.createIntent({
+        type: "close",
+        walletId,
+        positionId: position.id,
+        collateralPriceUsd,
+      })
       void session
         .previewTransaction(intent)
         .then((preview) => {
@@ -400,6 +405,7 @@ export function MultiplyActionPageClient({
       walletId,
       positionId: position.id,
       targetMultiplier: parsedMultiplier,
+      collateralPriceUsd,
     }
 
     void session
@@ -509,12 +515,14 @@ export function MultiplyActionPageClient({
                 type: "close" as const,
                 walletId,
                 positionId: position!.id,
+                collateralPriceUsd,
               }
             : {
                 type: "deleverage" as const,
                 walletId,
                 positionId: position!.id,
                 targetMultiplier: parsedMultiplier!,
+                collateralPriceUsd,
               }
 
       const intent = session.createIntent(action)
@@ -630,6 +638,7 @@ export function MultiplyActionPageClient({
         type: "close" as const,
         walletId,
         positionId: closingPosition.id,
+        collateralPriceUsd,
       }
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
@@ -674,7 +683,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [isPending, market, previewUi, session, walletId, walletPositions])
+  }, [collateralPriceUsd, isPending, market, previewUi, session, walletId, walletPositions])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
@@ -703,7 +712,7 @@ export function MultiplyActionPageClient({
   const canClosePosition = kind === "deleverage" && position != null
   const deleverageCloseOnly = kind === "deleverage" && position != null && isDeleverageCloseOnly(position.multiplier)
 
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // Multiply slider is always the global 1–9.99 / 0.01 scale. Per-market publicMax remains an
@@ -790,7 +799,7 @@ export function MultiplyActionPageClient({
     >
       {useWorkspaceFields ? stackedAmountField : null}
 
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
@@ -815,6 +824,7 @@ export function MultiplyActionPageClient({
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
           inputLabel="Collateral"
+          emptyReason={isExitKind && walletPositions.length === 0 ? "No open position" : undefined}
           amount={amount}
           // Read-only informational value; `amount` still drives validation, so showing the
           // position's collateral cannot make an unfilled form report as filled in.

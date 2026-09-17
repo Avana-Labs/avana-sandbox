@@ -1,4 +1,4 @@
-import { simulateDeleverage, simulateMultiply } from "./simulation"
+import { revalueMultiplyPosition, simulateDeleverage, simulateMultiply } from "./simulation"
 import type { MultiplyAction, MultiplyPosition, MultiplySystemState, MultiplyTransaction } from "./types"
 
 function cloneState(state: MultiplySystemState): MultiplySystemState {
@@ -135,23 +135,29 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     const position = next.positions[action.positionId]
     if (!position) throw new Error(`Unknown position ${action.positionId}`)
 
+    // Reprice at the live collateral price before reading it — see simulateMultiply's
+    // repricedExisting. Crediting the wallet off a stale catalog price would shortchange
+    // (or overpay) the cash returned on close.
+    const market = next.markets[position.marketId]
+    const repriced = market ? revalueMultiplyPosition(position, market, action.collateralPriceUsd) : position
+
     delete next.positions[position.id]
     // Repaying the outstanding debt returns that borrow capacity to the market.
-    applyBorrowLiquidityDelta(next, position.marketId, -position.debtValueUsd)
+    applyBorrowLiquidityDelta(next, position.marketId, -repriced.debtValueUsd)
     adjustWalletBalanceUsd(
       next,
       action.walletId,
       position.marketId,
-      Math.max(0, position.collateralValueUsd - position.debtValueUsd),
+      Math.max(0, repriced.collateralValueUsd - repriced.debtValueUsd),
     )
     next.transactions.push({
       id: `tx-${next.transactions.length + 1}`,
       walletId: action.walletId,
       marketId: position.marketId,
       kind: "close",
-      collateralAmountUsd: Math.max(0, position.collateralValueUsd - position.debtValueUsd),
-      debtDeltaUsd: -position.debtValueUsd,
-      multiplierBefore: position.multiplier,
+      collateralAmountUsd: Math.max(0, repriced.collateralValueUsd - repriced.debtValueUsd),
+      debtDeltaUsd: -repriced.debtValueUsd,
+      multiplierBefore: repriced.multiplier,
       multiplierAfter: 1,
       at,
     } satisfies MultiplyTransaction)
@@ -173,6 +179,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     market,
     position,
     targetMultiplier: action.targetMultiplier,
+    collateralPriceOverrideUsd: action.collateralPriceUsd,
   })
 
   if (!simulation.validation.allowed) {
@@ -181,7 +188,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
 
   const updated: MultiplyPosition = {
     ...position,
-    collateralAmount: simulation.after.collateralValueUsd / market.collateralAsset.priceUsd,
+    collateralAmount: simulation.after.collateralAmount,
     collateralValueUsd: simulation.after.collateralValueUsd,
     debtValueUsd: simulation.after.debtValueUsd,
     multiplier: simulation.after.multiplier,

@@ -109,7 +109,7 @@ export type ActionSuccessUi = {
   }
 }
 
-export type ActionPageDescriptor = {
+type ActionPageDescriptor = {
   product: ActionProduct
   kind: ActionKind
   title: string

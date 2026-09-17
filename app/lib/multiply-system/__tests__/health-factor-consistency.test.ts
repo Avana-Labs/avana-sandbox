@@ -91,7 +91,10 @@ describe("multiply credit-health aggregate agrees with the per-row table", () =>
     expect(data.creditLines.totalCollateralUsd).toBe(20_000)
     expect(data.creditLines.totalCollateralUsd).toBe(rowCollateral)
     expect(data.creditLines.totalCollateralUsd - data.creditLines.totalBorrowedUsd).toBe(10_500)
-    expect(data.creditLines.averageHealthFactor).toBe(1.3)
+    // HF is recomputed live from collateral/debt/threshold (never the value frozen at open), so the
+    // aggregate is the worst of the per-row HFs the table actually renders — not a stored figure.
+    const finiteRowHfs = data.lpCollaterals.map((row) => row.healthFactor).filter((hf) => Number.isFinite(hf))
+    expect(data.creditLines.averageHealthFactor).toBe(Math.min(...finiteRowHfs))
   })
 
   it("reports the WORST position HF (not the average) so a near-liquidation position isn't hidden", () => {
@@ -114,7 +117,52 @@ describe("multiply credit-health aggregate agrees with the per-row table", () =>
     }
     const data = buildPortfolioMultiplyData("wallet-1", stateWith([safe, risky]))
     // An average would hide the risky position (behind the ∞ one); the wallet HF must be
-    // the closest-to-liquidation position.
-    expect(data.creditLines.averageHealthFactor).toBe(1.25)
+    // the closest-to-liquidation position — the (recomputed) HF of the only row with debt.
+    const riskyRow = data.lpCollaterals.find((row) => Number.isFinite(row.healthFactor))!
+    expect(data.creditLines.averageHealthFactor).toBe(riskyRow.healthFactor)
+    expect(data.creditLines.averageHealthFactor).toBeLessThan(2)
+  })
+
+  it("recomputes per-row leverage and health factor from the LIVE collateral price, not the value frozen at open", () => {
+    const market = buildMultiplyCatalogMarketsRecord()[marketId]!
+    const openPrice = market.collateralAsset.priceUsd
+    // Opened at 2x: equity = collateral - debt, debt = collateral / 2.
+    const collateralAmount = 4
+    const openCollateralUsd = collateralAmount * openPrice
+    const debtValueUsd = openCollateralUsd / 2
+    const position: MultiplyPosition = {
+      id: `wallet-1:${marketId}`,
+      walletId: "wallet-1",
+      marketId,
+      collateralAmount,
+      collateralValueUsd: openCollateralUsd,
+      debtValueUsd,
+      multiplier: 2,
+      ltv: 50,
+      healthFactor: (openCollateralUsd * market.risk.liquidationThreshold) / debtValueUsd,
+      liquidationPrice: 0,
+      netApy: 0.04,
+      openedAt: 1_700_000_000_000,
+      lastUpdatedAt: 1_700_000_000_000,
+    }
+
+    // Collateral price rises 25% → collateral up, debt fixed → leverage falls below 2x and HF rises.
+    const livePrice = openPrice * 1.25
+    const data = buildPortfolioMultiplyData("wallet-1", stateWith([position]), [], (symbol) =>
+      symbol === market.collateralAsset.symbol ? livePrice : undefined,
+    )
+
+    const row = data.lpCollaterals[0]!
+    const liveCollateralUsd = collateralAmount * livePrice
+    const expectedLeverage = liveCollateralUsd / (liveCollateralUsd - debtValueUsd)
+    const expectedHf = (liveCollateralUsd * market.risk.liquidationThreshold) / debtValueUsd
+
+    // The frozen values would be 2.00x / the open HF; the live values must differ and match the math.
+    expect(row.multiplier).toBeCloseTo(expectedLeverage, 6)
+    expect(row.multiplier).toBeLessThan(2)
+    expect(row.healthFactor).toBeCloseTo(expectedHf, 6)
+    expect(row.healthFactor).toBeGreaterThan(position.healthFactor as number)
+    expect(data.positions[0]!.leverage).toBeCloseTo(expectedLeverage, 6)
+    expect(data.creditLines.averageHealthFactor).toBeCloseTo(expectedHf, 6)
   })
 })

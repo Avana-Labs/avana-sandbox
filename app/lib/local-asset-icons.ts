@@ -18,7 +18,7 @@ const LOCAL_ASSET_ICON_SLUGS: Record<string, string> = {
   GHO: "gho",
   USDE: "usde",
   "3CRV": "3crv",
-  CRVUSD: "crv",
+  CRVUSD: "crvusd",
   CRV: "crv",
   FRAX: "frax",
   EURC: "eurc",

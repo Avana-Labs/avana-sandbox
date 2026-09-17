@@ -8,14 +8,9 @@ type DetailQuickStat = {
 }
 
 /**
- * Pin the detail-page "Price" quick stat to the deterministic sandbox baseline for
- * `baseSymbol` — the SAME price that VALUES this token everywhere else in the sandbox
- * (catalog/read-model valuations). Every product detail builder used to overlay the live
- * DefiLlama oracle here instead, so the tile disagreed with the valuation it sat next to
- * (e.g. multiply aave-gho showed AAVE ~$86 while 5 AAVE of collateral was valued at the
- * $105 baseline). Reading the baseline keeps the tile and the valuation in agreement and
- * makes the sandbox internally consistent and deterministic across borrow, lend, and
- * multiply detail pages.
+ * Pin the "Price" quick stat to the sandbox baseline — the SAME price that values this token
+ * everywhere else. Overlaying the live oracle here instead makes the tile disagree with the
+ * valuation sitting next to it.
  */
 export function injectBaselinePrice<T extends DetailQuickStat>(quickStats: T[], baseSymbol: string): T[] {
   const value = formatTokenPrice(sandboxBaselinePriceUsd(baseSymbol))
@@ -78,7 +73,7 @@ type DetailWithContent = {
   faqs: FaqEntry[]
 }
 
-export type DetailContentOverlayOptions = {
+type DetailContentOverlayOptions = {
   /**
    * Live mode: when Convex content is missing, clear catalog About/FAQs/history
    * instead of silently re-pinning mock editorial. Mock/open-gate leaves base intact.

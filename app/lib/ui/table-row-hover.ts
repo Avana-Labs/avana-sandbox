@@ -23,11 +23,9 @@ export const TABLE_CELL_PRIMARY =
   "text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]"
 
 /**
- * Geometry only (no color) for secondary/caption sub-lines that carry a semantic
- * tone (text-success / text-danger). The color-bearing variants below bake in a
- * `dark:text-white/XX` override — a two-class selector that outranks a single-class
- * tone and would grey the tone out in dark mode. Use these when the sub-line is
- * semantically colored, then add the tone class.
+ * Geometry only, for sub-lines carrying a semantic tone. Use these plus the tone class: the
+ * color-bearing variants below bake in a `dark:text-white/XX` two-class selector that outranks
+ * a single-class tone and would grey it out in dark mode.
  */
 export const TABLE_CELL_SECONDARY_UNCOLORED = "mt-0.5 text-[13px] font-normal tracking-normal md:text-[13px]"
 export const TABLE_CELL_CAPTION_UNCOLORED = "mt-0.5 text-[13px] tracking-normal"
@@ -40,10 +38,6 @@ export const TABLE_CELL_CAPTION = `${TABLE_CELL_CAPTION_UNCOLORED} text-muted-fo
 
 /** Inline numeric metric with tabular alignment. Keep amount + symbol on one line. */
 export const TABLE_CELL_NUMERIC = `${TABLE_CELL_PRIMARY} tabular-nums whitespace-nowrap`
-
-/** Mono numeric metric when font-data is intentional (LTV %, index #). */
-export const TABLE_CELL_NUMERIC_DATA =
-  "font-data text-[15px] font-normal tracking-normal tabular-nums whitespace-nowrap text-foreground dark:text-white"
 
 /** Index column (#) in numbered tables. */
 export const TABLE_CELL_INDEX =

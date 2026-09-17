@@ -10,6 +10,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { formatTokenQuantity } from "@/app/lib/currency/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { LIQUIDATION_LTV, aprToneClass } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
@@ -160,7 +161,7 @@ export function DebtsPanel({
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
                         <DebtsMetricHeader
-                          label={t("APY")}
+                          label={t("Borrow APR")}
                           help={t(
                             "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.",
                           )}
@@ -178,10 +179,12 @@ export function DebtsPanel({
                         ? borrowAssetDetailPath(row.debtAssetId)
                         : `/borrow/markets/${row.pool.id}`
                       const debtSymbol = row.debtAssetSymbol
-                      // Value the borrowed token at the live oracle price so the USD line moves as
-                      // the debt asset re-prices, mirroring the Lend Assets "Deposited" column.
+                      // `borrowedUsd` is a USD amount (currentDebtValueUsd6). The primary line is the
+                      // token quantity owed — USD ÷ live price — and the secondary line is that USD
+                      // value, mirroring the Lend Assets "Deposited" column. Never render the USD
+                      // amount as a token count, and never multiply a *Usd field by price again.
                       const debtPrice = priceFor(debtSymbol)
-                      const debtUsd = debtPrice != null ? row.borrowedUsd * debtPrice : row.borrowedUsd
+                      const debtTokenQty = debtPrice != null && debtPrice > 0 ? row.borrowedUsd / debtPrice : null
                       return (
                         <tr
                           key={row.id ?? row.pool.id}
@@ -203,9 +206,15 @@ export function DebtsPanel({
                           </td>
                           <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                             <div className={TABLE_CELL_NUMERIC}>
-                              {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
+                              {showBalance
+                                ? debtTokenQty != null
+                                  ? formatTokenQuantity(debtTokenQty, debtSymbol)
+                                  : exact(row.borrowedUsd)
+                                : MASK}
                             </div>
-                            <div className={TABLE_CELL_SECONDARY}>{m(exact(debtUsd))}</div>
+                            <div className={TABLE_CELL_SECONDARY}>
+                              {debtTokenQty != null ? m(exact(row.borrowedUsd)) : null}
+                            </div>
                           </td>
                           <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                             <div className={TABLE_CELL_NUMERIC}>{row.borrowApr.toFixed(2)}%</div>

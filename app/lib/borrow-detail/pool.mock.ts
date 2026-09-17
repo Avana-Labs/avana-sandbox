@@ -1,25 +1,19 @@
 /**
- * Mock `PoolDetail` factory.
+ * Mock `PoolDetail` factory: hand-curated fixtures for the three home-page pools
+ * (`eth-usdc`, `wbtc-eth`, `usdc-usdt`) plus a procedural fallback for every other
+ * catalog id. Series come from the seeded PRNG so charts stay stable.
  *
- * - Three hand-curated fixtures for the pools we showcase on the home page
- *   (`eth-usdc`, `wbtc-eth`, `usdc-usdt`) so their numbers match the rest of
- *   the app.
- * - A procedural fallback so every id in `BORROW_POOL_CATALOG` also resolves.
- * - All numeric series are built via the seeded PRNG so charts stay stable.
- *
- * When live data arrives, swap the `buildPoolDetail` call in `index.ts` with
- * an API fetch. Nothing else in the UI layer needs to change.
+ * To go live, replace the `buildPoolDetail` call in `index.ts` with a fetch.
  */
 
 import {
-  BORROW_POOL_CATALOG,
   type BorrowAssetVisual,
   type BorrowPoolRow,
   formatCompactUsd,
   getDexById,
   getSpokeById,
 } from "@/app/lib/borrow-sim"
-import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatPairRate } from "./formatters"
@@ -53,19 +47,6 @@ const HOME_ID_TO_CATALOG_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
   "wbtc-eth": "uni-v3-bluechip-wbtc-weth",
   "usdc-usdt": "uni-v3-stable-usdc-usdt",
-}
-
-/** Resolves any detail-page id to a concrete `BorrowPoolRow`, or null. */
-export function resolvePoolRow(poolId: string): BorrowPoolRow | null {
-  if (!poolId) return null
-  const direct = BORROW_POOL_CATALOG.find((row) => row.id === poolId)
-  if (direct) return direct
-  const mapped = HOME_ID_TO_CATALOG_ID[poolId]
-  if (mapped) {
-    const row = BORROW_POOL_CATALOG.find((r) => r.id === mapped)
-    if (row) return row
-  }
-  return null
 }
 
 // -------------------------------------------------------------------------
@@ -400,7 +381,7 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     // borrow rates). getQuickStats emits `borrowApy` from Convex's implied rate;
     // mergeConvexQuickStats replaces this placeholder. Live-mode without a snapshot
     // fails closed via shouldFailClosedWithoutSnapshots — never shows the em dash to a user.
-    { id: "borrowApy", label: "Borrow APY", value: "—" },
+    { id: "borrowApy", label: "Borrow APR", value: "—" },
     { id: "reserveFactor", label: "Reserve Factor", value: isStablePool(row) ? "10%" : "15%" },
   ]
 }
@@ -537,7 +518,7 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
 
 function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCard["governanceParameters"]> {
   const ltvPct = row.ltv
-  const liquidationThresholdPct = Math.min(95, Math.round((row.ltv + 5) * 10) / 10)
+  const liquidationThresholdPct = Math.round(liquidationThresholdPctFromMaxLtvPct(row.ltv) * 10) / 10
   const liquidationBonusPct = isStablePool(row) ? 5 : 7
   const suppliedUsd = getSpokeById(row.spoke).liquidityUsd
   const supplyCapUsd = Math.max(25_000_000, Math.ceil((suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
@@ -757,17 +738,3 @@ export function getPoolAboutCard(row: BorrowPoolRow): AboutCard {
 
 /** Exposed so the app can enumerate home-page → detail-page ids in tests. */
 export const HOME_POOL_ID_MAP = HOME_ID_TO_CATALOG_ID
-
-/**
- * Accepts any id (home id, catalog id, or arbitrary input) and returns the
- * concrete row + the resolved id it maps to. Used by `index.ts` and by the
- * error-handling paths on the page.
- */
-export function tryGetPoolRow(id: string): { row: BorrowPoolRow; resolvedId: string } | null {
-  const row = resolvePoolRow(id)
-  if (!row) {
-    const fallback = HOME_COLLATERAL_POOLS.length > 0 ? null : null
-    return fallback
-  }
-  return { row, resolvedId: row.id }
-}

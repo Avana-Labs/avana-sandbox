@@ -1,31 +1,13 @@
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
-import type { UmbrellaPosition, UmbrellaTransaction } from "./use-umbrella-session"
+import type { UmbrellaTransaction } from "./use-umbrella-session"
 
-export type UmbrellaPositionStatus =
+type UmbrellaPositionStatus =
   "active" | "partiallyCooling" | "coolingDown" | "readyToUnstake" | "cooldownExpired" | "slashed" | "closed"
 
 /**
- * Reduce an UmbrellaPosition down to the single high-level state the dashboard
- * badge cares about. Kept in a helper so the same derivation covers table rows,
- * mobile cards, and any future rollups (e.g. a status count on the section
- * header) without drifting.
- *
- * `slashed` takes precedence over `closed` so a wallet that was slashed to 0
- * still shows the incident in the dashboard status column instead of the
- * neutral "closed" state.
+ * Lifecycle status from the persisted Convex position shape. `slashed` takes precedence over
+ * `closed` so a wallet slashed to 0 still shows the incident rather than a neutral "closed".
  */
-export function deriveUmbrellaPositionStatus(position: UmbrellaPosition): UmbrellaPositionStatus {
-  if (position.amount === 0) return position.slashedValueUsd > 0 ? "slashed" : "closed"
-  if (position.cooldownStatus === "expired") return "cooldownExpired"
-  if (position.cooldownStatus === "ready") return "readyToUnstake"
-  if (position.cooldownStatus === "cooling") {
-    if (position.cooldownAmount >= position.amount) return "coolingDown"
-    if (position.cooldownAmount > 0) return "partiallyCooling"
-  }
-  return "active"
-}
-
-/** Derive the same lifecycle status directly from the persisted Convex position shape. */
 export function derivePersistedUmbrellaPositionStatus(position: {
   status: "open" | "closed"
   suppliedUsd6?: string
@@ -46,18 +28,14 @@ export function derivePersistedUmbrellaPositionStatus(position: {
 }
 
 /**
- * Map the session transaction log into the shape the dashboard "recent activity"
- * feed expects. Mirrors the lend/borrow/multiply mappers: normalise timestamps
- * to ISO, sign amounts by whether they add to or subtract from the position,
- * pick a status + kind from the union, and keep the tx hash intact so the
- * composite hash/action/market dedup can collapse cross-store copies without
- * hiding distinct actions that happen to share a receipt hash.
+ * Map the session transaction log into dashboard "recent activity" rows, mirroring the
+ * lend/borrow/multiply mappers. The tx hash must survive intact so the composite
+ * hash/action/market dedup can collapse cross-store copies without hiding distinct actions.
  */
 export function buildUmbrellaActivityRows(transactions: UmbrellaTransaction[]): PortfolioActivityRow[] {
   return transactions.map((tx) => {
-    // Withdrawing stake leaves the wallet negative (funds returning to the
-    // wallet, not into the position); everything else (stake / claim / start
-    // cooldown) shows as a positive commitment to the Umbrella product.
+    // Unstaking returns funds to the wallet (negative); stake/claim/start-cooldown are positive
+    // commitments to the Umbrella product.
     const signedAmount = tx.kind === "unstake" ? -Math.abs(tx.amountUsd) : Math.abs(tx.amountUsd)
 
     return {

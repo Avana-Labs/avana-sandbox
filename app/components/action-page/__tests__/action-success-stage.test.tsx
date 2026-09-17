@@ -106,8 +106,8 @@ describe("ActionSuccessStage", () => {
     await waitFor(() => expect(screen.getByText("1.000000 ETH")).toBeInTheDocument())
     expect(screen.getByText("Multiply")).toBeInTheDocument()
     expect(screen.getByText("Market")).toBeInTheDocument()
-    // Only two info-row tooltips (amount + market) — no orphan "rate" tooltip row.
-    expect(screen.getAllByRole("button", { name: /more info/i })).toHaveLength(2)
+    // Three info-row tooltips (amount + market + fee) — no orphan "rate" tooltip row.
+    expect(screen.getAllByRole("button", { name: /more info/i })).toHaveLength(3)
   })
 
   it("links the receipt hash to its sandbox receipt page", () => {

@@ -11,8 +11,7 @@ describe("one honest fee story (#30)", () => {
     expect(formatActionFeeSummary(1000, 0.24)).not.toMatch(/bps|basis points/)
   })
 
-  it("tooltip no longer claims a basis-point protocol fee", () => {
-    expect(ACTION_INFO_TOOLTIPS.fee).not.toMatch(/basis points|bps/)
-    expect(ACTION_INFO_TOOLTIPS.fee).toMatch(/network fee/i)
+  it("tooltip discloses the real 15 bps upfront Avana interface fee", () => {
+    expect(ACTION_INFO_TOOLTIPS.fee).toMatch(/15 bps|0\.15%/)
   })
 })

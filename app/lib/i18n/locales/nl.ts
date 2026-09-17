@@ -1120,6 +1120,11 @@ const dict: TranslationDictionary = {
   Market: "Markt",
   successful: "geslaagd",
   processed: "verwerkt",
+  "Fund your wallet or switch accounts to continue.": "Stort geld op je wallet of wissel van account om door te gaan.",
+  "Amount exceeds your available balance. Max {amount}.":
+    "Bedrag overschrijdt je beschikbare saldo. Maximaal {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "Bedrag overschrijdt de openstaande schuld. De maximale aflossing is {amount}.",
   Repay: "Terugbetaling",
   Supply: "Storten",
   Remove: "Verwijderen",
@@ -1738,6 +1743,9 @@ const dict: TranslationDictionary = {
   "Support request": "Supportverzoek",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Als iets er niet klopt, stuur de details — ons team helpt je het probleem te beoordelen.",
+  "Avana Platform Fee": "Avana-platformkosten",
+  "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
+    "Voor transacties die via het Avana-platform worden gestart, geldt vooraf een Avana-interfacekosten van 15 bps (0,15%). Rentetarieven, rendementen en andere transactiekosten kunnen variëren afhankelijk van de markt, positie en uitvoeringsroute.",
 }
 
 export default dict

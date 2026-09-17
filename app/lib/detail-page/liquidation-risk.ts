@@ -3,7 +3,7 @@
  * day-over-day deltas. Shared by Convex product queries and unit tests.
  */
 
-export type LiquidationDailyTotals = {
+type LiquidationDailyTotals = {
   liquidationsCount: number
   collateralSeizedUsd: number
   debtRepaidUsd: number

@@ -1,24 +1,18 @@
-// A multiply market's "open" flow caps collateral at the wallet's spendable balance
-// of that market's collateral token — surfaced as a per-market USD bucket in
-// `MultiplySystemState.walletBalancesUsd`. Convex only writes an explicit "available"
-// multiplyBalances row when a prior multiply flow parked collateral there, so a wallet
-// that simply HOLDS the collateral token (its real liquid balance) had an empty bucket
-// and the flow blocked with a misleading "Max 0". This derives the bucket from the
-// wallet's real liquid holdings of the collateral token whenever no explicit row exists.
+// The open flow caps collateral at a per-market USD bucket in `walletBalancesUsd`. Convex only
+// writes an explicit multiplyBalances row when a prior multiply flow parked collateral there, so
+// when none exists the bucket is derived from the wallet's real liquid holdings of that token —
+// otherwise a wallet merely holding the token blocks with "Max 0".
 
 /** A wallet's liquid holding of a single token (walletLiquidBalances view, minimally typed). */
-export type MultiplyLiquidHolding = {
+type MultiplyLiquidHolding = {
   symbol: string
   valueUsd: number
 }
 
 /**
- * Per-market collateral budget (USD) for a wallet, keyed by market id.
- *
- * Explicit `multiplyBalances` "available" buckets always win. For any market with no
- * explicit (or a zero) bucket, fall back to the wallet's real liquid holding of that
- * market's collateral token (matched by symbol, case-insensitively) so a market whose
- * collateral the wallet actually holds is openable instead of showing "Max 0".
+ * Per-market collateral budget (USD), keyed by market id. Explicit `multiplyBalances` "available"
+ * buckets always win; a missing or zero bucket falls back to the wallet's liquid holding of that
+ * market's collateral token, matched by symbol case-insensitively.
  */
 export function deriveMultiplyCollateralBudgetUsd({
   explicitBucketsUsd,

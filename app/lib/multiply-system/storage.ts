@@ -8,16 +8,16 @@ import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 const STORAGE_PREFIX = `avana.multiply.session.${SESSION_CACHE_VERSION}`
 const META_STORAGE_PREFIX = `avana.multiply.session.meta.${SESSION_CACHE_VERSION}`
 
-export type MultiplySessionMetadata = {
+type MultiplySessionMetadata = {
   transactionHistory: MultiplyTransactionHistoryItem[]
   receipts: MultiplyTransactionResult[]
 }
 
-export function multiplySessionStorageKey(walletId: string) {
+function multiplySessionStorageKey(walletId: string) {
   return `${STORAGE_PREFIX}:${walletId}`
 }
 
-export function multiplySessionMetadataKey(walletId: string) {
+function multiplySessionMetadataKey(walletId: string) {
   return `${META_STORAGE_PREFIX}:${walletId}`
 }
 

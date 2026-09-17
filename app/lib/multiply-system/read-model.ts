@@ -1,13 +1,12 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatTokenQuantity } from "@/app/lib/currency/format"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
-import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
+import { calculateMaxLeverageApy, calculateMultiplyHealthFactor } from "@/app/lib/multiply-engine"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_LOGOS } from "@/app/lib/multiply-sim"
 import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
-import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
 import { resolveMultiplyCollateralPriceUsd } from "./collateral-limits"
@@ -43,10 +42,8 @@ export type MultiplyTrendingSnapshot = {
 export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]): MultiplyTrendingSnapshot[] {
   return [...markets]
     .map((market) => {
-      // Single-source the max-leverage figure so the trending card, markets table,
-      // hero average and explore table all print the same number for a market. The
-      // APY is a real financial formula computed from that same multiplier so the
-      // headline leverage and its achievable APY stay consistent.
+      // Single-source the max-leverage figure so the trending card, markets table, hero average
+      // and explore table all print the same number, and derive the APY from that multiplier.
       const maxMultiplier = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
       const maxLeverageApy = calculateMaxLeverageApy({
         supplyApy: market.economics.supplyApy,
@@ -115,10 +112,8 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
 }
 
 /**
- * Row shape returned by api.multiply.tokenParameters.listTokens — passed in from
- * the client (multiply-client.tsx uses useQuery). Kept as a structural type here so
- * this file doesn't import Convex generated code (which would drag SSR into the
- * Convex runtime).
+ * Row shape returned by api.multiply.tokenParameters.listTokens. Declared structurally so this
+ * file never imports Convex generated code, which would drag SSR into the Convex runtime.
  */
 export type MultiplyTokenParameterRow = {
   symbol: string
@@ -130,18 +125,13 @@ export type MultiplyTokenParameterRow = {
   iconUrl: string
 }
 
-/**
- * Client-side swap: when Convex has returned multiplyTokenParameters rows, build the
- * token-logo map from those rows. Symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys
- * (all 16 loop assets), so the returned object satisfies the MultiplyPageData typing.
- */
+/** Token-logo map built from Convex rows; symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys. */
 function buildTokenLogosFromConvex(rows: readonly MultiplyTokenParameterRow[]): Pick<MultiplyPageData, "tokenLogos"> {
   type TokenSymbol = keyof typeof MULTIPLY_TOKEN_LOGOS
   const logos: Partial<Record<TokenSymbol, string>> = {}
   for (const row of rows) {
-    // Resolve icons from the LOCAL png map (same source the working collateral
-    // column uses) rather than trusting row.iconUrl — the deployed Convex seed
-    // still carries stale `.svg` paths that 404 in the Borrowable column.
+    // Resolve icons from the local png map, not row.iconUrl: the deployed Convex seed still
+    // carries stale `.svg` paths that 404.
     logos[row.symbol as TokenSymbol] = resolveMultiplyTokenLogo(row.symbol)
   }
   return { tokenLogos: logos as MultiplyPageData["tokenLogos"] }
@@ -155,9 +145,8 @@ export function buildMultiplyPageData(
   const markets = state ? Object.values(state.markets) : MULTIPLY_MARKET_CATALOG
   const lendRows = [...markets].sort((a, b) => a.rank - b.rank).map(catalogMarketToRow)
 
-  // Aggregate the hero headline over EVERY loop market (not a 5-market sample) and
-  // anchor it to available liquidity — the same figure the markets table lists per
-  // row — so the headline reconciles with the table instead of showing a fraction.
+  // Aggregate the hero headline over every loop market, anchored to available liquidity (the
+  // same per-row figure the markets table lists) so headline and table reconcile.
   const totalLiquidityUsd = markets.reduce((sum, market) => sum + market.economics.availableLiquidityUsd, 0)
   const marketCount = markets.length
   const averageMaxApy =
@@ -195,12 +184,9 @@ export function buildMultiplyPageData(
 }
 
 /**
- * The wallet's multiply health factor is the WORST (minimum) active-position HF, not the
- * average. Multiply positions are isolated, so an average hides a position sitting near
- * liquidation behind a safe one — the safety hero must reflect the closest-to-liquidation
- * position. When positions exist but every one is debt-free the result is genuinely
- * infinite (report ∞ so the hero agrees with the per-row table, which renders "∞"); only a
- * wallet with no positions at all reports null.
+ * WORST (minimum) active-position HF, never the average: multiply positions are isolated, so an
+ * average would hide a near-liquidation position behind a safe one. All-debt-free positions report
+ * ∞ (matching the per-row table); only a wallet with no positions reports null.
  */
 export function worstMultiplyHealthFactor(healthFactors: readonly number[], positionCount: number): number | null {
   const finite = healthFactors.filter((healthFactor) => Number.isFinite(healthFactor))
@@ -209,10 +195,8 @@ export function worstMultiplyHealthFactor(healthFactors: readonly number[], posi
 }
 
 /**
- * Flat approximation of the blended liquidation threshold for the multiply credit-line
- * card. Kept identical here and in the SSR live source (live-source.ts) so the value
- * does not change on hydration. TODO(D3): derive per-market from each position's
- * liquidation LTV instead of a single factor.
+ * Flat approximation of the blended liquidation threshold for the multiply credit-line card. Must
+ * stay identical to the copy in live-source.ts or the value shifts on hydration.
  */
 export const MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR = 0.85
 
@@ -237,11 +221,9 @@ export function buildPortfolioMultiplyData(
   state: MultiplySystemState,
   history: MultiplyTransactionHistoryItem[] = [],
   /**
-   * Live collateral-token price resolver (canonical price context). When supplied, each position's
-   * collateral is valued at `collateralAmount × livePrice` instead of the USD frozen at open — the
-   * SAME basis the dashboard headline uses (aggregateNetValueUsd reprices multiply_active rows at
-   * the live oracle). Omitted → frozen behavior, so other callers are unchanged. Debt stays fixed
-   * (it is a USD-denominated stablecoin borrow).
+   * Live collateral-price resolver. When supplied, collateral is valued at
+   * `collateralAmount × livePrice` — the same basis the dashboard headline uses — instead of the
+   * USD frozen at open. Omitted keeps the frozen behavior. Debt stays fixed (stablecoin borrow).
    */
   collateralPriceFor?: (symbol: string) => number | undefined,
 ): PortfolioMultiplyTabData {
@@ -257,11 +239,26 @@ export function buildPortfolioMultiplyData(
     const liveUsd = position.collateralAmount * priceUsd
     return Number.isFinite(liveUsd) && liveUsd > 0 ? liveUsd : position.collateralValueUsd
   }
+  // Recompute HF, leverage and LTV from the live-repriced collateral; never read the value frozen
+  // at open. Dashboard rule: recompute risk/rate metrics, never read a stored per-position figure.
+  const liveHealthFactorOf = (position: (typeof positions)[number]): number => {
+    const market = state.markets[position.marketId]
+    if (!market) return position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor
+    const hf = calculateMultiplyHealthFactor(
+      collateralUsdOf(position),
+      position.debtValueUsd,
+      market.risk.liquidationThreshold,
+    )
+    return hf === "infinity" ? Number.POSITIVE_INFINITY : hf
+  }
+  const liveMultiplierOf = (position: (typeof positions)[number]): number => {
+    const collateralUsd = collateralUsdOf(position)
+    const equityUsd = collateralUsd - position.debtValueUsd
+    return equityUsd > 0 ? collateralUsd / equityUsd : position.multiplier
+  }
   const totalCollateralUsd = positions.reduce((sum, position) => sum + collateralUsdOf(position), 0)
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
-  const mappedHealthFactors = positions.map((position) =>
-    position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
-  )
+  const mappedHealthFactors = positions.map((position) => liveHealthFactorOf(position))
   // Worst-position, not average (see worstMultiplyHealthFactor). Field name kept as
   // averageHealthFactor for now to avoid a repo-wide contract rename.
   const averageHealthFactor = worstMultiplyHealthFactor(mappedHealthFactors, positions.length)
@@ -284,11 +281,12 @@ export function buildPortfolioMultiplyData(
         label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         collateralToken: market.collateralAsset.symbol,
         borrowableToken: market.borrowAsset.symbol,
-        multiplier: position.multiplier,
+        // Live leverage off the repriced collateral, consistent with the headline multiplier.
+        multiplier: liveMultiplierOf(position),
         protocol: "Avana Multiply",
-        // Real value: a zero-debt position is genuinely infinite. The table renders
-        // non-finite health factors as "∞" rather than a fabricated number.
-        healthFactor: position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
+        // Live health factor off the repriced collateral. A zero-debt position is genuinely
+        // infinite; the table renders non-finite health factors as "∞".
+        healthFactor: liveHealthFactorOf(position),
         collateralUsd,
         borrowPowerUsd: Math.max(0, collateralUsd - position.debtValueUsd),
         debtUsd: position.debtValueUsd,
@@ -313,7 +311,7 @@ export function buildPortfolioMultiplyData(
         symbol: market.collateralAsset.symbol,
         label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         side: "long" as const,
-        leverage: position.multiplier,
+        leverage: liveMultiplierOf(position),
         collateralUsd,
         exposureUsd: collateralUsd,
         pnlUsd,
@@ -328,11 +326,10 @@ export function buildPortfolioMultiplyData(
 }
 
 /**
- * Canonical Multiply Net APY: EQUITY-weighted mean of each position's netApy (a fraction) —
- * weight = max(0, collateral − debt). Shared by the Multiply dashboard tab and the Multiply
- * detail wallet snapshot so a large loop dominates the headline more than a tiny one, and so
+ * Canonical Multiply Net APY: equity-weighted mean of each position's netApy, weight
+ * = max(0, collateral − debt), so a large loop dominates the headline more than a tiny one and
  * both agree with the server blend (computePortfolioNetApyPct weights multiply legs by net
- * equity). Returns a fraction (multiply by 100 for a percent). (#21)
+ * equity). Returns a fraction, not a percent.
  */
 export function multiplyNetApyFraction(
   positions: ReadonlyArray<{ collateralValueUsd: number; debtValueUsd: number; netApy: number }>,
@@ -390,6 +387,32 @@ export function buildSyntheticReceipts(history: MultiplyTransactionHistoryItem[]
   }))
 }
 
+/**
+ * Leverage each market's open reached, inferred from the largest `multiplierBefore` among later
+ * unwinds (leverage peaks at open). Needed for positions that have since CLOSED: their position row
+ * is gone, so the position-multiplier fallback would render "1.00x → 1.00x".
+ */
+export function inferOpenedLeverageByMarket(
+  transactions: ReadonlyArray<{
+    product?: string
+    kind: string
+    marketSlug?: string | null
+    multiplierBefore?: number
+  }>,
+): Map<string, number> {
+  const byMarket = new Map<string, number>()
+  for (const transaction of transactions) {
+    if (transaction.product !== undefined && transaction.product !== "multiply") continue
+    if (transaction.kind !== "close" && transaction.kind !== "deleverage" && transaction.kind !== "reduce") continue
+    const before = transaction.multiplierBefore
+    const slug = transaction.marketSlug
+    if (typeof before === "number" && before > 1 && slug) {
+      byMarket.set(slug, Math.max(byMarket.get(slug) ?? 0, before))
+    }
+  }
+  return byMarket
+}
+
 export function buildMultiplyActivityHistory(
   walletId: string,
   history: MultiplyTransactionHistoryItem[],
@@ -415,33 +438,4 @@ export function buildMultiplyActivityHistory(
         marketId: item.marketId,
       }
     })
-}
-
-function formatRelativeAge(elapsedMs: number) {
-  const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
-  if (totalSeconds < 60) return `${totalSeconds}s`
-  const totalMinutes = Math.floor(totalSeconds / 60)
-  if (totalMinutes < 60) return `${totalMinutes}m`
-  const totalHours = Math.floor(totalMinutes / 60)
-  if (totalHours < 24) return `${totalHours}h`
-  return `${Math.floor(totalHours / 24)}d`
-}
-
-export function mapMultiplyHistoryToDetailRows(
-  history: MultiplyTransactionHistoryItem[],
-  collateralSymbol: string,
-  borrowableSymbol: string,
-  walletAddress?: string,
-) {
-  const now = Date.now()
-  return history.map((item) => ({
-    id: item.id,
-    at: new Date(item.timestamp).toISOString(),
-    timeLabel: formatRelativeAge(now - item.timestamp),
-    kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
-    amountLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
-    counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
-    walletLabel: formatWalletLabel(walletAddress),
-    txHashShort: item.hash.slice(0, 10),
-  }))
 }

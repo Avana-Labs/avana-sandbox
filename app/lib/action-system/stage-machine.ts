@@ -1,7 +1,7 @@
 import type { ActionStage } from "./contracts"
 import { blockedCtaLabel } from "./blocked-ui"
 
-export type ActionStageEvent =
+type ActionStageEvent =
   | "continue"
   | "review"
   | "submit"
@@ -66,7 +66,7 @@ export function nextActionStage(stage: ActionStage, event: ActionStageEvent): Ac
 }
 
 export function isConfigureVisibleStage(stage: ActionStage) {
-  return stage === "configure" || stage === "approve_allowance" || stage === "wallet_sign" || stage === "error"
+  return stage === "configure" || stage === "error"
 }
 
 export function isReviewStage(stage: ActionStage) {
@@ -75,6 +75,15 @@ export function isReviewStage(stage: ActionStage) {
 
 export function isProcessingStage(stage: ActionStage) {
   return ["processing", "submitted", "confirmed", "refreshing_position", "reconciled"].includes(stage)
+}
+
+/**
+ * Post-review stages where the pending view owns the screen and the editable amount card must NOT
+ * re-render. Kept distinct from `isProcessingStage` so CTA labels stay signature-specific while
+ * the wallet is signing.
+ */
+export function isSubmittingStage(stage: ActionStage) {
+  return stage === "approve_allowance" || stage === "wallet_sign" || isProcessingStage(stage)
 }
 
 export function secondaryCtaLabel(stage: ActionStage, options?: { canGoBack?: boolean }) {

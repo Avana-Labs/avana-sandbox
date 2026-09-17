@@ -6,7 +6,7 @@ import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-export type HealthRiskProduct = "borrow" | "multiply"
+type HealthRiskProduct = "borrow" | "multiply"
 
 /**
  * Proactive, dismissible banner shown inside the matching product tab, directly

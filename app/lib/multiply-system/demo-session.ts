@@ -2,7 +2,7 @@ import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { serializeMultiplySystemState } from "./codec"
 import { buildMockMultiplySystemState } from "./mock"
 
-export function getMultiplySessionWalletId() {
+function getMultiplySessionWalletId() {
   return getDefaultWalletProfileId()
 }
 

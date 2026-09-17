@@ -59,6 +59,12 @@ type MarketHeroChartProps = {
   balanceSubtitle?: ReactNode
   /** When false, lock to `defaultRange` and hide the 1D/1W/… pills. */
   showRangeSelector?: boolean
+  /**
+   * Drop the intraday "1D" range from the selector. Daily-granularity (live/Convex-backed)
+   * feeds synthesize 1D as a seeded random walk, so offering it lets the headline jump to
+   * values that never happened. Longer ranges still slice real history.
+   */
+  hideIntradayRange?: boolean
 }
 
 /**
@@ -83,10 +89,17 @@ export function MarketHeroChart({
   balanceSuffix,
   balanceSubtitle,
   showRangeSelector = true,
+  hideIntradayRange = false,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
-  // 1H/1D (which would render as duplicate sparse 2-point lines).
-  const availableRanges = useMemo(() => resolveAvailableRanges(feed.rangeData), [feed.rangeData])
+  // 1H/1D (which would render as duplicate sparse 2-point lines). Live heroes also opt
+  // out of the synthetic 1D via `hideIntradayRange` so the headline can't jump to it.
+  const availableRanges = useMemo(() => {
+    const resolved = resolveAvailableRanges(feed.rangeData)
+    if (!hideIntradayRange) return resolved
+    const withoutIntraday = resolved.filter((range) => range !== "1D")
+    return withoutIntraday.length > 0 ? withoutIntraday : resolved
+  }, [feed.rangeData, hideIntradayRange])
   const [requestedRange, setRequestedRange] = useState<ChartRangeOption>(defaultRange)
   const activeRange = showRangeSelector
     ? availableRanges.includes(requestedRange)

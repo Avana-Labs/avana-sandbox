@@ -415,7 +415,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               onOpenAssetPicker={() => setPickerSide("input")}
               fiatLabel={exact((Number(amount) || 0) * inputPriceUsd)}
               balanceLabel={formatAmount(maxAmount)}
-              onBalanceClick={() => setAmount(String(Number(maxAmount.toFixed(6))))}
+              onBalanceClick={() => setAmount(String(Math.floor(maxAmount * 1e6) / 1e6))}
               tone="raised"
             />
 

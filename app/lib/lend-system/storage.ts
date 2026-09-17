@@ -8,7 +8,7 @@ import type { LendTransactionHistoryItem, LendTransactionResult } from "./contra
 import { buildDemoLendSystemState } from "./mock"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
 
-export type LendSessionMetadata = {
+type LendSessionMetadata = {
   transactionHistory: LendTransactionHistoryItem[]
   receipts: LendTransactionResult[]
 }

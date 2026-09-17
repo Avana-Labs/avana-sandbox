@@ -58,7 +58,7 @@ function livePriceUsdForSymbol(symbol: string, ctx?: TransactionPriceContext): n
   return canonicalPriceUsd(symbol) ?? seedPriceUsdForSymbol(symbol)
 }
 
-export function parseTokenQuantity(label: string): number | null {
+function parseTokenQuantity(label: string): number | null {
   const trimmed = label.replace(/,/g, "").trim()
   if (!trimmed || trimmed === "—") return null
   const match = /^(-?)(\d+(?:\.\d+)?)([KMB])?$/i.exec(trimmed)
@@ -108,9 +108,22 @@ function formatUsdFromValue(usd: number): string {
 export function resolveTransactionTokenDisplay(
   row: DetailTransactionRow,
   opts?: TransactionPriceContext,
+  reconcileToLiveUsd = false,
 ): { amount: string; symbol: string; secondaryAmount?: string; secondarySymbol?: string } | null {
   const symbol = row.tokenSymbol
   if (!symbol) return null
+
+  // Debt/asset feed: the transaction record stores only USD, so any baked token amount is a
+  // reconstruction at a FROZEN seed price that will not reconcile with the live-priced USD column
+  // (a $2,471 WETH borrow bootstrapped at the $1,934 fixture reads "1.2776 WETH", which then
+  // re-values to ~$3.1K). Re-derive the quantity from the recorded USD at the SAME live price the
+  // USD cell uses, so token qty × price === recorded USD — matching the dashboard debt row.
+  if (reconcileToLiveUsd && !isPairedPoolRow(row)) {
+    const usd = row.amountUsd ?? parseCompactUsdLabel(row.amountLabel)
+    if (usd != null) {
+      return { amount: formatDetailTokenAmount(Math.abs(usd) / livePriceUsdForSymbol(symbol, opts)), symbol }
+    }
+  }
 
   if (row.tokenAmountLabel && !isUsdMirroredTokenLabel(row)) {
     if (row.tokenSymbolSecondary && row.tokenAmountLabel.includes("/")) {
@@ -196,9 +209,21 @@ export function resolvePoolUsdDisplay(
   return usd == null ? null : formatUsdFromValue(usd)
 }
 
-export function resolveTransactionUsdValue(row: DetailTransactionRow, opts?: TransactionPriceContext): number | null {
+export function resolveTransactionUsdValue(
+  row: DetailTransactionRow,
+  opts?: TransactionPriceContext,
+  reconcileToLiveUsd = false,
+): number | null {
   const trimmed = row.amountLabel.trim()
   if (trimmed.includes("→") || trimmed.endsWith("x") || trimmed.endsWith("×")) return null
+
+  // Debt/asset feed: show the recorded USD of the action (frozen at execution) instead of a
+  // re-valuation of a seed-bootstrapped token quantity, which overshoots the record. Paired with
+  // the token cell's live-price reconstruction, the row reconciles: qty × price === this USD.
+  if (reconcileToLiveUsd && !isPairedPoolRow(row)) {
+    const usd = row.amountUsd ?? parseCompactUsdLabel(row.amountLabel)
+    if (usd != null) return signedUsdValue(usd, row)
+  }
 
   if (isPairedPoolRow(row) && row.tokenSymbol && row.tokenSymbolSecondary) {
     const poolUsd = resolvePoolUsdValue(row, row.tokenSymbol, row.tokenSymbolSecondary, opts)
@@ -226,16 +251,4 @@ export function resolveTransactionUsdValue(row: DetailTransactionRow, opts?: Tra
 export function resolveTransactionUsdDisplay(row: DetailTransactionRow, opts?: TransactionPriceContext): string | null {
   const usd = resolveTransactionUsdValue(row, opts)
   return usd == null ? null : formatUsdFromValue(usd)
-}
-
-/** @deprecated Use seedPriceUsdForSymbol for FOR bootstrap; live USD uses resolveTransactionUsdValue. */
-export function usdLabelFromTokenAmount(
-  tokenAmountLabel: string,
-  symbol: string,
-  signed = false,
-  _priceOverride?: number,
-): string | null {
-  const usd = usdValueFromTokenAmount(tokenAmountLabel, symbol)
-  if (usd == null) return null
-  return formatUsdFromValue(signed ? -Math.abs(usd) : usd)
 }

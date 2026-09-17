@@ -4,12 +4,11 @@ import type { Preloaded } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
 /**
- * Server-side preload of `getQuickStats` for a detail page, handed to the client
- * `QuickStatsGrid` live variant via `usePreloadedQuery` (hydrate + subscribe, no client
- * re-fetch — same handoff as the hero series). Returns `null` when no deployment URL is
- * configured (CI/Lighthouse) so the grid renders the server-built static stats.
+ * Server-side `getQuickStats` preload handed to `QuickStatsGrid` via `usePreloadedQuery`
+ * (hydrate + subscribe, no client re-fetch). `null` with no deployment URL (CI/Lighthouse),
+ * so the grid falls back to the server-built static stats.
  */
-export type QuickStatsScope = "asset" | "pool" | "lend" | "multiply"
+type QuickStatsScope = "asset" | "pool" | "lend" | "multiply"
 export type QuickStatsPreload = Preloaded<typeof api.markets.getQuickStats>
 
 export async function preloadDetailQuickStats(scope: QuickStatsScope, slug: string): Promise<QuickStatsPreload | null> {

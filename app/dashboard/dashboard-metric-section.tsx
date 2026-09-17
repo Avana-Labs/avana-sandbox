@@ -10,7 +10,6 @@ import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type {
   BorrowBalanceMetrics,
-  DashboardOverviewMetrics,
   DashboardPerformanceMetrics,
   LendBalanceMetrics,
   MultiplyBalanceMetrics,
@@ -84,57 +83,7 @@ function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; la
   )
 }
 
-export function DashboardOverviewSection({
-  title,
-  metrics,
-  hideHeading = false,
-}: {
-  title: string
-  metrics: DashboardOverviewMetrics
-  hideHeading?: boolean
-}) {
-  const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { t } = useTranslation()
-  const m = (value: string) => (showDollarAmounts ? value : MASK)
-
-  return (
-    <section className="space-y-4 pb-3">
-      {hideHeading ? null : (
-        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
-      )}
-      <MetricGrid
-        labelOnTop
-        metrics={[
-          {
-            label: t("Net Value"),
-            value: m(formatUsdExact(metrics.netValueUsd)),
-            description: t("Total value of your positions minus outstanding loans"),
-          },
-          {
-            label: t("Total Borrowed"),
-            value: m(formatUsdExact(metrics.totalBorrowedUsd)),
-            description: t("Current outstanding loan balance"),
-          },
-          {
-            label: t("Liquidation Buffer"),
-            value: m(formatUsdExact(metrics.liquidationBufferUsd)),
-            description: t("Distance from liquidation based on current collateral value"),
-          },
-          {
-            label: t("Risk Premium"),
-            value: showDollarAmounts ? formatPct(metrics.riskPremiumPct) : MASK,
-            description: t("An additional cost on your borrow rate based on the riskiness of your collateral"),
-          },
-        ]}
-      />
-    </section>
-  )
-}
-
-/**
- * Wallet-level Borrow Balance — eight product metrics aggregated across every
- * Borrow position belonging to the connected wallet.
- */
+/** Wallet-level Borrow Balance, aggregated across every Borrow position on the wallet. */
 export function DashboardCreditOverviewSection({
   title,
   metrics,
@@ -219,10 +168,7 @@ export function DashboardCreditOverviewSection({
   )
 }
 
-/**
- * Wallet-level Multiply Balance — eight product metrics aggregated across every
- * Multiply position belonging to the connected wallet.
- */
+/** Wallet-level Multiply Balance, aggregated across every Multiply position on the wallet. */
 export function DashboardMultiplyBalanceSection({
   title,
   metrics,
@@ -244,7 +190,7 @@ export function DashboardMultiplyBalanceSection({
       description: t("Total value of your positions minus outstanding loans"),
     },
     {
-      label: t("Position Value"),
+      label: t("Gross Exposure"),
       value: m(formatUsdExact(metrics.positionValueUsd)),
       description: t("Gross Multiply exposure after looping across all positions"),
     },
@@ -341,17 +287,9 @@ export function DashboardPerformanceSection({
   )
 }
 
-export type DashboardLendPerformanceMetrics = {
-  totalSuppliedUsd: number
-  netApyPct: number
-  interestEarnedUsd: number
-  rewardsEarnedUsd: number
-  claimableRewardsUsd: number
-}
-
 /**
- * Wallet-level Lend Balance — eight growth metrics across every active Lend
- * position. Rewards stay on the Claim path / assets table, not these cards.
+ * Wallet-level Lend Balance across every active Lend position. Rewards stay on the
+ * Claim path / assets table, not these cards.
  */
 export function DashboardLendPerformanceSection({
   title,
@@ -367,8 +305,7 @@ export function DashboardLendPerformanceSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   const projectionHint = t("Projected earnings at current rates")
-  // Yearly USD the whole supplied balance earns at the current blend (principal × Net APY).
-  // The live counters accrue this from `accrualSinceMs` (when supply started) in real time.
+  // Yearly USD at the current blend; the live counters accrue it from `accrualSinceMs`.
   const accrualRatePerYearUsd = metrics.totalSuppliedUsd * (metrics.netApyPct / 100)
 
   const items: MetricItem[] = [

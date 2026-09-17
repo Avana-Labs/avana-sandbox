@@ -1,18 +1,8 @@
 /**
- * Market time-series queries — powers every numeric chart on the detail
- * pages that isn't revenue or engagement:
- *
- *   - `AssetDetail.historicalUtilization`       → `getHistoricalUtilization`
- *   - `AssetDetail.supplyBorrow`                → `getSupplyBorrow`
- *   - `AssetDetail.heroMetric.series`           → `getAssetHeroSeries`
- *   - `PoolDetail.heroMetric.series`            → `getPoolHeroSeries`
- *   - `PoolDetail.keyMetrics` / `AssetDetail.keyMetrics` → `getKeyMetrics`
- *   - `AssetDetail.quickStats` / `PoolDetail.quickStats` → `getQuickStats`
- *
- * Prefer product-siloed `*DailyStats` tables; fall back to legacy
- * `marketDailyStats` keyed by `markets` id. The UI keeps a single
- * `Series` / `Point` shape; this file is the only place that knows the
- * Convex column names.
+ * Market time-series queries behind every numeric detail-page chart that is not revenue or
+ * engagement. Reads the product-siloed `*DailyStats` tables, falling back to legacy
+ * `marketDailyStats` keyed by `markets` id. The UI sees one `Series` / `Point` shape; this
+ * file is the ONLY place that knows the Convex column names.
  */
 
 import { v } from "convex/values"
@@ -61,10 +51,7 @@ const rangeValidator = v.union(
   v.literal("ALL"),
 )
 
-/**
- * Historical utilization (borrowed ÷ supplied) over the last 12 months.
- * Returns shape: `Series`.
- */
+/** Historical utilization (borrowed ÷ supplied) over the last 12 months, as a `Series`. */
 export const getHistoricalUtilization = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -79,10 +66,7 @@ export const getHistoricalUtilization = query({
   },
 })
 
-/**
- * Supply, borrow and utilization for the asset page `SupplyBorrowCard`.
- * Returns `{ supplied, borrowed, utilization }` — each a `Series`.
- */
+/** Asset-page `SupplyBorrowCard` data: `{ supplied, borrowed, utilization }`, each a `Series`. */
 export const getSupplyBorrow = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -103,12 +87,7 @@ export const getSupplyBorrow = query({
   },
 })
 
-/**
- * Multiply variant of getSupplyBorrow — same shape as the asset version but
- * reads scope="multiply". Multiply detail's MarketHero metric tabs currently
- * fall back to a PRNG mock (`buildSupplyBorrow` in multiply-detail/index.ts).
- * Wiring this in Phase E removes that fallback.
- */
+/** getSupplyBorrow for scope="multiply" — same shape as the asset version. */
 export const getMultiplySupplyBorrow = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -129,7 +108,7 @@ export const getMultiplySupplyBorrow = query({
   },
 })
 
-/** Lend variant of getSupplyBorrow — same shape, scope="lend" (C05: replace PRNG series). */
+/** getSupplyBorrow for scope="lend" — same shape as the asset version. */
 export const getLendSupplyBorrow = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -150,11 +129,8 @@ export const getLendSupplyBorrow = query({
   },
 })
 
-/**
- * Quick-stats row values + 24h deltas derived from the two most recent daily
- * snapshots. The UI's `QuickStat[]` shape is built here so the data seam
- * stays in one place.
- */
+/** Quick-stat values + 24h deltas from the two most recent daily snapshots, shaped as the
+ *  UI's `QuickStat[]`. */
 export const getQuickStats = query({
   args: {
     scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")),
@@ -229,10 +205,9 @@ export const getQuickStats = query({
 })
 
 /**
- * Recompute the latest-day reference snapshot for every market (one indexed read
- * per market). This is the EXPENSIVE path (`markets.collect()` + ~173 reads); it
- * runs in `rebuildMarketSnapshots` on write / on schedule, never on the hot
- * subscribed query — and, defensively, as a cold-cache fallback below.
+ * The EXPENSIVE recompute: `markets.collect()` plus one indexed read per market (~173). Runs
+ * in `rebuildMarketSnapshots` on write / on schedule and as a cold-cache fallback, NEVER on
+ * the hot subscribed query.
  */
 async function computeMarketSnapshots(ctx: QueryCtx | MutationCtx) {
   const markets = await ctx.db.query("markets").collect()
@@ -325,19 +300,11 @@ async function loadSiloedMarketIdentity(ctx: QueryCtx | MutationCtx, scope: Mark
 }
 
 /**
- * Latest-day reference snapshot for every market. Subscribed app-wide, so it reads
- * the single precomputed `marketSnapshotsCache` document (O(1) reads) instead of
- * recomputing from ~173 per-market reads on every subscriber recompute. Powers the
- * borrow list/Explore cards and the session market-data hydration so every surface
- * reads the same Convex numbers. Keyed by the market `slug` (pool id, or
- * spoke-scoped asset id) for a direct lookup against the catalog.
- *
- * Live overlay: each row's economics are `dailyTip + folded liquidity delta` so
- * landings move with user activity without waiting for end-of-day rollup.
- *
- * Cold-cache fallback: if the cache has not been built yet (fresh deploy, before
- * the first `rebuildMarketSnapshots`), fall back to the recompute so the app still
- * hydrates. Steady state never hits that path.
+ * Latest-day reference snapshot for every market, keyed by `slug`. Subscribed app-wide, so it
+ * MUST read the precomputed `marketSnapshotsCache` document (O(1)) rather than recomputing
+ * ~173 per-market reads per subscriber; the recompute is only a cold-cache fallback for a
+ * fresh deploy. Economics are `dailyTip + folded liquidity delta`, so landings move with user
+ * activity without waiting for the end-of-day rollup.
  */
 export const listMarketSnapshots = query({
   args: {},
@@ -372,9 +339,8 @@ export const listMultiplyMarketSnapshots = query({
 })
 
 /**
- * Single-market reference snapshot for detail pages (C04). Reads the same
- * `marketSnapshotsCache` + live deltas as `list*MarketSnapshots`, but returns
- * one row so Next.js detail builders do not pull the full catalog over HTTP.
+ * Single-market reference snapshot: same cache + live deltas as `list*MarketSnapshots`, but
+ * one row, so Next.js detail builders do not pull the whole catalog over HTTP.
  */
 export const getMarketSnapshot = query({
   args: {
@@ -397,10 +363,9 @@ async function listMarketSnapshotRows(ctx: QueryCtx) {
 }
 
 /**
- * Rebuild the `listMarketSnapshots` cache document. Runs the expensive recompute
- * once and upserts the single cache row. Call this from the market-data write path
- * (seed / aggregator) after landing daily stats, or from a schedule — never on the
- * hot read path. Internal-only so anonymous callers can't trigger the full recompute.
+ * Rebuild the `listMarketSnapshots` cache document: one expensive recompute, one upsert. Call
+ * from the market-data write path or a schedule, never the hot read path. Internal-only so
+ * anonymous callers cannot trigger the full recompute.
  */
 export const rebuildMarketSnapshots = internalMutation({
   args: {},
@@ -418,23 +383,13 @@ export const rebuildMarketSnapshots = internalMutation({
 })
 
 /**
- * Daily aggregator: flush the running liquidity delta into a persistent daily
- * snapshot so the chart series lengthens over calendar time with REAL activity —
- * the seed is just the starting history.
+ * Daily aggregator: fold each market's accumulated supply/borrow delta into today's
+ * `marketDailyStats` row, then append a counter-delta that rebases the ledger to zero.
  *
- * For each market it folds the net supply/borrow delta accumulated since the last
- * flush, writes (or patches) today's `marketDailyStats` row to the resulting
- * absolute value, then appends a counter-delta that rebases the ledger to zero.
- * That keeps the invariant every consumer relies on — `latest daily row + current
- * folded delta = live value` — unchanged: before the flush it's `prevRow + D`,
- * after it's `(prevRow + D) + 0`. No double count, no schema change, and the
- * read-path tip overlay keeps working (it just adds ~0 right after a flush and the
- * fresh intraday delta between flushes). Idempotent within a day: a second run the
- * same day patches today's row and counters only the delta since the first run.
- *
- * Runs in one transaction (≈ #markets reads/writes, well within Convex limits) and
- * schedules the shared-cache rebuilds so every surface immediately reads the
- * flushed snapshot + zeroed delta.
+ * INVARIANT preserved: `latest daily row + current folded delta = live value` — `prevRow + D`
+ * before the flush, `(prevRow + D) + 0` after — so nothing double-counts and the read-path tip
+ * overlay keeps working. Idempotent within a day: a second run counters only the delta since
+ * the first. One transaction (≈ #markets reads/writes), then schedules the cache rebuilds.
  */
 export const rollupDailyStats = internalMutation({
   args: {},
@@ -492,8 +447,7 @@ export const rollupDailyStats = internalMutation({
       await upsertSiloedDailyStat(ctx, market.scope, market.slug, today, snapshot)
       written++
 
-      // Rebase the running ledger to zero for this market: the delta is now baked into
-      // the persisted daily row, so the accumulator restarts from the fresh snapshot.
+      // Rebase the ledger to zero: the delta is now baked into the persisted daily row.
       if (d.supplied !== 0 || d.borrowed !== 0) {
         await appendLiquidityDelta(ctx, {
           marketSlug: market.slug,
@@ -505,8 +459,8 @@ export const rollupDailyStats = internalMutation({
       }
     }
 
-    // Aggregate liquidity cache is bumped inside appendLiquidityDelta. Refresh market
-    // snapshot cache so chart surfaces see the flushed daily rows immediately.
+    // appendLiquidityDelta already bumped the liquidity cache; refresh the snapshot cache so
+    // chart surfaces see the flushed daily rows immediately.
     await ctx.scheduler.runAfter(0, internal.markets.rebuildMarketSnapshots, {})
 
     return { day: today, written, rebased }
@@ -680,25 +634,18 @@ type DetailSandboxTxRow = {
 }
 
 /**
- * How many of the most-recent transactions (across every wallet) to scan when
- * building a market's activity feed. `marketSlug` is stored verbatim and
- * multiply slugs are normalized only on the client, so we can't rely on an
- * exact index match — we scan this bounded window newest-first and match in
- * memory (normalized + scoped-asset aware). Fine at sandbox scale.
+ * Bounded newest-first scan window for a market's activity feed. An exact index match is not
+ * possible: `marketSlug` is stored verbatim while multiply slugs are normalized only on the
+ * client, so matching happens in memory (normalized + scoped-asset aware).
  */
 const DETAIL_TX_SCAN = 400
 
 /**
- * Recent transactions for one product-market detail page — a community feed of
- * ALL users' sandbox activity on that market, newest first.
- *
- * Lend / borrow / multiply are separate products, so rows are product-scoped
- * (a borrow row never leaks onto a multiply market that shares a slug). Borrow
- * asset pages match `assetId` as well as `marketSlug` (`gho` and
- * `bal-stable:gho` are the same asset).
- *
- * Combines live sandbox activity with seeded `walletEvents` so a single live action
- * never hides the market's historical activity feed.
+ * Recent transactions for one product-market detail page — a community feed of ALL users'
+ * activity, newest first. Rows are PRODUCT-SCOPED so a borrow row never leaks onto a multiply
+ * market sharing its slug; borrow asset pages also match `assetId` (`gho` and `bal-stable:gho`
+ * are the same asset). Live activity is merged with seeded `walletEvents` so one live action
+ * cannot hide the market's history.
  */
 export const getRecentTransactions = query({
   args: {
@@ -794,13 +741,10 @@ function productForDetailScope(scope: MarketScope): "borrow" | "lend" | "multipl
 }
 
 /**
- * Borrow is two page types over the same wallet activity: the pool/market page
- * shows the COLLATERAL side (pledge, remove, claim fees, liquidation) and the
- * asset page shows the DEBT side (borrow, repay). A GHO borrow therefore belongs
- * on the `bal-*:gho` asset page, never on the `bal-*-sdai-usdc` pool page.
- * Lend/multiply pages have no such split. Accepts raw sandbox kinds
- * (deposit/withdraw/borrow/repay/claim/liquidate) and seed walletEvents kinds
- * (supply/withdraw/borrow/repay/liquidation/rewardsClaim).
+ * Borrow splits one activity stream across two page types: the pool page shows the COLLATERAL
+ * side (pledge, remove, claim fees, liquidation), the asset page the DEBT side (borrow,
+ * repay) — so a GHO borrow belongs on `bal-*:gho`, never on `bal-*-sdai-usdc`. Lend/multiply
+ * have no such split. Accepts both raw sandbox kinds and seed walletEvents kinds.
  */
 function borrowScopeAllowsKind(scope: MarketScope, kind: string): boolean {
   if (scope !== "pool" && scope !== "asset") return true
@@ -990,7 +934,12 @@ async function dailyRowsForScope(
   range: RangeId,
 ): Promise<DailyStatAmounts[]> {
   const days = RANGE_DAYS[range]
-  const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+  // Seeded history ends at SANDBOX_NOW, before real "now", so anchor the window END to the
+  // latest available data day (clamped to now) — otherwise short ranges slice an empty tail.
+  const latest = await latestDailyStatForScope(ctx, scope, slug)
+  const latestMs = latest ? Date.parse(`${latest.day}T00:00:00Z`) : Date.now()
+  const anchorMs = Math.min(Date.now(), latestMs)
+  const start = new Date(anchorMs - days * 86_400_000).toISOString().slice(0, 10)
   const siloed = await loadSiloedDailyRows(ctx, scope, slug, start)
   if (siloed.length > 0) return siloed
 
@@ -1144,19 +1093,15 @@ async function resolveMarket(ctx: QueryCtx, scope: MarketScope, slug: string) {
 const DELTAS_SINGLETON = "deltas"
 
 /**
- * Net live supplied/borrowed delta for a market slug, folded from the shared liquidity
- * ledger (`marketLiquidityDeltas` → `liquidityDeltasCache`). This is the same aggregate
- * every supply/borrow/withdraw/repay writes to, so it lets a chart's latest point track
- * real cross-wallet activity instead of freezing at the seeded history.
+ * Net live supplied/borrowed delta for a market slug, folded from the shared liquidity ledger
+ * every supply/borrow/withdraw/repay writes to, so a chart's latest point tracks real
+ * cross-wallet activity instead of freezing at the seeded history.
  */
 /**
- * Full folded delta set, cache-first: read the precomputed `liquidityDeltasCache`
- * singleton (rebuilt on a schedule) and fold the raw ledger only on a cold cache.
- * The list-snapshot and quickStats read paths run on every page; folding the raw
- * baseline + delta tables on each call was two full-table scans per read, even
- * though this cache exists for exactly that reason. The scheduled aggregator
- * (`rollupDailyStats`) still folds directly — it rebuilds the cache, so it must read
- * the true current ledger, not the value it is about to overwrite.
+ * Full folded delta set, CACHE-FIRST: read the `liquidityDeltasCache` singleton and fold the
+ * raw ledger only on a cold cache — the list-snapshot and quickStats paths run on every page,
+ * and folding raw would be two full-table scans per read. `rollupDailyStats` still folds
+ * directly, because it rebuilds the cache and must read the ledger it is about to overwrite.
  */
 async function foldedDeltasCacheFirst(ctx: QueryCtx): Promise<Awaited<ReturnType<typeof foldDeltas>>> {
   const cacheRows = await ctx.db
@@ -1204,9 +1149,8 @@ async function withLiveLiquidityDeltas<T extends SnapshotRow>(ctx: QueryCtx, row
 }
 
 /**
- * Add the net live delta to the most-recent series point so the chart tip (and the
- * headline derived from it) moves with aggregate activity in real time. The seeded
- * history is the starting point; recorded days are never rewritten.
+ * Add the net live delta to the most-recent series point so the chart tip moves with aggregate
+ * activity. Recorded days are never rewritten.
  */
 function withLiveTip(points: Array<{ t: string; v: number }>, deltaUsd: number) {
   if (deltaUsd === 0 || points.length === 0) return points

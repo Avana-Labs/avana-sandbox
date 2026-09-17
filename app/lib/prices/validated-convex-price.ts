@@ -1,10 +1,10 @@
-export const CONVEX_PRICE_MIN_CONFIDENCE = 0.8
+const CONVEX_PRICE_MIN_CONFIDENCE = 0.8
 export const CONVEX_PRICE_INVALID_AFTER_MS = 45 * 60 * 1000
 const USD_PEGGED_SYMBOLS = new Set(["USDC", "USDT", "DAI", "GHO", "CRVUSD", "USDE", "FRXUSD", "USDG", "RLUSD"])
 const USD_PEGGED_MIN_PRICE = 0.5
 const USD_PEGGED_MAX_PRICE = 1.5
 
-export type ConvexPriceRow = {
+type ConvexPriceRow = {
   symbol: string
   priceUsd: number
   confidence?: number

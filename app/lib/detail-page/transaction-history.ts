@@ -45,7 +45,7 @@ export function normalizeDetailMarketKey(value: string): string {
   return value.trim().toLowerCase().replaceAll("_", "-")
 }
 
-export function detailMarketKeysMatch(left: string | undefined, right: string | undefined): boolean {
+function detailMarketKeysMatch(left: string | undefined, right: string | undefined): boolean {
   if (!left || !right) return false
   return normalizeDetailMarketKey(left) === normalizeDetailMarketKey(right)
 }
@@ -180,10 +180,9 @@ export function mapLendSessionRows(
 }
 
 /**
- * Borrow is split across two page types. The pool/market page (`scope: "pool"`)
- * shows the COLLATERAL side — pledge (deposit), remove (withdraw), claim fees,
- * liquidation — and the asset page (`scope: "asset"`) shows the DEBT side —
- * borrow, repay. Omit `scope` to keep every kind (no side filter).
+ * Borrow splits across two pages: `scope: "pool"` shows the COLLATERAL side (pledge, remove,
+ * claim fees, liquidation) and `scope: "asset"` the DEBT side (borrow, repay). Omit `scope`
+ * for no side filter.
  */
 export function mapBorrowSessionRows(
   history: TransactionHistoryItem[],

@@ -26,8 +26,8 @@ const catalogSources = createCatalogPageSources({
   },
 })
 
-export const mockLendPageAdapter = catalogSources.mockAdapter
-export const liveLendPageAdapter = catalogSources.liveAdapter
+const mockLendPageAdapter = catalogSources.mockAdapter
+const liveLendPageAdapter = catalogSources.liveAdapter
 
 export const mockLendPageSource: LendPageSource = {
   adapter: mockLendPageAdapter,

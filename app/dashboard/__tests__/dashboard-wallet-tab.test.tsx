@@ -10,7 +10,10 @@ vi.mock("@/app/lib/i18n/use-translation", () => ({
 }))
 
 vi.mock("@/app/lib/currency/use-currency", () => ({
-  useCurrency: () => ({ exact: (value: number) => `$${value.toFixed(2)}` }),
+  useCurrency: () => ({
+    exact: (value: number) => `$${value.toFixed(2)}`,
+    price: (value: number) => `$${value.toFixed(2)}`,
+  }),
 }))
 
 // The wallet tab now consults Convex for balances when no explicit prop is passed.

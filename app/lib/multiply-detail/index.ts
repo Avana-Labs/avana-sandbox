@@ -44,7 +44,7 @@ export type MultiplyMarketHero = {
   explorerUrl?: string
 }
 
-export type MultiplyTokenVisual = {
+type MultiplyTokenVisual = {
   symbol: string
   shortLabel: string
   bgClass: string

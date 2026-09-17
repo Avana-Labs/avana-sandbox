@@ -37,17 +37,16 @@ export function setAskAIGuestToken(token: AskAIGuestToken | null) {
   listeners.forEach((listener) => listener())
 }
 
-export function subscribeAskAIGuestToken(listener: () => void) {
+function subscribeAskAIGuestToken(listener: () => void) {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
 /**
- * Re-mint a guest token from the session endpoint and store it. The guest identity lives in
- * a long-lived HttpOnly cookie, so this returns a fresh (1h) JWT for the same subject without
- * consuming the new-identity mint throttle. Returns the new jwt, or null if the request fails
- * (the caller keeps whatever token it already had). This is what keeps a guest session alive
- * past the 1h token TTL — Convex calls it via fetchAccessToken before the token expires.
+ * Re-mint a guest token from the session endpoint. The guest identity lives in a long-lived
+ * HttpOnly cookie, so this yields a fresh 1h JWT for the same subject WITHOUT consuming the
+ * new-identity mint throttle — this is what keeps a guest session alive past the token TTL.
+ * Null on failure, so the caller keeps its existing token.
  */
 export async function refreshAskAIGuestToken(signal?: AbortSignal): Promise<string | null> {
   if (typeof window === "undefined") return null

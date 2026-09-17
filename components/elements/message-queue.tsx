@@ -5,7 +5,7 @@ import { ArrowUpIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { field, ghostButton, mono, paper } from "@/lib/surfaces"
 
-export interface QueuedMessage {
+interface QueuedMessage {
   id: string
   text: string
 }

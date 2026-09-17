@@ -1124,6 +1124,11 @@ const dict: TranslationDictionary = {
   Market: "Markt",
   successful: "erfolgreich",
   processed: "verarbeitet",
+  "Fund your wallet or switch accounts to continue.": "Lade dein Wallet auf oder wechsle das Konto, um fortzufahren.",
+  "Amount exceeds your available balance. Max {amount}.":
+    "Der Betrag übersteigt dein verfügbares Guthaben. Maximal {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "Der Betrag übersteigt die ausstehende Schuld. Die maximale Rückzahlung beträgt {amount}.",
   Repay: "Rückzahlung",
   Supply: "Einzahlen",
   Remove: "Entfernen",
@@ -1172,7 +1177,9 @@ const dict: TranslationDictionary = {
   "Preparing your transaction": "Transaktion wird vorbereitet",
   "Confirming on-chain": "Bestätigung on-chain",
   Value: "Wert",
-  "Network fee": "Netzwerkgebühr",
+  "Avana Platform Fee": "Avana-Plattformgebühr",
+  "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
+    "Bei über die Avana-Plattform initiierten Transaktionen fällt vorab eine Avana-Interface-Gebühr von 15 Basispunkten (0,15 %) an. Zinssätze, Erträge und sonstige Transaktionskosten können je nach Markt, Position und Ausführungsweg variieren.",
   Block: "Block",
   Explorer: "Explorer",
   "Transaction date": "Transaktionsdatum",

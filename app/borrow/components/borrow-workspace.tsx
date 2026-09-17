@@ -72,7 +72,7 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
   )
 }
 
-export type BorrowWorkspaceProps = {
+type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
   initialIsDesktop?: boolean

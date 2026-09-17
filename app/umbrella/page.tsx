@@ -58,6 +58,7 @@ function UmbrellaPageInner() {
   return (
     <div className="bg-background">
       <main className="container mx-auto px-3 py-6 pb-28 sm:px-4 md:py-10 lg:pb-10">
+        <h1 className="sr-only">{t("Umbrella")}</h1>
         <div className="mx-auto max-w-[1152px]">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
             <div className={cn(detailSectionStackClass, "min-w-0")}>

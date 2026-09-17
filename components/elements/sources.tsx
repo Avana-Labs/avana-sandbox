@@ -13,7 +13,7 @@ export interface Source {
   url?: string
 }
 
-export interface SourcesProps {
+interface SourcesProps {
   sources: readonly Source[]
   open: boolean
   onOpenChange: (open: boolean) => void

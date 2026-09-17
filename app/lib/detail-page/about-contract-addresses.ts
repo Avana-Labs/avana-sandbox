@@ -6,9 +6,9 @@
 
 export const ABOUT_CONTRACT_ADDRESS_SALTS = ["vault", "token", "riskManager", "oracleRouter"] as const
 
-export type AboutContractAddressSalt = (typeof ABOUT_CONTRACT_ADDRESS_SALTS)[number]
+type AboutContractAddressSalt = (typeof ABOUT_CONTRACT_ADDRESS_SALTS)[number]
 
-export const ABOUT_CONTRACT_ADDRESS_LABEL_BY_SALT: Record<AboutContractAddressSalt, string> = {
+const ABOUT_CONTRACT_ADDRESS_LABEL_BY_SALT: Record<AboutContractAddressSalt, string> = {
   vault: "Vault Contract Address",
   token: "Token Contract Address",
   riskManager: "Risk Manager Address",

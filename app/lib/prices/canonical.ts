@@ -2,22 +2,14 @@ import { priceKey } from "./format"
 import { PRICE_FIXTURE } from "./price-fixture"
 
 /**
- * Canonical per-token USD price — the SINGLE basis every surface reads: the borrow list price +
- * token quantities, the detail "Price" tile, the pool pair price, the swap catalog, and (via
- * sandboxBaselinePriceUsd) the engine valuation. One basis means a token can never show two prices
- * one click apart, and pool pair prices are exact PA/PB ratios of the per-token prices.
- *
- * The values live in a mutable module store seeded with the deterministic PRICE_FIXTURE so SSR,
- * tests, and offline renders are stable. At runtime the live Convex oracle (convex/prices.ts,
- * DefiLlama) overlays it via `setCanonicalPrices` — so connected clients value positions at the
- * real refreshed price, and a token the oracle doesn't cover falls back to the fixture. A symbol
- * in NEITHER resolves to `undefined` (unavailable), never a fabricated number.
+ * The SINGLE per-token USD basis every surface reads (lists, detail tiles, pool pair prices, swap
+ * catalog, engine valuation via sandboxBaselinePriceUsd), so a token can never show two prices one
+ * click apart. Deterministic PRICE_FIXTURE, overlaid at runtime by the live Convex oracle; a symbol
+ * covered by neither resolves to `undefined`, never a fabricated number.
  */
 
-// Two INDEPENDENT live overlays sit on top of the deterministic fixture: the crypto oracle
-// (Convex/DefiLlama, via setCanonicalPrices) and the stock feed (client route, via setStockPrices).
-// They are kept as separate layers so a refresh of one never clobbers the other's quotes — both are
-// re-applied on every recompute, with the stock layer winning any (non-existent) key overlap.
+// Two INDEPENDENT overlays (crypto oracle, stock feed) stay separate layers and are both re-applied
+// on every recompute, so refreshing one never clobbers the other's quotes. Stock wins on overlap.
 let oracleLayer: Record<string, number> = {}
 let stockLayer: Record<string, number> = {}
 
@@ -37,19 +29,15 @@ function normalizePrices(next: Record<string, number>): Record<string, number> {
 }
 
 /**
- * Overlay live oracle (crypto) prices onto the canonical store (client-only). Kept on TOP of the
- * fixture so a partial oracle response (missing an exotic token) still resolves the covered majors
- * instead of going unavailable. Non-finite/non-positive quotes are dropped.
+ * Overlay live crypto oracle prices (client-only). Sits on TOP of the fixture so a partial oracle
+ * response still resolves covered majors. Non-finite/non-positive quotes are dropped.
  */
 export function setCanonicalPrices(next: Record<string, number>): void {
   oracleLayer = normalizePrices(next)
   recompute()
 }
 
-/**
- * Overlay live tokenized-stock prices (client-side stock-price route) onto the canonical store.
- * Independent of the crypto oracle layer so neither feed's refresh drops the other's quotes.
- */
+/** Overlay live tokenized-stock prices. Independent of the crypto oracle layer. */
 export function setStockPrices(next: Record<string, number>): void {
   stockLayer = normalizePrices(next)
   recompute()
@@ -69,39 +57,17 @@ export function resetCanonicalPrices(): void {
   recompute()
 }
 
-export type CanonicalPrice = {
-  /** Uppercase token symbol. */
-  symbol: string
-  priceUsd: number
-  /** Provenance of the snapshot (kept for the { symbol, priceUsd, updatedAt, source } contract). */
-  source: string
-}
-
-export const CANONICAL_PRICE_SOURCE = "canonical-store"
-
 /**
- * Canonical USD price for a symbol, or `undefined` when neither the live oracle nor the fixture
- * covers it. Deliberately strict (no `?? 1` default) so callers fall back to their own label
- * instead of silently rendering "$1.00" for an unpriced asset. Engine code that needs a guaranteed
- * number uses `sandboxBaselinePriceUsd` (same store, last-resort default of 1).
+ * USD price for a symbol, or `undefined` when neither oracle nor fixture covers it. Deliberately
+ * strict (no `?? 1`) so callers fall back to their own label instead of rendering "$1.00" for an
+ * unpriced asset. Engine code needing a guaranteed number uses `sandboxBaselinePriceUsd`.
  */
 export function canonicalPriceUsd(symbol: string): number | undefined {
   if (!symbol) return undefined
   return priceStore[symbol.toUpperCase()]
 }
 
-/** The full canonical object for a symbol, or `undefined` when unpriced. */
-export function getCanonicalPrice(symbol: string): CanonicalPrice | undefined {
-  const priceUsd = canonicalPriceUsd(symbol)
-  if (priceUsd === undefined) return undefined
-  return { symbol: symbol.toUpperCase(), priceUsd, source: CANONICAL_PRICE_SOURCE }
-}
-
-/**
- * Canonical prices keyed by `priceKey` (lowercased symbol), matching the shape the pool
- * oracle path (`injectPoolOraclePrice`) consumes. Lets the detail page read the deterministic
- * canonical basis instead of a separate live-oracle fetch.
- */
+/** Canonical prices keyed by `priceKey` (lowercased), the shape `injectPoolOraclePrice` consumes. */
 export function canonicalPriceMap(): Record<string, number> {
   const map: Record<string, number> = {}
   for (const [symbol, priceUsd] of Object.entries(priceStore)) {
@@ -111,14 +77,10 @@ export function canonicalPriceMap(): Record<string, number> {
 }
 
 /**
- * Pool pair spot price: `base` denominated in `quote` = P(base) / P(quote). Derived from the
- * canonical single-token USD prices so it is always consistent with the prices shown on the
- * token rows and tiles. Returns `undefined` when either side is unpriced or the quote is ≤ 0
- * (the caller drops the stat rather than showing a fabricated value).
- *
- * Float division is safe here because the result is a displayed ratio formatted to a few
- * decimals; on-chain position math uses bigint fixed-point (see credit-engine/units.ts).
- * Examples: ETH/USDC = 1934, USDC/ETH = 1/1934, WBTC/ETH = 65000/1934 ≈ 33.6, USDC/USDT ≈ 1.
+ * Pool pair spot price: `base` in `quote` = P(base) / P(quote), derived from the canonical USD
+ * prices so it always agrees with the token rows. `undefined` when either side is unpriced or
+ * quote ≤ 0. Float division is fine — this is a display-only ratio; position math uses bigint
+ * fixed-point (credit-engine/units.ts).
  */
 export function poolPairPriceUsd(base: string, quote: string): number | undefined {
   const p0 = canonicalPriceUsd(base)

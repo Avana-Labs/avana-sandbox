@@ -1,4 +1,4 @@
-export type WalletLendAssetRecord = {
+type WalletLendAssetRecord = {
   walletProfileId: string
   symbol: string
   name: string
@@ -12,7 +12,7 @@ export type WalletLendAssetRecord = {
   utilization: number
 }
 
-export const WALLET_LEND_ASSETS: WalletLendAssetRecord[] = [
+const WALLET_LEND_ASSETS: WalletLendAssetRecord[] = [
   {
     walletProfileId: "demo-wallet",
     symbol: "USDC",

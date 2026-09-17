@@ -31,6 +31,12 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   // Borrow "My Collaterals" table — column (i) help text.
   // Multiply Positions table — redesigned column (i) help text + Value caption.
   "Exp.",
+  // Dashboard loading status — new copy awaiting the locale backfill.
+  "Loading dashboard…",
+  "This is taking longer than usual.",
+  // Merkl rewards — coming-soon copy awaiting the locale backfill.
+  "Coming soon",
+  "Merkl reward campaigns will appear here once they launch.",
   // Multiply Balance — Interest Earned tile help text.
   // Umbrella hero — Weighted APY tile (i) help text.
   "1 Day",
@@ -58,7 +64,14 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Explorer",
   "Exposure",
   "Exposure · Net APY",
+  // Borrow market filter — relabelled from "Search markets" to distinguish it from global search.
+  "Filter markets",
+  // Multiply tab — Gross Exposure tile + worst-position "Lowest Position Health" card
+  // (title + tooltip) awaiting the locale backfill.
+  "Gross Exposure",
   "Health Factor",
+  "Lowest Position Health",
+  "The health factor of your closest-to-liquidation Multiply position — the lowest across your open loops, not the portfolio blend. Below 1.0 triggers liquidation.",
   "Help",
   "HF",
   "In cooldown",
@@ -87,7 +100,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "pools",
   "Pools",
   "Position",
-  "Position Value",
   "Premium",
   "PREMIUM",
   "Preview {product}",

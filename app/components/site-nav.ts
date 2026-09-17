@@ -1,7 +1,7 @@
 import type { LucideIcon } from "@/app/components/icons"
 import { DashboardSquareAdd, Umbrella } from "@/app/components/icons"
 
-export type DesktopHeaderLink = {
+type DesktopHeaderLink = {
   href: string
   label: string
   icon?: LucideIcon

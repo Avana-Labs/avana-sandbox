@@ -31,7 +31,7 @@ describe("borrow preview mappers", () => {
       "LTV in scope",
       "Liquidation threshold",
       "Borrowing power in scope",
-      "Net balance in scope",
+      "Position equity in scope",
       "Net collateral in scope",
       "Health factor in scope",
     ])
@@ -246,7 +246,7 @@ describe("borrow preview mappers", () => {
       "Credit scope",
       "Annual earnings",
       "Borrowing power in scope",
-      "Net balance in scope",
+      "Position equity in scope",
       "Net collateral in scope",
       "Health factor in scope",
     ])

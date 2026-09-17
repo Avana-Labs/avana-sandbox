@@ -3,7 +3,7 @@
  * Equity-weighted blending only — never arithmetic-average product APYs.
  */
 
-export type PortfolioApyLeg = {
+type PortfolioApyLeg = {
   /** Net equity USD attributed to this product (collateral − debt for borrow/multiply). */
   equityUsd: number
   /** Product Net APY in percent units (e.g. 5.2 means 5.2%). */

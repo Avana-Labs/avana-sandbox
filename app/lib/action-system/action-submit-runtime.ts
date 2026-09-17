@@ -1,4 +1,4 @@
-export type ActionSubmitResult = {
+type ActionSubmitResult = {
   receipt: {
     status: string
     error?: string | null
@@ -6,28 +6,22 @@ export type ActionSubmitResult = {
   }
 }
 
-export const ALLOWANCE_SIMULATED_MS = 900
-export const WALLET_SIGN_SIMULATED_MS = 1200
-/**
- * Long enough for the processing narration (~5 readable lines) to fully play before the
- * receipt appears — see ProcessingNarration. Kept synthetic-only (`simulated`).
- */
+const ALLOWANCE_SIMULATED_MS = 900
+const WALLET_SIGN_SIMULATED_MS = 1200
+/** Long enough for the ProcessingNarration lines to play before the receipt appears. Synthetic-only. */
 export const PROCESSING_SIMULATED_MS = 4200
-export const RECONCILIATION_STAGE_SIMULATED_MS = 300
+const RECONCILIATION_STAGE_SIMULATED_MS = 300
 
-// Unit tests (vitest) drive the whole flow with real timers; skip the UX pacing so they
-// don't wait several seconds. The stage sequence itself is still exercised. The real app
-// and Playwright E2E (which don't set VITEST) keep the readable delays.
+// Vitest drives this flow with real timers, so skip the UX pacing there; the real app and
+// Playwright E2E keep the readable delays.
 const SKIP_SIMULATED_DELAYS = typeof process !== "undefined" && process.env?.VITEST === "true"
 
 /**
- * Ceiling on how long the "processing" stage waits for execute() (the wallet/Convex write)
- * to settle. Without it, a stalled Convex socket or dropped connection under load left the
- * submit awaiting forever — the CTA stuck at "Processing…" (disabled) with no recovery. On
- * timeout we reject so the caller transitions to the error stage and clears its pending flag.
+ * Ceiling on the "processing" wait for execute(); without it a stalled Convex socket leaves the
+ * CTA disabled forever. On timeout we reject so the caller reaches the error stage.
  */
-export const EXECUTE_TIMEOUT_MS = 30_000
-export const EXECUTE_TIMEOUT_MESSAGE = "The transaction timed out. Check your connection and try again."
+const EXECUTE_TIMEOUT_MS = 30_000
+const EXECUTE_TIMEOUT_MESSAGE = "The transaction timed out. Check your connection and try again."
 
 function delay(ms: number) {
   if (SKIP_SIMULATED_DELAYS) return Promise.resolve()
@@ -37,10 +31,8 @@ function delay(ms: number) {
 }
 
 /**
- * Resolve/reject with `promise`, but reject after `ms` if it hasn't settled. The timer is
- * always cleared once the race settles so a resolved submit never leaves a dangling timeout.
- * A rejected timeout does NOT cancel the underlying write; the intentId idempotency key means
- * a later server commit or a retry collapses onto one row rather than double-applying.
+ * Reject after `ms` if `promise` hasn't settled. A timeout does NOT cancel the underlying write —
+ * the intentId idempotency key collapses a late commit or a retry onto one row.
  */
 function raceWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   if (!ms || ms <= 0) return promise

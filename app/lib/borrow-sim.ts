@@ -192,8 +192,6 @@ export type PendingMarketRow = {
   subLabel: string
 }
 
-export type BorrowSortDirection = "asc" | "desc"
-
 // ----- Token visual catalog -------------------------------------------------
 
 const VISUALS = {
@@ -1574,7 +1572,7 @@ export function formatUsdExact(usdValue: number): string {
 
 // ----- Filtering / grouping / sorting --------------------------------------
 
-export type PoolFilterOptions = {
+type PoolFilterOptions = {
   text?: string
   dexes?: Set<BorrowDexId>
   spokes?: Set<BorrowSpokeId>
@@ -1615,84 +1613,6 @@ export function groupByDex(rows: BorrowPoolRow[]): DexGroup[] {
       .filter((entry) => entry.rows.length > 0)
     return { dex, spokes }
   }).filter((group) => group.spokes.length > 0)
-}
-
-/**
- * Legacy helper kept for callers that still need a per-spoke grouping.
- * Returns a partial record (only spokes with rows are present).
- */
-export function groupBySpoke(rows: BorrowPoolRow[]): Partial<Record<BorrowSpokeId, BorrowPoolRow[]>> {
-  const groups: Partial<Record<BorrowSpokeId, BorrowPoolRow[]>> = {}
-  for (const row of rows) {
-    const bucket = groups[row.spoke] ?? []
-    bucket.push(row)
-    groups[row.spoke] = bucket
-  }
-  return groups
-}
-
-export function filterAssets(rows: BorrowableAsset[], text: string): BorrowableAsset[] {
-  const needle = text.trim().toLowerCase()
-  if (!needle) return rows
-  return rows.filter(
-    (row) =>
-      row.symbol.toLowerCase().includes(needle) ||
-      row.name.toLowerCase().includes(needle) ||
-      row.subtitle.toLowerCase().includes(needle),
-  )
-}
-
-export type PoolSortKey = "ltv" | "apr" | "available" | "riskPremium"
-export type AssetSortKey = "apr" | "utilization" | "available" | "totalBorrowed"
-
-export function sortPools(rows: BorrowPoolRow[], key: PoolSortKey, direction: BorrowSortDirection): BorrowPoolRow[] {
-  const copy = [...rows]
-  copy.sort((left, right) => {
-    const leftValue = poolSortValue(left, key)
-    const rightValue = poolSortValue(right, key)
-    return direction === "asc" ? leftValue - rightValue : rightValue - leftValue
-  })
-  return copy
-}
-
-function poolSortValue(row: BorrowPoolRow, key: PoolSortKey): number {
-  switch (key) {
-    case "ltv":
-      return row.ltv
-    case "apr":
-      return (row.aprMin + row.aprMax) / 2
-    case "available":
-      return row.availableUsd
-    case "riskPremium":
-      return row.riskPremiumBps
-  }
-}
-
-export function sortAssets(
-  rows: BorrowableAsset[],
-  key: AssetSortKey,
-  direction: BorrowSortDirection,
-): BorrowableAsset[] {
-  const copy = [...rows]
-  copy.sort((left, right) => {
-    const leftValue = assetSortValue(left, key)
-    const rightValue = assetSortValue(right, key)
-    return direction === "asc" ? leftValue - rightValue : rightValue - leftValue
-  })
-  return copy
-}
-
-function assetSortValue(row: BorrowableAsset, key: AssetSortKey): number {
-  switch (key) {
-    case "apr":
-      return row.borrowApr
-    case "utilization":
-      return row.utilization
-    case "available":
-      return row.availableUsd
-    case "totalBorrowed":
-      return row.totalBorrowedUsd
-  }
 }
 
 export function aprToneClass(apr: number): string {

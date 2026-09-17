@@ -1,6 +1,5 @@
-import type { ChartPoint, ChartRangeData, ChartRangeOption } from "@/app/components/charts"
-import { CHART_RANGE_LABELS, CHART_RANGE_OPTIONS, buildRangeData } from "@/app/components/charts"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatActivityTokenAmount } from "@/app/lib/currency/format"
 import { calculateMaxWithdrawable, calculateTotalApy } from "@/app/lib/lend-engine/formulas"
 import type { LendMarket, LendSystemState } from "@/app/lib/lend-engine"
 import type { LendPageData } from "@/app/lib/data/providers/lend/types"
@@ -8,7 +7,6 @@ import type { PortfolioLendTabData, PortfolioStrategyBucket } from "@/app/lib/da
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend/featured-assets"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
-import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import { LEND_MARKET_CATALOG } from "./catalog"
 import { formatReliableLendApyLabel } from "./illiquid-apy"
 import type { LendTransactionHistoryItem, LendWalletReadSnapshot, LendYieldSnapshot } from "./contracts"
@@ -43,7 +41,7 @@ export type LendFeaturedSnapshot = {
   sparklinePath?: string
 }
 
-export type LendMarketRow = {
+type LendMarketRow = {
   marketId: string
   href: string
   asset: string
@@ -209,14 +207,8 @@ const STRATEGY_TIERS = [
   },
 ]
 
-/**
- * Group the live lend markets into risk-tiered opportunity buckets so the
- * dashboard "Lending Opportunities" reflect real market APYs/TVL rather than a
- * hardcoded catalog. Empty tiers are dropped.
- */
-// Which strategy a market belongs to is driven by its *yield*, not its collateral
-// risk tier. A "stable" asset paying 30% APY is not conservative — a high yield
-// implies risk — so bucket by APY to keep the risk-reward narrative honest.
+// Buckets by YIELD, not collateral risk tier: a "stable" asset paying 30% APY is not
+// conservative, so bucketing by APY keeps the risk-reward narrative honest.
 function strategyTierForApyPct(apyPct: number): "low" | "medium" | "high" {
   if (apyPct < 8) return "low"
   if (apyPct < 18) return "medium"
@@ -282,8 +274,10 @@ export function buildPortfolioLendData(
       earnedUsd: position.interestEarned * market.assetPriceUsd + position.rewardsEarnedUsd,
       interestUsd: position.interestEarned * market.assetPriceUsd,
       rewardsEarnedUsd: position.rewardsEarnedUsd,
-      dailyEarnedUsd: (position.suppliedValueUsd * market.totalApy) / 365,
-      apyPct: market.totalApy * 100,
+      // Supply APY, not totalApy, is the canonical lend rate — the same number /lend and the
+      // deposit action show. Rewards are surfaced separately.
+      dailyEarnedUsd: (position.suppliedValueUsd * market.supplyApy) / 365,
+      apyPct: market.supplyApy * 100,
       principalAmount: position.principalAmount,
       interestEarned: position.interestEarned,
       availableToWithdraw: maxWithdrawable,
@@ -305,10 +299,9 @@ export function buildPortfolioLendData(
 }
 
 /**
- * Canonical Lend Net APY: SUPPLIED-weighted mean of each investment's apyPct (percent).
- * Shared by the Lend dashboard tab and the Lend detail wallet snapshot so a $1 position
- * can't sway the headline like a $1M one — and so both agree with the server portfolio
- * blend (computePortfolioNetApyPct weights lend legs by suppliedUsd). Returns a percent.
+ * Canonical Lend Net APY: supplied-weighted mean of each investment's apyPct, returned as a
+ * percent. Weighting must stay supplied-based to match the server blend
+ * (computePortfolioNetApyPct) and keep a $1 position from swaying the headline.
  */
 export function lendNetApyPct(investments: ReadonlyArray<{ suppliedUsd: number; apyPct: number }>): number {
   const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
@@ -328,8 +321,8 @@ export function buildLendWalletSnapshot(
   const rewardsEarnedUsd =
     portfolio.rewardsSummary?.claimableUsd ??
     portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - (item.interestEarned ?? 0) * item.priceUsd), 0)
-  // Supplied-weighted (canonical), not the old flat per-investment average — matches the
-  // Lend dashboard tab and the server blend. `currentApy` is a fraction, so /100.
+  // Supplied-weighted, matching the dashboard tab and the server blend. `currentApy` is a
+  // fraction, hence /100.
   const averageApy = lendNetApyPct(portfolio.investments) / 100
 
   return {
@@ -348,7 +341,7 @@ export function buildLendWalletSnapshot(
   }
 }
 
-export function buildLendYieldSnapshots(state: LendSystemState): LendYieldSnapshot[] {
+function buildLendYieldSnapshots(state: LendSystemState): LendYieldSnapshot[] {
   return Object.values(state.markets).map((market) => ({
     marketId: market.marketId,
     asset: market.asset.symbol,
@@ -384,114 +377,10 @@ export function buildLendActivityHistory(
         item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
       primaryLabel: item.asset,
       secondaryLabel:
-        item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
+        item.kind === "claim"
+          ? `${item.amount.toFixed(2)} USD rewards`
+          : formatActivityTokenAmount(item.amount, item.asset),
       txHash: item.hash,
       marketId: item.marketId,
     }))
-}
-
-function buildLendRangeData(data: PortfolioLendTabData): ChartRangeData {
-  const totalSuppliedUsd = data.investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const totalEarnedUsd = data.investments.reduce((sum, item) => sum + item.earnedUsd, 0)
-  const confirmedHistory = [...data.history]
-    .filter((item) => item.status === "confirmed")
-    .sort((left, right) => new Date(left.at).getTime() - new Date(right.at).getTime())
-
-  if (totalSuppliedUsd <= 0 && confirmedHistory.length === 0) {
-    return buildRangeData(0, 42)
-  }
-
-  const netFlowUsd = confirmedHistory.reduce((sum, item) => {
-    return sum + (item.kind === "supply" ? item.amountUsd : -item.amountUsd)
-  }, 0)
-  const baseSuppliedUsd = Math.max(0, totalSuppliedUsd - netFlowUsd)
-  const rangeStartValue = Math.max(0, baseSuppliedUsd)
-  const rangeEndValue = totalSuppliedUsd
-
-  return CHART_RANGE_OPTIONS.reduce((accumulator, range) => {
-    accumulator[range] = buildRangePoints({
-      range,
-      history: confirmedHistory,
-      startValue: rangeStartValue,
-      endValue: rangeEndValue,
-      earnedUsd: totalEarnedUsd,
-    })
-    return accumulator
-  }, {} as ChartRangeData)
-}
-
-function buildRangePoints(params: {
-  range: ChartRangeOption
-  history: PortfolioLendTabData["history"]
-  startValue: number
-  endValue: number
-  earnedUsd: number
-}): ChartPoint[] {
-  const labels = CHART_RANGE_LABELS[params.range]
-  const pointCount = 63
-  const lastLabel = labels[labels.length - 1] ?? "Now"
-  const points = Array.from({ length: pointCount }, (_, index) => ({
-    time: index,
-    value: params.startValue,
-    label:
-      labels[Math.min(labels.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * labels.length))] ??
-      lastLabel,
-  }))
-
-  if (points.length === 0) return points
-
-  const historyCount = params.history.length
-  for (const [index, item] of params.history.entries()) {
-    const pointIndex =
-      historyCount === 1
-        ? Math.floor(pointCount * 0.6)
-        : Math.round((index / Math.max(1, historyCount - 1)) * (pointCount - 2))
-    const delta = item.kind === "supply" ? item.amountUsd : -item.amountUsd
-    for (let cursor = pointIndex; cursor < points.length; cursor += 1) {
-      points[cursor]!.value = Math.max(0, points[cursor]!.value + delta)
-    }
-  }
-
-  const earnedStep = points.length > 1 ? params.earnedUsd / (points.length - 1) : 0
-  for (let index = 0; index < points.length; index += 1) {
-    points[index]!.value = Math.max(0, points[index]!.value + earnedStep * index)
-  }
-
-  points[0]!.value = params.startValue
-  points[points.length - 1]!.value = params.endValue
-  return points.map((point, index) => ({
-    ...point,
-    time: index,
-    value: Math.round(point.value * 100) / 100,
-  }))
-}
-
-export { buildLendRangeData }
-
-export function mapLendHistoryToDetailRows(
-  history: LendTransactionHistoryItem[],
-  assetSymbol: string,
-  walletAddress?: string,
-) {
-  const now = Date.now()
-  return history.map((item) => ({
-    id: item.id,
-    at: new Date(item.timestamp).toISOString(),
-    timeLabel: formatRelativeAge(now - item.timestamp),
-    kind: item.kind,
-    amountLabel: `${item.amount.toFixed(4)} ${assetSymbol}`,
-    counterpartyLabel: assetSymbol,
-    walletLabel: formatWalletLabel(walletAddress),
-    txHashShort: item.hash.slice(0, 10),
-  }))
-}
-
-function formatRelativeAge(elapsedMs: number) {
-  const totalSeconds = Math.max(1, Math.floor(elapsedMs / 1000))
-  if (totalSeconds < 60) return `${totalSeconds}s`
-  const totalMinutes = Math.floor(totalSeconds / 60)
-  if (totalMinutes < 60) return `${totalMinutes}m`
-  const totalHours = Math.floor(totalMinutes / 60)
-  if (totalHours < 24) return `${totalHours}h`
-  return `${Math.floor(totalHours / 24)}d`
 }
