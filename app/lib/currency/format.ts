@@ -61,6 +61,21 @@ export function formatTokenQuantity(value: number, symbol: string): string {
   return `${formatNumber(value, { maximumFractionDigits: 2 })} ${symbol}`
 }
 
+/**
+ * Token quantity for the Activity feed. The executed token amount is not persisted — the durable
+ * transaction records only USD — so the amount shown here is reconstructed as `amountUsd / price`.
+ * Its low-order digits are oracle-drift noise, not real precision (a 100 USDC supply reconstructs
+ * to 100.0035). Round to a magnitude-appropriate scale so a round-number action reads cleanly
+ * ("100 USDC", "1 GHO") while a genuinely fractional balance stays legible ("0.4932 cbBTC").
+ */
+export function formatActivityTokenAmount(amount: number, symbol: string): string {
+  if (!Number.isFinite(amount)) return `0 ${symbol}`
+  const abs = Math.abs(amount)
+  const decimals = abs >= 1_000 ? 0 : abs >= 1 ? 2 : 6
+  const rounded = formatNumber(amount, { maximumFractionDigits: decimals })
+  return `${rounded} ${symbol}`
+}
+
 /** Exact currency formatting from a USD value, with currency-appropriate decimals. */
 export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   const value = convertFromUsd(usd, ctx)

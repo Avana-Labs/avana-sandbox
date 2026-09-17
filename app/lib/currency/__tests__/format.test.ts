@@ -2,10 +2,29 @@ import { describe, expect, it } from "vitest"
 import {
   currencyContext,
   convertFromUsd,
+  formatActivityTokenAmount,
   formatCompactCurrency,
   formatExactCurrency,
   redenominateCompactUsd,
 } from "@/app/lib/currency/format"
+
+describe("formatActivityTokenAmount", () => {
+  it("de-fuzzes reconstructed round-number amounts (no false precision)", () => {
+    // A 100 USDC supply reconstructs from USD to 100.0035; a 1 GHO withdraw to 1.0004.
+    expect(formatActivityTokenAmount(100.0035, "USDC")).toBe("100 USDC")
+    expect(formatActivityTokenAmount(1.0004, "GHO")).toBe("1 GHO")
+    expect(formatActivityTokenAmount(37_503.9557, "USDG")).toBe("37,504 USDG")
+  })
+
+  it("keeps genuinely fractional balances legible", () => {
+    expect(formatActivityTokenAmount(0.493175, "cbBTC")).toBe("0.493175 cbBTC")
+    expect(formatActivityTokenAmount(15.5215, "ETH")).toBe("15.52 ETH")
+  })
+
+  it("handles non-finite input", () => {
+    expect(formatActivityTokenAmount(Number.NaN, "ETH")).toBe("0 ETH")
+  })
+})
 
 describe("currency formatting", () => {
   it("USD is identity", () => {

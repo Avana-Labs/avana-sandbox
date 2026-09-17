@@ -111,4 +111,29 @@ describe("buildPortfolioLendData", () => {
     expect(rows.find((row) => row.id === "tx-1")?.kind).toBe("supply")
     expect(rows.find((row) => row.id === "tx-2")?.kind).toBe("withdraw")
   })
+
+  it("de-fuzzes the reconstructed token amount in the activity label (no false precision)", () => {
+    const state = buildMockLendSystemStateWithSeedPosition("wallet-1")
+    const market = state.markets.eth!
+    // A 100-unit supply reconstructs from USD to 100.0035; the label must read "100 <asset>".
+    const history: LendTransactionHistoryItem[] = [
+      {
+        id: "tx-1",
+        intentId: "intent-1",
+        walletId: "wallet-1",
+        marketId: market.marketId,
+        positionId: "wallet-1:eth",
+        kind: "deposit",
+        status: "success",
+        asset: market.asset.symbol,
+        amount: 100.0035,
+        simulated: true,
+        timestamp: state.now,
+        hash: "0xdeposit",
+      },
+    ]
+
+    const [row] = buildLendActivityHistory("wallet-1", history, state)
+    expect(row?.secondaryLabel).toBe(`100 ${market.asset.symbol}`)
+  })
 })

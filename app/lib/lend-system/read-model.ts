@@ -1,6 +1,7 @@
 import type { ChartPoint, ChartRangeData, ChartRangeOption } from "@/app/components/charts"
 import { CHART_RANGE_LABELS, CHART_RANGE_OPTIONS, buildRangeData } from "@/app/components/charts"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatActivityTokenAmount } from "@/app/lib/currency/format"
 import { calculateMaxWithdrawable, calculateTotalApy } from "@/app/lib/lend-engine/formulas"
 import type { LendMarket, LendSystemState } from "@/app/lib/lend-engine"
 import type { LendPageData } from "@/app/lib/data/providers/lend/types"
@@ -384,7 +385,9 @@ export function buildLendActivityHistory(
         item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
       primaryLabel: item.asset,
       secondaryLabel:
-        item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
+        item.kind === "claim"
+          ? `${item.amount.toFixed(2)} USD rewards`
+          : formatActivityTokenAmount(item.amount, item.asset),
       txHash: item.hash,
       marketId: item.marketId,
     }))
