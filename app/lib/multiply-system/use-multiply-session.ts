@@ -12,7 +12,7 @@ import type {
   MultiplyTransactionIntent,
   MultiplyTransactionResult,
 } from "./contracts"
-import { buildSyntheticReceipts } from "./read-model"
+import { buildSyntheticReceipts, inferOpenedLeverageByMarket } from "./read-model"
 import { SandboxMultiplyReadAdapter } from "./sandbox-read-adapter"
 import { SandboxMultiplyTransactionAdapter } from "./sandbox-transaction-adapter"
 import { mergeConvexMultiplySnapshots, type MultiplyConvexSnapshot } from "./market-hydration"
@@ -277,12 +277,22 @@ export function useMultiplySession({
       // multiplierAfter was always the fallback of 1). Prefer the linked positionId; fall
       // back to the still-open position for the same market.
       const positionByMarket = new Map(Object.values(positions).map((position) => [position.marketId, position]))
+      // Recovers the "1.00x → 2.00x" an open should read for a position that has since CLOSED (its
+      // position row is gone, so the position-multiplier fallback below can't see it and the open
+      // otherwise rendered a meaningless "1.00x → 1.00x").
+      const openedLeverageByMarket = inferOpenedLeverageByMarket(data.transactions)
       const history: MultiplyTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "multiply")
         .map((transaction) => {
           const position =
             (transaction.positionId ? positions[String(transaction.positionId)] : undefined) ??
             (transaction.marketSlug ? positionByMarket.get(transaction.marketSlug) : undefined)
+          // For an open, the resulting leverage is the opened multiplier: persisted value, else the
+          // still-open position, else inferred from a later unwind on the same market, else 1.
+          const inferredOpenLeverage = transaction.marketSlug
+            ? openedLeverageByMarket.get(transaction.marketSlug)
+            : undefined
+          const openMultiplierAfter = transaction.multiplierAfter ?? position?.multiplier ?? inferredOpenLeverage ?? 1
           return {
             id: String(transaction._id),
             intentId: transaction.intentId ?? String(transaction._id),
@@ -295,7 +305,10 @@ export function useMultiplySession({
             // Use the leverage captured AT the transaction; fall back to the old heuristic only
             // for legacy rows written before multiplierBefore/After were persisted.
             multiplierBefore: transaction.multiplierBefore ?? 1,
-            multiplierAfter: transaction.multiplierAfter ?? position?.multiplier ?? 1,
+            multiplierAfter:
+              transaction.kind === "multiply"
+                ? openMultiplierAfter
+                : (transaction.multiplierAfter ?? position?.multiplier ?? 1),
             simulated: transaction.simulated,
             timestamp: transaction.at,
             hash: transaction.syntheticTxHash,

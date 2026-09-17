@@ -264,7 +264,11 @@ export function buildPortfolioMultiplyData(
   const liveHealthFactorOf = (position: (typeof positions)[number]): number => {
     const market = state.markets[position.marketId]
     if (!market) return position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor
-    const hf = calculateMultiplyHealthFactor(collateralUsdOf(position), position.debtValueUsd, market.risk.liquidationThreshold)
+    const hf = calculateMultiplyHealthFactor(
+      collateralUsdOf(position),
+      position.debtValueUsd,
+      market.risk.liquidationThreshold,
+    )
     return hf === "infinity" ? Number.POSITIVE_INFINITY : hf
   }
   const liveMultiplierOf = (position: (typeof positions)[number]): number => {
@@ -402,6 +406,34 @@ export function buildSyntheticReceipts(history: MultiplyTransactionHistoryItem[]
     simulated: item.simulated,
     timestamp: item.timestamp,
   }))
+}
+
+/**
+ * Leverage each market's open reached, inferred from the pre-unwind leverage of a later
+ * close/deleverage/reduce on that market. Leverage peaks at open, so the largest `multiplierBefore`
+ * among the unwinds is the opened value. Used to render an open as "1.00x → 2.00x" for a position
+ * that has since CLOSED — its position row is gone, so the position-multiplier fallback can't see it
+ * and the open otherwise rendered a meaningless "1.00x → 1.00x".
+ */
+export function inferOpenedLeverageByMarket(
+  transactions: ReadonlyArray<{
+    product?: string
+    kind: string
+    marketSlug?: string | null
+    multiplierBefore?: number
+  }>,
+): Map<string, number> {
+  const byMarket = new Map<string, number>()
+  for (const transaction of transactions) {
+    if (transaction.product !== undefined && transaction.product !== "multiply") continue
+    if (transaction.kind !== "close" && transaction.kind !== "deleverage" && transaction.kind !== "reduce") continue
+    const before = transaction.multiplierBefore
+    const slug = transaction.marketSlug
+    if (typeof before === "number" && before > 1 && slug) {
+      byMarket.set(slug, Math.max(byMarket.get(slug) ?? 0, before))
+    }
+  }
+  return byMarket
 }
 
 export function buildMultiplyActivityHistory(
