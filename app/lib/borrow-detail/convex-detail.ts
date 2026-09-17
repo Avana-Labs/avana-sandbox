@@ -4,7 +4,6 @@ import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import {
   fetchAllocation,
-  fetchAssetCashflowTrend,
   fetchAssetContractAddresses,
   fetchBorrowInterestRateModel,
   fetchBorrowLiquidationRisk,
@@ -128,6 +127,11 @@ export function injectPoolOraclePrice(
  * shows two different values for the one metric. The mock quick stat comes from the
  * catalog row while risk is overlaid from Convex; without this they can disagree.
  */
+export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: number): QuickStat[] {
+  const value = formatBpsAsPct(premiumBps)
+  return quickStats.map((s) => (s.id === "riskPremium" ? { ...s, value } : s))
+}
+
 /**
  * Derive the asset `historicalUtilization` series from the `supplyBorrow` utilization series.
  *
@@ -140,11 +144,6 @@ export function injectPoolOraclePrice(
 export function deriveHistoricalUtilization<T extends { id: string }>(utilization: T | null | undefined): T | null {
   if (!utilization) return null
   return { ...utilization, id: utilization.id.replace(/:sb:utilization$/, ":historical-utilization") }
-}
-
-export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: number): QuickStat[] {
-  const value = formatBpsAsPct(premiumBps)
-  return quickStats.map((s) => (s.id === "riskPremium" ? { ...s, value } : s))
 }
 
 /**
@@ -415,10 +414,14 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   if (!detail) return null
 
   // Hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  // cashflowTrend stays here (no matching page preload yet).
+  //
+  // cashflowTrend is NOT fetched: `borrow.cashflow.getRevenueForAsset` re-read the same
+  // `borrowRevenueDaily` window as the preloaded breakdown (Convex billed both at 20.19 MB)
+  // and no component renders the result — the field is written here and read nowhere. The
+  // shape stays on AssetDetail because schema.ts still documents it as an asset-page
+  // surface; restore the fetch here when something actually renders it.
   const [
     supplyBorrow,
-    cashflowTrend,
     transactions,
     allocation,
     risk,
@@ -429,7 +432,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     contractAddresses,
   ] = await Promise.all([
     fetchSupplyBorrow(slug),
-    fetchAssetCashflowTrend(slug),
     fetchRecentTransactions("asset", slug),
     fetchAllocation(slug),
     fetchRisk("asset", slug),
@@ -455,7 +457,7 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
       supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
       historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
       cashflow: EMPTY_CASHFLOW_CARD,
-      cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend | null) ?? EMPTY_CASHFLOW_TREND,
+      cashflowTrend: EMPTY_CASHFLOW_TREND,
       transactions: (transactions as typeof detail.transactions | null) ?? [],
       allocation: (allocationWithCf as typeof detail.allocation | null) ?? [],
       risk: (risk as typeof detail.risk | null) ?? EMPTY_RISK_ASSESSMENT,

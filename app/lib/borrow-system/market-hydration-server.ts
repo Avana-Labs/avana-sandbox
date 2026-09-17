@@ -173,29 +173,11 @@ export function fetchAssetUtilizationSeries(slug: string): Promise<ConvexSeriesP
   return fetchAssetHeroSeries(slug, "utilization")
 }
 
-/** Cashflow breakdown card (rows + monthly bars) from seeded revenue. */
-export async function fetchCashflowBreakdown(scope: "pool" | "asset", slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return scope === "pool"
-      ? await client.query(api.borrow.cashflow.getBreakdownForPool, { slug })
-      : await client.query(api.borrow.cashflow.getBreakdownForAsset, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Asset monthly revenue trend (gross interest paid by borrowers). */
-export async function fetchAssetCashflowTrend(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.borrow.cashflow.getRevenueForAsset, { slug })
-  } catch {
-    return null
-  }
-}
+// The cashflow breakdown reaches the page through `preloadDetailCashflow` (a reactive
+// `preloadQuery` handed to the client card), so the one-shot `fetchCashflowBreakdown`
+// fetcher that used to live here had no callers left. `fetchAssetCashflowTrend` is gone
+// with it: `getRevenueForAsset` re-read the same `borrowRevenueDaily` window as that
+// breakdown and nothing rendered the result.
 
 /** Recent market transactions (sandbox first, seeded walletEvents fallback). */
 export async function fetchRecentTransactions(scope: "pool" | "asset", slug: string) {
