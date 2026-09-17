@@ -313,7 +313,7 @@ function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
       <PairedTokenIcons row={row} />
       <MarketMobileIdentityText
         title={`${row.collateralToken} / ${row.borrowableToken}`}
-        subtitle={`${row.multiplier.toFixed(2)}× ${t("leverage")}`}
+        subtitle={`${row.multiplier.toFixed(2)}x ${t("leverage")}`}
       />
     </div>
   )
@@ -330,7 +330,7 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
             {row.collateralToken} / {row.borrowableToken}
           </span>
           <span className={cn("block truncate", TABLE_CELL_SECONDARY)}>
-            {row.multiplier.toFixed(2)}× {t("leverage")}
+            {row.multiplier.toFixed(2)}x {t("leverage")}
           </span>
         </span>
       </div>

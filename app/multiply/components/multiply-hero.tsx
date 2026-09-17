@@ -15,7 +15,7 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
 
   const stats = [
     { label: t("Avg APY at max leverage"), value: `${(metrics.averageMaxApy * 100).toFixed(2)}%`, sensitive: false },
-    { label: t("Avg Max Leverage"), value: `${metrics.averageMaxLeverage.toFixed(1)}x`, sensitive: false },
+    { label: t("Avg Max Leverage"), value: `${metrics.averageMaxLeverage.toFixed(2)}x`, sensitive: false },
   ]
 
   return (
