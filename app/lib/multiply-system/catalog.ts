@@ -3,6 +3,7 @@ import { calculateSafeMaxMultiplier, calculateTheoreticalMaxMultiplier } from "@
 import { MULTIPLY_CATALOG_LEVERAGE_SCALE } from "@/app/lib/multiply-system/leverage-limits"
 import { MULTIPLY_COLLATERAL_FACTORS } from "@/app/lib/multiply-sim"
 import { SANDBOX_BASELINE_PRICES_USD as ASSET_PRICES_USD } from "@/app/lib/prices/sandbox-baseline-prices"
+import { canonicalTokenSymbol } from "@/app/lib/tokens/canonical-symbol"
 
 type CatalogSeed = {
   id: string
@@ -445,12 +446,15 @@ function toMarketRecord(seed: CatalogSeed): MultiplyMarketRecord {
     minHealthFactor: seed.minHealthFactor,
     liquidationThreshold: seed.liquidationThreshold,
   })
-  const collateralKey = seed.collateral as keyof typeof MULTIPLY_COLLATERAL_FACTORS
+  // Normalize the declared collateral symbol to its canonical map key so the per-token factor resolves
+  // regardless of the seed's casing (STETH → stETH, CBBTC → cbBTC). The old `as` cast silently let a
+  // cased mismatch fall through to seed.maxLtv for the 5 mixed-case symbols (stETH/wstETH/rETH/cbBTC/cbETH).
+  const collateralKey = canonicalTokenSymbol(seed.collateral)
   // The collateral factor (max borrow ratio) must sit strictly below the
   // liquidation threshold — a market can't let you borrow up to the point it
   // liquidates. The per-token MULTIPLY_COLLATERAL_FACTORS override could exceed a
   // market's LT (e.g. AAVE CF 70% vs GHO LT 65%), so clamp it below LT.
-  const rawCollateralFactor = MULTIPLY_COLLATERAL_FACTORS[collateralKey] ?? seed.maxLtv
+  const rawCollateralFactor = (collateralKey ? MULTIPLY_COLLATERAL_FACTORS[collateralKey] : undefined) ?? seed.maxLtv
   const collateralFactor = Math.min(rawCollateralFactor, seed.liquidationThreshold - 0.01)
 
   return {
