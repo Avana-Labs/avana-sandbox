@@ -261,9 +261,29 @@ describe("MultiplyActionPageClient", () => {
     })
 
     expect(screen.getByTestId("action-leverage-ruler")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "No position" })).toBeDisabled()
+    // The seeded position lives in eth-usdt while this renders aave-gho. The exit routes now
+    // fall back to a market the wallet can actually exit instead of dead-ending on
+    // "No position", so the CTA is no longer the blocked no-position label.
+    expect(screen.queryByRole("button", { name: "No position" })).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
+  })
+
+  it("falls back to a market holding a position instead of dead-ending on close", async () => {
+    // Regression: /actions/multiply/close?market=<market with no position> rendered
+    // "No open position to close in this market." with no collateral field and no way to
+    // switch. Exit kinds now resolve a market the wallet can exit and expose the picker.
+    seedExistingMultiplyPosition()
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="close" initialMarketId="aave-gho" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText("No open position to close in this market.")).not.toBeInTheDocument()
+    })
+    expect(screen.queryByRole("button", { name: "No position" })).not.toBeInTheDocument()
   })
 
   it("lets the deleverage slider move freely instead of snapping back to the default", async () => {

@@ -43,7 +43,7 @@ import {
   maxMultiplyCollateralAmount,
   resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
-import { formatActionAmount } from "@/app/lib/action-system/formatters"
+import { formatActionAmount, formatActionUsd } from "@/app/lib/action-system/formatters"
 import { useCanonicalPriceFor, usePriceFor, usePriceFreshness } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -98,16 +98,31 @@ export function MultiplyActionPageClient({
     return selected ?? markets[0] ?? null
   }, [selectedMarketId, session.state.markets])
 
+  // Opening a loop can target any market in the catalog; CLOSING or DELEVERAGING can only
+  // target a market this wallet actually holds a position in. Scoping the exit picker to
+  // those positions means every option leads somewhere — previously the exit routes hid the
+  // selector entirely, so a market with no position (e.g. an already-closed wsteth-eth) was a
+  // dead end reading "No open position to close in this market" with no way to switch.
   const marketOptions = useMemo(() => {
-    if (kind !== "multiply") return undefined
-    const options = Object.values(session.state.markets).map((entry) => ({
-      id: entry.id,
-      label: translateMultiplyLoopMarketLabel(t, entry.collateralAsset.symbol, entry.borrowAsset.symbol),
-      symbol: entry.collateralAsset.symbol,
-      borrowSymbol: entry.borrowAsset.symbol,
-    }))
-    return options.length > 1 ? options : undefined
-  }, [kind, session.state.markets])
+    const entries = isExitKind
+      ? walletPositions
+          .map((entry) => session.state.markets[entry.marketId])
+          .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+      : Object.values(session.state.markets)
+    const seen = new Set<string>()
+    const options = entries
+      .filter((entry) => !seen.has(entry.id) && seen.add(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        label: translateMultiplyLoopMarketLabel(t, entry.collateralAsset.symbol, entry.borrowAsset.symbol),
+        symbol: entry.collateralAsset.symbol,
+        borrowSymbol: entry.borrowAsset.symbol,
+      }))
+    // Exit kinds keep a single option visible so the user can always see WHICH position they
+    // are about to close; opening only shows the picker when there is a real choice.
+    if (options.length === 0) return undefined
+    return isExitKind || options.length > 1 ? options : undefined
+  }, [isExitKind, session.state.markets, t, walletPositions])
   // Value the collateral at the live oracle price when it is usable, else the catalog price
   // — the SAME guard the engine applies to the exposure. `??` alone passed a 0/NaN oracle
   // reading through and zeroed the displayed collateral USD while the exposure stayed at the
@@ -132,12 +147,14 @@ export function MultiplyActionPageClient({
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
-    // The standalone exit routes are intentionally unbound until a market is supplied.
-    // Detail-page sidebars pass `initialMarketId`, so they still resolve their active
-    // position while `/actions/multiply/deleverage` and `/close` show the safe empty state.
-    if (!market || (isExitKind && !validInitialMarketId)) return null
+    // Resolve against whichever market is SELECTED. The exit routes used to stay unbound
+    // unless the caller supplied `initialMarketId`, which meant the standalone
+    // /actions/multiply/close and /deleverage routes could never resolve a position even
+    // though they auto-select one below. The collateral picker now makes the selection
+    // explicit and visible, so binding to it is safe (and the review step restates it).
+    if (!market) return null
     return walletPositions.find((entry) => entry.marketId === market.id) ?? null
-  }, [isExitKind, market, validInitialMarketId, walletPositions])
+  }, [market, walletPositions])
   const defaultMultiplyMultiplier = useMemo(() => {
     if (kind !== "multiply") return ""
     const safeDefault = market
@@ -158,9 +175,15 @@ export function MultiplyActionPageClient({
   const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
-    if (!isExitKind || initialMarketId || selectedMarketId || walletPositions.length === 0) return
+    if (!isExitKind || walletPositions.length === 0) return
+    // Land on a market this wallet can actually exit. The selected market (from `?market=`,
+    // a detail sidebar, or a previous pick) wins whenever it holds a position; otherwise fall
+    // back to the first one that does, rather than dead-ending on "No open position". The
+    // picker shows which market resolved, so the substitution is never hidden.
+    const active = selectedMarketId ?? validInitialMarketId
+    if (active && walletPositions.some((entry) => entry.marketId === active)) return
     setSelectedMarketId(walletPositions[0]!.marketId)
-  }, [initialMarketId, isExitKind, selectedMarketId, walletPositions])
+  }, [isExitKind, selectedMarketId, validInitialMarketId, walletPositions])
 
   useEffect(() => {
     if (kind !== "deleverage" || !position) return
@@ -289,6 +312,9 @@ export function MultiplyActionPageClient({
       return
     }
 
+    // Deleverage intentionally shows no projection until the user picks a target leverage —
+    // the seeded default is a starting point, not a recommendation. (The Collateral row's USD
+    // comes from `amountUsdLabel`, not the preview, so it stays correct while this is blank.)
     if (kind === "deleverage" && !hasUserInput) {
       setPreviewUi(null)
       return
@@ -689,10 +715,26 @@ export function MultiplyActionPageClient({
   const useWorkspaceFields = embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
-  const collateralBalanceLabel = showCollateralBalance ? "Balance" : undefined
+  // Exit kinds show the position's collateral in the (read-only) Collateral field, so the user
+  // can see what they are unwinding and which market it sits in.
+  // Display-only, so format it: the raw float renders as "83364.92319002117" in the field.
+  // This never feeds the action — close uses the positionId and deleverage the slider.
+  const exitCollateralAmount =
+    isExitKind && position
+      ? position.collateralAmount >= 100
+        ? position.collateralAmount.toFixed(2).replace(/\.?0+$/, "")
+        : position.collateralAmount.toFixed(6).replace(/\.?0+$/, "")
+      : ""
+  const exitCollateralUsdLabel =
+    isExitKind && position
+      ? formatActionUsd(position.collateralAmount * collateralPriceUsd, { exact: true })
+      : undefined
+  const collateralBalanceLabel = showCollateralBalance ? "Balance" : isExitKind && position ? "Position" : undefined
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
-    : undefined
+    : isExitKind && position
+      ? formatActionAmount(position.collateralAmount, market.collateralAsset.symbol, 6)
+      : undefined
   const multiplierLabel = kind === "deleverage" ? "Target leverage" : "Multiplier"
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
@@ -772,8 +814,15 @@ export function MultiplyActionPageClient({
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
-          inputLabel={kind === "multiply" ? "Collateral" : undefined}
+          inputLabel="Collateral"
           amount={amount}
+          // Read-only informational value; `amount` still drives validation, so showing the
+          // position's collateral cannot make an unfilled form report as filled in.
+          displayAmount={isExitKind ? exitCollateralAmount : undefined}
+          // The exit field shows COLLATERAL, so its USD must be the collateral's value. The
+          // preview's own amountUsd describes something else (the withdrawal for close, the
+          // target leverage for deleverage), which rendered "$41,707" or "$0" beside it.
+          amountUsdLabel={exitCollateralUsdLabel}
           onAmountChange={(value) => {
             setHasUserInput(true)
             setAmount(value)
@@ -811,15 +860,24 @@ export function MultiplyActionPageClient({
           secondaryHref={closeHref}
           isPending={isPending}
           outcome={outcome}
-          showBalance={showCollateralBalance}
-          onMax={handleMaxCollateral}
+          showBalance={showCollateralBalance || Boolean(isExitKind && position)}
+          onMax={showCollateralBalance ? handleMaxCollateral : undefined}
           balanceLabel={collateralBalanceLabel}
           balanceValue={collateralBalanceValue}
-          hideAmountInput={useWorkspaceFields || kind === "deleverage" || kind === "close" || deleverageCloseOnly}
+          amountReadOnly={isExitKind}
+          allowAssetSwitchWhenReadOnly={isExitKind}
+          // Exit kinds keep the Collateral row visible: the amount is not user-editable (a
+          // close is a full exit; a deleverage is driven by the slider) but the row carries
+          // the position's collateral and the picker that selects WHICH position is being
+          // exited. Hiding the whole row left Close/Deleverage with no collateral context at
+          // all and no way off a market holding no position.
+          hideAmountInput={useWorkspaceFields || (isExitKind && !position)}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
           singlePrimaryCta={sidebar || deleverageCloseOnly}
-          hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
+          // Exit kinds always keep the picker: choosing WHICH position to close is the
+          // point, even in the home layout where opening is pinned to one market.
+          hideAssetSelector={!isExitKind && isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
 
