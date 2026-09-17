@@ -32,7 +32,7 @@ import {
 } from "@/app/lib/detail-page/about-contract-addresses"
 import { resolveLendHeadlineRates } from "./headline-rates"
 import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
-import { buildLendMarketDetail, resolveLendMarket } from "./mock"
+import { alignRiskSupplyApyMetric, buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 import type { QuickStat } from "@/app/lib/borrow-detail"
 
@@ -207,7 +207,12 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
       // The client overlays the wallet's own session transactions on top of this.
       transactions:
         preferLiveOrNull(mode, transactions as typeof detail.transactions | null, detail.transactions) ?? [],
-      risk: preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
+      // Single-source Supply APY: the seeded/frozen risk metric is realigned to the live
+      // headline value Key Statistics shows, so the page never renders two different rates.
+      risk: alignRiskSupplyApyMetric(
+        preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
+        detail.quickStats,
+      ),
       utilizationPct: headline.utilizationPct,
       borrowAprPct: headline.borrowAprPct,
       protocolParameters: interestRateModel ? irmProtocolParameters(interestRateModel) : detail.protocolParameters,

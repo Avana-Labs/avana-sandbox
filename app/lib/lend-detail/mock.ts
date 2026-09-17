@@ -21,7 +21,7 @@ import { buildLendFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
-import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
+import type { AboutCard, CashflowCard, DeltaStat, QuickStat, RiskAssessment, TxHistoryRow } from "@/app/lib/borrow-detail"
 import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { formatDetailTokenAmount } from "@/app/lib/detail-page/transaction-display"
@@ -364,19 +364,39 @@ export function resolveLendMarket(id: string): LendMarket | null {
   return getLendMarketById(decoded) ?? getLendMarketById(resolveLendMarketId(decoded))
 }
 
+/**
+ * Key Statistics and the Risk card both surface "Supply APY". Key Statistics reflects the
+ * live snapshot rate while the seeded/catalog risk metric is frozen, so on the live detail
+ * page the two can disagree. Overlay the risk metric with the exact value Key Statistics
+ * renders so the page shows a single Supply APY. No-op when they already match or when the
+ * metric / stat is absent.
+ */
+export function alignRiskSupplyApyMetric(risk: RiskAssessment, quickStats: QuickStat[]): RiskAssessment {
+  const headline = quickStats.find((stat) => stat.id === "supplyApy")?.value
+  if (!headline || !risk.metrics.some((metric) => metric.id === "supplyApy" && metric.value !== headline)) {
+    return risk
+  }
+  return {
+    ...risk,
+    metrics: risk.metrics.map((metric) => (metric.id === "supplyApy" ? { ...metric, value: headline } : metric)),
+  }
+}
+
 /** Build the full deterministic detail for a lend market, optionally overlaying Convex reference values. */
 export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetailOverrides): LendMarketDetail {
   const ref = resolveReference(market, overrides)
+  const quickStats = buildQuickStats(market, ref)
   return {
     id: market.marketId,
     hero: buildHero(market),
-    quickStats: buildQuickStats(market, ref),
+    quickStats,
     utilizationPct: ref.utilizationPct,
     borrowAprPct: ref.borrowAprPct,
     protocolParameters: buildInterestRateModelParameterRows(market.marketId, ref.borrowAprPct),
     supplyBorrow: buildSupplyBorrow(market, ref),
     cashflow: buildCashflow(market, ref),
-    risk: buildLendRiskAssessment(market),
+    // Single-source Supply APY: keep the risk metric equal to the headline quick stat.
+    risk: alignRiskSupplyApyMetric(buildLendRiskAssessment(market), quickStats),
     about: buildAbout(market, ref),
     faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     transactions: buildTransactions(market),
