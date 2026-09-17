@@ -29,6 +29,7 @@ import {
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
 import { liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
+import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import {
@@ -160,6 +161,10 @@ export function SuppliesPanel({
                         row.liquidationThresholdUsd > 0
                           ? Math.min(100, (row.borrowedUsd / row.liquidationThresholdUsd) * 100)
                           : 0
+                      // Spoke/venue context distinguishes two positions on the same pair but
+                      // different spokes; reuse the borrow market-context helper.
+                      const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
+                      const valueLabel = m(`${t("Value")}: ${compact(row.pool.collateralUsd)}`)
                       return (
                         <tr
                           key={row.pool.id}
@@ -167,12 +172,12 @@ export function SuppliesPanel({
                           onClick={() => router.push(detailHref)}
                         >
                           <td className={`${TABLE_CELL_PADDING} pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                            {/* Collateral column: the LP pair over its live collateral value (replaces the
-                            venue subtitle and the old standalone Collateral column). */}
+                            {/* Collateral column: the LP pair over its spoke/venue and live collateral
+                            value, so two positions on the same pair but different spokes stay distinct. */}
                             <TokenPairCell
                               visuals={visuals}
                               name={row.pool.name}
-                              subtitle={m(`${t("Value")}: ${compact(row.pool.collateralUsd)}`)}
+                              subtitle={`${spokeLabel} · ${valueLabel}`}
                               size="md"
                             />
                           </td>
@@ -224,6 +229,8 @@ export function SuppliesPanel({
               // caps/formats health identically to the desktop table and the hero card.
               const hfLabel = formatHealthFactor(hf)
               const hfTone = healthFactorBarTone(hf)
+              // Spoke/venue context so same-pair positions on different spokes stay distinct.
+              const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
               return (
                 <MarketMobileCard
                   key={row.pool.id}
@@ -231,7 +238,7 @@ export function SuppliesPanel({
                   onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
                 >
                   <MarketMobileCardHeader
-                    identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
+                    identity={<TokenPairCell visuals={visuals} name={row.pool.name} subtitle={spokeLabel} size="md" />}
                     metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
                   />
                   <MarketMobileStatList className="mt-3">
