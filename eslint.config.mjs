@@ -10,6 +10,7 @@ export default tseslint.config(
       ".next/**",
       ".next-dev/**",
       ".next-prod/**",
+      ".next-mock/**",
       ".next-check/**",
       "node_modules/**",
       ".reports/**",

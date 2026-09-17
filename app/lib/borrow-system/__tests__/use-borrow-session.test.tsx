@@ -192,7 +192,7 @@ describe("useBorrowSession", () => {
     })
   })
 
-  it("anchors the engine clock to Convex hydration time", async () => {
+  it("anchors the engine clock to the last persisted moment, not wall-clock, on hydration", async () => {
     const walletId = "convex-wallet"
     const sessionSeed = buildBorrowSessionSeed(walletId)
     const { result } = renderHook(() =>
@@ -201,7 +201,8 @@ describe("useBorrowSession", () => {
         sessionSeed,
       }),
     )
-    const seedNow = result.current.state.now
+    // The wallet's last real persisted activity (the seed's onboarding moment).
+    const persistedMoment = result.current.state.accounts[walletId].lastUpdatedAt
 
     act(() => {
       result.current.hydrateWalletData({
@@ -212,9 +213,14 @@ describe("useBorrowSession", () => {
       })
     })
 
+    // Hydration anchors the engine clock to that persisted moment instead of jumping it
+    // forward to Date.now(). The read model then accrues supply/debt indices across the
+    // offline gap (now → Date.now()) rather than collapsing that span to zero, so a loan
+    // open for days still shows its accrued Interest Owed. See hydrateWalletData.
     await waitFor(() => {
-      expect(result.current.state.now).toBeGreaterThan(seedNow)
+      expect(result.current.state.now).toBe(persistedMoment)
     })
+    expect(result.current.state.now).toBeLessThan(Date.now())
   })
 
   it("dedupes concurrent execute calls for the same intent", async () => {

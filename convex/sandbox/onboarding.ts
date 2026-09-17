@@ -134,7 +134,7 @@ async function getOrSeedConfig(ctx: MutationCtx) {
  * v2: include the tokenized stock lend markets (AAPL/GOOGL/NVDA/TSLA) and the stock collateral
  * pools (Uniswap Robinhood Stocks, Aerodrome Concentrated Stocks).
  */
-const STARTER_CATALOG_VERSION = 2
+export const STARTER_CATALOG_VERSION = 2
 
 async function getOrSeedStarterCatalog(ctx: MutationCtx) {
   const existing = await ctx.db

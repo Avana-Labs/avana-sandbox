@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
 import { seedStarterTestMarkets, starterTestPriceFor, STARTER_TEST_MARKETS } from "./starterTestMarkets"
+import { STARTER_CATALOG_VERSION } from "./sandbox/onboarding"
 
 // Rooted at the convex directory so convex-test can resolve "sandbox/onboarding".
 const modules = import.meta.glob("./**/*.*s")
@@ -126,6 +127,9 @@ describe("sandbox onboarding + economy caps", () => {
           priceUsd: starterTestPriceFor(market.symbol),
         })),
         updatedAt: SENTINEL_UPDATED_AT,
+        // Current-version, fully-priced catalog → the claim must take the read-only
+        // fast path and leave the shared singleton untouched (updatedAt preserved).
+        version: STARTER_CATALOG_VERSION,
       })
     })
 
