@@ -71,6 +71,10 @@ export function DetailMarketTransactions({
       kindConfig={kindConfig}
       context={context}
       title={title}
+      // Borrow DEBT feed: each row is a single borrowed token whose record stores only USD, so
+      // reconcile the token quantity to that USD at the live price. Pool/lend/multiply carry real
+      // recorded amounts and keep the frozen-of-record display.
+      reconcileTokenToLiveUsd={scope === "asset"}
     />
   )
 }

@@ -50,11 +50,13 @@ function TokenAmountWithIcon({ symbol, amount }: { symbol: string; amount: strin
 export function TransactionTokenCell({
   row,
   priceContext,
+  reconcileToLiveUsd = false,
 }: {
   row: DetailTransactionRow
   priceContext?: TransactionPriceContext
+  reconcileToLiveUsd?: boolean
 }) {
-  const token = resolveTransactionTokenDisplay(row, priceContext)
+  const token = resolveTransactionTokenDisplay(row, priceContext, reconcileToLiveUsd)
   if (!token) return <EmptyAlign />
 
   return <TokenAmountWithIcon symbol={token.symbol} amount={`${token.amount} ${token.symbol}`} />
@@ -85,15 +87,17 @@ export function TransactionUsdCell({
   row,
   priceContext,
   poolSymbols,
+  reconcileToLiveUsd = false,
 }: {
   row: DetailTransactionRow
   priceContext?: TransactionPriceContext
   poolSymbols?: { token0: string; token1: string }
+  reconcileToLiveUsd?: boolean
 }) {
   const { compact } = useCurrency()
   const usdValue = poolSymbols
     ? resolvePoolUsdValue(row, poolSymbols.token0, poolSymbols.token1, priceContext)
-    : resolveTransactionUsdValue(row, priceContext)
+    : resolveTransactionUsdValue(row, priceContext, reconcileToLiveUsd)
 
   if (usdValue == null) return <EmptyAlign />
 
