@@ -21,7 +21,14 @@ import { buildLendFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
-import type { AboutCard, CashflowCard, DeltaStat, QuickStat, RiskAssessment, TxHistoryRow } from "@/app/lib/borrow-detail"
+import type {
+  AboutCard,
+  CashflowCard,
+  DeltaStat,
+  QuickStat,
+  RiskAssessment,
+  TxHistoryRow,
+} from "@/app/lib/borrow-detail"
 import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { formatDetailTokenAmount } from "@/app/lib/detail-page/transaction-display"

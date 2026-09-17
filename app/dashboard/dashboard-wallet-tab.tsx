@@ -180,7 +180,9 @@ function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; market
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>{row.name}</div>
+          <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>
+            {row.name}
+          </div>
           <div className={TABLE_CELL_SECONDARY}>{detail.protocol}</div>
         </div>
       </div>
@@ -516,7 +518,9 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>{row.name}</div>
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>
+                        {row.name}
+                      </div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
                         {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                       </div>
