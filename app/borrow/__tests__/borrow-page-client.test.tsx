@@ -84,8 +84,9 @@ describe("BorrowPageHero", () => {
     expect(screen.getByText("Borrow TVL")).toBeInTheDocument()
     expect(screen.getByText("$327.4M")).toBeInTheDocument()
     // "Total Collateral" ($315.7M) was dropped in the one-stat-per-page hero refactor.
-    expect(screen.getByText("$92.7M")).toBeInTheDocument()
-    expect(screen.getByText("$159.8M")).toBeInTheDocument()
+    // Available Credit / Outstanding Loans render twice (desktop inline + mobile condensed row).
+    expect(screen.getAllByText("$92.7M").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("$159.8M").length).toBeGreaterThan(0)
     expect(screen.getByText("WETH / USDC")).toBeInTheDocument()
     expect(screen.getByText("5.30% Fees")).toBeInTheDocument()
     expect(screen.getByText("78% LTV")).toBeInTheDocument()

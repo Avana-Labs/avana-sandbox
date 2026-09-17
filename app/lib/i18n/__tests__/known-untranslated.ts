@@ -119,8 +119,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "TVL",
   "Txn",
   "Type",
-  // Umbrella product/brand name — rendered as-is across locales.
-  "Umbrella",
   "Unstake",
   "was",
   "Website",
