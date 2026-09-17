@@ -1,21 +1,13 @@
 /**
- * Convex schema — the canonical persistence layer for every number a detail
- * page renders. The frontend never imports mock data once these tables are
- * populated; instead it calls the queries in sibling files (`engagement.ts`,
- * `cashflow.ts`, `markets.ts`, `allocation.ts`) which fold these rows into
- * the view-model shapes declared in `app/lib/borrow-detail/types.ts`.
+ * Convex schema — canonical persistence for every number a detail page renders.
+ * Queries in sibling files (`engagement.ts`, `cashflow.ts`, `markets.ts`,
+ * `allocation.ts`) fold these rows into the view-models in
+ * `app/lib/borrow-detail/types.ts`; keep the `@convex-source` JSDoc pointers there
+ * in sync when renaming a field.
  *
- * Table naming contract:
- *   - `markets`                     canonical identity (legacy shared; decoupling track splits by product).
- *   - `walletEvents`                source-of-truth user actions (drives engagement + transaction history).
- *   - `marketDailyStats`            daily market snapshot (drives supply/borrow, utilization, key metrics).
- *   - `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily` product cash flow.
- *   - `assetPoolAllocationDaily`    daily per-pool allocation per asset (drives allocation breakdown).
- *   - `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments` product risk.
- *   - `borrow*` / `lend*` / `multiply*`  product-siloed detail params (IRM, risk grid, liquidation, borrowables).
- *
- * If you change field names here, update the matching JSDoc `@convex-source`
- * pointers in `app/lib/borrow-detail/types.ts` so the data seam stays obvious.
+ * Products are siloed: `borrow*` / `lend*` / `multiply*` tables are slug-keyed and
+ * must not share rows. `markets` is the legacy shared identity hub that
+ * `walletEvents` / allocation still FK against.
  */
 
 import { defineSchema, defineTable } from "convex/server"
@@ -33,9 +25,8 @@ const walletEventKind = v.union(
   v.literal("rewardsClaim"),
 )
 
-/** Scope differentiates an asset (single borrowable token), a pool (LP collateral
- *  market), a lend market (single-asset supply market), and a multiply market
- *  (leveraged collateral→borrow loop). */
+/** asset = single borrowable token, pool = LP collateral, lend = single-asset supply,
+ *  multiply = leveraged collateral→borrow loop. */
 export const MARKET_SCOPES = ["asset", "pool", "lend", "multiply"] as const
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
@@ -44,28 +35,25 @@ const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("el
 
 export default defineSchema({
   /**
-   * Canonical market directory. Every other table fk's against this. The
-   * `slug` is what the UI uses in URLs (e.g. `usdc`, `uni-v3-bluechip-weth-usdc`)
-   * so the migration from mocks is a straight lookup.
+   * Canonical market directory; every other table FKs against this. `slug` is the
+   * URL id (e.g. `usdc`, `uni-v3-bluechip-weth-usdc`) and matches
+   * `AssetDetail.id` / `PoolDetail.id`.
    */
   markets: defineTable({
     scope: marketScope,
-    /** URL-safe id. Matches `AssetDetail.id` / `PoolDetail.id`. */
     slug: v.string(),
     chainId: v.number(),
-    /** Display name, e.g. "USD Coin" or "ETH / USDC". */
     name: v.string(),
     /** Short symbol (assets) or pair label (pools). */
     symbol: v.string(),
-    /** For pools: e.g. "Uniswap v3 · 0.3%". Optional for assets. */
+    /** Pools only, e.g. "Uniswap v3 · 0.3%". */
     venueLabel: v.optional(v.string()),
-    /** For assets only: "stable" | "crypto" | "stock". */
+    /** Assets only. */
     category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
-    /** Block explorer link for the underlying contract. */
     explorerUrl: v.optional(v.string()),
-    /** Used to cap user-visible utilization / LTV on the front end. */
+    /** Caps user-visible utilization / LTV on the front end. */
     reserveFactorPct: v.optional(v.number()),
-    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
+    /** Incentive APY percent (0 = none). */
     rewardsApyPct: v.optional(v.number()),
     description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
@@ -73,18 +61,16 @@ export default defineSchema({
     feeTier: v.optional(v.string()),
     maxLtvPct: v.optional(v.number()),
     /**
-     * Canonical USD price. The live token oracle (tokenPrices) only covers single-token
-     * bluechip symbols; pool markets carry LP-pair symbols and long-tail lend markets carry
-     * chain-name symbols with no oracle price, so this is seeded per market. For POOL markets
-     * it is the LP token price (poolLpTokenPriceUsd) — used both by the onboarding starter
-     * gate and by assertBorrowSolvent to revalue an 18-decimal LP-token pledge.
+     * Canonical USD price, seeded per market because the live `tokenPrices` oracle only
+     * covers single-token bluechip symbols. On POOL markets this is the LP token price,
+     * read by the onboarding starter gate and by assertBorrowSolvent to revalue an
+     * 18-decimal LP pledge.
      */
     priceUsd: v.optional(v.number()),
     /**
-     * Pool composition with NORMALIZED weights (fractions summing to 1). Present on POOL markets so
-     * the LP price can be recomputed live from the token oracle as Σ(weightᵢ × priceᵢ)
-     * (prices.refreshPoolLpPrices) instead of staying frozen at the seed value. Seeded from the app
-     * catalog's constituents (build-seed).
+     * Pool composition with NORMALIZED weights (fractions summing to 1). Lets
+     * `prices.refreshPoolLpPrices` recompute the LP price live as Σ(weightᵢ × priceᵢ)
+     * instead of leaving it frozen at the seed value.
      */
     constituents: v.optional(v.array(v.object({ symbol: v.string(), weight: v.number() }))),
     visuals: v.optional(
@@ -103,15 +89,13 @@ export default defineSchema({
   })
     .index("by_scope_slug", ["scope", "slug"])
     .index("by_scope_chain", ["scope", "chainId"])
-    // Scope-independent slug/symbol point reads for Ask AI tools (a market slug is
-    // globally unique in practice); avoids full-table scans in stress/pool lookups.
+    // Scope-independent point reads for Ask AI tools; a slug is globally unique in practice.
     .index("by_slug", ["slug"])
     .index("by_symbol", ["symbol"]),
 
   /**
    * Product-siloed borrow market identity (pool + asset). Prefer this for display
-   * metadata; legacy `markets` remains the FK hub for walletEvents / allocation until
-   * those are siloed.
+   * metadata; legacy `markets` is still the FK hub for walletEvents / allocation.
    */
   borrowMarkets: defineTable({
     slug: v.string(),
@@ -123,7 +107,6 @@ export default defineSchema({
     category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
-    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
     rewardsApyPct: v.optional(v.number()),
     description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
@@ -149,7 +132,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),
 
-  /** Product-siloed lend market identity. */
   lendMarkets: defineTable({
     slug: v.string(),
     chainId: v.number(),
@@ -159,7 +141,6 @@ export default defineSchema({
     category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
-    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
     rewardsApyPct: v.optional(v.number()),
     description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
@@ -182,7 +163,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),
 
-  /** Product-siloed multiply market identity. */
   multiplyMarkets: defineTable({
     slug: v.string(),
     chainId: v.number(),
@@ -192,7 +172,6 @@ export default defineSchema({
     category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
-    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
     rewardsApyPct: v.optional(v.number()),
     description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
@@ -212,10 +191,7 @@ export default defineSchema({
       ),
     ),
     resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
-    /**
-     * Multiply-specific catalog fields. All optional so existing rows migrate
-     * lazily; seed writer populates from MULTIPLY_MARKET_CATALOG in Phase C.
-     */
+    /** Multiply-specific catalog fields; optional so existing rows migrate lazily. */
     publicMaxMultiplier: v.optional(v.number()),
     hardMaxMultiplier: v.optional(v.number()),
     minHealthFactor: v.optional(v.number()),
@@ -231,26 +207,22 @@ export default defineSchema({
   }).index("by_slug", ["slug"]),
 
   /**
-   * Every on-chain user action. Source of truth for:
-   *   - `EngagementTrend.series`    (distinct wallets per day)
-   *   - `EngagementTrend.primary`   (active wallets today vs. yesterday)
-   *   - `EngagementTrend.secondary` (conversion: e.g. supplies that later borrowed)
-   *   - `AssetDetail.transactions`  (recent N rows with amount + tx hash)
-   *
-   * Write path: indexer/webhook. Read path: `convex/engagement.ts`.
+   * Every on-chain user action; drives `EngagementTrend.*` and
+   * `AssetDetail.transactions`. Write path: indexer/webhook. Read path:
+   * `convex/engagement.ts`.
    */
   walletEvents: defineTable({
     marketId: v.id("markets"),
-    /** Checksummed EVM address. Store lowercase for deterministic indexing. */
+    /** EVM address, stored LOWERCASE for deterministic indexing. */
     wallet: v.string(),
     kind: walletEventKind,
-    /** Notional in USD at event time. Back-fill from price oracle at block. */
+    /** Notional in USD at event time (oracle price at block). */
     amountUsd: v.number(),
-    /** Counterparty wallet if applicable (liquidator, router, etc.). */
+    /** Liquidator, router, etc. */
     counterparty: v.optional(v.string()),
     txHash: v.string(),
     blockNumber: v.number(),
-    /** Event time, ms since epoch (UTC). Index on this for range scans. */
+    /** ms since epoch, UTC. */
     at: v.number(),
   })
     .index("by_market_at", ["marketId", "at"])
@@ -258,43 +230,27 @@ export default defineSchema({
     .index("by_market_kind_at", ["marketId", "kind", "at"]),
 
   /**
-   * Daily snapshot of market-wide stats (one row per market per day).
-   *
-   * Source of truth for:
-   *   - `AssetDetail.supplyBorrow.{supplied, borrowed, utilization}`
-   *   - `AssetDetail.historicalUtilization`
-   *   - `AssetDetail.heroMetric.series.{supply, borrow, utilization, apy}`
-   *   - `AssetDetail.quickStats` (latest row + 24h delta)
-   *   - `PoolDetail.keyMetrics.*`
-   *   - `PoolDetail.heroMetric.series.*`
-   *
-   * Write path: daily aggregator job. Read path: `convex/markets.ts`.
-   */
-  /**
-   * Legacy shared daily market snapshot. Prefer product-siloed
-   * `borrowDailyStats` / `lendDailyStats` / `multiplyDailyStats`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
-   *
-   * Write path: daily aggregator job. Read path: `convex/markets.ts` (+ siloed IRM).
+   * LEGACY shared daily market snapshot, one row per (market, day). Prefer the
+   * product-siloed `borrowDailyStats` / `lendDailyStats` / `multiplyDailyStats`; kept
+   * for dual-read and the seed still dual-writes. Write path: daily aggregator job.
    */
   marketDailyStats: defineTable({
     marketId: v.id("markets"),
-    /** ISO YYYY-MM-DD in UTC. One row per (marketId, day). */
+    /** ISO YYYY-MM-DD, UTC. */
     day: v.string(),
     suppliedUsd: v.number(),
     borrowedUsd: v.number(),
-    /** 0..100; derived as `borrowedUsd / suppliedUsd`. Stored to avoid recompute. */
+    /** 0..100; `borrowedUsd / suppliedUsd`, stored to avoid recompute. */
     utilizationPct: v.number(),
     supplyApyPct: v.number(),
     borrowAprPct: v.number(),
-    /** For pools: same as suppliedUsd. For assets: total reserve value. */
+    /** Pools: same as suppliedUsd. Assets: total reserve value. */
     tvlUsd: v.number(),
-    /** Rolling 24h swap volume (pools only; 0 for single-asset markets). */
+    /** Rolling 24h swap volume; 0 for single-asset markets. */
     volumeUsd: v.number(),
     feesUsd: v.number(),
-    /** Spot price of the underlying at end-of-day (assets only). */
+    /** End-of-day spot price of the underlying (assets only). */
     priceUsd: v.optional(v.number()),
-    /** Current caps / parameters (useful for key metrics card). */
     supplyCapUsd: v.optional(v.number()),
     borrowCapUsd: v.optional(v.number()),
   }).index("by_market_day", ["marketId", "day"]),
@@ -317,7 +273,6 @@ export default defineSchema({
     borrowCapUsd: v.optional(v.number()),
   }).index("by_slug_day", ["slug", "day"]),
 
-  /** Lend product daily stats, slug-keyed. */
   lendDailyStats: defineTable({
     slug: v.string(),
     day: v.string(),
@@ -334,7 +289,6 @@ export default defineSchema({
     borrowCapUsd: v.optional(v.number()),
   }).index("by_slug_day", ["slug", "day"]),
 
-  /** Multiply product daily stats, slug-keyed. */
   multiplyDailyStats: defineTable({
     slug: v.string(),
     day: v.string(),
@@ -352,12 +306,10 @@ export default defineSchema({
   }).index("by_slug_day", ["slug", "day"]),
 
   /**
-   * Precomputed reference-snapshot cache for `listMarketSnapshots`. That query is
-   * subscribed app-wide, so recomputing it from a full `markets` collect plus one
-   * indexed read per market (~173 reads) on every subscriber recompute does not
-   * scale. Instead the recompute runs once in `rebuildMarketSnapshots` (on write /
-   * on schedule) and writes the folded rows here; the hot query reads this single
-   * document (O(1)). One row total — `singleton: "markets"`.
+   * Precomputed cache for `listMarketSnapshots`, which is subscribed app-wide — reading
+   * one document keeps it O(1) instead of a full `markets` collect plus an indexed read
+   * per market (~173) on every subscriber recompute. Rebuilt by
+   * `rebuildMarketSnapshots` on write / on schedule.
    */
   marketSnapshotsCache: defineTable({
     /** Constant discriminator so there is exactly one cache row (`"markets"`). */
@@ -378,7 +330,7 @@ export default defineSchema({
         maxLtvPct: v.optional(v.number()),
         reserveFactorPct: v.optional(v.number()),
         rewardsApyPct: v.optional(v.number()),
-        /** Latest siloed risk-assessment premium (bps) for list Risk Premium column. */
+        /** Latest siloed risk-assessment premium, bps. */
         premiumBps: v.optional(v.number()),
         visuals: v.optional(
           v.array(
@@ -407,27 +359,20 @@ export default defineSchema({
   }).index("by_singleton", ["singleton"]),
 
   /**
-   * Legacy shared daily revenue per market (Cashflow card), keyed by `markets` id.
-   * Prefer product-siloed `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
-   *
-   * Source of truth for:
-   *   - `CashflowTrend.series` (asset page — "revenue generated")
-   *   - `CashflowCard.rows`    (both pages — breakdown table)
-   *   - `CashflowCard.bars`    (monthly fees + incentives)
+   * LEGACY shared daily revenue per market (Cashflow card). Prefer the siloed
+   * `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily`; kept for
+   * dual-read and the seed still dual-writes.
    */
   marketRevenueDaily: defineTable({
     marketId: v.id("markets"),
     day: v.string(),
-    /** Gross interest paid by borrowers. */
     interestFromBorrowersUsd: v.number(),
-    /** Net interest that accrued to suppliers (after reserve take). */
+    /** Net of the reserve take. */
     interestToSuppliersUsd: v.number(),
-    /** Protocol reserve take. */
     reserveTakeUsd: v.number(),
-    /** External incentives emitted on top of native yield. */
+    /** External incentives on top of native yield. */
     rewardsDistributedUsd: v.number(),
-    /** Swap fees (pools only). */
+    /** Pools only. */
     swapFeesUsd: v.number(),
   }).index("by_market_day", ["marketId", "day"]),
 
@@ -443,7 +388,6 @@ export default defineSchema({
     swapFeesUsd: v.number(),
   }).index("by_slug_day", ["slug", "day"]),
 
-  /** Lend product daily revenue, slug-keyed. */
   lendRevenueDaily: defineTable({
     slug: v.string(),
     day: v.string(),
@@ -454,7 +398,6 @@ export default defineSchema({
     swapFeesUsd: v.number(),
   }).index("by_slug_day", ["slug", "day"]),
 
-  /** Multiply product daily revenue, slug-keyed. */
   multiplyRevenueDaily: defineTable({
     slug: v.string(),
     day: v.string(),
@@ -466,9 +409,8 @@ export default defineSchema({
   }).index("by_slug_day", ["slug", "day"]),
 
   /**
-   * Daily snapshot of how an asset's liquidity is split across pools.
-   * Source of truth for `AssetDetail.allocation`. The table is keyed by the
-   * asset; the `poolId` FK lets the query join to `markets` for display.
+   * Daily split of an asset's liquidity across pools; drives `AssetDetail.allocation`.
+   * Keyed by asset, with `poolId` joining back to `markets` for display.
    */
   assetPoolAllocationDaily: defineTable({
     assetId: v.id("markets"),
@@ -484,9 +426,9 @@ export default defineSchema({
     .index("by_pool_day", ["poolId", "day"]),
 
   /**
-   * Legacy shared risk review snapshots (Risk Premium card), keyed by `markets` id.
-   * Prefer product-siloed `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
+   * LEGACY shared risk review snapshots (Risk Premium card). Prefer the siloed
+   * `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments`; kept
+   * for dual-read and the seed still dual-writes.
    */
   riskAssessments: defineTable({
     marketId: v.id("markets"),
@@ -517,25 +459,18 @@ export default defineSchema({
   }).index("by_market_assessed_at", ["marketId", "assessedAt"]),
 
   /**
-   * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
-   * withdraw from ANY client APPENDS a delta event here (never patches a shared
-   * row), and every client subscribes (see `convex/liquidity.ts`), which folds the
-   * events per market and layers the net onto the base catalog so liquidity stats
-   * move with aggregate activity across all users instead of staying frozen.
+   * Shared multi-user liquidity ledger: every borrow / repay / supply / withdraw
+   * APPENDS a row here, and `convex/liquidity.ts` folds them per market onto the base
+   * catalog. APPEND-ONLY BY DESIGN — patching one per-market row put every writer on
+   * the same document and made concurrent actions contend under Convex OCC.
    *
-   * Append-only by design: patching a single per-market row put every writer on the
-   * same document and made concurrent actions contend under Convex OCC. Appending a
-   * fresh row per action removes that hot-write contention.
-   *
-   * Scale is handled by COMPACTION, not by changing this write path: when the
-   * un-compacted row count crosses a dirty threshold, `liquidity.compactDeltas`
-   * folds the oldest rows into the cumulative `marketLiquidityBaseline` (one row
-   * per market) and deletes them, so this table only holds a bounded recent window
-   * and the fold reads `#markets + #recent rows` instead of O(#events). Each row is
-   * counted exactly once — raw here until folded, then baseline.
+   * Growth is handled by compaction, never by patching: past a dirty threshold
+   * `liquidity.compactDeltas` folds the oldest rows into `marketLiquidityBaseline` and
+   * deletes them, so this table holds a bounded recent window. Every row is counted
+   * exactly once — raw here until folded, then baseline only.
    */
   marketLiquidityDeltas: defineTable({
-    /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
+    /** Pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
     marketSlug: v.string(),
     /** Net borrowed change in USD (borrow +, repay −). */
     borrowedDeltaUsd: v.number(),
@@ -545,42 +480,26 @@ export default defineSchema({
   }).index("by_slug", ["marketSlug"]),
 
   /**
-   * Cumulative per-market fold of every COMPACTED `marketLiquidityDeltas` row — the
-   * bounded baseline that keeps the fold independent of the total number of actions.
-   *
-   * The append-only event table stays the zero-contention hot-write sink. Threshold-
-   * triggered compaction (`liquidity.compactDeltas`) folds the OLDEST delta rows into these
-   * per-market accumulators and DELETES the folded rows, so the raw table only ever holds
-   * a bounded recent window. The fold is then `baseline + the few un-compacted deltas`
-   * (markets + recent-window rows), not a full-table scan. One row per market slug.
-   *
-   * Correctness: every delta row is counted exactly once — either it is still in the raw
-   * table (summed live) or it has been folded into a baseline row and deleted (summed via
-   * the baseline), never both. Compaction only touches this table, so it never contends
-   * with the hot append path on a document.
+   * Cumulative per-market fold of every COMPACTED `marketLiquidityDeltas` row, so the
+   * live fold is `baseline + the few un-compacted deltas` rather than a full-table
+   * scan. One row per market slug. Compaction only writes here, never on the hot
+   * append path.
    */
   marketLiquidityBaseline: defineTable({
     marketSlug: v.string(),
-    /** Running sum of borrowedDeltaUsd across all compacted rows for this market. */
+    /** Running sums over the compacted rows for this market. */
     borrowedDeltaUsd: v.number(),
-    /** Running sum of suppliedDeltaUsd across all compacted rows for this market. */
     suppliedDeltaUsd: v.number(),
-    /** Max `updatedAt` of any delta folded into this baseline (for the fold's freshness). */
+    /** Max `updatedAt` of any delta folded in here. */
     updatedAt: v.number(),
   }).index("by_slug", ["marketSlug"]),
 
   /**
-   * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
-   * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
-   * single document (O(1)) instead of the append-only event table.
-   *
-   * This document is READ BY EVERY AUTHENTICATED CLIENT (directly, and again through
-   * `markets.listMarketSnapshots`'s live-delta overlay), so every write to it re-runs
-   * those subscriptions for every connected session. Rebuilds are therefore COALESCED
-   * behind `liquidityRebuildState` (see `liquidity.SNAPSHOT_REBUILD_DEBOUNCE_MS`) rather
-   * than written inline on each append — otherwise one wallet's action invalidates every
-   * other subscriber, and the re-run fan-out scales with (writes × concurrent sessions).
-   * Appends stay instant on the raw table; the aggregate is eventually consistent within
+   * O(1) fold of `marketLiquidityDeltas` for the app-wide `liquidity.listDeltaSnapshot`
+   * subscription. READ BY EVERY AUTHENTICATED CLIENT, so any write re-runs those
+   * subscriptions everywhere: rebuilds MUST stay coalesced behind `liquidityRebuildState`
+   * (`liquidity.SNAPSHOT_REBUILD_DEBOUNCE_MS`) and never be written inline per append, or
+   * the fan-out scales with writes × concurrent sessions. Eventually consistent within
    * one debounce window.
    */
   liquidityDeltasCache: defineTable({
@@ -598,24 +517,21 @@ export default defineSchema({
   }).index("by_singleton", ["singleton"]),
 
   /**
-   * Debounce marker for `liquidityDeltasCache` rebuilds. Deliberately a SEPARATE table:
-   * no client subscription reads it, so bumping the marker on a hot append does not
-   * invalidate anyone. Holds the timestamp the queued rebuild is due (0 = none pending).
+   * Debounce marker for `liquidityDeltasCache` rebuilds. Must stay a SEPARATE table no
+   * client subscription reads, so bumping it on a hot append invalidates nobody.
    */
   liquidityRebuildState: defineTable({
     /** Constant discriminator so there is exactly one state row (`"deltas"`). */
     singleton: v.string(),
-    /** ms epoch the queued rebuild will run; 0 once that rebuild has landed. */
+    /** ms epoch the queued rebuild will run; 0 = none pending. */
     scheduledFor: v.number(),
   }).index("by_singleton", ["singleton"]),
 
   /**
-   * Sharded economy counters. The single `sandboxEconomy` row is read-and-patched
-   * by every claim, so concurrent claims all contend on it under Convex OCC (the
-   * load sweep saw ~53% of concurrent claims fail there). Each claim instead adds
-   * its grant to ONE randomly-chosen shard row; the live count/total is the sum of
-   * all shards. Distinct shards never collide, so the hot counter comes off the
-   * write path while the aggregate stays exact.
+   * Sharded economy counters. Every claim read-and-patched the single `sandboxEconomy`
+   * row, so concurrent claims contended under Convex OCC (~53% failed). A claim now
+   * adds its grant to one randomly-chosen shard; the live count/total is the sum of all
+   * shards, so the aggregate stays exact with no hot document.
    */
   sandboxEconomyShards: defineTable({
     /** 0..N-1 shard bucket; a claim picks one at random to increment. */
@@ -625,20 +541,19 @@ export default defineSchema({
   }).index("by_shard", ["shard"]),
 
   /**
-   * Real token spot prices (the ONE place the sandbox reads live market data). A
-   * scheduled action (`convex/prices.ts refreshPrices`) pulls these from DefiLlama
-   * so the detail "Price" + the list price-under-logos reflect production prices,
-   * while supply/borrow/TVL stay simulated. One row per base symbol.
+   * Real token spot prices — the ONE place the sandbox reads live market data
+   * (`convex/prices.ts refreshPrices`, from DefiLlama). Supply/borrow/TVL stay
+   * simulated. One row per lowercase base symbol.
    */
   tokenPrices: defineTable({
-    /** Lowercase base symbol/id, e.g. "usdc", "weth". Matches SpokeBorrowableRecord.baseAssetId. */
+    /** Lowercase base symbol, e.g. "usdc". Matches SpokeBorrowableRecord.baseAssetId. */
     symbol: v.string(),
-    /** DefiLlama coin id used to fetch it (chain:address or coingecko:id). */
+    /** DefiLlama coin id (chain:address or coingecko:id). */
     llamaId: v.string(),
     /**
-     * Canonical on-chain identity parsed from `llamaId`. Prefer (chainId, contractAddress) over
-     * symbol for identification — two different-chain tokens can share a symbol. Optional because
-     * coingecko-id-sourced quotes (e.g. native ETH) carry no contract.
+     * Prefer (chainId, contractAddress) over symbol for identity — two tokens on
+     * different chains can share a symbol. Absent for coingecko-id quotes (e.g. native
+     * ETH), which carry no contract.
      */
     chainId: v.optional(v.number()),
     contractAddress: v.optional(v.string()),
@@ -647,26 +562,23 @@ export default defineSchema({
     /** DefiLlama price confidence (0..1). */
     confidence: v.optional(v.number()),
     /**
-     * Freshness lineage. sourceUpdatedAt = the provider's own quote timestamp (when known);
-     * fetchedAt = when our action received the response; snapshotAt = when we wrote the row. A
-     * failed refresh writes nothing, so these never advance on stale data. `status` is the
-     * classification at write time (fresh|stale|invalid); the client re-derives live age too.
+     * Freshness lineage: sourceUpdatedAt = provider's own quote time, fetchedAt = when the
+     * response arrived, snapshotAt = when the row was written. A failed refresh writes
+     * nothing, so none of these ever advance on stale data. `status` is the classification
+     * at write time; the client re-derives live age as well.
      */
     sourceUpdatedAt: v.optional(v.number()),
     fetchedAt: v.optional(v.number()),
     snapshotAt: v.optional(v.number()),
     status: v.optional(v.union(v.literal("fresh"), v.literal("stale"), v.literal("invalid"))),
     /**
-     * Where the row came from: "defillama" is the hourly refreshed live spot;
-     * "baseline" is the seeded snapshot used until the first live refresh lands
-     * (replaces the ASSET_PRICE_USD constant in the mock). Live upserts strictly
-     * overwrite baselines on the same symbol.
+     * "defillama" = hourly live spot; "baseline" = seeded snapshot used until the first
+     * live refresh. A live upsert always overwrites a baseline on the same symbol.
      */
     source: v.string(),
     /**
-     * 24h price change as a 1e18 wad (bigint stored as string). Optional because
-     * DefiLlama's percentChange1d isn't always populated; when absent, the UI
-     * suppresses the delta arrow. Replaces ASSET_PRICE_CHANGE_24H mock map.
+     * 24h price change as a 1e18 wad (bigint stored as a string). Absent when DefiLlama
+     * omits percentChange1d, and the UI then suppresses the delta arrow.
      */
     priceChange24hWad: v.optional(v.string()),
     updatedAt: v.number(),
@@ -675,9 +587,9 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
-   * Last successful oracle/FX provider check. Written on every successful refresh even when
-   * quote rows are unchanged, so freshness stays observable without rewriting every quote
-   * (which would invalidate every price subscriber).
+   * Last successful oracle/FX provider check. Written on every successful refresh even
+   * when the quotes are unchanged, so freshness is observable without rewriting quote
+   * rows — which would invalidate every price subscriber.
    */
   oracleProviderHealth: defineTable({
     kind: v.union(v.literal("prices"), v.literal("fx")),
@@ -689,10 +601,9 @@ export default defineSchema({
   }).index("by_kind", ["kind"]),
 
   /**
-   * Historical token prices, one row per (symbol, UTC day) — the daily closing snapshot. Kept
-   * SEPARATE from the current `tokenPrices` table (§12): current UI reads `tokenPrices`, charts
-   * read this history, so an old value can never be mistaken for the live price. Bounded growth
-   * (one row per token per day) via the daily prices snapshot job.
+   * Daily closing token prices, one row per (symbol, UTC day). Deliberately SEPARATE from
+   * `tokenPrices`: the UI reads `tokenPrices`, charts read this, so an old value can never
+   * be mistaken for the live price.
    */
   tokenPricesHistory: defineTable({
     symbol: v.string(),
@@ -702,10 +613,9 @@ export default defineSchema({
   }).index("by_symbol_day", ["symbol", "day"]),
 
   /**
-   * Fiat FX rates, refreshed by a Convex job from a live provider (open.er-api.com) so fiat
-   * conversion flows through the validated data layer instead of independent client polling.
-   * `usdPerUnit` = units of the currency per 1 USD (USD row is always 1). Same freshness lineage
-   * as tokenPrices; a failed refresh writes nothing so old rows age honestly.
+   * Fiat FX rates, refreshed server-side from open.er-api.com so conversion never depends
+   * on client polling. `usdPerUnit` = units of the currency per 1 USD (USD row is always 1).
+   * Same freshness lineage as tokenPrices; a failed refresh writes nothing.
    */
   fxRates: defineTable({
     currency: v.string(),
@@ -718,9 +628,9 @@ export default defineSchema({
   }).index("by_currency", ["currency"]),
 
   /**
-   * Legacy shared editorial content (About / history / FAQs), keyed by `markets` id.
-   * Prefer product-siloed `borrowMarketContent` / `lendMarketContent` / `multiplyMarketContent`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
+   * LEGACY shared editorial content (About / history / FAQs). Prefer the siloed
+   * `borrowMarketContent` / `lendMarketContent` / `multiplyMarketContent`; kept for
+   * dual-read and the seed still dual-writes.
    */
   marketContent: defineTable({
     marketId: v.id("markets"),
@@ -730,8 +640,7 @@ export default defineSchema({
     faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
   }).index("by_market", ["marketId"]),
 
-  // ── Product-siloed detail params (Borrow / Lend / Multiply are separate products) ──
-  // Keyed by product slug — do NOT share rows across products.
+  // Product-siloed detail params, keyed by product slug — never share rows across products.
 
   /** Borrow About / FAQs / parameter-change history (pool + asset). */
   borrowMarketContent: defineTable({
@@ -862,7 +771,6 @@ export default defineSchema({
     ),
   }).index("by_slug", ["slug"]),
 
-  /** Lend Risk Parameters grid. */
   lendRiskParameters: defineTable({
     slug: v.string(),
     parameters: v.array(
@@ -878,7 +786,6 @@ export default defineSchema({
     txHash: v.optional(v.string()),
   }).index("by_slug", ["slug"]),
 
-  /** Lend Interest Rate Model curve params. */
   lendInterestRateModels: defineTable({
     slug: v.string(),
     optimalUtilizationPct: v.number(),
@@ -900,12 +807,10 @@ export default defineSchema({
   }).index("by_slug", ["slug"]),
 
   /**
-   * Governance "Parameter changelog" — real parameter transitions (previous → current)
-   * for a market, one doc per market holding the ordered list (newest first). Distinct
-   * from the thin `*MarketContent.history` timeline: this carries the full change shape
-   * (source, executor, category) the detail table renders. Product-siloed via `product`;
-   * borrow pool + asset share the `"borrow"` product with disjoint slugs (same as
-   * `borrowMarketContent`).
+   * Governance "Parameter changelog": one doc per market holding parameter transitions
+   * (previous → current), newest first. Richer than the `*MarketContent.history`
+   * timeline — carries source/executor/category. Borrow pool + asset share the
+   * `"borrow"` product with disjoint slugs.
    */
   parameterChanges: defineTable({
     product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply")),
@@ -954,7 +859,6 @@ export default defineSchema({
     ),
   }).index("by_slug", ["slug"]),
 
-  /** Multiply Risk Parameters grid. */
   multiplyRiskParameters: defineTable({
     slug: v.string(),
     parameters: v.array(
@@ -986,9 +890,8 @@ export default defineSchema({
   }).index("by_slug_day", ["slug", "day"]),
 
   /**
-   * Support Center submissions. Captured every time a user sends a request from
-   * the Support Center form so the team has a durable record. Wallet/email are
-   * optional (a user may not be signed in); status defaults to "new".
+   * Support Center submissions. Wallet/email are optional because the sender may not be
+   * signed in; status starts at "new".
    */
   supportRequests: defineTable({
     wallet: v.optional(v.string()),
@@ -1007,11 +910,11 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"]),
 
-  // ── Phase 2: wallet-scoped sandbox state (synthetic; never source of truth in prod) ──
+  // Wallet-scoped sandbox state — synthetic, never source of truth in prod.
 
   /**
-   * Single authoritative row holding the global sandbox economy caps. Caps are
-   * enforced SERVER-SIDE here at claim time — never trusted from the client.
+   * Single authoritative row holding the global sandbox economy caps. Caps are enforced
+   * SERVER-SIDE at claim time and never trusted from the client.
    */
   sandboxEconomy: defineTable({
     userCap: v.number(),
@@ -1047,14 +950,14 @@ export default defineSchema({
       }),
     ),
     updatedAt: v.number(),
-    /** Grant-manifest version; a mismatch rebuilds the cache so newly seeded markets
-     *  become grantable (see STARTER_CATALOG_VERSION). Optional for pre-versioning rows. */
+    /** Grant-manifest version; a mismatch with STARTER_CATALOG_VERSION rebuilds the cache
+     *  so newly seeded markets become grantable. */
     version: v.optional(v.number()),
   }).index("by_singleton", ["singleton"]),
 
   /** Per-authenticated-user onboarding + allocation profile. */
   sandboxProfiles: defineTable({
-    /** Lowercased wallet address; must match the authenticated identity. */
+    /** Lowercased wallet address; MUST match the authenticated identity. */
     wallet: v.string(),
     /** @deprecated Migration-only. New identity data belongs in walletProfiles. */
     authSubject: v.optional(v.string()),
@@ -1090,7 +993,6 @@ export default defineSchema({
         showDollarAmounts: v.optional(v.boolean()),
         /** Short display name captured at onboarding (≤10 chars). */
         name: v.optional(v.string()),
-        /** Which DEX(es) the user brings LP liquidity from — research signal. */
         dexSources: v.optional(v.array(v.string())),
       }),
     ),
@@ -1100,9 +1002,9 @@ export default defineSchema({
 
   /** Permanent wallet identity and display preferences, independent of Sandbox onboarding. */
   walletProfiles: defineTable({
-    /** Lowercased wallet address derived from the authenticated identity. */
+    /** Lowercased, derived from the authenticated identity. */
     wallet: v.string(),
-    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    /** Privy user id or SIWE-JWT subject. */
     authSubject: v.optional(v.string()),
     preferences: v.optional(
       v.object({
@@ -1155,10 +1057,9 @@ export default defineSchema({
   }).index("by_wallet", ["wallet"]),
 
   /**
-   * Shared per-key rate-limit buckets. Used by Next API route guards (SIWE nonce/verify/
-   * dev-token) so a horizontally-scaled deploy enforces one limit across all instances
-   * instead of one bucket per Node process. `resetAt` is the epoch ms when the current
-   * window ends; `count` is the number of requests already served in it.
+   * Shared per-key rate-limit buckets for the Next API route guards (SIWE nonce/verify/
+   * dev-token). Must live here, not in process memory, so a horizontally-scaled deploy
+   * enforces ONE limit across instances. `resetAt` = epoch ms the window ends.
    */
   rateLimitBuckets: defineTable({
     key: v.string(),
@@ -1167,11 +1068,10 @@ export default defineSchema({
   }).index("by_key", ["key"]),
 
   /**
-   * Per-wallet remaining claimable on each borrow LP-fee reward position. One row per
-   * (wallet, rewardPositionId). `remainingUsd6` is the claimable left AFTER the wallet's
-   * claims (decimal usd6 string), so hydration reduces the statically-seeded claimable to
-   * this value instead of resetting it to full on reload. Additive + backward compatible:
-   * wallets with no rows simply keep the seeded (full) claimable, i.e. today's behavior.
+   * Per-wallet remaining claimable on each borrow LP-fee reward position.
+   * `remainingUsd6` is what is left AFTER the wallet's claims (decimal usd6 string), so
+   * hydration reduces the seeded claimable instead of resetting it to full on reload. A
+   * wallet with no row keeps the seeded (full) claimable.
    */
   sandboxRewardClaims: defineTable({
     wallet: v.string(),
@@ -1182,26 +1082,22 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_wallet_position", ["wallet", "rewardPositionId"]),
 
-  // ── Phase 2 (cont.): wallet-scoped FINANCIAL state (synthetic; never prod truth) ──
+  // Wallet-scoped FINANCIAL state — synthetic, never prod truth.
   //
-  // ENCODING CONTRACT: the credit-/multiply-engines work in bigint fixed-point —
-  // usd6 (1e6), WAD (1e18), RAY (1e27). Convex has no bigint and RAY overflows the
-  // JS Number safe-integer range, so every fixed-point field below is a *decimal
-  // integer string* (e.g. "12400000000" = 12,400 usd6). This is the same lossless
-  // representation `app/lib/borrow-system/codec.ts` uses (it tags bigints as
-  // {__bigint}); here we drop the wrapper and store the bare string. Nullable rates
-  // (e.g. an infinite health factor) are `v.union(<string>, v.null())`. Plain-number
-  // fields belong ONLY to the multiply engine, which is number-native (see types.ts).
+  // ENCODING CONTRACT: the credit/multiply engines use bigint fixed-point — usd6 (1e6),
+  // WAD (1e18), RAY (1e27). Convex has no bigint and RAY overflows Number's safe-integer
+  // range, so every fixed-point field below is a DECIMAL INTEGER STRING ("12400000000" =
+  // 12,400 usd6), never a float. Nullable rates (e.g. an infinite health factor) are
+  // `v.union(<string>, v.null())`. Plain-number fields belong ONLY to the multiply
+  // engine, which is number-native.
   //
-  // Wallet is always the lowercased authed address (see convex/sandbox/auth.ts). The
-  // server derives it from ctx.auth and never trusts a client-passed wallet.
+  // `wallet` is always the lowercased authed address, derived from ctx.auth server-side
+  // (convex/sandbox/auth.ts); a client-passed wallet is never trusted.
 
   /**
-   * LP collateral-pool catalog (global, not wallet-scoped). Mirrors
-   * `PortfolioPoolRecord` (app/lib/data/providers/portfolio/source.ts) — the pool a
-   * `positionCollateral` row pledges into. Distinct from the `markets` directory:
-   * `markets` is the borrow/lend/multiply market catalog; `pools` is the pledgeable
-   * LP-pair catalog the portfolio + collateral views render. One row per slug.
+   * Global (not wallet-scoped) LP collateral-pool catalog — the pledgeable LP-pair
+   * catalog a `positionCollateral` row pledges into, mirroring `PortfolioPoolRecord`.
+   * Distinct from `markets`, which is the borrow/lend/multiply market catalog.
    */
   pools: defineTable({
     /** URL-safe pool id, e.g. "uni-v3-bluechip-weth-usdc". */
@@ -1218,7 +1114,6 @@ export default defineSchema({
         shortLabel: v.string(),
         bgClassName: v.string(),
         textClassName: v.string(),
-        /** Optional iconUrl added in Phase C so the borrow catalog stops relying on the client-side VISUALS map. */
         iconUrl: v.optional(v.string()),
       }),
     ),
@@ -1226,11 +1121,7 @@ export default defineSchema({
     liquidationThresholdPct: v.optional(v.number()),
     pairAprPct: v.number(),
     lpTokenPriceUsd: v.optional(v.number()),
-    /**
-     * Phase C additions — currently hardcoded in borrow-sim.ts. All optional so
-     * existing pool rows migrate lazily; the borrow-catalog seed writer sets
-     * them when it repopulates.
-     */
+    /** Optional so existing pool rows migrate lazily; set by the borrow-catalog seed writer. */
     venueLabel: v.optional(v.string()),
     spokeId: v.optional(v.string()),
     dexId: v.optional(v.string()),
@@ -1259,9 +1150,8 @@ export default defineSchema({
     .index("by_spoke_id", ["spokeId"]),
 
   /**
-   * Open/closed position, one row per (wallet, product, market). Unified across
-   * products via a `product` discriminator: borrow & lend carry usd6 *string*
-   * fields; multiply is number-native (mirrors `MultiplyPosition`, incl. the
+   * Open/closed position, one row per (wallet, product, market). Borrow & lend carry
+   * usd6 STRING fields; multiply is number-native (mirrors `MultiplyPosition`, incl. the
    * "infinity" health-factor sentinel and nullable liquidationPrice). Child
    * collateral/debt detail lives in `positionCollateral` / `positionDebt`.
    */
@@ -1279,37 +1169,22 @@ export default defineSchema({
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
     supplyApyPct: v.optional(v.number()),
-    // umbrella-only: cooldown tranche AGGREGATE fields + withdrawal-window timestamps
-    // and the running claimed-rewards total. Meaningful ONLY when product === "umbrella";
-    // the fields are optional to keep the shared positions table compatible with
-    // borrow/lend/multiply rows. See convex/sandbox/umbrella.ts for lifecycle.
-    //
-    // Multi-tranche support: the per-tranche source of truth is
-    // `umbrellaCooldownTranches` (one row per startCooldown call). These fields are
-    // kept as the derived aggregate rollup so backwards-compat callers (portfolio
-    // snapshots, older UI, cross-wallet market scans) still see one number per
-    // position:
-    //   - cooldownAmountUsd6      = sum(amountUsd6 of active tranches)
-    //   - cooldownStartedAt       = min(startedAt) across active tranches
-    //   - cooldownEndsAt          = min(endsAt) across active tranches
-    //   - withdrawalWindowEndsAt  = min(windowEndsAt) across active tranches
-    // Recomputed after every tranche mutation (startCooldown / unstake / simulateSlash).
+    // Umbrella-only (optional so the shared table still fits borrow/lend/multiply rows).
+    // `umbrellaCooldownTranches` is the per-tranche source of truth; these are the
+    // DERIVED aggregate rollup over active tranches, recomputed after every tranche
+    // mutation (startCooldown / unstake / simulateSlash), so one-number callers still work:
+    //   cooldownAmountUsd6 = sum(amountUsd6); the three timestamps = min() across tranches.
     cooldownAmountUsd6: v.optional(v.string()),
     cooldownStartedAt: v.optional(v.number()),
     cooldownEndsAt: v.optional(v.number()),
     withdrawalWindowEndsAt: v.optional(v.number()),
     claimedRewardsUsd6: v.optional(v.string()),
-    /**
-     * Umbrella-only: cumulative principal removed by simulated slashes on this
-     * position. Used by dashboard/portfolio surfaces to report Slashed status
-     * and by historical reward math. Optional so pre-existing rows default to 0.
-     */
+    /** Umbrella-only: cumulative principal removed by simulated slashes; absent = 0. */
     slashedAmountUsd6: v.optional(v.string()),
     /**
-     * Reward accrual checkpoint for umbrella positions — DISTINCT from
-     * `lastUpdatedAt` so balance-sync patches (which touch lastUpdatedAt on
-     * every mutation) do NOT reset accrued rewards. Updated only when a
-     * stake / claim / startCooldown / unstake re-checkpoints `earnedUsd6`.
+     * Umbrella reward-accrual checkpoint. MUST stay distinct from `lastUpdatedAt`, which
+     * every balance-sync patch touches — sharing it would reset accrued rewards. Moves
+     * only when stake / claim / startCooldown / unstake re-checkpoints `earnedUsd6`.
      */
     rewardCheckpointAt: v.optional(v.number()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
@@ -1327,33 +1202,29 @@ export default defineSchema({
     openTxSynthetic: v.optional(v.string()),
     /**
      * Optimistic-concurrency version, bumped on every successful write. A client that
-     * computed a write from revision N sends `expectedRevision: N`; the server rejects it
-     * if the stored position has since advanced (another tab/device wrote first), instead
-     * of silently clobbering that write. Optional for rows seeded before this field.
+     * computed from revision N sends `expectedRevision: N` and the server rejects the
+     * write if the row has since advanced, instead of clobbering another tab's write.
      */
     revision: v.optional(v.number()),
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_product", ["wallet", "product"])
     .index("by_wallet_market", ["wallet", "marketSlug"])
-    // Cross-wallet aggregate scans (used by umbrella market-level Coverage /
-    // Amount-in-cooldown, computed live from every wallet's positions on top
-    // of the catalog baseline).
+    // Cross-wallet aggregate scans: umbrella market-level Coverage / Amount-in-cooldown.
     .index("by_product_market", ["product", "marketSlug"])
-    // Direct (wallet, product, market) lookup so the position upsert is a `.unique()`
-    // instead of collect()+find() over every position sharing a market slug.
+    // Lets the position upsert be a `.unique()` instead of collect()+find().
     .index("by_wallet_product_market", ["wallet", "product", "marketSlug"]),
 
   /** Collateral leg of a borrow position. Mirrors `UserCollateralPosition`. */
   positionCollateral: defineTable({
     wallet: v.string(),
     positionId: v.id("positions"),
-    /** Collateral pool slug (joins to `pools.slug`). */
+    /** Joins to `pools.slug`. */
     marketSlug: v.string(),
     collateralShares: v.string(),
     principalTokenAmount: v.string(),
     collateralEnabled: v.boolean(),
-    /** Denormalized USD value for O(1) reads. */
+    /** Denormalized for O(1) reads. */
     collateralValueUsd6: v.optional(v.string()),
     updatedAt: v.number(),
   })
@@ -1378,13 +1249,11 @@ export default defineSchema({
     .index("by_position", ["positionId"]),
 
   /**
-   * Per-wallet transaction ledger — ONE row per balance-changing action (the §2
-   * invariant). Mirrors `TransactionHistoryItem` (borrow-system/contracts.ts) plus
-   * `PortfolioActivityRecord`. `intentId` is the client intent id; the
-   * `by_wallet_intent` index makes the execute mutation idempotent (replays/double
-   * clicks return the existing row). `amountUsd` is the denormalized human-USD value
-   * so activity feeds read without decoding usd6. (`sandboxActivity` stays the
-   * onboarding-claim log; portfolio activity reads merge both — see §7.)
+   * Per-wallet transaction ledger — INVARIANT: exactly one row per balance-changing
+   * action. IDEMPOTENCY: the execute mutation looks up the client `intentId` via
+   * `by_wallet_intent`, so replays and double clicks return the existing row.
+   * `amountUsd` is denormalized human USD so activity feeds read without decoding usd6.
+   * `sandboxActivity` stays the onboarding-claim log; portfolio activity merges both.
    */
   transactions: defineTable({
     wallet: v.string(),
@@ -1408,32 +1277,28 @@ export default defineSchema({
     amountUsd: v.number(),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
-    /** Multiply/deleverage leverage at the time of THIS transaction, so hydrated history shows
-     *  the real before→after (e.g. "3.00x → 2.00x") instead of a constant 1 × the position's
-     *  current multiplier (which rendered deleverages as leverage increases). */
+    /** Leverage at the time of THIS transaction. Hydrated history must read these, not the
+     *  position's current multiplier, or deleverages render as leverage increases. */
     multiplierBefore: v.optional(v.number()),
     multiplierAfter: v.optional(v.number()),
-    /** Swap-only legs (product === "swap"): the input/output token identity + amounts so
-     *  the activity feed can render "0.001 ETH → 1.925 USDC" from the durable row alone. */
+    /** Swap-only: token identity + amounts, so the activity feed renders
+     *  "0.001 ETH → 1.925 USDC" from the durable row alone. */
     swapInputSymbol: v.optional(v.string()),
     swapOutputSymbol: v.optional(v.string()),
     swapInputAmount: v.optional(v.number()),
     swapOutputAmount: v.optional(v.number()),
-    /** Swap-only receipt detail (product === "swap"): the quote/provider/economics so the
-     *  synthetic-transaction receipt renders the full swap breakdown from the durable row
-     *  alone — cross-device, or after the in-session swap history is gone. Before this, a
-     *  durable-row-only receipt fell back to a generic card with a hash-derived network fee
-     *  and no min-received / price-impact / provider / quote id. */
+    /** Swap-only receipt detail: quote/provider/economics, so the receipt renders the full
+     *  breakdown from the durable row alone — cross-device, or after in-session swap
+     *  history is gone. */
     swapProvider: v.optional(v.string()),
     swapQuoteId: v.optional(v.string()),
     swapNetworkFeeUsd: v.optional(v.number()),
     swapMinOutputAmount: v.optional(v.number()),
     swapPriceImpactPct: v.optional(v.number()),
     swapSlippageBps: v.optional(v.number()),
-    /** Rewards-only (product === "rewards"): the concrete quest ids this claim paid
-     *  out. Populated by `recordRewardsClaim` so the mutation can reject a later
-     *  attempt to re-claim any of these tasks — the "server-authoritative single-
-     *  claim" guarantee no longer relies on the client filtering its state blob. */
+    /** Rewards-only: the quest ids this claim paid out. `recordRewardsClaim` writes them so
+     *  it can reject a later re-claim server-side, rather than trusting the client to
+     *  filter its own state blob. */
     claimedTaskIds: v.optional(v.array(v.string())),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
@@ -1446,10 +1311,9 @@ export default defineSchema({
     .index("by_wallet_product_at", ["wallet", "product", "at"]),
 
   /**
-   * Append-only risk/health history per wallet. Preserves the SPOKE-scoped health
-   * dimension (BorrowSpokeBreakdown) rather than collapsing to one account health
-   * factor — `calculateSpokeCreditMetrics` is per-spoke. Latest row = current risk;
-   * history feeds the hero risk chart.
+   * Append-only risk/health history per wallet. Health MUST stay SPOKE-scoped rather than
+   * collapsed to one account health factor — `calculateSpokeCreditMetrics` is per-spoke.
+   * Latest row = current risk; the history feeds the hero risk chart.
    */
   riskSnapshots: defineTable({
     wallet: v.string(),
@@ -1474,9 +1338,8 @@ export default defineSchema({
   }).index("by_wallet_at", ["wallet", "at"]),
 
   /**
-   * Audit log of liquidation PREVIEWS (analytics-only; sandbox liquidation never
-   * executes). One row per computed preview so health-before/after and the
-   * allowed/blocked verdict are inspectable. `wallet` is the position owner (victim).
+   * Audit log of liquidation PREVIEWS — analytics only; sandbox liquidation never
+   * executes. `wallet` is the position owner (victim).
    */
   liquidationPreviews: defineTable({
     wallet: v.string(),
@@ -1493,9 +1356,8 @@ export default defineSchema({
   }).index("by_wallet_at", ["wallet", "at"]),
 
   /**
-   * Recorded liquidation ACTIONS. Captures the liquidator↔victim pair: `wallet` is
-   * the victim (wallet-scoped read), `liquidatorWallet` is the keeper. Indexed both
-   * ways so each party can list its liquidations.
+   * Recorded liquidation ACTIONS. `wallet` is the victim (wallet-scoped read),
+   * `liquidatorWallet` the keeper; indexed both ways so either party can list its own.
    */
   liquidationActions: defineTable({
     wallet: v.string(),
@@ -1517,9 +1379,8 @@ export default defineSchema({
     .index("by_liquidator_intent", ["liquidatorWallet", "intentId"]),
 
   /**
-   * Append-only portfolio time series per wallet (mirrors `PortfolioSnapshotRecord`;
-   * the mock ships a 13-point series feeding the hero chart). `at` is ms-epoch
-   * (mock used ISO strings). Values are plain-number USD (portfolio view-model unit).
+   * Append-only portfolio time series per wallet (mirrors `PortfolioSnapshotRecord`),
+   * feeding the hero chart. `at` is ms-epoch; values are plain-number USD.
    */
   portfolioSnapshots: defineTable({
     wallet: v.string(),
@@ -1555,11 +1416,9 @@ export default defineSchema({
   }).index("by_wallet", ["wallet"]),
 
   /**
-   * Live per-market umbrella state that mutates outside the frozen catalog
-   * (currentDeficitUsd / deficitOffsetUsd / totalSlashedUsd). The
-   * UMBRELLA_MARKETS constant in `convex/sandbox/umbrella.ts` is the catalog
-   * fallback; this table is the source of truth once populated by
-   * `simulateDeficit` / `simulateSlash`.
+   * Live per-market umbrella state that mutates outside the frozen catalog. Source of
+   * truth once `simulateDeficit` / `simulateSlash` populates it; the UMBRELLA_MARKETS
+   * constant in `convex/sandbox/umbrella.ts` is the fallback.
    */
   umbrellaMarketState: defineTable({
     marketId: v.string(),
@@ -1570,20 +1429,14 @@ export default defineSchema({
   }).index("by_market", ["marketId"]),
 
   /**
-   * Per-tranche umbrella cooldown source of truth. Each call to
-   * `startCooldown` inserts one row — a user can therefore have multiple
-   * concurrent tranches per (wallet, market), each with its own 20-day
-   * cooldown clock and 2-day withdrawal window. `positions.cooldownAmountUsd6`
-   * / `cooldownStartedAt` / `cooldownEndsAt` / `withdrawalWindowEndsAt` are the
-   * derived aggregate rollup over the active tranches (see comments on
-   * `positions`); this table is what the umbrella lifecycle actually reads
-   * and mutates.
+   * Per-tranche umbrella cooldown source of truth — what the lifecycle reads and mutates;
+   * the `positions.cooldown*` fields are only its derived rollup. `startCooldown` inserts
+   * one row, so a (wallet, market) can hold several concurrent tranches, each with its own
+   * 20-day cooldown clock and 2-day withdrawal window.
    *
-   * `status` is the last-mutated persisted value. Read-time
-   * (getSessionState) recomputes it by comparing `now` against endsAt /
-   * windowEndsAt so idle time doesn't need a background sweep. `consumed` =
-   * fully unstaked or slashed to zero; kept for activity history but excluded
-   * from every live total.
+   * `status` is the last-mutated persisted value; `getSessionState` recomputes it at read
+   * time against `now` so idle time needs no background sweep. `consumed` (fully unstaked
+   * or slashed to zero) is kept for activity history but excluded from every live total.
    */
   umbrellaCooldownTranches: defineTable({
     positionId: v.id("positions"),
@@ -1603,15 +1456,11 @@ export default defineSchema({
     .index("by_market_status", ["marketId", "status"]),
 
   /**
-   * Per-wallet token balances backing the swap flow + the dashboard "Wallet" tab.
-   * Mirrors app/lib/swap-system/contracts.ts UserAssetBalance so the display path
-   * stops reading DEMO_SWAP_BALANCES. One row per (wallet, assetId, sourceType);
-   * amount is a number (asset-native, not USD-scaled — pricing happens at render).
-   *
-   * sourceType discriminates where the balance sits: "wallet" is the base wallet
-   * holding; "position" is claimable/withdrawable balance credited by an open
-   * position (with sourcePositionId joining `positions`). Positions writes update
-   * these rows so the wallet tab reflects unrealized earnings live.
+   * Per-wallet token balances behind the swap flow and the dashboard "Wallet" tab; one row
+   * per (wallet, assetId, sourceType). `amount` is ASSET-NATIVE, not USD-scaled — pricing
+   * happens at render. sourceType: "wallet" = base holding, "position" =
+   * claimable/withdrawable credited by an open position (`sourcePositionId` joins
+   * `positions`), which position writes keep current so unrealized earnings show live.
    */
   walletBalances: defineTable({
     wallet: v.string(),
@@ -1620,20 +1469,16 @@ export default defineSchema({
     sourceType: v.union(v.literal("wallet"), v.literal("position")),
     sourcePositionId: v.optional(v.id("positions")),
     /**
-     * Discriminates the asset shape inside a balance row so home + action
-     * flows can filter without a join. "wallet" = plain token holding;
-     * "lp" = LP-token collateral for a pool market (assetId is `lp:<marketSlug>`);
-     * "returned-lp" = LP returned from a remove-collateral action, pending
-     * withdrawal to the wallet. Optional so existing rows migrate lazily.
+     * Lets home + action flows filter without a join. "wallet" = plain token holding,
+     * "lp" = LP-token collateral for a pool market (assetId is `lp:<marketSlug>`),
+     * "returned-lp" = LP from a remove-collateral action, pending withdrawal.
      */
     assetKind: v.optional(v.union(v.literal("wallet"), v.literal("lp"), v.literal("returned-lp"))),
-    /** Display symbol so select lists render without a per-row asset lookup. */
+    /** Display symbol, so select lists render without a per-row asset lookup. */
     symbol: v.optional(v.string()),
     /**
-     * USD-scaled value at 1e6 (bigint stored as string), computed at write
-     * time using the row's live price. Home + action pages read this instead
-     * of doing a price join per row. Refreshed by the same rollup that
-     * updates `tokenPrices`.
+     * usd6 (1e6 fixed-point as a decimal string), computed at write time from the row's
+     * live price and refreshed by the `tokenPrices` rollup, so reads need no price join.
      */
     valueUsd6: v.optional(v.string()),
     updatedAt: v.number(),
@@ -1643,9 +1488,9 @@ export default defineSchema({
     .index("by_wallet_asset_kind", ["wallet", "assetKind"]),
 
   /**
-   * Product-scoped onboarding + wallet balances. These are the source-of-truth
-   * buckets for authenticated sandbox wallets; frontend `buildConvex*SessionSeed`
-   * functions must not mint product funds locally.
+   * Product-scoped onboarding + wallet balances: the source-of-truth buckets for
+   * authenticated sandbox wallets. The frontend `buildConvex*SessionSeed` functions must
+   * NEVER mint product funds locally.
    */
   walletLendBalances: defineTable({
     wallet: v.string(),
@@ -1702,25 +1547,21 @@ export default defineSchema({
     .index("by_wallet_asset", ["wallet", "assetId"]),
 
   /**
-   * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow
-   * "you deposit N LP ≈ $X" previews across the borrow action pages. Kept per-slug
-   * (not baked into marketDailyStats) because LP prices tick faster than daily
-   * — snapshots update on the same interval as the market-snapshots cache.
+   * USD per LP token for a pool market, feeding the pledge-flow "you deposit N LP ≈ $X"
+   * previews. Kept out of `marketDailyStats` because LP prices tick faster than daily;
+   * refreshed on the market-snapshots cache interval.
    */
   lpTokenPrices: defineTable({
     slug: v.string(),
-    /** Spot price in USD per LP token. */
     priceUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_slug", ["slug"]),
 
   /**
-   * Fee APY as a wad (1e18-scaled bigint stored as string) per market. Sourced
-   * from marketDailyStats.supplyApyPct at rollup, but split into its own table so
-   * the credit engine's accrual math (accrueLinearIndex) can read a stable wad
-   * value without re-parsing/rounding a percentage on the hot path. Feeds
-   * BorrowMarketRecord.snapshot.feeApyWad in hydrated state — currently sourced
-   * from the mock catalog, target for #17's home + sidebar flip.
+   * Per-market fee APY as a WAD (1e18 fixed-point, decimal string), derived from
+   * `marketDailyStats.supplyApyPct` at rollup. Split out so the credit engine's
+   * `accrueLinearIndex` reads a stable wad instead of re-parsing and rounding a
+   * percentage on the hot path.
    */
   feeApyWads: defineTable({
     slug: v.string(),
@@ -1728,14 +1569,10 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_slug", ["slug"]),
 
-  // ---------------------------------------------------------------------------
-  // Global reference — spokes, dexes, home content
-  // ---------------------------------------------------------------------------
-
   /**
-   * BorrowSpoke registry (currently hardcoded in `app/lib/borrow-sim.ts`
-   * BORROW_SPOKES). Feeds spoke section headings, category filter (isSmartSpoke),
-   * risk-model spoke labels, `getSpokeById` lookups, and SPOKE_SLUGS routing.
+   * BorrowSpoke registry, mirroring BORROW_SPOKES in `app/lib/borrow-sim.ts`. Feeds spoke
+   * headings, the isSmartSpoke filter, risk-model labels, `getSpokeById` and SPOKE_SLUGS
+   * routing.
    */
   spokes: defineTable({
     id: v.string(),
@@ -1766,7 +1603,7 @@ export default defineSchema({
     .index("by_key", ["id"])
     .index("by_slug", ["slug"]),
 
-  /** DEX catalog (currently hardcoded BORROW_DEXES). 4 entries at seed time. */
+  /** DEX catalog, mirroring BORROW_DEXES. */
   dexes: defineTable({
     id: v.string(),
     label: v.string(),
@@ -1776,15 +1613,10 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_key", ["id"]),
 
-  // ---------------------------------------------------------------------------
-  // Borrowable assets — global registry per (spokeId, baseAssetId)
-  // ---------------------------------------------------------------------------
-
   /**
-   * Per-spoke borrowable asset records currently derived at runtime from
-   * `app/lib/borrow-system/registry.ts`. Referenced by pool + asset landing
-   * rows, the "Assets You Can Borrow" section, and asset detail cross-market
-   * links.
+   * Global borrowable-asset registry, one row per (spokeId, baseAssetId), mirroring
+   * `app/lib/borrow-system/registry.ts`. Read by pool + asset landing rows, "Assets You
+   * Can Borrow", and asset-detail cross-market links.
    */
   borrowAssets: defineTable({
     id: v.string(),
@@ -1815,15 +1647,7 @@ export default defineSchema({
     .index("by_spoke", ["spokeId"])
     .index("by_base_asset", ["baseAssetId"]),
 
-  // ---------------------------------------------------------------------------
-  // Multiply — missing tables that let detail render from Convex (constraint 6)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Multiply IRM parameters. Mirrors `borrowInterestRateModels` — one row per
-   * multiply market slug. Currently multiply detail renders the IRM section
-   * from a client-side mock silently; this fixes that.
-   */
+  /** Multiply IRM parameters, one row per market slug. Mirrors `borrowInterestRateModels`. */
   multiplyInterestRateModels: defineTable({
     slug: v.string(),
     optimalUtilizationPct: v.number(),
@@ -1836,9 +1660,8 @@ export default defineSchema({
   }).index("by_slug", ["slug"]),
 
   /**
-   * Per-multiply-market allocation across contributing pools. Currently
-   * missing; detail renders nothing / silent mock. Same shape as the asset
-   * allocation cards but keyed by multiplyMarkets.slug.
+   * Per-multiply-market allocation across contributing pools. Same shape as the asset
+   * allocation cards, keyed by `multiplyMarkets.slug`.
    */
   multiplyMarketAllocations: defineTable({
     marketSlug: v.string(),
@@ -1854,13 +1677,7 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_market", ["marketSlug"]),
 
-  /**
-   * Per-token multiply parameters (supply APY, borrow APY, available USD,
-   * collateral factor, liquidation threshold) currently spread across
-   * MULTIPLY_TOKEN_SUPPLY_APYS / MULTIPLY_TOKEN_BORROW_APYS /
-   * MULTIPLY_TOKEN_AVAILABLE_USD / MULTIPLY_COLLATERAL_FACTORS /
-   * MULTIPLY_LIQUIDATION_THRESHOLDS / MULTIPLY_TOKEN_LOGOS in `multiply-sim.ts`.
-   */
+  /** Per-token multiply parameters; mirrors the MULTIPLY_TOKEN_* maps in `multiply-sim.ts`. */
   multiplyTokenParameters: defineTable({
     symbol: v.string(),
     supplyApyPct: v.number(),
@@ -1872,10 +1689,7 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_symbol", ["symbol"]),
 
-  // ---------------------------------------------------------------------------
-  // Contract addresses — seeded synthetic 0x… strings today, Etherscan later.
-  // Split by scope (pool / asset / lend / multiply) to keep indexes narrow.
-  // ---------------------------------------------------------------------------
+  // Contract addresses — seeded synthetic 0x… strings. Split by scope to keep indexes narrow.
 
   poolContractAddresses: defineTable({
     poolSlug: v.string(),
@@ -1929,16 +1743,10 @@ export default defineSchema({
     .index("by_market_salt", ["marketSlug", "salt"])
     .index("by_market", ["marketSlug"]),
 
-  // ---------------------------------------------------------------------------
-  // Per-wallet portfolio — the "home page is the connected wallet's portfolio"
-  // architecture. Test wallet is a seeded row using the "test-wallet-000"
-  // convention; production wallets use hex addresses that never collide.
-  // ---------------------------------------------------------------------------
+  // Per-wallet portfolio: the home page IS the connected wallet's portfolio. The test
+  // wallet is a seeded "test-wallet-000" row; production wallets use non-colliding hex.
 
-  /**
-   * Home page collateral cards + action-page sidebar HomeCollateralPool.
-   * Currently HOME_COLLATERAL_POOLS mock keyed by home compact id.
-   */
+  /** Home page collateral cards + the action-page sidebar HomeCollateralPool. */
   walletCollateralPositions: defineTable({
     wallet: v.string(),
     homePoolId: v.string(),
@@ -1957,10 +1765,7 @@ export default defineSchema({
     .index("by_wallet_home_pool", ["wallet", "homePoolId"])
     .index("by_wallet_market", ["wallet", "marketId"]),
 
-  /**
-   * UI view of open debts. Currently HOME_INITIAL_DEBTS mock leaks into every
-   * non-'home-demo-wallet' session; per-wallet rows fix that leak.
-   */
+  /** UI view of open debts, per wallet. */
   walletDebts: defineTable({
     wallet: v.string(),
     homePoolId: v.string(),
@@ -1973,8 +1778,8 @@ export default defineSchema({
     .index("by_wallet_home_pool", ["wallet", "homePoolId"]),
 
   /**
-   * Rewards / fee claim positions on the home page. Currently HOME_CLAIM_POSITIONS
-   * mock. Breakdown is an inline array so a single query renders the whole card.
+   * Rewards / fee claim positions on the home page. `breakdown` is inline so one query
+   * renders the whole card.
    */
   walletClaimPositions: defineTable({
     wallet: v.string(),
@@ -2105,14 +1910,10 @@ export default defineSchema({
     .index("by_owner_created", ["ownerSubject", "createdAt"]),
 
   /**
-   * Phase 2 mode-run record: one row per deterministic Ask AI mode-run.
-   *
-   * Unlike askAIMessageParts.parts (v.any() scattered across assistant messages), a run
-   * is a dedicated, typed unit — mode + the single snapshot it was computed on + the
-   * typed widgets and actions. Top-level fields are validated here; `widgets`/`actions`
-   * are the TS-typed AskAiWidget[]/AskAiAction[] produced by the engine builders and
-   * stored structurally (the write path type-checks them, and convex/askAiRuns.ts also
-   * guards the widget discriminant at write time). Nothing writes here yet.
+   * One row per deterministic Ask AI mode-run: the mode, the single snapshot it was
+   * computed on, and its typed widgets/actions. `widgets`/`actions` hold TS-typed
+   * AskAiWidget[]/AskAiAction[]; the write path type-checks them and
+   * `convex/askAiRuns.ts` also guards the widget discriminant at write time.
    */
   askAiRuns: defineTable({
     ownerSubject: v.string(),
@@ -2134,9 +1935,9 @@ export default defineSchema({
 
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
-    // Only coingecko/defillama/aave are writable by current ingestion. These legacy
-    // literals must remain until production cleanup is verified; narrowing first
-    // makes Convex reject the existing documents during schema validation.
+    // Only coingecko/defillama/aave are writable by current ingestion, but the legacy
+    // literals must stay until prod rows are cleaned up — narrowing first makes Convex
+    // reject the existing documents during schema validation.
     source: v.union(
       v.literal("coingecko"),
       v.literal("defillama"),

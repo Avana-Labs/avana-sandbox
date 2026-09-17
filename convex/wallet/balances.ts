@@ -1,11 +1,8 @@
 /**
- * Wallet token balances — feeds the dashboard "Wallet" tab, the sidebar amount
- * pickers, and every action page's "Available" line. Mirrors the
- * app/lib/swap-system/contracts.ts UserAssetBalance shape.
- *
- * Reads are wallet-scoped and gated by requireSandboxWallet (i.e. the auth
- * subject must control the requested wallet). No public reads — a wallet's
- * holdings are not public data.
+ * Wallet token balances behind the dashboard "Wallet" tab, the sidebar amount pickers and
+ * every action page's "Available" line. Mirrors UserAssetBalance in
+ * app/lib/swap-system/contracts.ts. Every read is gated by requireSandboxWallet — a wallet's
+ * holdings are NOT public data, so there are no public reads here.
  */
 
 import { v, type Infer } from "convex/values"
@@ -28,12 +25,9 @@ const walletBalanceRow = v.object({
 })
 
 /**
- * Wallet's own balances across all assets + sources.
- *
- * `assetKind` filter (optional) narrows the return set to a single shape —
- * "wallet" for token holdings, "lp" for LP-token collateral, "returned-lp" for
- * pending withdrawal queue. Omit to get everything. Home + action pages use
- * the filter so they don't page over irrelevant rows.
+ * The wallet's balances across all assets + sources. Optional `assetKind` narrows to one
+ * shape ("wallet" token holdings, "lp" collateral, "returned-lp" pending withdrawal); home +
+ * action pages pass it so they do not page over irrelevant rows.
  */
 export const listBalances = query({
   args: { wallet: v.string(), assetKind: v.optional(assetKind) },
@@ -64,9 +58,9 @@ export const listBalances = query({
 })
 
 /**
- * Upsert a batch of wallet balances. Internal-only so anonymous callers can't
- * mint tokens for a wallet they don't control — the caller (seed writer, position
- * upsert path) is trusted. Keyed by (wallet, assetId, sourceType, sourcePositionId).
+ * Upsert a batch of wallet balances, keyed by (wallet, assetId, sourceType, sourcePositionId).
+ * Internal-only: the callers (seed writer, position upsert) are trusted, and an anonymous
+ * caller must never be able to mint tokens for a wallet it does not control.
  */
 export async function upsertWalletBalanceRows(ctx: MutationCtx, rows: Array<Infer<typeof walletBalanceRow>>) {
   const now = Date.now()
@@ -153,10 +147,8 @@ export const upsertBalances = internalMutation({
   handler: async (ctx, { rows }) => upsertWalletBalanceRows(ctx, rows),
 })
 
-/**
- * Delete a wallet's balance rows. Used when reseeding a dev wallet or when a
- * position closes — leaving stale $0 rows around is a rendering foot-gun.
- */
+/** Delete a wallet's balance rows, for a dev reseed or a closing position — stale $0 rows are
+ *  a rendering foot-gun. */
 export const deleteBalances = internalMutation({
   args: { wallet: v.string(), positionId: v.optional(v.id("positions")) },
   handler: async (ctx, { wallet, positionId }) => {

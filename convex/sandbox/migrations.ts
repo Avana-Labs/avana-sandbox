@@ -7,24 +7,19 @@ import { validatedTokenPriceUsd } from "./oraclePrice"
 import { resolveWriteBackPriceUsd } from "./writeBackPrice"
 
 /**
- * One-off, idempotent re-value of seeded MULTIPLY positions after the token-price
- * baseline was corrected (ETH-family dropped from the stale ~$3,500 tier to the
- * realistic ~$1,934 tier — see app/lib/prices/sandbox-baseline-prices.ts and the
- * aligned SANDBOX_TOKEN_PRICE_USD map).
+ * One-off, idempotent re-value of seeded MULTIPLY positions after the token-price baseline was
+ * corrected downward.
  *
- * WHY: a multiply position stores `collateralValueUsd` (the intended gross exposure,
- * an invariant) and `collateralAmount` (a TOKEN quantity frozen at claim-time price).
- * The dashboard re-values exposure as `collateralAmount × currentBaseline`. With the
- * token amount frozen at the old high price, exposure now re-values DOWN while the
- * fixed `debtValueUsd` stays — collapsing equity and pushing seeded positions
- * underwater. Rewriting the token amount from the invariant restores the intended
- * exposure (and therefore LTV / health factor) at the new baseline.
+ * A multiply position stores `collateralValueUsd` (intended gross exposure, the INVARIANT) and
+ * `collateralAmount` (a TOKEN quantity frozen at claim-time price), and the dashboard re-values
+ * exposure as `collateralAmount × currentBaseline`. With the amount frozen at the old high
+ * price, exposure re-values DOWN while `debtValueUsd` stays, collapsing equity and pushing
+ * seeded positions underwater.
  *
- * FORMULA: collateralAmount = collateralValueUsd / baselinePrice(collateralSymbol).
- * `collateralValueUsd` and `debtValueUsd` are left untouched, so LTV/HF are preserved.
- * Idempotent: it recomputes from the invariant, so re-running is a no-op.
- *
- * Collateral symbol is the first leg of the market slug (e.g. "wsteth-eth" → wsteth).
+ * FORMULA: collateralAmount = collateralValueUsd / baselinePrice(collateralSymbol), leaving
+ * `collateralValueUsd` / `debtValueUsd` untouched so LTV and HF are preserved. Recomputes from
+ * the invariant, so a re-run is a no-op. Collateral symbol is the slug's first leg
+ * ("wsteth-eth" → wsteth).
  */
 function baselinePriceForSlug(marketSlug: string): number {
   const symbol = marketSlug.split("-")[0]?.toLowerCase() ?? ""
@@ -80,17 +75,15 @@ export const migrateMultiplyCollateralToBaseline = internalMutation({
 })
 
 /**
- * Backfill: heal product-balance rows that stored a USD figure in the token-quantity `amount` field.
+ * Backfill: heal product-balance rows that stored USD in the token-quantity `amount` field.
+ * Legacy rows persist `amount ≈ valueUsd`, and the dashboard reprices non-LP rows as
+ * `amount × livePrice`, inflating Net Value by the token price (a 1 AAVE deposit → +$14k).
  *
- * The write paths now derive `amount` from a validated oracle price (adjustProductBalanceUsd /
- * upsertProductBalanceValue), but rows created before that fix persist `amount ≈ valueUsd`, and the
- * dashboard reprices non-LP rows as `amount × livePrice` — inflating Net Value by the token price
- * (a 1 AAVE deposit landed `amount: 120.18` → +$14k). DETECTION reuses the write-back rule
- * (writeBackPrice.ts): a row whose implied unit price (`valueUsd / amount`) is ≈1 while the live
- * oracle price is NOT ≈1 is a USD-in-amount row; rewrite `amount = valueUsd / livePrice`. A row with a
- * real (non-$1) implied price is a genuine token quantity and is left untouched, so it is idempotent
- * and safe to re-run; `valueUsd` is canonical and never changes. Scoped to lend + multiply — borrow LP
- * collateral is intentionally USD-denominated and repriced from the live pool price at read time.
+ * DETECTION follows the write-back rule (writeBackPrice.ts): an implied unit price
+ * (`valueUsd / amount`) of ≈1 while the live oracle price is NOT ≈1 means USD-in-amount, so
+ * rewrite `amount = valueUsd / livePrice`. A real (non-$1) implied price is a genuine token
+ * quantity and is left alone, which makes this idempotent; `valueUsd` is canonical and never
+ * changes. Scoped to lend + multiply — borrow LP collateral is deliberately USD-denominated.
  */
 async function healUsdInAmount(
   ctx: MutationCtx,
@@ -184,21 +177,15 @@ export const backfillProductBalanceAmountUnits = internalMutation({
 })
 
 /**
- * Rebase onboarding cost-basis snapshots that were pinned to a stale static-fixture price.
+ * Rebase onboarding cost-basis snapshots pinned to a stale static-fixture price. Wallet P/L
+ * reads `sandboxProfiles.basketSnapshot[].priceUsdAtClaim` as the per-token basis, and wallets
+ * onboarded BEFORE a token gained live oracle coverage stored the SANDBOX_TOKEN_PRICE_USD
+ * fallback (LINK $18), so the leg now shows a fake loss against the lower live price.
  *
- * The wallet P/L reads `sandboxProfiles.basketSnapshot[].priceUsdAtClaim` as the per-token cost basis
- * (app/lib/swap-system/use-convex-wallet-balances.ts → dashboard-wallet-tab.tsx). Wallets onboarded
- * BEFORE a token gained live oracle coverage stored the SANDBOX_TOKEN_PRICE_USD fallback as the basis
- * (e.g. LINK $18), so the leg now valued at a lower LIVE price shows a fake loss (LINK −37%). The claim
- * path already prefers the live oracle for new claims; this heals the legacy snapshots.
- *
- * SAFETY: only a leg whose stored basis still equals the static fixture value it would have fallen
- * back to (`SANDBOX_TOKEN_PRICE_USD[token] ?? 1`) is rebased — a basis captured from a live claim is
- * left alone, so genuine P/L is never erased. Rebasing to the current live price makes a just-granted
- * synthetic leg read ~0 P/L (sane) and accrues correctly from here. Idempotent: after a rebase the
- * basis no longer matches the fixture signature, so a re-run is a no-op. Scoped to the tokens that
- * gained coverage after launch; override `tokens` to widen or narrow. `amount` is untouched (the leg's
- * under/over-grant sizing is a separate reseed concern).
+ * SAFETY: only a leg whose basis still equals the fixture value it would have fallen back to is
+ * rebased, so a basis captured from a live claim is never overwritten and genuine P/L is never
+ * erased. After a rebase the basis no longer matches that signature, making a re-run a no-op.
+ * `amount` is untouched — grant sizing is a separate reseed concern.
  */
 const DEFAULT_STALE_BASIS_TOKENS = ["link", "arb", "op", "ldo", "crv", "bal", "aero", "eurc"]
 
@@ -206,7 +193,7 @@ export const rebaseOnboardingStaleBasis = internalMutation({
   args: {
     // Optional single-wallet run (validate on the test wallet first).
     wallet: v.optional(v.string()),
-    // Token ids (lowercased) to rebase; defaults to the set that gained live coverage after launch.
+    // Lowercased token ids; defaults to the set that gained live coverage after launch.
     tokens: v.optional(v.array(v.string())),
     // Pagination for the all-wallets sweep.
     cursor: v.optional(v.union(v.string(), v.null())),
@@ -244,7 +231,7 @@ export const rebaseOnboardingStaleBasis = internalMutation({
         const isStaleFixture =
           leg.priceUsdAtClaim > 0 && Math.abs(leg.priceUsdAtClaim - fixtureBasis) <= fixtureBasis * 1e-3
         if (!isStaleFixture) continue
-        // Already at the live basis (idempotent re-run, or fixture coincidentally equals live).
+        // Already at the live basis (re-run, or the fixture happens to equal live).
         if (Math.abs(live - leg.priceUsdAtClaim) <= leg.priceUsdAtClaim * 1e-6) continue
         nextBasket[index] = { ...leg, priceUsdAtClaim: live }
         changed = true

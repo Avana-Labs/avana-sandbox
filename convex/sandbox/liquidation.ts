@@ -1,15 +1,11 @@
 /**
- * Sandbox liquidation recording.
+ * Sandbox liquidation recording. `recordLiquidationPreview` is analytics-only and
+ * owner-scoped; `recordLiquidation` atomically updates the victim's debt/collateral and
+ * records the transaction, portfolio snapshot and audit row.
  *
- * Liquidation previews remain analytics-only. A confirmed liquidation with a
- * position id atomically updates the victim's debt/collateral, records the
- * transaction and portfolio snapshot, and stores the liquidation audit row:
- *   - `recordLiquidationPreview` — every computed preview (health before/after, the
- *     allowed/blocked verdict), owner-scoped.
- *   - `recordLiquidation` — a recorded liquidation action. Unlike the rest of the
- *     sandbox (self-only via `requireSandboxWallet`), a liquidation has TWO parties:
- *     the caller is the LIQUIDATOR (the authed wallet), acting on a VICTIM wallet it
- *     does not own. So we gate on the liquidator identity, not the victim.
+ * AUTHORIZATION: unlike the rest of the sandbox (self-only via `requireSandboxWallet`), a
+ * liquidation has TWO parties — the caller is the LIQUIDATOR acting on a VICTIM wallet it does
+ * not own, so the gate is on the liquidator identity, never the victim.
  */
 
 import { v } from "convex/values"
@@ -36,12 +32,10 @@ const MAX_LIQUIDATION_BONUS_BPS = 2_000
 const MAX_LIQUIDATIONS_PER_HOUR = 200
 const MAX_INTENT_ID_LENGTH = 128
 /**
- * Liquidation-threshold basis, hand-synced with the borrow path's server-side
- * solvency re-derivation (convex/sandbox/transactions.ts
- * `serverCollateralValueUsd` / `liquidationThresholdFromMaxLtv`) which itself
- * mirrors the client credit engine. Convex can't import app/lib and those
- * helpers aren't exported, so the minimal formula is replicated here: LT =
- * explicit `liquidationThresholdPct`, else maxLtv + 10pp capped at 95%, else 85%.
+ * Liquidation-threshold basis: LT = explicit `liquidationThresholdPct`, else maxLtv + 10pp
+ * capped at 95%, else 85%. Hand-synced with the borrow path's `liquidationThresholdFromMaxLtv`
+ * (transactions.ts), which mirrors the client credit engine — Convex cannot import app/lib and
+ * the helper is not exported, so the formula is replicated.
  */
 const BORROW_FALLBACK_LIQUIDATION_PCT = 85
 const LIQUIDATION_THRESHOLD_SPREAD_PCT = 10
@@ -60,10 +54,9 @@ function requireOptionalWad(value: string | null, field: string) {
 }
 
 /**
- * Revalue a victim collateral leg from shares/principal + the pool/market oracle
- * (never the spoofable client `collateralValueUsd6`) and return its liquidation
- * threshold. Replicates the borrow path's `serverCollateralValueUsd` so the
- * liquidation solvency check uses the same basis the borrow write does.
+ * Revalue a victim collateral leg from shares/principal + the pool/market oracle — NEVER the
+ * spoofable client `collateralValueUsd6` — and return its liquidation threshold. Mirrors the
+ * borrow path's `serverCollateralValueUsd` so both checks use the same basis.
  */
 async function victimCollateralLiquidationValue(
   ctx: MutationCtx,
@@ -173,12 +166,10 @@ export const recordLiquidation = mutation({
         throw new Error("INVALID_LIQUIDATION: market does not match the victim position.")
       }
 
-      // ── Server-side solvency + sizing gate (P1-2) ──────────────────────────
-      // `healthFactorWadBefore` above is CLIENT-supplied and spoofable — a caller
-      // could pass "0" to liquidate a solvent victim. Independently recompute the
-      // victim's health factor from stored collateral/debt + the pool oracle
-      // (same basis as the borrow path's `assertBorrowSolvent`) and cap repay/seize
-      // by a real close factor × liquidation bonus, not just "positive and ≤ value".
+      // Server-side solvency + sizing gate. `healthFactorWadBefore` is CLIENT-supplied and
+      // spoofable (a caller could pass "0" to liquidate a solvent victim), so recompute the
+      // victim's HF from stored collateral/debt + the pool oracle — the same basis as
+      // `assertBorrowSolvent` — and cap repay/seize by a real close factor × liquidation bonus.
       const debtTotalUsd6 = debtRows.reduce((sum, row) => sum + BigInt(row.principalBorrowedUsd6), 0n)
       if (debtTotalUsd6 <= 0n) {
         throw new Error("INVALID_LIQUIDATION: the victim position has no debt to liquidate.")
@@ -190,8 +181,7 @@ export const recordLiquidation = mutation({
         liquidationValueUsd += valueUsd * (thresholdPct / 100)
       }
       const debtTotalUsd = Number(debtTotalUsd6) / 1_000_000
-      // HF = risk-adjusted collateral / debt; the victim is solvent (HF ≥ 1) when
-      // that collateral still covers the debt. Reject solvent victims outright.
+      // HF = risk-adjusted collateral / debt; reject a solvent victim (HF ≥ 1) outright.
       if (liquidationValueUsd >= debtTotalUsd) {
         throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
       }
@@ -212,9 +202,9 @@ export const recordLiquidation = mutation({
         throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the close-factor × bonus cap.")
       }
 
-      // A liquidation is an exchange, not a free administrative write. Charge the
-      // authenticated keeper in the debt asset at the current Convex oracle price before
-      // mutating the victim. The whole mutation is atomic, so any later failure rolls this back.
+      // A liquidation is an exchange, not a free write: charge the authenticated keeper in the
+      // debt asset at the current oracle price before mutating the victim. The mutation is
+      // atomic, so a later failure rolls this back.
       const debtAssetId = debt.baseAssetId.toLowerCase()
       const debtPriceUsd = await validatedTokenPriceUsd(ctx, debtAssetId, now)
       if (debtPriceUsd === null) {
@@ -279,11 +269,10 @@ export const recordLiquidation = mutation({
         debtValueUsd6: (debtAfter > 0n ? debtAfter : 0n).toString(),
         status: closed ? "closed" : "open",
         lastUpdatedAt: now,
-        // Bump the optimistic-concurrency token: a liquidation mutates the position outside
-        // recordTransaction, so without this a victim's tab that cached the pre-liquidation
-        // revision would still match currentRevision and its stale-read repay/withdraw/borrow
-        // would pass the STALE_WRITE guard — silently restoring the seized collateral and
-        // repaid debt. Advancing revision forces that client to reload before it can write.
+        // MUST bump the concurrency token: a liquidation mutates the position outside
+        // recordTransaction, so a victim's tab holding the pre-liquidation revision would
+        // still pass the STALE_WRITE guard and silently restore the seized collateral and
+        // repaid debt. Advancing revision forces that client to reload first.
         revision: (position.revision ?? 0) + 1,
         ...(closed ? { closedAt: now } : {}),
       })

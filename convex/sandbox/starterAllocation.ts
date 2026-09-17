@@ -65,13 +65,11 @@ export type StarterLiquidTokenLeg = {
 }
 
 /**
- * Build the liquid (wallet) starter legs from REAL swap-catalog tokens instead of the
- * spoke-borrowable `scope:"asset"` markets the allocation planner selects. Those markets
- * carry composite ids ("uni-v2:wbtc", "bal-boosted:usdc"…) that are NOT in the swap catalog,
- * so `getSwapAsset` can't resolve them — the wallet rendered them as "Unsupported asset" and
- * downstream valuation treated them as unknown. `totalUsd` is split exactly across `tokens`
- * (so the seeded liquid total is preserved to the cent) and each leg is sized in token units
- * at its resolved price. A non-positive/NaN price degrades to 1 rather than producing Infinity.
+ * Build the liquid (wallet) starter legs from REAL swap-catalog tokens, not the planner's
+ * spoke-borrowable `scope:"asset"` markets — their composite ids ("uni-v2:wbtc") are absent
+ * from the swap catalog, so `getSwapAsset` cannot resolve them and the wallet renders
+ * "Unsupported asset". `totalUsd` is split across `tokens` exactly, preserving the seeded
+ * liquid total to the cent. A non-positive/NaN price degrades to 1 rather than Infinity.
  */
 export function buildStarterLiquidTokenLegs(
   tokens: readonly { id: string; symbol: string }[],
@@ -132,16 +130,12 @@ const SCOPE_TO_BUCKET: Record<StarterMarket["scope"], BucketKey> = {
 }
 
 /**
- * Fail-closed catalog gate for onboarding. Onboarding must never mark a wallet "done"
- * on a partial/empty seed (that seeds a truncated portfolio and permanently locks the
- * wallet out of a real allocation). This asserts the seed can satisfy EVERY starter
- * bucket — enough candidates for each `STARTER_BUCKETS.*.count`, and that the specific
- * legs the plan would select all carry a positive price. Throws
- * `ONBOARDING_CATALOG_INCOMPLETE` with a descriptive reason; the caller aborts the claim
- * (no seeding, wallet stays claimable) rather than completing onboarding on bad data.
- *
- * `buildStarterAllocationPlan` deliberately still degrades gracefully for its other
- * callers; this is the strict gate used only on the claim path.
+ * FAIL-CLOSED catalog gate for the claim path: onboarding must never mark a wallet "done" on a
+ * partial seed, which would permanently lock it out of a real allocation. Asserts every
+ * starter bucket has enough candidates for its `STARTER_BUCKETS.*.count` and that each leg the
+ * plan would select carries a positive price, throwing `ONBOARDING_CATALOG_INCOMPLETE` so the
+ * caller aborts before any write and the wallet stays claimable.
+ * `buildStarterAllocationPlan` still degrades gracefully for its other callers.
  */
 export function assertCatalogCanSatisfyStarter(wallet: string, markets: readonly StarterPricedMarket[]): void {
   const byScope = (scope: StarterMarket["scope"]) =>
@@ -166,8 +160,8 @@ export function assertCatalogCanSatisfyStarter(wallet: string, markets: readonly
     }
   }
 
-  // 2) Every leg the plan would actually select must have a positive price. A zero/absent
-  //    price would seed a $0-valued or divide-by-zero position, so treat it as incomplete.
+  // 2) Every selected leg needs a positive price: zero/absent would seed a $0-valued or
+  //    divide-by-zero position, so count it as incomplete.
   const priceBySlug = new Map(markets.map((market) => [market.slug, market.priceUsd]))
   const plan = buildStarterAllocationPlan(
     wallet,
@@ -240,10 +234,9 @@ export function buildStarterAllocationPlan(wallet: string, markets: readonly Sta
     },
   ]
 
-  // Onboarding must never hard-fail just because a scope is missing from the seed (e.g.
-  // an un-seeded deployment). Allocate only across the buckets that have markets and
-  // redistribute the full equity over them, proportional to each bucket's base target.
-  // When every scope is present this reproduces the original per-bucket amounts exactly.
+  // Never hard-fail on a scope missing from the seed: allocate across the buckets that have
+  // markets and redistribute the full equity proportional to each bucket's base target. With
+  // every scope present this reproduces the original per-bucket amounts exactly.
   const available = bucketDefs
     .map((def) => ({ ...def, candidates: byScope(def.scope) }))
     .filter((def) => def.candidates.length > 0)

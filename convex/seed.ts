@@ -1,12 +1,10 @@
 /**
- * Seed mutations for the market data layer. Self-contained (no app imports, so it
- * bundles cleanly). The deterministic ROW DATA is built in the repo by
- * `app/lib/convex-seed/build-seed.ts` and pushed here in batches by
- * `scripts/seed-convex.mjs`.
+ * Seed mutations for the market data layer. Must stay self-contained (no app imports) so it
+ * bundles cleanly; the deterministic row data is built by `app/lib/convex-seed/build-seed.ts`
+ * and pushed in batches by `scripts/seed-convex.mjs`.
  *
- * All writes are IDEMPOTENT upserts keyed by (marketId, day) / (scope, slug), so
- * re-running the seed updates rows in place — there is no destructive "clear all"
- * exposed publicly. Safe to run repeatedly.
+ * Every write is an IDEMPOTENT upsert keyed by (marketId, day) / (scope, slug), and no
+ * destructive "clear all" is exposed publicly, so re-running the seed is safe.
  */
 
 import { v } from "convex/values"
@@ -16,12 +14,10 @@ import type { Id } from "./_generated/dataModel"
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 /**
- * Lightweight seed-verification: exact counts for the small per-market tables (markets,
- * risk) and a non-empty "seeded" signal for the LARGE tables — collecting the 46k+ daily
- * allocation/stat rows would blow the per-query read limit. Internal-only (the seed CLI
- * reaches it through the secret-gated `seedAdmin.getCounts` action); an anonymous caller
- * can neither invoke it nor force an unbounded scan. Use listMarketSnapshots in
- * convex/markets.ts for the calibrated aggregate totals.
+ * Seed verification: exact counts for the small per-market tables, and only a non-empty
+ * "seeded" signal for the large ones — collecting the 46k+ daily rows would blow the
+ * per-query read limit. Internal-only (reached via the secret-gated `seedAdmin.getCounts`),
+ * so an anonymous caller can neither invoke it nor force an unbounded scan.
  */
 export const getCounts = internalQuery({
   args: {},
@@ -34,8 +30,7 @@ export const getCounts = internalQuery({
       ctx.db.query("multiplyRiskAssessments").collect(),
     ])
     const risk = [...borrowRisk, ...lendRisk, ...multiplyRisk]
-    // The remaining tables are large (daily rows) or heavy per-row (content blobs), so
-    // read only a single-row "seeded" signal instead of collecting the whole table.
+    // Large or heavy-per-row tables: read a single-row "seeded" signal, never collect.
     const oneAllocation = await ctx.db.query("assetPoolAllocationDaily").take(1)
     const oneContent = await ctx.db.query("borrowMarketContent").take(1)
     const oneStat = await ctx.db.query("marketDailyStats").take(1)
@@ -216,10 +211,9 @@ export const insertWalletEvents = internalMutation({
 })
 
 /**
- * Delete stored portfolio history in bounded batches. Used once to drop snapshots
- * written under an older portfolio-value basis (before Umbrella / net-debt were folded
- * into totalValueUsd), so the hero chart rebuilds clean, on-basis history going forward.
- * `portfolioCurrent` is left alone — it is overwritten on the next snapshot write.
+ * Delete stored portfolio history in bounded batches, for dropping snapshots written under an
+ * older portfolio-value basis so the hero chart rebuilds on-basis. `portfolioCurrent` is left
+ * alone; the next snapshot write overwrites it.
  */
 export const clearPortfolioSnapshots = internalMutation({
   args: { limit: v.optional(v.number()) },

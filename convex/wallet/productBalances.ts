@@ -4,16 +4,13 @@ import { internalMutation, mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "../sandbox/auth"
 
 /**
- * Live-LP collateral reprice is only trustworthy when the claim anchor (`claimLp`,
- * derived as valueUsd/amount from the collateral row) shares a basis with the live pool
- * price (`liveLp` = markets.priceUsd, scope "pool"). Onboarding-seeded collateral is
- * stored USD-denominated — the seed values it with pool priceUsd = 1, so amount == valueUsd
- * and claimLp ≈ 1 — while `liveLp` is the oracle's LP *unit* price (Σ wᵢ·pᵢ, e.g. ~$40k for a
- * WBTC/WETH pool). Scaling the frozen claim USD by liveLp/claimLp across those mismatched
- * bases inflated Net Value ~40000× (a $43,750 leg became ~$1.75B, headline hit ~$7.1B).
- * A genuine intra-session token move is bounded; a basis mismatch is orders of magnitude
- * off. Only apply the reprice when the scale falls inside a plausible drift band; otherwise
- * keep the frozen (correct at claim) USD.
+ * Plausible-drift band for the live-LP collateral reprice. The reprice is only valid when the
+ * claim anchor (`claimLp` = valueUsd/amount) and the live pool price (`liveLp` =
+ * markets.priceUsd) share a basis. Onboarding-seeded collateral is USD-denominated (pool
+ * priceUsd = 1, so claimLp ≈ 1) while `liveLp` is the LP UNIT price (Σ wᵢ·pᵢ, ~$40k for a
+ * WBTC/WETH pool), and scaling across that mismatch inflated Net Value ~40000×. A genuine
+ * intra-session move is bounded, so a scale outside this band means basis mismatch: keep the
+ * frozen (claim-correct) USD instead.
  */
 export const COLLATERAL_REPRICE_DRIFT_BAND = { min: 0.1, max: 10 } as const
 
@@ -169,21 +166,18 @@ export const listForWallet = query({
         )
         .map((market) => [market.slug, market.priceUsd!] as const),
     )
-    // A multiply market with a debt row but no live collateral or position is an ORPHAN — a
-    // closed position whose debt was written under a different asset id than the close zeroed
-    // (legacy data from before the transactions.ts debt-anchor fix). Debt against zero collateral
-    // is economically impossible, and the position's equity has already returned to `available`,
-    // so counting the debt double-subtracts it and drags Net Value below the granted equity.
-    // Exclude these debt rows at read time so existing orphans self-heal without a reseed.
+    // A multiply debt row with no live collateral or position is an ORPHAN: legacy data whose
+    // debt was written under a different asset id than the close zeroed. Debt against zero
+    // collateral is impossible and its equity already returned to `available`, so counting it
+    // double-subtracts. Excluded at READ time so existing orphans self-heal without a reseed.
     const multiplyMarketHasPosition = new Set<string>()
     for (const row of rawMultiply) {
       if ((row.state === "collateral" || row.state === "position") && row.valueUsd > 0 && row.marketId) {
         multiplyMarketHasPosition.add(row.marketId)
       }
     }
-    // Available Multiply buckets are USD ledgers plus a display token quantity. Normalize
-    // the quantity at read time as well as at write time so legacy rows created with the
-    // old $1/token fallback cannot inflate the dashboard or action pages after reload.
+    // Available Multiply buckets are USD ledgers plus a display token quantity; normalize at
+    // READ time too, so legacy rows written with a $1/token fallback cannot inflate anything.
     const multiply = rawMultiply
       .filter((row) => !(row.state === "debt" && row.marketId != null && !multiplyMarketHasPosition.has(row.marketId)))
       .map((row) => {
@@ -215,15 +209,12 @@ export const listForWallet = query({
       poolTotals.set(row.marketId, (poolTotals.get(row.marketId) ?? 0) + row.valueUsd)
     }
 
-    // Reprice borrow-collateral LP value at the pool's LIVE LP price rather than the
-    // frozen claim-time USD. `markets.priceUsd` (scope "pool") is Σ(weightᵢ × priceᵢ)
-    // refreshed from the token oracle (convex/prices.ts refreshPoolLpPrices), the same
-    // basis the credit engine / borrow tab use — so a fall in a collateral token now
-    // shows up in Net Value here and the two surfaces reconcile. We scale the frozen
-    // split by liveLp / claimLp: the per-pool claim price comes from the collateral row
-    // (valueUsd / amount), which is the one row carrying a reliable unit count. Falls back
-    // to the frozen basis when the pool has no live price (e.g. an unpriced constituent)
-    // or no claim-price anchor, so unpriced pools degrade gracefully instead of zeroing.
+    // Reprice borrow-collateral LP at the pool's LIVE LP price, not the frozen claim USD:
+    // `markets.priceUsd` (scope "pool") is Σ(weightᵢ × priceᵢ) from refreshPoolLpPrices, the
+    // same basis the credit engine and borrow tab use, so a collateral-token fall reconciles
+    // across surfaces. The frozen split is scaled by liveLp / claimLp, with claimLp taken from
+    // the collateral row (the one row carrying a reliable unit count). Falls back to the frozen
+    // basis when the pool has no live price or no anchor, so unpriced pools never zero out.
     const poolSlugs = [...new Set(rawBorrow.map((row) => row.marketId).filter((slug): slug is string => Boolean(slug)))]
     const poolMarkets = await Promise.all(
       poolSlugs.map((slug) =>
