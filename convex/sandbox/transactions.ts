@@ -176,12 +176,24 @@ export async function adjustProductBalanceUsd(
         (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId),
     )
   const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
-  const priceUsd =
+  // `amount` is a TOKEN QUANTITY, so it must be derived with a real unit price. Falling back to
+  // $1 whenever no row exists yet wrote the USD figure straight into `amount` for every first
+  // deposit/borrow into a market with no prior row — and the dashboard reprices non-LP rows as
+  // `amount × livePrice`, so a verified 1 AAVE ($120.18) deposit landed `amount: 120.18` and
+  // contributed $14,443 to Net Value. Prefer an explicit override, then the unit price implied
+  // by an existing/sibling row, then the server oracle. $1 is only reached for a symbol the
+  // oracle does not cover (where amount == valueUsd is the best available answer anyway).
+  const impliedPriceUsd =
+    existing && existing.amount > 0 && existing.valueUsd > 0
+      ? existing.valueUsd / existing.amount
+      : sibling && sibling.amount > 0 && sibling.valueUsd > 0
+        ? sibling.valueUsd / sibling.amount
+        : null
+  const resolvedPriceUsd =
     priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
       ? priceUsdOverride
-      : existing && existing.amount > 0 && existing.valueUsd > 0
-        ? existing.valueUsd / existing.amount
-        : 1
+      : (impliedPriceUsd ?? (await validatedTokenPriceUsd(ctx, match.assetId ?? symbol, now)))
+  const priceUsd = resolvedPriceUsd && resolvedPriceUsd > 0 ? resolvedPriceUsd : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
   if (existing) {
     await ctx.db.patch(existing._id, { amount: nextAmount, valueUsd: nextValueUsd, updatedAt: now })
@@ -1697,11 +1709,18 @@ async function applyProductBucketDelta(
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
         .collect()
     ).find((row) => row.marketId === marketSlug && row.state === "debt")
+    const debtAssetId = existingMultiplyDebt?.assetId ?? assetId
+    // `amount` is a token quantity, not USD. Writing `amount: debtValueUsd` was harmless only
+    // while every debt asset was a ~$1 stablecoin; for an ETH/WBTC-denominated debt the
+    // dashboard's `amount × livePrice` repricing inflated the debt by the token price. Derive
+    // the token amount from the server oracle, keeping USD as the canonical `valueUsd`.
+    const debtPriceUsd = await validatedTokenPriceUsd(ctx, debtAssetId, now)
+    const debtAmount = debtPriceUsd && debtPriceUsd > 0 ? debtValueUsd / debtPriceUsd : debtValueUsd
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
-      assetId: existingMultiplyDebt?.assetId ?? assetId,
+      assetId: debtAssetId,
       symbol: existingMultiplyDebt?.symbol ?? assetId.toUpperCase(),
-      amount: debtValueUsd,
+      amount: debtAmount,
       valueUsd: debtValueUsd,
       state: "debt",
     })
