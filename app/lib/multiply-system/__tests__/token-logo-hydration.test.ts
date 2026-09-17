@@ -44,11 +44,11 @@ describe("buildMultiplyPageData token-logo hydration from Convex", () => {
   })
 
   it("resolves a slug-aliased symbol through the local resolver", () => {
-    // crvUSD maps through the CRVUSD -> "crv" slug alias in local-asset-icons.
+    // crvUSD maps through the CRVUSD -> "crvusd" slug alias in local-asset-icons.
     const page = buildMultiplyPageData("wallet-1", undefined, [
       convexRow({ symbol: "crvUSD", iconUrl: "/asset-icons/crvusd.svg" }),
     ])
 
-    expect(page.tokenLogos.crvUSD).toBe("/asset-icons/crv.png")
+    expect(page.tokenLogos.crvUSD).toBe("/asset-icons/crvusd.png")
   })
 })

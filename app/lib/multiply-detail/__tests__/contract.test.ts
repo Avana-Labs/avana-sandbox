@@ -16,7 +16,7 @@ describe("multiply detail about contract", () => {
     const detail = getMultiplyMarketDetail("crvusd-usdt")!
     expect(detail.hero.name).toBe("crvUSD / USDT")
     expect(detail.hero.visuals[0]?.symbol).toBe("crvUSD")
-    expect(detail.hero.visuals[0]?.iconUrl).toMatch(/\/asset-icons\/crv\.png$/)
+    expect(detail.hero.visuals[0]?.iconUrl).toMatch(/\/asset-icons\/crvusd\.png$/)
     expect(detail.hero.visuals[1]?.iconUrl).toMatch(/\/asset-icons\/usdt\.png$/)
   })
 
