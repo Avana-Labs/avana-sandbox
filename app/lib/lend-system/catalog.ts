@@ -1,7 +1,7 @@
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { calculateAvailableLiquidity, calculateTotalApy, calculateUtilization } from "@/app/lib/lend-engine/formulas"
 import { INITIAL_LIQUIDITY_INDEX } from "@/app/lib/lend-engine/constants"
-import type { LendMarket, LendRiskTier } from "@/app/lib/lend-engine/types"
+import type { LendMarket, LendMarketCategory, LendRiskTier } from "@/app/lib/lend-engine/types"
 import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 const SPEC_UTILIZATION: Record<string, number> = {
@@ -49,6 +49,12 @@ function riskTierForGroup(title: string): LendRiskTier {
   if (title === "Ethereum-Based") return "medium"
   if (title === "Bitcoin Based") return "medium"
   return "high"
+}
+
+function categoryForGroup(title: string): LendMarketCategory {
+  if (title === "Stablecoins") return "stable"
+  if (title === "Coinbase & Robinhood Stocks") return "stock"
+  return "crypto"
 }
 
 function toMarketId(symbol: string) {
@@ -103,6 +109,7 @@ function buildMarketFromRow(
     reserveFactor: reserveFactorForGroup(groupTitle),
     status: "active",
     riskTier: riskTierForGroup(groupTitle),
+    category: categoryForGroup(groupTitle),
     liquidityIndex: INITIAL_LIQUIDITY_INDEX,
     lastAccrualTimestamp: now,
     priceUpdatedAt: now,

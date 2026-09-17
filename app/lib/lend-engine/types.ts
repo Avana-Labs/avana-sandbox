@@ -1,5 +1,8 @@
 export type LendRiskTier = "low" | "medium" | "high"
 
+/** Market grouping for display + the Convex `category` column. Tokenized equities are "stock". */
+export type LendMarketCategory = "stable" | "crypto" | "stock"
+
 export type LendMarketStatus = "active" | "capped" | "paused"
 
 export type LendAsset = {
@@ -32,6 +35,8 @@ export type LendMarket = {
   supplyCap?: number
   status: LendMarketStatus
   riskTier: LendRiskTier
+  /** Display/seed grouping (stable / crypto / stock). Optional so legacy constructors stay valid. */
+  category?: LendMarketCategory
   liquidityIndex: number
   lastAccrualTimestamp: number
   priceUpdatedAt: number

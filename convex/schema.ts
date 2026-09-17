@@ -59,8 +59,8 @@ export default defineSchema({
     symbol: v.string(),
     /** For pools: e.g. "Uniswap v3 · 0.3%". Optional for assets. */
     venueLabel: v.optional(v.string()),
-    /** For assets only: "stable" | "crypto". */
-    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    /** For assets only: "stable" | "crypto" | "stock". */
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     /** Block explorer link for the underlying contract. */
     explorerUrl: v.optional(v.string()),
     /** Used to cap user-visible utilization / LTV on the front end. */
@@ -120,7 +120,7 @@ export default defineSchema({
     name: v.string(),
     symbol: v.string(),
     venueLabel: v.optional(v.string()),
-    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
     /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
@@ -156,7 +156,7 @@ export default defineSchema({
     name: v.string(),
     symbol: v.string(),
     venueLabel: v.optional(v.string()),
-    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
     /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
@@ -189,7 +189,7 @@ export default defineSchema({
     name: v.string(),
     symbol: v.string(),
     venueLabel: v.optional(v.string()),
-    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
     explorerUrl: v.optional(v.string()),
     reserveFactorPct: v.optional(v.number()),
     /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
@@ -370,7 +370,7 @@ export default defineSchema({
         symbol: v.string(),
         chainId: v.number(),
         venueLabel: v.optional(v.string()),
-        category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+        category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
         description: v.optional(v.string()),
         iconUrl: v.optional(v.string()),
         spokeId: v.optional(v.string()),

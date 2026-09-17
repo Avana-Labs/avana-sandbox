@@ -11,7 +11,7 @@ const marketFields = {
   name: v.string(),
   symbol: v.string(),
   venueLabel: v.optional(v.string()),
-  category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+  category: v.optional(v.union(v.literal("stable"), v.literal("crypto"), v.literal("stock"))),
   explorerUrl: v.optional(v.string()),
   reserveFactorPct: v.optional(v.number()),
   rewardsApyPct: v.optional(v.number()),

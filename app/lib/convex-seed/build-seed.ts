@@ -72,7 +72,7 @@ export type SeedMarketRow = {
   name: string
   symbol: string
   venueLabel?: string
-  category?: "stable" | "crypto"
+  category?: "stable" | "crypto" | "stock"
   description?: string
   iconUrl?: string
   spokeId?: string
@@ -579,8 +579,9 @@ function lendMarketRow(market: LendMarket, createdAt: number): SeedMarketRow {
     chainId: market.chainId,
     name: market.asset.name,
     symbol: market.asset.symbol,
-    // Low-tier lend markets are the stablecoins; everything else is volatile.
-    category: market.riskTier === "low" ? "stable" : "crypto",
+    // Prefer the catalog's group-derived category (stablecoins → "stable", tokenized
+    // equities → "stock"); fall back to the risk-tier heuristic for any legacy market.
+    category: market.category ?? (market.riskTier === "low" ? "stable" : "crypto"),
     description: `Supply ${market.asset.symbol} to the Avana lending market.`,
     reserveFactorPct: Math.round(market.reserveFactor * 1000) / 10,
     rewardsApyPct: Math.round(market.rewardsApy * 10000) / 100,

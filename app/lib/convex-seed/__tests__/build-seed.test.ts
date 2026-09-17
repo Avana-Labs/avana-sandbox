@@ -68,7 +68,7 @@ describe("buildBorrowSeed", () => {
     expect(lend.length).toBe(LEND_COUNT)
     for (const m of lend) {
       expect(m.slug).not.toContain(":") // bare marketId, e.g. "usdc"
-      expect(m.category === "stable" || m.category === "crypto").toBe(true)
+      expect(m.category === "stable" || m.category === "crypto" || m.category === "stock").toBe(true)
     }
     const lendSlugs = new Set(lend.map((m) => m.slug))
     expect(seed.content.some((c) => lendSlugs.has(c.slug))).toBe(true)
