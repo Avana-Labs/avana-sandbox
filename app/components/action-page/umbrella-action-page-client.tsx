@@ -6,7 +6,7 @@ import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/ac
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -356,7 +356,7 @@ export function UmbrellaActionPageClient({
     router.push(closeHref)
   }
 
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
   const amountReadOnly = kind === "claim"
 
   if (shouldShowActionSessionLoading(umbrella.isHydrated)) {
@@ -404,7 +404,7 @@ export function UmbrellaActionPageClient({
       hideClose={embedded}
       flowHeaderStage={!embedded ? stage : undefined}
     >
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage verb={dynamicVerb} preview={preview} closeHref={closeHref} stage={stage} />
       ) : null}
       {stage === "review" ? (

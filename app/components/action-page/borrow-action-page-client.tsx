@@ -54,7 +54,12 @@ import {
   resolveClaimMarketId,
   supplySelectItemsForWallet,
 } from "@/app/lib/action-system/resolve-borrow-context"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import {
+  isConfigureVisibleStage,
+  isProcessingStage,
+  isSubmittingStage,
+  reviewStageTitle,
+} from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { resolveClaimPositions, selectionsFromPositions } from "./borrow-action-selection"
 
@@ -1128,10 +1133,10 @@ export function BorrowActionPageClient({
             : kind === "supply"
               ? "Choose the LP pool you want to pledge."
               : "Choose the asset to borrow."
-      : stage === "success" || isProcessingStage(stage) || stage === "review"
+      : stage === "success" || isSubmittingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
   // Require a collateral pool before the borrow-asset picker opens, so the asset
@@ -1329,7 +1334,7 @@ export function BorrowActionPageClient({
         />
       ) : null}
 
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage
           verb={descriptor.primaryVerb}
           preview={reviewPreviewUi ?? previewUi}

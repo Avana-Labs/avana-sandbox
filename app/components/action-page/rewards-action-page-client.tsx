@@ -17,7 +17,7 @@ import { ActionReviewStage } from "@/app/components/action-page/action-review-st
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
-import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -202,7 +202,7 @@ export function RewardsActionPageClient({
     )
   }
 
-  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isSubmittingStage(stage) || stage === "review"
 
   return (
     <ActionPageShell
@@ -215,7 +215,7 @@ export function RewardsActionPageClient({
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
     >
-      {isProcessingStage(stage) ? (
+      {isSubmittingStage(stage) ? (
         <ActionProcessingStage
           verb={descriptor.primaryVerb}
           preview={reviewQuote?.preview ?? previewUi}
