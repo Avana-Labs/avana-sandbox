@@ -53,6 +53,9 @@ function riskFromPreview(preview: TransactionPreview, healthAfter: number) {
   return null
 }
 
+// Collateral minus borrowed = position equity (surfaced in the UI as "Position
+// equity"). A borrow adds equal debt and cash, so equity is unchanged — the label
+// avoids reading like a borrow costs money.
 function netBalanceUsd(preview: TransactionPreview, side: "before" | "after") {
   const snapshot = side === "before" ? preview.before : preview.after
   const collateral = fixedToNumber(snapshot.collateralValueUsd6, 6)
@@ -174,7 +177,7 @@ export function mapBorrowTransactionPreviewToActionUi(
       },
       {
         id: "net-balance",
-        label: scopedMetricLabel("Net balance", options.creditScopeLabel),
+        label: scopedMetricLabel("Position equity", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
         before: formatActionUsd(netBalanceUsd(preview, "before")),
         after: formatActionUsd(netBalanceUsd(preview, "after")),
@@ -429,7 +432,7 @@ export function mapBorrowRemovePreviewToActionUi(
       },
       {
         id: "net-balance",
-        label: scopedMetricLabel("Net balance", options.creditScopeLabel),
+        label: scopedMetricLabel("Position equity", options.creditScopeLabel),
         value: formatActionUsdBeforeAfter(netBalanceUsd(preview, "before"), netBalanceUsd(preview, "after")),
         before: formatActionUsd(netBalanceUsd(preview, "before")),
         after: formatActionUsd(netBalanceUsd(preview, "after")),
