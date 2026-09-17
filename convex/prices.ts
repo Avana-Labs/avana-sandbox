@@ -473,10 +473,22 @@ export const refreshPrices = internalAction({
         // flagged and the UI doesn't keep serving stale values as if the refresh worked.
         throw new Error("DefiLlama returned no usable prices")
       }
-      await ctx.runMutation(internal.prices.upsertPrices, { rows })
+      const { written: quotesWritten } = await ctx.runMutation(internal.prices.upsertPrices, { rows })
       // Recompute pool LP prices from the freshly-written token prices × pool weights so the
       // server-side LP valuation tracks the oracle instead of a frozen seed value.
-      await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
+      //
+      // Only when a quote actually moved. An LP price is Σ(weight × priceUsd) gated on the
+      // leg's `status`, and `upsertPrices` counts a row as written only when priceUsd,
+      // status, confidence, source or llamaId differs — timestamps alone never count. So
+      // `quotesWritten === 0` means no input to that sum changed and the scan, which reads
+      // every pool market document in full (the largest database-I/O consumer in the
+      // deployment), could not produce a single patch.
+      //
+      // Caveat: a newly seeded pool market is repriced on the next run where some quote
+      // moves, not immediately. Run `refreshPoolLpPrices` after a reseed if that matters.
+      if (quotesWritten > 0) {
+        await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
+      }
       return { written: rows.length, fetched: Object.keys(json.coins).length }
     } catch (err) {
       console.error("[prices] refreshPrices failed; UI will surface staleness via getPriceStatus:", err)

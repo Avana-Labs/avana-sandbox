@@ -55,6 +55,60 @@ describe("refreshPrices is internal-only", () => {
   })
 })
 
+describe("refreshPrices only rescans pool LP prices when a quote moved", () => {
+  const ETH_QUOTE = (price: number) => ({
+    ok: true,
+    json: async () => ({ coins: { "coingecko:ethereum": { price, decimals: 18, confidence: 0.99 } } }),
+  })
+
+  async function poolPrice(t: ReturnType<typeof convexTest>) {
+    return t.run(async (ctx) => {
+      const m = await ctx.db
+        .query("markets")
+        .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", "eth-only"))
+        .unique()
+      return m?.priceUsd
+    })
+  }
+
+  test("an unchanged quote skips the scan; a moved quote runs it", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "eth-only",
+        chainId: 1,
+        name: "eth-only",
+        symbol: "eth-only",
+        priceUsd: 1,
+        constituents: [{ symbol: "eth", weight: 1 }],
+        createdAt: 0,
+      })
+    })
+
+    vi.stubGlobal("fetch", vi.fn(async () => ETH_QUOTE(3210.5)) as unknown as typeof fetch)
+    await t.action(internal.prices.refreshPrices, {})
+    expect(await poolPrice(t)).toBeCloseTo(3210.5, 6)
+
+    // Corrupt the derived price, then refresh with a byte-identical quote. The scan is
+    // skipped, so nothing repairs it — proof the pool markets were never read.
+    await t.run(async (ctx) => {
+      const m = await ctx.db
+        .query("markets")
+        .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", "eth-only"))
+        .unique()
+      if (m) await ctx.db.patch(m._id, { priceUsd: 1 })
+    })
+    await t.action(internal.prices.refreshPrices, {})
+    expect(await poolPrice(t)).toBe(1)
+
+    // A quote that actually moved runs the scan again and reprices the pool.
+    vi.stubGlobal("fetch", vi.fn(async () => ETH_QUOTE(3300)) as unknown as typeof fetch)
+    await t.action(internal.prices.refreshPrices, {})
+    expect(await poolPrice(t)).toBeCloseTo(3300, 6)
+  })
+})
+
 describe("refreshPrices rejects insane/low-confidence quotes (C1)", () => {
   // TOKEN_LLAMA_IDS coin ids (mainnet addresses / coingecko slugs) for the tokens we exercise.
   const IDS = {
