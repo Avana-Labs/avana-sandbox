@@ -70,6 +70,27 @@ describe("aggregateNetValueUsd — token-vs-USD amount units", () => {
     expect(aggregateNetValueUsd(rows, priceFor)).toBeCloseTo(7_000 + 41_666.67, 6)
   })
 
+  it("does not double a sub-$10 token row whose amount holds USD (LDO/CRV/ARB/EURC hole)", () => {
+    // These tokens' live prices sit INSIDE the [0.1, 10] drift band, so a USD-in-amount row (implied
+    // unit price 1.0) used to pass the band and reprice as amount × livePrice — a $1,000 LDO row read
+    // $2,000. Their stored USD is canonical.
+    const priceForAlt = (symbol: string): number | undefined =>
+      ({ LDO: 2, CRV: 0.6, ARB: 0.16, EURC: 1.08 })[symbol.trim().toUpperCase()]
+    const badRow = (assetId: string) => row({ assetId, amount: 1_000, valueUsd: 1_000, sourceType: "lend_deposited" })
+    for (const assetId of ["ldo", "crv", "arb", "eurc"]) {
+      expect(aggregateNetValueUsd([badRow(assetId)], priceForAlt)).toBeCloseTo(1_000, 6)
+    }
+  })
+
+  it("still reprices a GENUINE sub-$10 token row (real tokens, not USD-in-amount)", () => {
+    // 500 LDO stored at open price $2 (valueUsd 1,000, implied 2.0 — NOT the ≈1 USD signature), live
+    // $2.20 → must reprice to 500 × 2.20.
+    const priceForAlt = (symbol: string): number | undefined =>
+      symbol.trim().toUpperCase() === "LDO" ? 2.2 : undefined
+    const rows = [row({ assetId: "ldo", amount: 500, valueUsd: 1_000, sourceType: "lend_deposited" })]
+    expect(aggregateNetValueUsd(rows, priceForAlt)).toBeCloseTo(500 * 2.2, 6)
+  })
+
   it("keeps a lend deposit value-neutral end to end", () => {
     // $120.18 of AAVE moves wallet → lend. Net Value must not change.
     const before = [row({ assetId: "aave", amount: 119.04761904761905, valueUsd: 12_500 })]

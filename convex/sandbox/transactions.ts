@@ -29,6 +29,7 @@ import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
+import { resolveWriteBackPriceUsd } from "./writeBackPrice"
 import {
   assertClose,
   BORROW_FALLBACK_LIQUIDATION_PCT,
@@ -189,10 +190,19 @@ export async function adjustProductBalanceUsd(
       : sibling && sibling.amount > 0 && sibling.valueUsd > 0
         ? sibling.valueUsd / sibling.amount
         : null
-  const resolvedPriceUsd =
-    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
-      ? priceUsdOverride
-      : (impliedPriceUsd ?? (await validatedTokenPriceUsd(ctx, match.assetId ?? symbol, now)))
+  let resolvedPriceUsd: number | null
+  if (priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0) {
+    resolvedPriceUsd = priceUsdOverride
+  } else if (impliedPriceUsd != null && impliedPriceUsd > 0 && Math.abs(impliedPriceUsd - 1) >= 1e-4) {
+    // The implied price is a real (non-$1) unit price from the row's own history — trust it directly,
+    // no oracle read. (The ≈1 case falls through so a USD-in-amount row is checked against the oracle.)
+    resolvedPriceUsd = impliedPriceUsd
+  } else {
+    // New row (no implied price) or a USD-in-amount row (implied ≈ 1): consult the oracle so a corrupt
+    // `amount` heals to a real token quantity instead of re-deriving valueUsd / 1 = valueUsd forever.
+    const oraclePriceUsd = await validatedTokenPriceUsd(ctx, match.assetId ?? symbol, now)
+    resolvedPriceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd)
+  }
   const priceUsd = resolvedPriceUsd && resolvedPriceUsd > 0 ? resolvedPriceUsd : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
   if (existing) {

@@ -58,6 +58,13 @@ export type DashboardPortfolioSummary = {
 export const AMOUNT_TRUST_DRIFT_BAND = { min: 0.1, max: 10 } as const
 
 /**
+ * How far a live price may sit from $1 and still be treated as "peg-like". A USD-in-amount row for a
+ * token whose live price is within this of $1 is harmless to reprice (`amount × ~1 ≈ the stored USD`),
+ * so it need not be rejected; outside it the reprice would materially distort the value.
+ */
+export const AMOUNT_USD_PEG_TOLERANCE = 0.05
+
+/**
  * True when `row.amount` can be trusted as a TOKEN QUANTITY and repriced live.
  *
  * Several writers store a USD figure in `amount` instead of a token count — the multiply debt
@@ -65,13 +72,22 @@ export const AMOUNT_TRUST_DRIFT_BAND = { min: 0.1, max: 10 } as const
  * `priceUsd = 1` whenever it CREATES a row, so the first deposit/borrow into a market with no
  * existing row lands USD in `amount`. Repricing those as `amount × livePrice` multiplies the
  * position by the token price: a verified 1 AAVE ($120.18) lend deposit contributed $14,443 to
- * Net Value. The stored `valueUsd` is correct in every one of those cases, so fall back to it
- * whenever the implied unit price and the live price disagree beyond a plausible drift band.
+ * Net Value. The stored `valueUsd` is correct in every one of those cases, so fall back to it.
+ *
+ * Those writers set `amount === valueUsd`, so a USD-in-amount row's IMPLIED unit price is exactly 1.
+ * A genuine token's implied price is its real price; only a ~$1 token implies ≈1, and then its live
+ * price is ≈1 too (repricing is harmless). So an implied price of ≈1 against a live price that is NOT
+ * ≈1 is a USD-in-amount row for ANY token — this catches sub-$10 tokens (LDO, CRV, ARB, EURC…) whose
+ * price sits inside the drift band, where the band alone (`live/implied ∈ [0.1, 10]`) let the reprice
+ * through and doubled/scaled the value. The band still guards genuinely token-denominated rows.
  */
 function amountIsTokenDenominated(amount: number, valueUsd: number, livePriceUsd: number): boolean {
   if (!(amount > 0) || !(valueUsd > 0)) return false
   const impliedPriceUsd = valueUsd / amount
   if (!Number.isFinite(impliedPriceUsd) || impliedPriceUsd <= 0) return false
+  const impliedIsUsdLike = Math.abs(impliedPriceUsd - 1) < 1e-4
+  const liveIsUsdLike = Math.abs(livePriceUsd - 1) <= AMOUNT_USD_PEG_TOLERANCE
+  if (impliedIsUsdLike && !liveIsUsdLike) return false
   const scale = livePriceUsd / impliedPriceUsd
   if (!Number.isFinite(scale)) return false
   return scale >= AMOUNT_TRUST_DRIFT_BAND.min && scale <= AMOUNT_TRUST_DRIFT_BAND.max
