@@ -572,10 +572,16 @@ export default defineSchema({
   /**
    * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
    * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
-   * single document (O(1)) instead of the append-only event table — so ONE user's
-   * borrow/repay/supply/withdraw no longer invalidates every other subscriber. The
-   * cache is bumped on each append (and rebuilt after compaction), so idle hours do
-   * not require interval rebuild crons.
+   * single document (O(1)) instead of the append-only event table.
+   *
+   * This document is READ BY EVERY AUTHENTICATED CLIENT (directly, and again through
+   * `markets.listMarketSnapshots`'s live-delta overlay), so every write to it re-runs
+   * those subscriptions for every connected session. Rebuilds are therefore COALESCED
+   * behind `liquidityRebuildState` (see `liquidity.SNAPSHOT_REBUILD_DEBOUNCE_MS`) rather
+   * than written inline on each append — otherwise one wallet's action invalidates every
+   * other subscriber, and the re-run fan-out scales with (writes × concurrent sessions).
+   * Appends stay instant on the raw table; the aggregate is eventually consistent within
+   * one debounce window.
    */
   liquidityDeltasCache: defineTable({
     /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
@@ -589,6 +595,18 @@ export default defineSchema({
       }),
     ),
     updatedAt: v.number(),
+  }).index("by_singleton", ["singleton"]),
+
+  /**
+   * Debounce marker for `liquidityDeltasCache` rebuilds. Deliberately a SEPARATE table:
+   * no client subscription reads it, so bumping the marker on a hot append does not
+   * invalidate anyone. Holds the timestamp the queued rebuild is due (0 = none pending).
+   */
+  liquidityRebuildState: defineTable({
+    /** Constant discriminator so there is exactly one state row (`"deltas"`). */
+    singleton: v.string(),
+    /** ms epoch the queued rebuild will run; 0 once that rebuild has landed. */
+    scheduledFor: v.number(),
   }).index("by_singleton", ["singleton"]),
 
   /**
