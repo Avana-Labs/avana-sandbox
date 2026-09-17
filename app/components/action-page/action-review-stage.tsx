@@ -21,7 +21,7 @@ export function ActionReviewStage({
   primaryPending = false,
   blockedReason = null,
   confirmationGate,
-  amountVariant = "card",
+  amountVariant = "raised",
 }: {
   title: string
   subtitle?: string

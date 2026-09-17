@@ -386,7 +386,11 @@ function CollateralDesktopTable({
                 type="button"
                 onClick={() => toggleSort("cf")}
                 className={cn(
-                  "flex items-center gap-2 transition-colors",
+                  // Tailwind preflight sets `button { text-transform: none }`, so the header
+                  // cell's `uppercase` does not reach this label. Sibling headers hide the
+                  // problem by shouting in the source (`t("ASSET")`); keep the i18n key
+                  // human-readable and uppercase in CSS instead.
+                  "flex items-center gap-2 uppercase transition-colors",
                   sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >

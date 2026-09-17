@@ -1402,7 +1402,6 @@ export function BorrowActionPageClient({
           isPending={isPending}
           outcome={outcome}
           hideAmountInput={kind === "claim" || kind === "remove" || Boolean(useWorkspaceFields)}
-          amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           multiplier={kind === "remove" ? percent : undefined}
           onMultiplierChange={kind === "remove" ? setPercent : undefined}
