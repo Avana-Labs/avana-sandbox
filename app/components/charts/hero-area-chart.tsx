@@ -122,8 +122,10 @@ export function buildHeroAreaGeometry(
   const valueSpan = Math.max(1, rawMax - rawMin)
   // Explicit domain overrides let small-magnitude series (health factor, APY %)
   // opt out of the dollar-oriented ±4 padding floor that would otherwise show
-  // nonsensical (e.g. negative) axis ticks.
-  const min = domainMin ?? rawMin - Math.max(4, valueSpan * 0.08)
+  // nonsensical (e.g. negative) axis ticks. For a non-negative series with no override,
+  // clamp the auto floor at 0 so money charts never render negative gridline ticks.
+  const auto = rawMin - Math.max(4, valueSpan * 0.08)
+  const min = domainMin ?? (rawMin >= 0 ? Math.max(0, auto) : auto)
   const max = domainMax ?? rawMax + Math.max(4, valueSpan * 0.28)
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
