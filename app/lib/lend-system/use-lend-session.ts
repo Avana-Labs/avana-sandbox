@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LendAction, LendSystemState } from "@/app/lib/lend-engine"
 import { accrueLendSystemState } from "@/app/lib/lend-engine/simulation"
+import { calculateScaledDepositAmount } from "@/app/lib/lend-engine/formulas"
 import { deserializeLendSystemState, serializeLendSystemState } from "./codec"
 import type {
   LendReadAdapter,
@@ -304,7 +305,10 @@ export function useLendSession({
           marketId: position.marketSlug,
           asset: market?.asset.symbol ?? position.marketSlug,
           principalAmount: amounts.principalAmount,
-          scaledBalance: amounts.suppliedAmount,
+          // scaledBalance is the index-normalized principal; the current balance is recovered as
+          // scaledBalance × liquidityIndex (calculateCurrentSuppliedBalance). Storing the raw
+          // supplied amount here would re-inflate the balance by the index on the next action.
+          scaledBalance: calculateScaledDepositAmount(amounts.suppliedAmount, market?.liquidityIndex ?? 1),
           liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
           currentSuppliedAmount: amounts.suppliedAmount,
           interestEarned: amounts.interestEarnedAmount,
@@ -332,7 +336,7 @@ export function useLendSession({
           marketId: row.marketId,
           asset: market?.asset.symbol ?? row.symbol,
           principalAmount: row.amount,
-          scaledBalance: row.amount,
+          scaledBalance: calculateScaledDepositAmount(row.amount, market?.liquidityIndex ?? 1),
           liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
           currentSuppliedAmount: row.amount,
           interestEarned: 0,
