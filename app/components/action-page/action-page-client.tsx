@@ -60,6 +60,7 @@ export function ActionPageClient({
       <LendActionPageClient
         kind={kind as "deposit" | "withdraw"}
         closeHref={closeHref ?? "/lend"}
+        initialAssetId={initialAssetId}
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}
       />

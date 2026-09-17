@@ -55,6 +55,7 @@ export function LendActionPageClient({
   embedded = false,
   sidebar = false,
   layout = "default",
+  initialAssetId,
   initialMarketId,
   initialAmount = "",
 }: {
@@ -63,6 +64,7 @@ export function LendActionPageClient({
   embedded?: boolean
   sidebar?: boolean
   layout?: "default" | "home"
+  initialAssetId?: string
   initialMarketId?: string
   initialAmount?: string
 }) {
@@ -84,11 +86,14 @@ export function LendActionPageClient({
   // A lend market is "available" whenever it exists in the catalog or session. An
   // unknown initial id (stale link) is treated as "no initial market" so the user
   // lands on the picker instead of a "Market unavailable" dead-end.
+  // A lend market is keyed by its asset id, so ?asset=usdc resolves the same as ?market=.
+  // Prefer an explicit market id, then fall back to the asset id from the deep link.
+  const requestedMarketId = initialMarketId ?? initialAssetId
   const validInitialMarketId =
-    initialMarketId && (session.state.markets[initialMarketId] ?? getLendMarketById(initialMarketId))
-      ? initialMarketId
+    requestedMarketId && (session.state.markets[requestedMarketId] ?? getLendMarketById(requestedMarketId))
+      ? requestedMarketId
       : undefined
-  const hasInvalidInitialMarket = Boolean(initialMarketId) && !validInitialMarketId
+  const hasInvalidInitialMarket = Boolean(requestedMarketId) && !validInitialMarketId
   const [marketId, setMarketId] = useState(() => validInitialMarketId ?? (kind === "deposit" ? "gho" : ""))
   const [stage, setStage] = useState<ActionStage>(() => {
     if (embedded) return "configure"
