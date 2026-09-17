@@ -1101,6 +1101,10 @@ const dict: TranslationDictionary = {
   Market: "마켓",
   successful: "완료",
   processed: "처리됨",
+  "Fund your wallet or switch accounts to continue.": "계속하려면 지갑에 자금을 충전하거나 계정을 전환하세요.",
+  "Amount exceeds your available balance. Max {amount}.": "금액이 사용 가능한 잔액을 초과했습니다. 최대 {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "금액이 미상환 부채를 초과했습니다. 최대 상환액은 {amount}입니다.",
   Repay: "상환",
   Supply: "공급",
   Remove: "제거",
@@ -1700,6 +1704,7 @@ const dict: TranslationDictionary = {
   "Support request": "지원 요청",
   "If something looks off, send the details and our team can help you triage the issue.":
     "이상해 보이면 세부 정보를 보내 주세요. 팀에서 문제 분류를 도와드릴 수 있습니다.",
+  "Avana Platform Fee": "Avana 플랫폼 수수료",
 }
 
 export default dict

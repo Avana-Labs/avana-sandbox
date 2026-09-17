@@ -1119,6 +1119,10 @@ const dict: TranslationDictionary = {
   Market: "Pasar",
   successful: "berhasil",
   processed: "diproses",
+  "Fund your wallet or switch accounts to continue.": "Isi saldo dompet Anda atau beralih akun untuk melanjutkan.",
+  "Amount exceeds your available balance. Max {amount}.": "Jumlah melebihi saldo yang tersedia. Maksimum {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "Jumlah melebihi utang yang belum lunas. Pembayaran maksimum adalah {amount}.",
   Repay: "Pelunasan",
   Supply: "Suplai",
   Remove: "Hapus",
@@ -1735,6 +1739,7 @@ const dict: TranslationDictionary = {
   "Support request": "Permintaan dukungan",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Jika sesuatu terlihat tidak beres, kirim detailnya dan tim kami dapat membantu meninjau masalahnya.",
+  "Avana Platform Fee": "Biaya Platform Avana",
 }
 
 export default dict

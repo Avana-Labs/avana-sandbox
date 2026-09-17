@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
  * `/sandbox/transactions/[hash]` permalink so there is exactly one "receipt" in the app.
  *
  * Everything localizes: labels flow through `ActionInfoRow` -> `t()`, and the fiat
- * figures (Value, Network fee) format through `useCurrency`, so both react live to the
+ * figures (Value, Avana Platform Fee) format through `useCurrency`, so both react live to the
  * header language/currency switchers. Token amounts stay in their own units.
  */
 export type TransactionReceiptData = {
@@ -36,7 +36,7 @@ export type TransactionReceiptData = {
   rateValue?: string | null
   marketValue?: string | null
   quoteId?: string | null
-  /** Raw USD network fee; rendered as a currency-reactive "Network fee" row when present. */
+  /** Raw USD network fee; rendered as a currency-reactive "Avana Platform Fee" row when present. */
   networkFeeUsd?: number | null
   block?: number | string | null
   /** Epoch ms; rendered as a localized date row when present. */
@@ -143,7 +143,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
             ) : null}
             {data.marketValue ? <ActionInfoRow label="Market" value={data.marketValue} tooltip="market" /> : null}
             {typeof data.networkFeeUsd === "number" ? (
-              <ActionInfoRow label="Network fee" value={exact(data.networkFeeUsd)} />
+              <ActionInfoRow label="Avana Platform Fee" value={exact(data.networkFeeUsd)} tooltip="fee" />
             ) : null}
             {data.block != null ? <ActionInfoRow label="Block" value={String(data.block)} /> : null}
             {data.dateMs != null ? (

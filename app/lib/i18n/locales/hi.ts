@@ -1111,6 +1111,9 @@ const dict: TranslationDictionary = {
   Market: "मार्केट",
   successful: "सफल",
   processed: "प्रोसेस किया गया",
+  "Fund your wallet or switch accounts to continue.": "जारी रखने के लिए अपने वॉलेट में राशि जोड़ें या खाता बदलें।",
+  "Amount exceeds your available balance. Max {amount}.": "राशि आपके उपलब्ध बैलेंस से अधिक है। अधिकतम {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.": "राशि बकाया ऋण से अधिक है। अधिकतम चुकौती {amount} है।",
   Repay: "चुकौती",
   Supply: "कोलेटरल जमा",
   Remove: "हटाएँ",
@@ -1733,6 +1736,7 @@ const dict: TranslationDictionary = {
   "Support request": "सहायता अनुरोध",
   "If something looks off, send the details and our team can help you triage the issue.":
     "यदि कुछ गलत लगे, तो विवरण भेजें और हमारी टीम समस्या को वर्गीकृत करने में मदद कर सकती है।",
+  "Avana Platform Fee": "Avana प्लेटफ़ॉर्म शुल्क",
 }
 
 export default dict

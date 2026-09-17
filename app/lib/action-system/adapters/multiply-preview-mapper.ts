@@ -147,7 +147,7 @@ export function mapMultiplyPreviewToActionUi(
     rateValue: "",
     marketLabel: "Market",
     // Omit Market row — pair is already in the page chrome; the Supply X · Borrow Y
-    // card was redundant noise next to Network fee.
+    // card was redundant noise next to Avana Platform Fee.
     marketValue: "",
     balanceLabel: "Selected leverage",
     balanceValue: `${options.multiplier.toFixed(2)}x`,

@@ -1115,6 +1115,11 @@ const dict: TranslationDictionary = {
   Market: "市場",
   successful: "成功",
   processed: "処理済み",
+  "Fund your wallet or switch accounts to continue.":
+    "続行するには、ウォレットに資金を入金するか、別のアカウントに切り替えてください。",
+  "Amount exceeds your available balance. Max {amount}.": "金額が利用可能な残高を超えています。最大 {amount}。",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "金額が未払いの負債を超えています。最大返済額は {amount} です。",
   Repay: "返済",
   Supply: "サプライ",
   Remove: "引き出し",
@@ -1163,7 +1168,7 @@ const dict: TranslationDictionary = {
   "Preparing your transaction": "取引を準備しています",
   "Confirming on-chain": "オンチェーンで確認しています",
   Value: "価値",
-  "Network fee": "ネットワーク手数料",
+  "Avana Platform Fee": "Avanaプラットフォーム手数料",
   Block: "ブロック",
   Explorer: "エクスプローラー",
   "Transaction date": "取引日",

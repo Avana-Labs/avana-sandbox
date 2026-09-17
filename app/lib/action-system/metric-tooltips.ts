@@ -36,15 +36,15 @@ const METRIC_TOOLTIPS_BY_LABEL: Record<string, string> = {
   "Position APY": METRIC_TOOLTIPS_BY_ID["position-apy"]!,
   "Rewards earned": METRIC_TOOLTIPS_BY_ID["rewards-earned"]!,
   "Interest earned": METRIC_TOOLTIPS_BY_ID["interest-earned"]!,
-  "Network fee":
-    "The estimated gas cost to confirm this action on-chain. Avana does not deduct a separate protocol fee in the sandbox.",
+  "Avana Platform Fee":
+    "Avana interest rates, returns, and total costs vary depending on the market, position, and route used. A 15 bps (0.15%) upfront Avana interface fee applies when initiating a transaction through Avana platform.",
 }
 
 export const ACTION_INFO_TOOLTIPS: Record<string, string> = {
   rate: "Estimated annual rate for this action, such as borrow APY, supply APY, or net carry.",
   fxRate: "Estimated exchange rate for this swap after price impact.",
   market: "The market this action applies to, including collateral and borrow assets where relevant.",
-  fee: "The network fee is the estimated gas cost to confirm this action on-chain. Avana does not deduct a separate protocol fee in the sandbox.",
+  fee: "Avana interest rates, returns, and total costs vary depending on the market, position, and route used. A 15 bps (0.15%) upfront Avana interface fee applies when initiating a transaction through Avana platform.",
   amount: "Amount you are confirming for this transaction.",
   apy: "Annualized yield or cost rate for the selected market.",
   collateralApy: "Annualized yield earned by the collateral asset in this multiply position.",

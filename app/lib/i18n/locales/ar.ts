@@ -1094,6 +1094,10 @@ const dict: TranslationDictionary = {
   Market: "السوق",
   successful: "تم بنجاح",
   processed: "تمت المعالجة",
+  "Fund your wallet or switch accounts to continue.": "قم بتمويل محفظتك أو التبديل إلى حساب آخر للمتابعة.",
+  "Amount exceeds your available balance. Max {amount}.": "المبلغ يتجاوز رصيدك المتاح. الحد الأقصى {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "المبلغ يتجاوز الدين المستحق. الحد الأقصى للسداد هو {amount}.",
   Repay: "سداد",
   Supply: "إيداع ضمان",
   Remove: "إزالة",
@@ -1705,6 +1709,7 @@ const dict: TranslationDictionary = {
   "Support request": "طلب دعم",
   "If something looks off, send the details and our team can help you triage the issue.":
     "إذا بدا شيء غير صحيح، أرسل التفاصيل ويمكن لفريقنا مساعدتك في فرز المشكلة.",
+  "Avana Platform Fee": "رسوم منصة Avana",
 }
 
 export default dict

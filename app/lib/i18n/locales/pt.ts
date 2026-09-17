@@ -1125,6 +1125,11 @@ const dict: TranslationDictionary = {
   Market: "Mercado",
   successful: "concluído",
   processed: "processado",
+  "Fund your wallet or switch accounts to continue.":
+    "Deposite fundos na sua carteira ou troque de conta para continuar.",
+  "Amount exceeds your available balance. Max {amount}.": "O valor excede seu saldo disponível. Máximo {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "O valor excede a dívida pendente. O pagamento máximo é {amount}.",
   Repay: "Pagamento",
   Supply: "Depósito de garantia",
   Remove: "Remoção",
@@ -1173,7 +1178,7 @@ const dict: TranslationDictionary = {
   "Preparing your transaction": "Preparando sua transação",
   "Confirming on-chain": "Confirmando on-chain",
   Value: "Valor",
-  "Network fee": "Taxa de rede",
+  "Avana Platform Fee": "Taxa da plataforma Avana",
   Block: "Bloco",
   Explorer: "Explorador",
   "Transaction date": "Data da transação",

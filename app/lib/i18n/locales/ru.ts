@@ -1126,6 +1126,11 @@ const dict: TranslationDictionary = {
   Market: "Рынок",
   successful: "выполнено",
   processed: "обработано",
+  "Fund your wallet or switch accounts to continue.":
+    "Пополните кошелёк или переключитесь на другой аккаунт, чтобы продолжить.",
+  "Amount exceeds your available balance. Max {amount}.": "Сумма превышает доступный баланс. Максимум {amount}.",
+  "Amount exceeds outstanding debt. Maximum repay is {amount}.":
+    "Сумма превышает непогашенный долг. Максимальная сумма погашения — {amount}.",
   Repay: "Погашение",
   Supply: "Внести",
   Remove: "Вывод",
@@ -1742,6 +1747,7 @@ const dict: TranslationDictionary = {
   "Support request": "Обращение в поддержку",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Если что-то выглядит неверно, пришлите детали — наша команда поможет разобрать проблему.",
+  "Avana Platform Fee": "Комиссия платформы Avana",
 }
 
 export default dict
