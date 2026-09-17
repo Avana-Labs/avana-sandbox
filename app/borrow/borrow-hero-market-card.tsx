@@ -5,7 +5,7 @@ import type { BorrowPoolRow } from "@/app/lib/data/borrow-domain"
 import { cn } from "@/lib/utils"
 import { TokenBubble } from "./components/atoms"
 
-export type HeroMarketCardProps = {
+type HeroMarketCardProps = {
   title?: string
   subtitle?: string
   hideTitleOnMobile?: boolean

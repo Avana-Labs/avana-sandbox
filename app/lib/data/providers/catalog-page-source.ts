@@ -83,5 +83,3 @@ export function createCatalogPageSources<State, Snapshot, PageData>({
 
   return { mockAdapter, liveAdapter, mockSource, liveSource }
 }
-
-export type { CatalogPageSource }

@@ -6,7 +6,6 @@ import {
   calculateCurrentLtvWad,
   calculateHealthFactorWad,
   formatFixed,
-  totalDebtValueUsd6,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
 import { buildAssetDetail, resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
@@ -111,10 +110,8 @@ export function mapTransactionHistoryToActivityRows(history: TransactionHistoryI
         ? -Math.abs(amountUsd)
         : Math.abs(amountUsd)
 
-    // Debt actions (borrow/repay) are about the BORROWED asset (e.g. GHO), while
-    // collateral actions (pledge/withdraw/claim/liquidate) are about the collateral
-    // pool — the same split the detail transaction tables use. Labelling every row with
-    // the pool made a GHO borrow read as "sDAI / USDC" with a USDC icon on the dashboard.
+    // Debt actions label by the BORROWED asset; collateral actions by the pool. Same split the
+    // detail transaction tables use — labelling every row with the pool mislabels borrows.
     const isDebtAction = item.kind === "borrow" || item.kind === "repay"
     const market = item.marketId && markets ? markets[item.marketId] : undefined
     const poolLabel = market ? formatBorrowLpSymbolLabel(market) : undefined
@@ -155,10 +152,8 @@ export function buildWalletReadSnapshot(
   transactionHistory: TransactionHistoryItem[] = buildLegacyTransactionHistory(state, walletId),
   now: number = Date.now(),
 ): WalletReadSnapshot {
-  // Advance debt/supply indexes to "now" so the displayed HF drifts with interest
-  // between actions. accrueBorrowSystemState is immutable (returns a new state and
-  // no-ops when now <= state.now), so we select from the accrued copy without
-  // double-accruing or mutating the shared session state.
+  // Advance indexes to `now` so the displayed HF drifts with interest between actions.
+  // accrueBorrowSystemState is immutable and no-ops when now <= state.now.
   const accrued = accrueBorrowSystemState(state, now)
   return {
     walletId,
@@ -172,11 +167,9 @@ export function buildBorrowPageData(
   walletId: string,
   now: number = Date.now(),
 ): BorrowPageData {
-  // Market-reference figures (pool TVL, example collateral) and the serialized seed stay
-  // on the RAW state — accruing would drift those reference numbers and bake an advanced
-  // `now` into the seed. But the WALLET's own position views (snapshot HF/net value, debt
-  // and collateral rows) are accrued to `now` so the detail page shows the same live
-  // interest/HF as the dashboard tab (which also accrues on read) — no tab-vs-detail drift.
+  // Market-reference figures and the serialized seed read the RAW state (accruing would drift
+  // them and bake an advanced `now` into the seed); wallet position views read the accrued copy
+  // so detail and dashboard agree.
   const accrued = accrueBorrowSystemState(state, now)
   const poolCatalog = selectBorrowMarketSummaries(state, walletId)
   const markets = Object.values(state.markets)
@@ -194,9 +187,8 @@ export function buildBorrowPageData(
 
   return {
     walletId,
-    // Session seed lives in AvanaSessionsProvider (client). Shipping the full
-    // serialized BorrowSystemState here duplicated ~250KB+ into every catalog RSC
-    // payload without a consumer on the list page (C06).
+    // Deliberately empty: the session seed lives in AvanaSessionsProvider (client). Serializing
+    // it here added ~250KB to every catalog RSC payload with no consumer on the list page.
     borrowSessionSeed: "",
     poolCatalog,
     heroMetrics: {
@@ -255,7 +247,7 @@ export function resolvePoolDetailFromState(
 }
 
 /** Convex market reference overrides applied to a borrowable asset before building its detail. */
-export type AssetLiquidityOverrides = {
+type AssetLiquidityOverrides = {
   availableUsd?: number
   totalBorrowedUsd?: number
   utilization?: number
@@ -275,10 +267,4 @@ export function resolveAssetDetailFromState(assetId: string, overrides?: AssetLi
       }
     : base
   return buildAssetDetail(asset)
-}
-
-export function readTotalBorrowedUsd(state: BorrowSystemState, walletId: string) {
-  const account = state.accounts[walletId]
-  if (!account) return 0
-  return fixedToNumber(totalDebtValueUsd6(account), 6)
 }

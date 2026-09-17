@@ -26,7 +26,7 @@ export function decodeBorrowRiskSnapshot(snapshot: {
 
 /** A health factor as it is actually stored: a number, the literal string
  * "infinity" when there is no debt (multiply-engine/formulas.ts), or absent. */
-export type AskAIHealthFactor = number | "infinity" | null | undefined
+type AskAIHealthFactor = number | "infinity" | null | undefined
 
 /** One shared wording for "am I safe?", so every surface agrees. */
 export function askAIRiskLevel(healthFactor: AskAIHealthFactor): "low" | "elevated" | "critical" | "none" {
@@ -41,7 +41,7 @@ export function askAIRiskLevel(healthFactor: AskAIHealthFactor): "low" | "elevat
 /** How far above liquidation the position sits. HF 1.0 is the liquidation line.
  * Null when there is no debt or no health factor, since "infinite headroom" is
  * not a number the model should try to render. */
-export function askAIHealthFactorHeadroom(healthFactor: AskAIHealthFactor): number | null {
+function askAIHealthFactorHeadroom(healthFactor: AskAIHealthFactor): number | null {
   return typeof healthFactor === "number" && Number.isFinite(healthFactor) ? healthFactor - 1 : null
 }
 

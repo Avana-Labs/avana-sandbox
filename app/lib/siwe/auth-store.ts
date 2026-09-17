@@ -5,7 +5,7 @@ import { isJwtExpired } from "./token-expiry"
 
 /** Public client state. The bearer credential is deliberately not part of it. */
 export type SiweSession = { wallet: string }
-export type SiweToken = { jwt: string; wallet: string }
+type SiweToken = { jwt: string; wallet: string }
 
 const AUTH_EVENT_KEY = "avana.siwe.event.v2"
 const LEGACY_STORAGE_KEY = "avana.siwe.token.v1"

@@ -3,7 +3,7 @@
  * (reserve factor, rewards APY, available) onto Dual detail objects.
  */
 
-export type SiloedMarketIdentity = {
+type SiloedMarketIdentity = {
   name: string
   symbol: string
   venueLabel?: string
@@ -16,7 +16,7 @@ export type SiloedMarketIdentity = {
   rewardsApyPct?: number
 }
 
-export type OverlayQuickStat = {
+type OverlayQuickStat = {
   id: string
   value: string
 }

@@ -1,12 +1,9 @@
 import type { PositionConstituent, PositionSnapshotInput } from "./position-context"
 
 /**
- * Bridge from Convex row shapes to the pure engine's {@link PositionSnapshotInput}.
- *
- * Kept pure and Convex-free (it takes plain row objects, not a `ctx`) so the
- * field-mapping — the part most likely to drift from the schema — is unit-tested in
- * isolation before any query wires it in. A future internal query reads the rows and
- * calls this; nothing imports it yet.
+ * Bridge from Convex row shapes to the engine's {@link PositionSnapshotInput}. Takes plain row
+ * objects rather than a `ctx` so the field mapping — the part most likely to drift from the
+ * schema — stays unit-testable without Convex.
  */
 
 const USD6 = 1_000_000
@@ -34,7 +31,7 @@ export type MarketRow = {
 }
 
 /** The subset of a `multiplyTokenParameters` row the engine needs. */
-export type TokenParameterRow = {
+type TokenParameterRow = {
   borrowAprPct?: number
   collateralFactorPct?: number
   liquidationThresholdPct?: number

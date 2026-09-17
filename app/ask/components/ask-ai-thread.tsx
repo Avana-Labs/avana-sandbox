@@ -37,7 +37,7 @@ import type { AskAiRun } from "@/app/lib/ask-ai/mode-run"
 
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
-export type AskAISuggestion = {
+type AskAISuggestion = {
   icon: ComponentType<{ className?: string }>
   label: string
   prompt: string

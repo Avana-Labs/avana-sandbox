@@ -3,7 +3,7 @@
 // matches on the title come before token-contains matches, which in turn come
 // before generic substring (fuzzy) matches on the keywords/subtitle blob.
 
-export type RankableResult = {
+type RankableResult = {
   title: string
   subtitle: string
   eyebrow: string

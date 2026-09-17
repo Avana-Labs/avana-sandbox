@@ -9,7 +9,7 @@ export function take<T>(items: readonly T[], count: number) {
 }
 
 /** The position `index` names in `items`, for an `index` out of range. */
-export function indexIn<T>(items: readonly T[], index: number) {
+function indexIn<T>(items: readonly T[], index: number) {
   return Math.floor(clamp(index, 0, Math.max(0, items.length - 1)))
 }
 
@@ -23,10 +23,4 @@ export function at<T>(items: readonly T[], index: number) {
 export function pct(value: number, total: number) {
   if (!(total > 0)) return 0
   return clamp((value / total) * 100, 0, 100)
-}
-
-/** A count of completed items out of `total`, in `0…total`. */
-export function progressOf(index: number, total: number) {
-  if (!(total > 0)) return 0
-  return Math.floor(clamp(index, 0, total))
 }

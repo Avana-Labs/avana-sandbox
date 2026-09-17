@@ -2,20 +2,18 @@ export const USD_DECIMALS = 6
 export const TOKEN_DECIMALS = 18
 export const WAD_DECIMALS = 18
 export const RAY_DECIMALS = 27
-export const BPS_DECIMALS = 4
 export const SECONDS_PER_YEAR = 365n * 24n * 60n * 60n
 
 export const USD_SCALE = 10n ** BigInt(USD_DECIMALS)
 export const TOKEN_SCALE = 10n ** BigInt(TOKEN_DECIMALS)
 export const WAD = 10n ** BigInt(WAD_DECIMALS)
 export const RAY = 10n ** BigInt(RAY_DECIMALS)
-export const BPS_SCALE = 10n ** BigInt(BPS_DECIMALS)
 
 function abs(value: bigint) {
   return value < 0n ? -value : value
 }
 
-export function pow10(decimals: number) {
+function pow10(decimals: number) {
   return 10n ** BigInt(decimals)
 }
 
@@ -52,19 +50,12 @@ export function formatFixed(value: bigint, decimals: number) {
   return negative ? `-${formatted}` : formatted
 }
 
-/**
- * A 6-decimal USD amount (the on-chain/engine representation) as a plain JS number for
- * display/formatting. Centralises the `Number.parseFloat(formatFixed(x, 6))` idiom that was
- * copy-pasted across the borrow client, read-models and context resolvers.
- */
+/** A 6-decimal USD engine amount as a plain JS number, for display only. */
 export function usd6ToNumber(value6: bigint): number {
   return Number.parseFloat(formatFixed(value6, USD_DECIMALS))
 }
 
-/**
- * A WAD (1e18) risk parameter (collateral factor, liquidation threshold) as a percentage
- * rounded to one decimal — e.g. 0.825e18 → 82.5. Single home for the risk-config → % idiom.
- */
+/** A WAD risk parameter as a percentage rounded to one decimal — 0.825e18 → 82.5. */
 export function wadToPercent(valueWad: bigint): number {
   return Math.round(Number.parseFloat(formatFixed(valueWad, WAD_DECIMALS)) * 1000) / 10
 }
@@ -74,28 +65,16 @@ export function mulDiv(a: bigint, b: bigint, denominator: bigint) {
   return (a * b) / denominator
 }
 
-export function wadMul(a: bigint, b: bigint) {
-  return mulDiv(a, b, WAD)
-}
-
-export function wadDiv(a: bigint, b: bigint) {
-  return mulDiv(a, WAD, b)
-}
-
-export function rayMul(a: bigint, b: bigint) {
+function rayMul(a: bigint, b: bigint) {
   return mulDiv(a, b, RAY)
 }
 
-export function rayDiv(a: bigint, b: bigint) {
+function rayDiv(a: bigint, b: bigint) {
   return mulDiv(a, RAY, b)
 }
 
-export function wadToRay(value: bigint) {
+function wadToRay(value: bigint) {
   return value * (RAY / WAD)
-}
-
-export function rayToWad(value: bigint) {
-  return value / (RAY / WAD)
 }
 
 export function assetsToShares(assets: bigint, indexRay: bigint) {

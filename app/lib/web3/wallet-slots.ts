@@ -3,17 +3,14 @@
 import { useCallback, useId, useSyncExternalStore } from "react"
 
 /**
- * The wallet SDK (wagmi + ConnectKit) is mounted as a sibling of the app tree, never as an
- * ancestor — wrapping the app and flipping the wrapper on when the SDK finished loading
- * remounted the ENTIRE app (header, gates, Convex provider, page) seconds after first paint.
- *
- * The few components that need wagmi context (header wallet pill, wrong-network banner) render
- * an empty "slot" element in the app tree and register it here; the SDK host renders the real
- * component into that slot with a portal. Nothing in the app tree ever changes parent.
+ * The wallet SDK must be mounted as a SIBLING of the app tree, never an ancestor: an ancestor
+ * that flips on when the SDK loads remounts the whole app seconds after first paint. Components
+ * needing wagmi context render an empty slot here and the SDK host portals into it, so nothing
+ * in the app tree ever changes parent.
  */
-export type WalletSlotKind = "wallet-control-desktop" | "wallet-control-mobile" | "wrong-network-banner"
+type WalletSlotKind = "wallet-control-desktop" | "wallet-control-mobile" | "wrong-network-banner"
 
-export type WalletSlot = { id: string; kind: WalletSlotKind; element: HTMLElement }
+type WalletSlot = { id: string; kind: WalletSlotKind; element: HTMLElement }
 
 let slots: WalletSlot[] = []
 const listeners = new Set<() => void>()

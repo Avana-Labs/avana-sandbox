@@ -2,7 +2,7 @@
 
 import { useWrongNetworkState } from "@/app/lib/web3/wrong-network-context"
 
-export type ActionNetworkGuard = {
+type ActionNetworkGuard = {
   /** True when a wallet is connected on a chain other than the target (never in test mode). */
   isWrongNetwork: boolean
   /**
@@ -13,13 +13,9 @@ export type ActionNetworkGuard = {
 }
 
 /**
- * Submit-time network gate for borrow/lend/multiply action pages.
- *
- * The wrong-network banner is display-only; nothing previously stopped a user on the wrong
- * chain from previewing, confirming and persisting an action. This hook is the single source
- * the action clients use to hard-block submission (and disable the confirm CTA) until the
- * wallet is on the target chain. Inert in the headless/test mode (useWrongNetwork returns
- * false), so it never interferes with the sandbox flows.
+ * Submit-time network gate for action pages — the single source action clients use to
+ * hard-block submission until the wallet is on the target chain (the wrong-network banner
+ * itself is display-only). Inert in headless/test mode so sandbox flows are unaffected.
  */
 export function useActionNetworkGuard(): ActionNetworkGuard {
   // Reads the wagmi-free context (fed by the mounted wallet provider), so the borrow client

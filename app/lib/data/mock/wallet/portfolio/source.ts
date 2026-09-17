@@ -16,7 +16,7 @@ import { getWalletSnapshots } from "./snapshots"
 import { WALLET_STRATEGY_BUCKETS } from "./strategies"
 import { getWalletSupplies } from "./supplies"
 
-export const mockPortfolioPageAdapter = createDataSourceAdapter({
+const mockPortfolioPageAdapter = createDataSourceAdapter({
   id: "portfolio-mock",
   label: "Portfolio page mock source",
   mode: "mock",

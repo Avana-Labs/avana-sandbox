@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { clamp, take } from "@/lib/range"
 import { mono, paper } from "@/lib/surfaces"
 
-export type ChartVariant = "area" | "line" | "bars"
+type ChartVariant = "area" | "line" | "bars"
 
 const W = 300
 const H = 88

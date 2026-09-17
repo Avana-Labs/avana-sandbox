@@ -1,13 +1,11 @@
-export type BlockedCta = {
+type BlockedCta = {
   /** Short, button-sized label describing why the action can't proceed. */
   label: string
 }
 
 /**
- * Map a block reason — raw engine text or a humanized string from
- * `humanizeBlockedReason` — to a short primary-button label (Uniswap-style).
- * The gate lives on the CTA (disabled + short reason) plus an inline
- * ActionOutcomeBanner. Redirect CTAs for prerequisites were removed.
+ * Map a block reason (raw engine text or a `humanizeBlockedReason` string) to a short
+ * primary-button label. The gate lives on the CTA itself, not a dialog.
  *
  * `symbol` is the asset the action spends, used for balance messages.
  */

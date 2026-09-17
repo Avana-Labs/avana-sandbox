@@ -12,33 +12,8 @@ export function priceKey(symbol: string): string {
 /** Format a USD token price: "$1,612.87", "$1.00", "$0.9997" (more precision under $1). */
 export function formatTokenPrice(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "—"
-  // Force en-US grouping/decimal so the baked "$…" string round-trips through the currency
-  // switcher's en-US-only regex (redenominateCompactUsd). toLocaleString(undefined) followed the
-  // server/render locale, producing e.g. "$1.612,87" that the switcher couldn't parse — the price
-  // tile then stayed in USD while sibling tiles converted.
+  // Locale MUST be pinned to en-US: the currency switcher (redenominateCompactUsd) only parses
+  // en-US grouping, so a locale-derived "$1.612,87" silently stays in USD.
   if (value >= 1) return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`
-}
-
-/**
- * Pair exchange rate label for an LP pair, e.g. "1 ETH = 1,612 USDC". `priceFor`
- * resolves a symbol to its USD price; returns null if either side is unpriced so
- * the caller can fall back. The rate is token0-priced-in-token1 (price0 / price1).
- */
-export function pairExchangeRateLabel(
-  symbol0: string,
-  symbol1: string,
-  priceFor: (symbol: string) => number | undefined,
-): string | null {
-  const p0 = priceFor(symbol0)
-  const p1 = priceFor(symbol1)
-  if (!p0 || !p1) return null
-  const rate = p0 / p1
-  const rateStr =
-    rate >= 1000
-      ? rate.toLocaleString(undefined, { maximumFractionDigits: 0 })
-      : rate >= 1
-        ? rate.toLocaleString(undefined, { maximumFractionDigits: 2 })
-        : rate.toLocaleString(undefined, { maximumFractionDigits: 6 })
-  return `1 ${symbol0} = ${rateStr} ${symbol1}`
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-export const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
+const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
 /** Vertical stack of detail page sections with horizontal dividers centered between siblings. */
 export const detailSectionStackClass =
@@ -87,7 +87,7 @@ const DETAIL_PAGE_NOTICES = {
     "Opening a multiply position involves risk, including liquidation if market conditions move against your leveraged loop. Avana does not custody your funds or alter how the underlying collateral and debt legs operate. Leverage limits, interest rates, and collateral values are enforced on-chain using transparent oracle systems and automated risk parameters. You remain in full control of your position at all times and can deleverage, repay, or close whenever you choose. Only use leverage you are comfortable maintaining through market volatility.",
 } as const
 
-export type DetailPageNoticeProduct = keyof typeof DETAIL_PAGE_NOTICES
+type DetailPageNoticeProduct = keyof typeof DETAIL_PAGE_NOTICES
 
 export function DetailPageNotice({
   className,

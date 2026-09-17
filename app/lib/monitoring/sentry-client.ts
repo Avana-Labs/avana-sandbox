@@ -1,13 +1,8 @@
 /**
- * Lazy browser Sentry.
- *
- * `@sentry/nextjs` is ~200KB (≈63KB gzipped) of JavaScript. Importing it statically from
- * `instrumentation-client.ts` put all of it — download, parse AND `Sentry.init()` — on the
- * critical path of every page, ahead of React hydration. Monitoring must never be the thing
- * that makes the page slow, so the SDK is loaded once the page is idle after `load`.
- *
- * Errors thrown before the SDK is up are buffered by two plain listeners and forwarded as soon
- * as `init` completes, so nothing is lost in the gap.
+ * Lazy browser Sentry. `@sentry/nextjs` is ~63KB gzipped; a static import puts download, parse
+ * and `init()` on every page's critical path ahead of hydration, so it loads on idle after
+ * `load` instead. Errors thrown in the gap are buffered by two plain listeners and replayed
+ * once `init` completes.
  */
 import { scheduleIdle } from "@/app/lib/web3/schedule-idle"
 
@@ -25,7 +20,7 @@ function onEarlyRejection(event: PromiseRejectionEvent) {
   earlyErrors.push(event.reason)
 }
 
-export function loadSentry(): Promise<SentryModule> {
+function loadSentry(): Promise<SentryModule> {
   if (modulePromise) return modulePromise
   modulePromise = import("@sentry/nextjs").then((Sentry) => {
     const isProd = process.env.NODE_ENV === "production"

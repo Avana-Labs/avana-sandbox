@@ -7,7 +7,7 @@ import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-pos
 import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 
-export type DashboardOverviewMetrics = {
+type DashboardOverviewMetrics = {
   netValueUsd: number
   totalBorrowedUsd: number
   liquidationBufferUsd: number
@@ -21,12 +21,12 @@ export type DashboardPerformanceMetrics = {
   interestOwedUsd: number
 }
 
-export type DashboardTabMetrics = {
+type DashboardTabMetrics = {
   overview: DashboardOverviewMetrics
   performance: DashboardPerformanceMetrics
 }
 
-/** Canonical wallet-level Borrow Balance snapshot (8 product metrics). */
+/** Canonical wallet-level Borrow Balance snapshot. */
 export type BorrowBalanceMetrics = {
   netValueUsd: number
   collateralValueUsd: number

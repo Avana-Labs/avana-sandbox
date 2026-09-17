@@ -12,18 +12,18 @@ import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 const STORAGE_PREFIX = `avana.borrow.session.${SESSION_CACHE_VERSION}`
 const META_STORAGE_PREFIX = `avana.borrow.session.meta.${SESSION_CACHE_VERSION}`
 
-export type BorrowSessionMetadata = {
+type BorrowSessionMetadata = {
   transactionHistory: TransactionHistoryItem[]
   receipts: SyntheticTransactionReceipt[]
   /** Monotonic write timestamp used to reject stale cross-tab overwrites. */
   persistedAt?: number
 }
 
-export function borrowSessionStorageKey(walletId: string) {
+function borrowSessionStorageKey(walletId: string) {
   return `${STORAGE_PREFIX}:${walletId}`
 }
 
-export function borrowSessionMetadataKey(walletId: string) {
+function borrowSessionMetadataKey(walletId: string) {
   return `${META_STORAGE_PREFIX}:${walletId}`
 }
 

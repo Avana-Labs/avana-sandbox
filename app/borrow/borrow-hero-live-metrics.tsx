@@ -4,7 +4,7 @@ import { HowItWorks } from "@/app/components/how-it-works"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-export type BorrowHeroMetrics = {
+type BorrowHeroMetrics = {
   totalTvlUsd: number
   totalCollateralUsd: number
   availableCreditUsd: number

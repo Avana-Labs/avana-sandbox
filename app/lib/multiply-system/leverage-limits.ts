@@ -1,27 +1,19 @@
-/**
- * Catalog leverage labels are shown as-is (no inflation). Kept as a named constant
- * so the division in resolveMultiplyMarketMaxLeverage stays explicit; 1 = truthful.
- */
+/** Catalog leverage labels are shown as-is; named so the division below stays explicit. */
 export const MULTIPLY_CATALOG_LEVERAGE_SCALE = 1
 
 /** Multiply action modal slider range (independent of per-market public caps). */
 export const MULTIPLY_ACTION_MIN_LEVERAGE = 1
 /** Engine / validation hard ceiling. */
 export const MULTIPLY_ACTION_MAX_LEVERAGE = 10
-/**
- * Global multiply **slider** right end (mock scale). Slightly under the engine
- * ceiling so ticks land on 1 / 3.25 / 5.5 / 7.74 / 9.99 with step 0.01.
- */
+/** Slider right end: just under the engine ceiling so ticks land evenly at step 0.01. */
 export const MULTIPLY_ACTION_SLIDER_MAX = 9.99
 export const MULTIPLY_ACTION_SLIDER_STEP = 0.01
-export const MULTIPLY_DEFAULT_LEVERAGE = 1.1
+const MULTIPLY_DEFAULT_LEVERAGE = 1.1
 
 /**
- * Resolve the per-market public cap clamped to the global action ceiling.
- * Used for defaults / display helpers — the multiply **slider** itself always
- * spans `MULTIPLY_ACTION_MIN_LEVERAGE`…`MULTIPLY_ACTION_SLIDER_MAX` at
- * `MULTIPLY_ACTION_SLIDER_STEP`; per-market publicMax is enforced as a hard
- * engine validation block, not a thumb clamp.
+ * Per-market public cap clamped to the global action ceiling, for defaults and display. The
+ * slider itself always spans the full range; publicMax is enforced as engine validation, not
+ * a thumb clamp.
  */
 export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | undefined) {
   if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {
@@ -33,10 +25,8 @@ export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | u
 }
 
 /**
- * The single source of the per-market "max leverage" figure shown across the
- * Multiply page (hero average, trending card, markets table, explore table).
- * It is the public cap the market advertises — NOT the recommended/safe cap and
- * NOT the action-slider clamp — so every surface prints the same number.
+ * Single source of the per-market "max leverage" figure across the Multiply page. This is the
+ * advertised public cap — NOT the recommended/safe cap and NOT the action-slider clamp.
  */
 export function resolveMultiplyMarketDisplayMaxLeverage(publicMaxMultiplier: number | undefined) {
   if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {
@@ -62,10 +52,8 @@ function stepDecimals(step: number) {
 }
 
 /**
- * Snap a leverage value to the slider's step grid, using the SAME rounding rule the
- * ruler thumb uses (`round((v - min) / step)`), then clamp to [min, max]. Keeping the
- * controlled state on this grid means the pill and the projection summary all read
- * one value instead of drifting apart. (E6)
+ * Snap a leverage value to the slider's step grid using the SAME rounding rule as the ruler thumb
+ * (`round((v - min) / step)`), then clamp. Keeps the pill and projection summary on one value.
  */
 export function snapMultiplierToStep(value: number, min: number, max: number, step = 0.01): number {
   if (!Number.isFinite(value)) return min
@@ -83,15 +71,10 @@ function analyticLoopHealthFactor(multiplier: number, liquidationThreshold: numb
 }
 
 /**
- * The leverage the "Recommended up to Nx" marker should point at. It is the largest
- * value ON THE SLIDER STEP GRID that (a) does not exceed the market's safe/recommended
- * max and (b) still clears the market's minimum health factor.
- *
- * The safe max already equals the HF-analytic ceiling, but the slider snaps in 0.1
- * steps and would round a marker at e.g. 1.76x UP to 1.80x — a leverage whose health
- * factor sits below the minimum, so opening there is blocked. Flooring the marker to
- * the grid (and stepping down if a boundary value still fails the HF gate) makes
- * dragging to the recommended max a valid, non-blocked action. (E2)
+ * The leverage the "Recommended up to Nx" marker points at: the largest value on the slider step
+ * grid that stays within the market's safe max and still clears its minimum health factor.
+ * Must FLOOR to the grid (and step down on a failing boundary) — rounding up lands on a leverage
+ * whose HF is below the minimum, so dragging to the marker would be blocked.
  */
 export function resolveRecommendedActionLeverage(params: {
   recommendedMaxMultiplier: number

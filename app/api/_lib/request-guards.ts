@@ -63,14 +63,11 @@ export function assertSameOriginRead(request: Request) {
 }
 
 /**
- * Per-instance in-memory rate limit. Only correct when the app runs as a single
- * Node process — on horizontally-scaled deploys (Vercel, k8s replicas) each
- * instance keeps its own bucket, so a burst can multiply by the replica count.
- * Prefer `rateLimitShared` for anything guarding a real security boundary; this
- * one remains available as a synchronous fallback for tests and single-process
- * dev, and is used automatically when no shared store is configured.
+ * Per-instance in-memory rate limit. On horizontally-scaled deploys each instance keeps
+ * its own bucket, so a burst can multiply by the replica count. Only a synchronous
+ * fallback for tests and single-process dev; `rateLimitShared` guards real boundaries.
  */
-export function rateLimit(key: string, limit: number, windowMs: number) {
+function rateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now()
   const bucket = buckets.get(key)
   if (!bucket || bucket.resetAt <= now) {
@@ -92,12 +89,9 @@ function sharedStoreClient(): ConvexHttpClient | null {
 }
 
 /**
- * Shared-store rate limit backed by a Convex table (`rateLimitBuckets`). Convex
- * mutations are serializable, so concurrent callers with the same key see a single
- * counter across every Next server instance — the fix for the per-process drift
- * `rateLimit` above suffers from. Falls back to the in-memory bucket when no
- * `NEXT_PUBLIC_CONVEX_URL` / `CONVEX_URL` is configured (tests, offline dev) so
- * this helper never turns a limiter into a hard dependency on Convex reachability.
+ * Shared-store rate limit backed by Convex `rateLimitBuckets`. Convex mutations are
+ * serializable, so one counter spans every Next instance. Falls back to the in-memory
+ * bucket when no Convex URL is configured, so a limiter never hard-depends on Convex.
  */
 export async function rateLimitShared(key: string, limit: number, windowMs: number): Promise<boolean> {
   const client = sharedStoreClient()

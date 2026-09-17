@@ -1,7 +1,7 @@
 import { applyBorrowAction } from "./actions"
 import type { BorrowAction, BorrowSystemState } from "./types"
 
-export type BorrowValidationResult = {
+type BorrowValidationResult = {
   actionType: BorrowAction["type"]
   allowed: boolean
   validationErrors: string[]

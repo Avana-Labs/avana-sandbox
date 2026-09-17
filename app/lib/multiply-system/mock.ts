@@ -50,9 +50,8 @@ export function buildMockMultiplySystemStateWithSeedPosition(walletId = "demo-wa
 }
 
 /**
- * Detect the old demo-only ETH/USDT position that used to be inserted into every
- * fresh local wallet. It has no matching transaction because the user never opened
- * it. Removing only this exact state preserves real persisted multiply positions.
+ * Detect the legacy demo-only ETH/USDT position seeded into fresh local wallets: one position with
+ * no matching transaction. Matching this exact shape preserves real persisted positions.
  */
 export function isLegacySeedOnlyMultiplyState(state: MultiplySystemState, walletId: string) {
   const positions = Object.values(state.positions)
@@ -82,10 +81,6 @@ export function buildMockMultiplyRiskSnapshots(state: MultiplySystemState): Mult
     multiplier: position.multiplier,
     capturedAt: position.lastUpdatedAt,
   }))
-}
-
-export function getMultiplyMarketIds() {
-  return Object.keys(buildMultiplyCatalogMarketsRecord())
 }
 
 export type { MultiplyAction, MultiplySystemState }

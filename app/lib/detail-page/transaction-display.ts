@@ -58,7 +58,7 @@ function livePriceUsdForSymbol(symbol: string, ctx?: TransactionPriceContext): n
   return canonicalPriceUsd(symbol) ?? seedPriceUsdForSymbol(symbol)
 }
 
-export function parseTokenQuantity(label: string): number | null {
+function parseTokenQuantity(label: string): number | null {
   const trimmed = label.replace(/,/g, "").trim()
   if (!trimmed || trimmed === "—") return null
   const match = /^(-?)(\d+(?:\.\d+)?)([KMB])?$/i.exec(trimmed)
@@ -251,16 +251,4 @@ export function resolveTransactionUsdValue(
 export function resolveTransactionUsdDisplay(row: DetailTransactionRow, opts?: TransactionPriceContext): string | null {
   const usd = resolveTransactionUsdValue(row, opts)
   return usd == null ? null : formatUsdFromValue(usd)
-}
-
-/** @deprecated Use seedPriceUsdForSymbol for FOR bootstrap; live USD uses resolveTransactionUsdValue. */
-export function usdLabelFromTokenAmount(
-  tokenAmountLabel: string,
-  symbol: string,
-  signed = false,
-  _priceOverride?: number,
-): string | null {
-  const usd = usdValueFromTokenAmount(tokenAmountLabel, symbol)
-  if (usd == null) return null
-  return formatUsdFromValue(signed ? -Math.abs(usd) : usd)
 }

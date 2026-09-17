@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 
-export type ActionSelectItem = {
+type ActionSelectItem = {
   id: string
   name: string
   symbol: string

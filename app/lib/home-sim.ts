@@ -430,7 +430,7 @@ export function getRiskTone(healthFactor: number | null): HomeRiskTone {
   return "warning"
 }
 
-export type HealthStatus = {
+type HealthStatus = {
   label: string
   dotClass: string
   textClass: string
@@ -445,22 +445,6 @@ export function getHealthStatus(hf: number): HealthStatus {
     textClass: band.status.textClass,
     barClass: band.status.barClass,
   }
-}
-
-export function healthGaugePercent(hf: number): number {
-  if (!Number.isFinite(hf)) return 100
-  const min = 1.0
-  const max = 3.0
-  const clamped = Math.max(min, Math.min(max, hf))
-  return ((clamped - min) / (max - min)) * 100
-}
-
-export function healthFactorBarPct(hf: number | null): number {
-  if (hf === null || Number.isNaN(hf)) return 0
-  if (!Number.isFinite(hf)) return 100
-  const min = 1.0
-  const max = 5.0
-  return Math.max(0, Math.min(100, ((hf - min) / (max - min)) * 100))
 }
 
 export const MAX_LTV = 0.8

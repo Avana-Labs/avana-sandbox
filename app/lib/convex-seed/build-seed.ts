@@ -118,9 +118,9 @@ export type SeedDailyStatRow = {
 }
 
 /** Product-siloed borrow daily stats (pool + asset). */
-export type SeedBorrowDailyStatRow = SeedDailyStatRow & { kind: "pool" | "asset" }
+type SeedBorrowDailyStatRow = SeedDailyStatRow & { kind: "pool" | "asset" }
 
-export type SeedRevenueRow = {
+type SeedRevenueRow = {
   slug: string
   day: string
   interestFromBorrowersUsd: number
@@ -131,9 +131,9 @@ export type SeedRevenueRow = {
 }
 
 /** Product-siloed borrow revenue (pool + asset). */
-export type SeedBorrowRevenueRow = SeedRevenueRow & { kind: "pool" | "asset" }
+type SeedBorrowRevenueRow = SeedRevenueRow & { kind: "pool" | "asset" }
 
-export type SeedRiskRow = {
+type SeedRiskRow = {
   slug: string
   assessedAt: number
   premiumBps: number
@@ -152,9 +152,9 @@ export type SeedRiskRow = {
 }
 
 /** Product-siloed borrow risk assessment (pool + asset). */
-export type SeedBorrowRiskAssessmentRow = SeedRiskRow & { kind: "pool" | "asset" }
+type SeedBorrowRiskAssessmentRow = SeedRiskRow & { kind: "pool" | "asset" }
 
-export type SeedWalletEventRow = {
+type SeedWalletEventRow = {
   slug: string
   wallet: string
   kind: "supply" | "withdraw" | "borrow" | "repay"
@@ -166,7 +166,7 @@ export type SeedWalletEventRow = {
 
 /** One per (asset, pool) — the latest-day allocation snapshot. Keyed by both slugs;
  *  the push script resolves each to a `markets._id` before writing. */
-export type SeedAllocationRow = {
+type SeedAllocationRow = {
   assetSlug: string
   poolSlug: string
   day: string
@@ -177,7 +177,7 @@ export type SeedAllocationRow = {
 }
 
 /** Static editorial content (About description + stats, parameter-change history, FAQs). */
-export type SeedContentRow = {
+type SeedContentRow = {
   slug: string
   description: string
   stats: { label: string; value: string; href?: string }[]
@@ -186,9 +186,9 @@ export type SeedContentRow = {
 }
 
 /** Product-siloed borrow content (pool + asset). */
-export type SeedBorrowContentRow = SeedContentRow & { kind: "pool" | "asset" }
+type SeedBorrowContentRow = SeedContentRow & { kind: "pool" | "asset" }
 
-export type SeedRiskParameterRow = {
+type SeedRiskParameterRow = {
   slug: string
   kind?: "pool" | "asset"
   parameters: Array<{ id: string; label: string; value: string; description?: string }>
@@ -196,7 +196,7 @@ export type SeedRiskParameterRow = {
   source: "seed"
 }
 
-export type SeedInterestRateModelRow = {
+type SeedInterestRateModelRow = {
   slug: string
   optimalUtilizationPct: number
   slopeBelowOptimalPct: number
@@ -206,7 +206,7 @@ export type SeedInterestRateModelRow = {
   source: "seed"
 }
 
-export type SeedLiquidationDailyRow = {
+type SeedLiquidationDailyRow = {
   slug: string
   day: string
   liquidationsCount: number
@@ -220,7 +220,7 @@ export type SeedLiquidationDailyRow = {
   walletsWithBadDebt: number
 }
 
-export type SeedBorrowableEdgeRow = {
+type SeedBorrowableEdgeRow = {
   poolSlug: string
   assetSlug: string
   name: string
@@ -417,7 +417,7 @@ export type SeedWalletClaimPositionRow = {
 /** Re-export TEST_WALLET_ADDRESS at its original path so existing consumers keep working. */
 export { TEST_WALLET_ADDRESS } from "./test-wallet"
 
-export type BuildSeedOptions = {
+type BuildSeedOptions = {
   /** How many trailing daily rows to generate per market (drives 1Y/ALL chart depth). */
   days?: number
   /** End date (ms, UTC) of the daily window; defaults to "now". Pass a fixed value for reproducible tests. */
@@ -783,7 +783,7 @@ export function borrowPoolCapacityLabels(suppliedUsd: number, availableUsd: numb
   }
 }
 
-export function borrowAssetCapacityLabels(suppliedUsd: number, availableUsd: number) {
+function borrowAssetCapacityLabels(suppliedUsd: number, availableUsd: number) {
   return {
     depositCapacityLabel: formatCompactUsd(Math.max(25_000_000, Math.max(0, suppliedUsd) * 1.75)),
     borrowCapacityLabel: formatCompactUsd(Math.max(10_000_000, Math.max(0, availableUsd) * 2)),
@@ -826,10 +826,10 @@ function borrowAssetRiskParameterRow(asset: SpokeBorrowableRecord, asOf: number)
 }
 
 /**
- * After `calibrateToTargets`, rewrite borrow risk deposit/borrow capacity labels from
- * the calibrated latest-day tip so Risk Parameters match live market size (not raw catalog).
+ * Must run after `calibrateToTargets`: rewrites the capacity labels from the calibrated
+ * latest-day tip so Risk Parameters match live market size, not the raw catalog.
  */
-export function resyncBorrowRiskParameterCapsFromDailyTips(
+function resyncBorrowRiskParameterCapsFromDailyTips(
   riskParameters: SeedRiskParameterRow[],
   dailyStats: ReadonlyArray<{ slug: string; day: string; suppliedUsd: number; borrowedUsd: number }>,
   lastDay: string,

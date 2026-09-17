@@ -1,6 +1,6 @@
 import type { PortfolioDebtRecord } from "@/app/lib/data/providers/portfolio/source"
 
-export const WALLET_DEBTS: PortfolioDebtRecord[] = [
+const WALLET_DEBTS: PortfolioDebtRecord[] = [
   {
     id: "debt-weth-usdc",
     walletProfileId: "demo-wallet",

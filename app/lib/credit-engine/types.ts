@@ -25,7 +25,7 @@ export type BorrowVisual = {
   textClassName: string
 }
 
-export type BorrowMetricPoint = {
+type BorrowMetricPoint = {
   at: string
   value: bigint
 }
@@ -47,7 +47,7 @@ export type BorrowParameterChange = {
   body?: string
 }
 
-export type BorrowTransactionKind = "deposit" | "withdraw" | "borrow" | "repay" | "claim" | "liquidate"
+type BorrowTransactionKind = "deposit" | "withdraw" | "borrow" | "repay" | "claim" | "liquidate"
 
 export type BorrowTransaction = {
   id: string

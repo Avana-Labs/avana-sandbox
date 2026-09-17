@@ -86,7 +86,7 @@ const USDC_USDT_POOL: PortfolioPoolRecord = {
   ],
 }
 
-export const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
+const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
   {
     id: "collateral-eth-usdc",
     walletProfileId: "demo-wallet",
@@ -116,7 +116,7 @@ export const WALLET_COLLATERALS: PortfolioCollateralRecord[] = [
   },
 ]
 
-export const WALLET_MULTIPLY_POSITIONS: PortfolioMultiplyPositionRecord[] = [
+const WALLET_MULTIPLY_POSITIONS: PortfolioMultiplyPositionRecord[] = [
   {
     id: "mult-eth-loop",
     walletProfileId: "demo-wallet",
@@ -158,7 +158,7 @@ export const WALLET_MULTIPLY_POSITIONS: PortfolioMultiplyPositionRecord[] = [
   },
 ]
 
-export const WALLET_MULTIPLY_CREDIT_LINES: PortfolioCreditLinesRecord[] = [
+const WALLET_MULTIPLY_CREDIT_LINES: PortfolioCreditLinesRecord[] = [
   {
     walletProfileId: "demo-wallet",
     approvedUsd: 64_400,
@@ -170,7 +170,7 @@ export const WALLET_MULTIPLY_CREDIT_LINES: PortfolioCreditLinesRecord[] = [
   },
 ]
 
-export const WALLET_MULTIPLY_COLLATERALS: PortfolioMultiplyCollateralRecord[] = [
+const WALLET_MULTIPLY_COLLATERALS: PortfolioMultiplyCollateralRecord[] = [
   {
     id: "mult-collateral-weth-usdc",
     walletProfileId: "demo-wallet",
@@ -209,7 +209,7 @@ export const WALLET_MULTIPLY_COLLATERALS: PortfolioMultiplyCollateralRecord[] = 
   },
 ]
 
-export const WALLET_OPEN_ORDERS: PortfolioOpenOrderRecord[] = [
+const WALLET_OPEN_ORDERS: PortfolioOpenOrderRecord[] = [
   {
     id: "open-1",
     walletProfileId: "demo-wallet",
@@ -228,7 +228,7 @@ export const WALLET_OPEN_ORDERS: PortfolioOpenOrderRecord[] = [
   },
 ]
 
-export const WALLET_TWAP_ORDERS: PortfolioTwapOrderRecord[] = [
+const WALLET_TWAP_ORDERS: PortfolioTwapOrderRecord[] = [
   {
     id: "twap-1",
     walletProfileId: "demo-wallet",

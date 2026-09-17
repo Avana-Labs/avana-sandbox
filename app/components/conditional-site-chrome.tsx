@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 import { Header } from "@/app/components/header"
 import { WrongNetworkBanner } from "@/app/components/wrong-network-banner"
 
-export function ConditionalSiteHeader() {
+function ConditionalSiteHeader() {
   return <Header />
 }
 

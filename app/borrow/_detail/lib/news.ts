@@ -1,6 +1,6 @@
 import type { AboutCard } from "@/app/lib/borrow-detail"
 
-export type NewsCardItem = {
+type NewsCardItem = {
   title: string
   description?: string
   source: string

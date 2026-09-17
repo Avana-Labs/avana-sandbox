@@ -1,25 +1,15 @@
 import type { ActionMetricTone } from "@/app/lib/action-system/contracts"
 
 /**
- * Single source of truth for how a health factor maps to a risk band, label,
- * tone and colour. Every surface (action pages, dashboard, home previews,
- * borrow tables) must derive its HF presentation from here so the same number
- * never reads as "Safe/green" on one screen and "Watch/orange" on another.
- *
- * Scale: conservative 4-band, anchored just above the engine's 1.0 liquidation
- * floor (see app/lib/credit-engine/actions.ts). Chosen deliberately to warn
- * earlier and more granularly.
- *
- *   danger   hf < 1.2     (red)     — at risk, approaching liquidation
- *   watch    1.2 ≤ hf < 1.75 (orange) — keep an eye on it
- *   moderate 1.75 ≤ hf < 2.5 (amber) — healthy but not comfortable
- *   safe     hf ≥ 2.5     (green)    — comfortable buffer
- *   unknown  null / NaN             — no position / not applicable
+ * Single source of truth for health-factor band, label, tone and colour. EVERY surface must
+ * derive HF presentation from here, so one number never reads "Safe/green" on one screen and
+ * "Watch/orange" on another. Bands sit deliberately above the engine's 1.0 liquidation floor
+ * to warn early: danger < 1.2, watch < 1.75, moderate < 2.5, safe ≥ 2.5, unknown for null/NaN.
  */
 
-export type HealthBandId = "safe" | "moderate" | "watch" | "danger" | "unknown"
+type HealthBandId = "safe" | "moderate" | "watch" | "danger" | "unknown"
 
-export type HealthBand = {
+type HealthBand = {
   id: HealthBandId
   /** Inclusive lower bound on the health-factor axis. */
   min: number
@@ -94,7 +84,7 @@ export const HEALTH_BANDS: readonly HealthBand[] = [
   },
 ] as const
 
-export const UNKNOWN_HEALTH_BAND: HealthBand = {
+const UNKNOWN_HEALTH_BAND: HealthBand = {
   id: "unknown",
   min: Number.NaN,
   max: Number.NaN,

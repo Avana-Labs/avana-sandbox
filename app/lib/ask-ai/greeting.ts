@@ -4,7 +4,7 @@
  * plus the user's local clock for time-of-day tone.
  */
 
-export type AskAIDayPart = "morning" | "afternoon" | "evening" | "late"
+type AskAIDayPart = "morning" | "afternoon" | "evening" | "late"
 
 /** Local-hour buckets for greeting tone. */
 export function dayPartFromLocalHour(hour: number): AskAIDayPart {

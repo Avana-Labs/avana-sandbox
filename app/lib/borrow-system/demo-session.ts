@@ -2,7 +2,7 @@ import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { serializeBorrowSystemState } from "./codec"
 import { buildMockBorrowSystemState } from "./mock"
 
-export function getBorrowSessionWalletId() {
+function getBorrowSessionWalletId() {
   return getDefaultWalletProfileId()
 }
 

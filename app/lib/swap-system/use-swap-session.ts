@@ -42,7 +42,7 @@ export type DurableSwapTransaction = {
   at: number
 }
 
-export function createInitialSwapSystemState(walletId: string): SwapSystemState {
+function createInitialSwapSystemState(walletId: string): SwapSystemState {
   const seededBalances = DEMO_SWAP_BALANCES.filter((balance) => balance.walletId === "demo-wallet").map((balance) => ({
     ...balance,
     id: balance.id.replace("demo-wallet", walletId),
@@ -66,22 +66,18 @@ export function useSwapSession({
   walletId: string
   persistState?: boolean
   /**
-   * Durable server persistence for an executed swap (Convex mode). Called after the local
-   * adapter applies the swap so the client UX is instant; failures are swallowed because the
-   * local session already reflects the swap and durability is best-effort. (#15)
+   * Durable server persistence for an executed swap (Convex mode), called after the local adapter
+   * applies it. Failures are swallowed: the local session already reflects the swap.
    */
   persistTransaction?: (record: SwapTransactionRecord) => void | Promise<unknown>
   /**
-   * Server-authoritative quote source (Convex mode). When provided, quotes come from the Convex
-   * `sandbox.swap.getQuote` engine — the SAME engine recordSwap executes with — so the preview
-   * matches what the swap will do and nothing is computed by a separate client formula. In demo
-   * mode this is undefined and the local MockSwapProvider (same engine, static prices) is used.
+   * Server-authoritative quote source (Convex mode) — the SAME engine recordSwap executes with, so
+   * the preview matches the swap. Undefined in demo mode, which uses the local MockSwapProvider.
    */
   serverGetQuote?: (request: SwapQuoteRequest) => Promise<SwapQuote>
   /**
-   * Durable swaps read back from Convex (Convex mode). Exposed as `durableTransactions` so the
-   * dashboard can merge them with the in-session history and show persisted swaps after a
-   * reload / on another device — deduped by swap id. (#15 follow-on)
+   * Durable swaps read back from Convex, exposed as `durableTransactions` so the dashboard can
+   * merge them with the in-session history (deduped by swap id) after a reload or on a new device.
    */
   remoteTransactions?: DurableSwapTransaction[]
 }) {
@@ -207,8 +203,8 @@ export function useSwapSession({
 
   const isHydrated = hydratedWalletId === walletId
   const transactionHistory = state.transactions
-  /** Durable swaps from Convex (empty in demo mode); merged with the in-session history by
-   *  the dashboard, deduped by swap id, so persisted swaps survive reload. (#15 follow-on) */
+  /** Durable swaps from Convex (empty in demo mode); the dashboard merges these with the
+   *  in-session history, deduped by swap id. */
   const durableTransactions = remoteTransactions ?? EMPTY_DURABLE_TRANSACTIONS
 
   return useMemo(

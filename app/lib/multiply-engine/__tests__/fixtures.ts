@@ -1,7 +1,7 @@
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 
-export const EXAMPLE_ETH_USDT_MARKET_ID = "eth-usdt"
+const EXAMPLE_ETH_USDT_MARKET_ID = "eth-usdt"
 
 export const EXAMPLE_ETH_USDT_MARKET: MultiplyMarketRecord =
   MULTIPLY_MARKET_CATALOG.find((market) => market.id === EXAMPLE_ETH_USDT_MARKET_ID) ?? MULTIPLY_MARKET_CATALOG[0]!

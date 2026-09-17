@@ -119,9 +119,9 @@ export const MULTIPLY_KIND_CONFIG: TransactionKindConfig = {
 
 export type DetailTransactionPreset = "standard" | "pool"
 
-export type DetailTransactionColumnId = "time" | "type" | "for" | "usd" | "token0" | "token1" | "wallet"
+type DetailTransactionColumnId = "time" | "type" | "for" | "usd" | "token0" | "token1" | "wallet"
 
-export type DetailTransactionColumn = {
+type DetailTransactionColumn = {
   id: DetailTransactionColumnId
   label: string
   align?: "left" | "right"

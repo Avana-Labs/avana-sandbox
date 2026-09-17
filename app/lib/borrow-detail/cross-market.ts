@@ -26,7 +26,7 @@ export type BorrowableAssetRef = {
   href: string
 }
 
-export type CollateralMarketRef = {
+type CollateralMarketRef = {
   id: string
   name: string
   venue: string

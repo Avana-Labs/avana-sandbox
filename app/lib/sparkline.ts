@@ -1,6 +1,6 @@
 import { getDeterministicAmount, hashString } from "@/app/lib/deterministic"
 
-export type SparklinePoint = {
+type SparklinePoint = {
   x: number
   y: number
 }

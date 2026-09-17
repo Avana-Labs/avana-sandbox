@@ -35,7 +35,7 @@ function mergeReceipts(nextReceipt: MultiplyTransactionResult, receipts: Multipl
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
-export type ConvexMultiplyWalletData = {
+type ConvexMultiplyWalletData = {
   positions: Array<{
     _id: string
     product: "borrow" | "lend" | "multiply"
@@ -75,10 +75,8 @@ export type ConvexMultiplyWalletData = {
     valueUsd: number
     state: "available" | "collateral" | "debt" | "position"
   }>
-  // The wallet's real liquid token holdings (walletLiquidBalances). Already delivered by
-  // the Convex session hydrator, used to derive a per-market "available" collateral
-  // budget for markets that have no explicit multiplyBalances "available" row so a
-  // market whose collateral the wallet actually holds is openable (not "Max 0").
+  // Real liquid token holdings (walletLiquidBalances), used to derive an "available" collateral
+  // budget for markets with no explicit multiplyBalances row so they aren't stuck at "Max 0".
   balances?: Array<{
     symbol: string
     valueUsd: number
@@ -272,14 +270,11 @@ export function useMultiplySession({
           lastUpdatedAt: position.lastUpdatedAt,
         }
       }
-      // Resolve a transaction's resulting multiplier by its POSITION, not its own tx id
-      // (they never match — the prior code looked positions up by `transaction._id`, so
-      // multiplierAfter was always the fallback of 1). Prefer the linked positionId; fall
-      // back to the still-open position for the same market.
+      // Resolve the resulting multiplier by POSITION, not tx id — position ids never equal
+      // `transaction._id`. Prefer the linked positionId, else the still-open position for the
+      // market. The inferred-open map below covers positions that have since closed, whose
+      // position row is gone and would otherwise read "1.00x → 1.00x".
       const positionByMarket = new Map(Object.values(positions).map((position) => [position.marketId, position]))
-      // Recovers the "1.00x → 2.00x" an open should read for a position that has since CLOSED (its
-      // position row is gone, so the position-multiplier fallback below can't see it and the open
-      // otherwise rendered a meaningless "1.00x → 1.00x").
       const openedLeverageByMarket = inferOpenedLeverageByMarket(data.transactions)
       const history: MultiplyTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "multiply")
@@ -302,8 +297,8 @@ export function useMultiplySession({
             kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
             status: transaction.status,
             amountUsd: transaction.amountUsd,
-            // Use the leverage captured AT the transaction; fall back to the old heuristic only
-            // for legacy rows written before multiplierBefore/After were persisted.
+            // Use the leverage captured AT the transaction; the fallbacks cover legacy rows
+            // written before multiplierBefore/After were persisted.
             multiplierBefore: transaction.multiplierBefore ?? 1,
             multiplierAfter:
               transaction.kind === "multiply"
@@ -314,12 +309,8 @@ export function useMultiplySession({
             hash: transaction.syntheticTxHash,
           }
         })
-      // Do NOT trust the persisted collateralValueUsd/healthFactor/liquidationPrice —
-      // they freeze at the price captured when the position was last written. Re-derive
-      // them from the stored collateralAmount (token qty) × the CURRENT collateral price
-      // (from the hydrated market data) using the same engine math a live simulation
-      // uses, so a freshly-hydrated position and a just-simulated one agree. Fall back to
-      // the persisted value only when the market/price isn't available for a position.
+      // Re-derive USD figures from collateralAmount × current price; persisted values freeze at
+      // write time. Falls back to persisted when the market price is unavailable.
       setState((current) => {
         const revalued: typeof positions = {}
         for (const [id, position] of Object.entries(positions)) {

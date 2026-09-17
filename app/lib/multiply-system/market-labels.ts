@@ -10,10 +10,10 @@ export function formatMultiplyLoopPairLabel(collateralSymbol: string, borrowSymb
   return `${displaySymbol(collateralSymbol)} / ${displaySymbol(borrowSymbol)}`
 }
 
-export const MULTIPLY_LOOP_SUPPLY_VERB = "Supply" as const
-export const MULTIPLY_LOOP_BORROW_VERB = "Borrow" as const
-export const MULTIPLY_LOOP_SUPPLY_LABEL = "Supply {collateral}" as const
-export const MULTIPLY_LOOP_BORROW_LABEL = "Borrow {borrow}" as const
+const MULTIPLY_LOOP_SUPPLY_VERB = "Supply" as const
+const MULTIPLY_LOOP_BORROW_VERB = "Borrow" as const
+const MULTIPLY_LOOP_SUPPLY_LABEL = "Supply {collateral}" as const
+const MULTIPLY_LOOP_BORROW_LABEL = "Borrow {borrow}" as const
 
 /** Market row label that names collateral and borrow roles explicitly. */
 export function formatMultiplyLoopMarketLabel(collateralSymbol: string, borrowSymbol: string) {

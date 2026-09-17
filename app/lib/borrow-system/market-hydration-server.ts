@@ -13,9 +13,8 @@ import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
 import type { AllocationRow } from "@/app/lib/borrow-detail/types"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
 
-// One client per request instead of a fresh instance for each of the ~15 fetch*
-// helpers a detail render calls. request-scoped via React.cache; identity (a new
-// client each call, i.e. today's behavior) in the non-RSC test runtime.
+// One client per request instead of one per fetch* helper. Request-scoped via React.cache;
+// falls back to a fresh client per call in the non-RSC test runtime.
 const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
@@ -27,10 +26,9 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
 })
 
 /**
- * Server-side fetch of the Convex market reference snapshots. Returns [] when no
- * deployment is configured or it's unreachable, so callers degrade to the catalog
- * base and the page always renders. Prefer `fetchConvexMarketSnapshot` on detail
- * pages (C04) — this list path is for catalogs / session hydration.
+ * Convex market reference snapshots. Returns [] when unconfigured or unreachable so callers
+ * degrade to the catalog base. Detail pages should use `fetchConvexMarketSnapshot` instead;
+ * this list path is for catalogs / session hydration.
  */
 export async function fetchConvexMarketSnapshots(): Promise<ConvexMarketSnapshot[]> {
   const client = convexClient()
@@ -42,7 +40,7 @@ export async function fetchConvexMarketSnapshots(): Promise<ConvexMarketSnapshot
   }
 }
 
-/** One borrow pool/asset snapshot for detail builders (slug-scoped; C04). */
+/** One slug-scoped borrow pool/asset snapshot for detail builders. */
 export async function fetchConvexMarketSnapshot(
   scope: "pool" | "asset",
   slug: string,
@@ -60,9 +58,8 @@ export async function fetchConvexMarketSnapshot(
 export type ConvexSeriesPoint = { t: string; v: number }
 
 /**
- * Row shape emitted by api.contractAddresses.list{Pool,Asset,Multiply}Addresses —
- * mapped 1:1 into AboutCard.stats. `label`/`href` are seeded so the display path stays
- * a dumb pass-through; `isSynthetic` is metadata for the seed sync and unused in UI.
+ * Row shape from api.contractAddresses.list{Pool,Asset,Multiply}Addresses, mapped 1:1 into
+ * AboutCard.stats. `label`/`href` are seeded; `isSynthetic` is seed-sync metadata, unused in UI.
  */
 export type ConvexContractAddressRow = {
   salt: string
@@ -108,77 +105,6 @@ export async function fetchMultiplyContractAddresses(marketSlug: string): Promis
   )
 }
 
-/** Pool hero series = TVL (total supplied) over the full window. */
-export async function fetchPoolTvlSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getPoolHeroSeries, { slug, metric: "tvl", range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-/** Pool hero borrowed series over the full window. */
-export async function fetchPoolBorrowedSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getPoolHeroSeries, { slug, metric: "borrowed", range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-/** Pool hero utilization series over the full window. */
-export async function fetchPoolUtilizationSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getPoolHeroSeries, { slug, metric: "utilization", range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-async function fetchAssetHeroSeries(
-  slug: string,
-  metric: "supply" | "borrow" | "utilization",
-): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getAssetHeroSeries, { slug, metric, range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-/** Asset hero Supplied series over the full window. */
-export function fetchAssetSuppliedSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  return fetchAssetHeroSeries(slug, "supply")
-}
-
-/** Asset hero Borrowed series over the full window. */
-export function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  return fetchAssetHeroSeries(slug, "borrow")
-}
-
-/** Asset hero Utilization series over the full window. */
-export function fetchAssetUtilizationSeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  return fetchAssetHeroSeries(slug, "utilization")
-}
-
-// The cashflow breakdown reaches the page through `preloadDetailCashflow` (a reactive
-// `preloadQuery` handed to the client card), so the one-shot `fetchCashflowBreakdown`
-// fetcher that used to live here had no callers left. `fetchAssetCashflowTrend` is gone
-// with it: `getRevenueForAsset` re-read the same `borrowRevenueDaily` window as that
-// breakdown and nothing rendered the result.
-
 /** Recent market transactions (sandbox first, seeded walletEvents fallback). */
 export async function fetchRecentTransactions(scope: "pool" | "asset", slug: string) {
   const client = convexClient()
@@ -192,10 +118,9 @@ export async function fetchRecentTransactions(scope: "pool" | "asset", slug: str
 }
 
 /**
- * Asset allocation breakdown (per-pool split) from `assetPoolAllocationDaily`.
- * The Convex query returns the numeric split + `poolSlug`; we hydrate token
- * `visuals` + the venue label from the catalog here (icons are a client concern),
- * matching the procedural `computeAssetAllocation` output shape exactly.
+ * Per-pool asset allocation from `assetPoolAllocationDaily`. Convex returns the numeric split
+ * plus `poolSlug`; visuals and the venue label are hydrated from the catalog here to match
+ * `computeAssetAllocation`'s output shape exactly.
  */
 export async function fetchAllocation(slug: string): Promise<AllocationRow[] | null> {
   const client = convexClient()
@@ -228,30 +153,12 @@ export async function fetchAllocation(slug: string): Promise<AllocationRow[] | n
   }
 }
 
-/** Latest risk assessment (premium + breakdown + metrics) for a pool or asset. */
 /** Latest risk assessment (Risk Premium card) from product-siloed `borrowRiskAssessments`. */
 export async function fetchRisk(_scope: "pool" | "asset", slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.borrow.riskAssessment.getRisk, { slug })
-  } catch {
-    return null
-  }
-}
-
-/**
- * Calibrated Market-overview quick stats (supplied/borrowed/utilization/APY) for a
- * pool or asset, from the Convex daily rows. The detail builder merges these over
- * the mock quick stats so the headline numbers match the hero + the page aggregate
- * (and aren't the curated-fixture values). Returns null when unreachable/unseeded.
- */
-export async function fetchQuickStats(scope: "pool" | "asset", slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const rows = await client.query(api.markets.getQuickStats, { scope, slug })
-    return rows && rows.length > 0 ? rows : null
   } catch {
     return null
   }
@@ -268,18 +175,6 @@ export async function fetchSupplyBorrow(slug: string) {
   }
 }
 
-/** Asset historical utilization series from Convex (null when unseeded). */
-export async function fetchHistoricalUtilization(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.markets.getHistoricalUtilization, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Editorial content (About description/stats/history + FAQs) for a pool or asset. */
 /** Editorial content (About / FAQs / history) from product-siloed `borrowMarketContent`. */
 export async function fetchContent(_scope: "pool" | "asset", slug: string) {
   const client = convexClient()

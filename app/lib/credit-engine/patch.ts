@@ -1,6 +1,6 @@
 import type { BorrowSystemState } from "./types"
 
-export type BorrowStatePatch = {
+type BorrowStatePatch = {
   now?: number
   accounts?: BorrowSystemState["accounts"]
   markets?: BorrowSystemState["markets"]

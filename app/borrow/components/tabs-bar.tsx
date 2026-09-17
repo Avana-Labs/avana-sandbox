@@ -16,7 +16,7 @@ export function isPoolTab(tab: BorrowTabId): tab is PoolTabId {
   return POOL_TAB_IDS.includes(tab as PoolTabId)
 }
 
-export type TabsBarProps = {
+type TabsBarProps = {
   currentTab: BorrowTabId
   onTabChange: (tab: BorrowTabId) => void
   search: string

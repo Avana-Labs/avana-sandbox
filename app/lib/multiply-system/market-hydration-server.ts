@@ -1,23 +1,20 @@
 import "server-only"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
-import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import type { MultiplyTokenParameterRow } from "@/app/lib/multiply-system/read-model"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
 
 /**
- * Server-side Convex fetchers for the multiply (leveraged loop) detail page + list.
- * Mirrors the borrow/lend hydration servers, scoped to `"multiply"`. Every fetcher
- * degrades to `null`/`[]` when no Convex deployment is configured or it's unreachable,
- * so the page always renders off the catalog/mock fallback.
+ * Server-side Convex fetchers for the multiply detail page + list. Every fetcher degrades to
+ * `null`/`[]` when Convex is unconfigured or unreachable, so the page renders off the catalog.
  */
 
 export type { ConvexContractAddressRow, ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 export { fetchMultiplyContractAddresses, fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 
 /** Latest-day reference snapshot for a single multiply market. */
-export type MultiplyMarketSnapshot = {
+type MultiplyMarketSnapshot = {
   slug: string
   suppliedUsd: number
   availableUsd: number
@@ -26,8 +23,8 @@ export type MultiplyMarketSnapshot = {
   borrowAprPct: number
 }
 
-// One client per request (request-scoped via React.cache); a fresh client per call
-// in the non-RSC test runtime, matching prior behavior.
+// One client per request (request-scoped via React.cache); a fresh client per call in the
+// non-RSC test runtime.
 const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
@@ -38,7 +35,7 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
   }
 })
 
-/** Latest-day reference snapshot for one multiply market (slug-scoped; C04). */
+/** Latest-day reference snapshot for one multiply market (slug-scoped). */
 export async function fetchMultiplyMarketSnapshot(slug: string): Promise<MultiplyMarketSnapshot | null> {
   const client = convexClient()
   if (!client) return null
@@ -84,10 +81,9 @@ export async function fetchMultiplyMarketSnapshots(): Promise<MultiplyConvexSnap
 }
 
 /**
- * Live token parameters (per-asset supply/borrow APY, logos, CF/LT) for SSR — the
- * same rows the client reads via `useQuery(api.multiply.tokenParameters.listTokens)`.
- * Fetching these server-side lets the first paint carry real APYs/logos instead of
- * the bundled static constants (no mock-then-live swap). [] when unreachable.
+ * Live token parameters for SSR — the same rows the client reads via
+ * `useQuery(api.multiply.tokenParameters.listTokens)`, so the first paint carries real
+ * APYs/logos instead of the bundled static constants. [] when unreachable.
  */
 export async function fetchMultiplyTokenParameters(): Promise<MultiplyTokenParameterRow[]> {
   const client = convexClient()
@@ -97,29 +93,6 @@ export async function fetchMultiplyTokenParameters(): Promise<MultiplyTokenParam
     return (rows ?? []) as MultiplyTokenParameterRow[]
   } catch {
     return []
-  }
-}
-
-/** Multiply hero series = total value locked (supplied) over the full window. */
-export async function fetchMultiplySupplySeries(slug: string): Promise<ConvexSeriesPoint[]> {
-  const client = convexClient()
-  if (!client) return []
-  try {
-    const res = await client.query(api.markets.getMultiplyHeroSeries, { slug, metric: "supply", range: "ALL" })
-    return (res?.points ?? []) as ConvexSeriesPoint[]
-  } catch {
-    return []
-  }
-}
-
-/** Cashflow breakdown card (rows + monthly bars) for a multiply market. */
-export async function fetchMultiplyCashflowBreakdown(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.multiply.cashflow.getBreakdown, { slug })
-  } catch {
-    return null
   }
 }
 
@@ -135,25 +108,12 @@ export async function fetchMultiplyRecentTransactions(slug: string) {
   }
 }
 
-/** Latest risk assessment (premium + breakdown + metrics) for a multiply market. */
 /** Latest risk assessment (Risk Premium card) from product-siloed `multiplyRiskAssessments`. */
 export async function fetchMultiplyRisk(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.multiply.riskAssessment.getRisk, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Calibrated Market-overview quick stats for a multiply market. Null when unseeded. */
-export async function fetchMultiplyQuickStats(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const rows = await client.query(api.markets.getQuickStats, { scope: "multiply", slug })
-    return rows && rows.length > 0 ? rows : null
   } catch {
     return null
   }

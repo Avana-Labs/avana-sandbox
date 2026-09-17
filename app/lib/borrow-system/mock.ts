@@ -26,11 +26,9 @@ export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
 }
 
 /**
- * Test-fixture initial debts baked into the mock builder. Duplicated once here rather than
- * imported from home-sim so Wave 6 can delete HOME_INITIAL_DEBTS from home-sim/home-contracts
- * without breaking selector/read-model/dashboard tests that rely on demo-wallet debtPositions.
- * Production authenticated flows use buildConvexBorrowSessionSeed (empty accounts) and hydrate
- * seeded debts from Convex walletDebts — this map never reaches a real wallet.
+ * Test-fixture initial debts, deliberately duplicated here rather than imported from home-sim so
+ * that file can drop its copy. Never reaches a real wallet — authenticated flows seed empty
+ * accounts and hydrate debts from Convex walletDebts.
  */
 const MOCK_INITIAL_DEBTS: Record<string, number> = {
   "eth-usdc": 1_200,
@@ -113,16 +111,14 @@ function estimateRiskScoreWad(pool: BorrowPoolRow) {
 }
 
 function estimateLiquidationThresholdWad(pool: BorrowPoolRow) {
-  // maxLtv + 10pp, capped 95% — via the shared helper so the credit engine, portfolio HF,
-  // and the Convex persist gate all use one liquidation-threshold basis (#12).
+  // maxLtv + 10pp, capped 95% — via the shared helper so the credit engine, portfolio HF and the
+  // Convex persist gate all use one liquidation-threshold basis.
   return wadFromRatio(liquidationThresholdPctFromMaxLtvPct(pool.ltv) / 100)
 }
 
 export function assetPriceUsd6(asset: SpokeBorrowableRecord) {
-  // Canonical basis wins so the ENGINE values debt/collateral at the SAME price the UI shows.
-  // ASSET_PRICE_USD used to carry an independent snapshot (e.g. ETH $2021.44) that drifted from
-  // the $1934 canonical baseline on the tiles, so a health factor was computed at a price shown
-  // nowhere. Fall back to the local seed map only for tokens the canonical snapshot omits.
+  // Canonical basis wins so the engine values debt/collateral at the same price the UI shows;
+  // ASSET_PRICE_USD is only a fallback for tokens the canonical snapshot omits.
   const canonical = canonicalPriceUsd(asset.baseAssetId) ?? canonicalPriceUsd(asset.id)
   if (canonical !== undefined) return usd6(canonical)
   const byId = ASSET_PRICE_USD[asset.id]
@@ -351,7 +347,7 @@ function walletLpBalancesFromHomePools() {
   return balances
 }
 
-export function buildMockBorrowCatalog() {
+function buildMockBorrowCatalog() {
   const spokeBorrowables = listSpokeBorrowables()
   const borrowAssetIdsBySpoke = new Map<string, string>()
   for (const asset of spokeBorrowables) {
@@ -380,10 +376,8 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
   const collateralPositions = HOME_COLLATERAL_POOLS.map((pool) =>
     collateralPositionFromHomePool(walletId, pool.id, pool.collateralUsd, markets),
   ).filter((position): position is UserCollateralPosition => Boolean(position))
-  // home-demo-wallet is the unauthenticated landing demo, deliberately clean.
-  // Every OTHER walletId here is a test fixture — production authenticated wallets
-  // never reach this builder (they use buildConvexBorrowSessionSeed with empty
-  // accounts and hydrate real debts from Convex walletDebts).
+  // home-demo-wallet is the unauthenticated landing demo, deliberately debt-free. Every other
+  // walletId here is a test fixture; authenticated wallets use buildConvexBorrowSessionSeed.
   const initialDebts = walletId === "home-demo-wallet" ? {} : MOCK_INITIAL_DEBTS
   const debtPositions = Object.entries(initialDebts)
     .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
@@ -411,17 +405,6 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
   }
 }
 
-export function buildMockBorrowSystemCatalog() {
-  const { accounts: _accounts, transactions: _transactions, now: _now, ...catalog } = buildMockBorrowSystemState()
-  void _accounts
-  void _transactions
-  void _now
-  return catalog
-}
-
 export function buildBorrowCatalogBaselineState(walletId = "catalog"): BorrowSystemState {
   return buildMockBorrowSystemState(walletId)
 }
-
-export const MOCK_BORROW_SYSTEM_STATE = buildMockBorrowSystemState()
-export const MOCK_BORROW_SYSTEM_CATALOG = buildMockBorrowSystemCatalog()

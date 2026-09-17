@@ -1,6 +1,5 @@
 import { formatFixed } from "@/app/lib/credit-engine"
 import type { TransactionPreview } from "@/app/lib/borrow-system/contracts"
-import type { BorrowSimulationResult } from "@/app/lib/credit-engine/simulation"
 import type { ActionPreviewUi, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
@@ -12,7 +11,6 @@ import {
   formatActionHealthFactor,
   formatActionInputAmount,
   formatActionPercent,
-  formatActionRatioPercent,
   formatActionPercentBeforeAfter,
   formatActionUsd,
   formatActionUsdBeforeAfter,
@@ -224,9 +222,8 @@ export function mapBorrowRepayPreviewToActionUi(
   const afterDebt = fixedToNumber(preview.after.totalBorrowedUsd6, 6)
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
-  // You cannot repay more than you owe. The engine silently caps an over-debt
-  // repay (so it never throws), which previously let an inflated amount through
-  // the CTA and get persisted as the "processed" amount. Block it here.
+  // Block over-debt repays here: the engine silently caps them instead of throwing, so an
+  // inflated amount would otherwise reach the CTA and persist as the processed amount.
   const exceedsDebt = options.exceedsDebt ?? false
   const allowed = preview.allowed && !exceedsDebt
   const price = options.priceUsd && options.priceUsd > 0 ? options.priceUsd : null
@@ -385,11 +382,8 @@ export function mapBorrowRemovePreviewToActionUi(
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
-  // Blocked simulations intentionally keep `after` equal to `before`. In that
-  // case, deriving the amount from the state delta renders an unsafe request as
-  // $0.00, which hides the actual amount the user entered. Use the canonical
-  // requested amount for blocked previews and the simulated delta only after a
-  // removal is allowed.
+  // Blocked simulations keep `after` equal to `before`, so the state delta would render an
+  // unsafe request as $0.00. Blocked previews use the requested amount instead.
   const simulatedRemoveUsd = Math.max(0, beforeCollateral - afterCollateral)
   const removeUsd = preview.allowed ? simulatedRemoveUsd : Math.max(0, options.removeUsd)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
@@ -463,78 +457,6 @@ export function mapBorrowRemovePreviewToActionUi(
   }
 }
 
-export function mapLiquidationPreviewToActionUi(
-  simulation: BorrowSimulationResult,
-  options: {
-    amountUsd: number
-    marketLabel: string
-    debtSymbol: string
-  },
-): ActionPreviewUi {
-  const healthBefore = hfToNumber(simulation.before.metrics.healthFactorWad)
-  const healthAfter = hfToNumber(simulation.after.metrics.healthFactorWad)
-  const beforeCollateral = fixedToNumber(simulation.before.metrics.collateralValueUsd6, 6)
-  const afterCollateral = fixedToNumber(simulation.after.metrics.collateralValueUsd6, 6)
-  const beforeDebt = fixedToNumber(simulation.before.metrics.totalBorrowedUsd6, 6)
-  const afterDebt = fixedToNumber(simulation.after.metrics.totalBorrowedUsd6, 6)
-
-  return {
-    allowed: simulation.allowed,
-    amountLabel: formatActionAmount(options.amountUsd, options.debtSymbol, 2),
-    amountUsd: options.amountUsd,
-    amountUsdLabel: formatActionApproxUsd(options.amountUsd),
-    rateLabel: "Liquidation",
-    rateValue: formatActionUsd(options.amountUsd),
-    marketLabel: "Market",
-    marketValue: options.marketLabel,
-    balanceLabel: "Estimated repay",
-    balanceValue: formatActionUsd(options.amountUsd),
-    maxAmount: null,
-    metrics: [
-      {
-        id: "collateral",
-        label: "Collateral",
-        value: formatActionUsdBeforeAfter(beforeCollateral, afterCollateral),
-        before: formatActionUsd(beforeCollateral),
-        after: formatActionUsd(afterCollateral),
-      },
-      {
-        id: "debt",
-        label: "Debt",
-        value: formatActionUsdBeforeAfter(beforeDebt, afterDebt),
-        before: formatActionUsd(beforeDebt),
-        after: formatActionUsd(afterDebt),
-      },
-      {
-        id: "health-factor",
-        label: "Health factor",
-        value: formatActionBeforeAfter(formatActionHealthFactor(healthBefore), formatActionHealthFactor(healthAfter)),
-        before: formatActionHealthFactor(healthBefore),
-        after: formatActionHealthFactor(healthAfter),
-        tone: hfTone(healthAfter),
-      },
-    ],
-    networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
-    risk:
-      simulation.riskLabel === "danger"
-        ? {
-            level: "danger",
-            title: "Liquidation leaves position at risk",
-            message: simulation.validationErrors[0] ?? simulation.warnings[0] ?? "Health factor is too low.",
-          }
-        : simulation.riskLabel === "warning"
-          ? {
-              level: "warning",
-              title: "Liquidation impact",
-              message: simulation.warnings[0] ?? "Health factor is declining.",
-            }
-          : null,
-    blockedReason: simulation.allowed ? null : (simulation.validationErrors[0] ?? "Liquidation unavailable"),
-    validationErrors: simulation.validationErrors,
-    warnings: simulation.warnings,
-  }
-}
-
 export function mapBorrowSuccessToActionUi(options: {
   title: string
   description: string
@@ -568,10 +490,4 @@ export function mapBorrowSuccessToActionUi(options: {
         }
       : undefined,
   }
-}
-
-export function mapLtvBeforeAfter(preview: TransactionPreview) {
-  const before = formatActionRatioPercent(fixedToNumber(preview.before.currentLtvWad, 18))
-  const after = formatActionRatioPercent(fixedToNumber(preview.after.currentLtvWad, 18))
-  return `${before} → ${after}`
 }

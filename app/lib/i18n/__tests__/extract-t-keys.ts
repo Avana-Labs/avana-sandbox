@@ -3,24 +3,14 @@ import { fileURLToPath } from "node:url"
 import path from "node:path"
 
 /**
- * Code-derived translation-key extractor (backbone for the key-parity test).
+ * Translation-key extractor backing the key-parity test: scans the source tree for
+ * `t("…")` calls and returns the string-literal keys plus a count of purely dynamic
+ * `t(variable)` calls, which parity cannot assert on.
  *
- * The app localizes through `const { t } = useTranslation()` and calls
- * `t("<English source string>")`. This module scans the source tree for those
- * calls and returns the set of STRING-LITERAL keys, plus a count of purely
- * dynamic `t(variable)` calls that carry no literal (which the parity test can
- * not assert on and therefore excludes).
- *
- * Design notes:
- *  - We only ever collect string literals that appear INSIDE a `t(...)` argument
- *    span, so comments / unrelated strings elsewhere in a file can never leak in.
- *  - The scan is a small string-and-comment-aware tokenizer (not a regex) so that
- *    parentheses and quotes inside key strings (e.g. `t("Amount (net)")`) and
- *    ternary / nullish arguments (e.g. `t(cond ? "Yes" : "No")`,
- *    `t(label ?? "Balance")`) are handled correctly. Every literal inside the
- *    argument list is captured; a call with no literal at all counts as dynamic.
- *  - `t` is matched only as a standalone identifier immediately followed by `(`,
- *    so `format(`, `getT(`, `.filter(` etc. are never mistaken for a call.
+ * Deliberately a string-and-comment-aware tokenizer rather than a regex, so parentheses
+ * and quotes inside keys (`t("Amount (net)")`) and ternary/nullish arguments parse
+ * correctly. Literals are only collected inside a `t(...)` argument span, and `t` matches
+ * only as a standalone identifier followed by `(`, so `format(`/`getT(` never match.
  */
 
 const IDENT = /[A-Za-z0-9_$]/
@@ -28,7 +18,7 @@ const IDENT = /[A-Za-z0-9_$]/
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..")
 
 /** Directories (relative to repo root) scanned for `t("…")` call sites. */
-export const SCAN_ROOTS = ["app", "components"] as const
+const SCAN_ROOTS = ["app", "components"] as const
 
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "__tests__"])
 
@@ -61,7 +51,7 @@ function collectSourceFiles(dir: string, out: string[]): void {
   }
 }
 
-export function listSourceFiles(): string[] {
+function listSourceFiles(): string[] {
   const files: string[] = []
   for (const root of SCAN_ROOTS) {
     collectSourceFiles(path.join(REPO_ROOT, root), files)
@@ -69,18 +59,15 @@ export function listSourceFiles(): string[] {
   return files.sort()
 }
 
-export type ExtractionResult = {
+type ExtractionResult = {
   /** Every distinct string-literal key passed to a `t(...)` call, sorted. */
   keys: string[]
   /** Count of `t(...)` calls whose argument contained no string literal (dynamic). */
   dynamicCallCount: number
 }
 
-/**
- * Extract the literal `t(...)` keys and the dynamic-call count from one source string.
- * Exported for unit-testing the extractor itself.
- */
-export function extractFromSource(source: string): { keys: Set<string>; dynamicCallCount: number } {
+/** Literal `t(...)` keys and the dynamic-call count for one source string. */
+function extractFromSource(source: string): { keys: Set<string>; dynamicCallCount: number } {
   const keys = new Set<string>()
   let dynamicCallCount = 0
   const len = source.length
@@ -95,8 +82,7 @@ export function extractFromSource(source: string): { keys: Set<string>; dynamicC
     while (j < len) {
       const ch = source[j]
       if (ch === "\\") {
-        // Preserve the escaped character verbatim (keys never rely on decoding,
-        // and JS source keys here contain no escape sequences in practice).
+        // Escaped char kept verbatim; these keys never contain real escape sequences.
         value += source[j + 1] ?? ""
         j += 2
         continue
@@ -105,8 +91,6 @@ export function extractFromSource(source: string): { keys: Set<string>; dynamicC
         j += 1
         break
       }
-      // Template-literal interpolation makes the argument dynamic; bail on it by
-      // treating the whole template as non-literal (handled by the caller).
       value += ch
       j += 1
     }
@@ -151,8 +135,7 @@ export function extractFromSource(source: string): { keys: Set<string>; dynamicC
         continue
       }
       if (ch === "`") {
-        // Template literal: only a plain (non-interpolated) template is a usable
-        // key; anything with `${…}` is dynamic.
+        // Only a non-interpolated template is a usable key; `${…}` makes it dynamic.
         const hasInterp = /\$\{/.test(source.slice(j + 1, source.indexOf("`", j + 1) + 1))
         const { end, value } = readTemplate(j)
         if (hasInterp) {
@@ -167,8 +150,7 @@ export function extractFromSource(source: string): { keys: Set<string>; dynamicC
       j += 1
     }
     if (!sawLiteral || sawTemplateInterpolation) {
-      // A call is "dynamic" when it carries no literal at all. (A call that mixes
-      // a literal with a dynamic branch still contributes its literal above.)
+      // Only a call with no literal at all is dynamic; a mixed call already contributed its literal.
       if (!sawLiteral) dynamicCallCount += 1
     }
     return j

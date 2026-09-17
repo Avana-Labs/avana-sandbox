@@ -35,14 +35,10 @@ export const REWARDS_PROMO_TABS = [
   { id: "referrals", label: "Referrals" },
 ] as const satisfies ReadonlyArray<{ id: RewardsPromoTabId; label: string }>
 
-/** Max quest cards shown per product tab; extra claimable quests still claim via the rail. */
-export const REWARDS_QUESTS_PER_TAB = 6
-
 /**
- * Group a reward task under one of the product tabs. Product-tagged quests route
- * by tag; cross-cutting quests (volume, activity, risk, integration, streak) are
- * pinned by id to the product they exercise. Everything else — wallet setup,
- * education, generic rewards/dashboard/mastery — lands in "Getting started".
+ * Cross-cutting quests (volume, activity, risk, integration, streak) pinned by id to the
+ * product they exercise; product-tagged quests route by tag, everything else falls to
+ * "Getting started".
  */
 const REWARDS_TAB_BY_TASK_ID: Record<string, RewardsPromoTabId> = {
   "supply-5k-lend": "lend",
@@ -51,10 +47,8 @@ const REWARDS_TAB_BY_TASK_ID: Record<string, RewardsPromoTabId> = {
 }
 
 /**
- * Per-task illustration (files live in public/asset-rewards). Populated one quest
- * at a time as each card is verified end-to-end; an unmapped id falls back to its
- * tag icon in the card. Rendered via next/image, so the 1254² source is downscaled
- * and served as lazy WebP/AVIF — kilobytes on the wire, not the raw PNG.
+ * Per-task illustration under public/asset-rewards; an unmapped id falls back to its tag icon.
+ * Rendered via next/image, so the 1254² source ships downscaled as lazy WebP/AVIF.
  */
 const REWARDS_IMAGE_BY_TASK_ID: Record<string, string> = {
   "connect-wallet": "/asset-rewards/2.png",

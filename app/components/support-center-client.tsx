@@ -287,7 +287,7 @@ function getSupportCategories(t: Translate): SupportCategory[] {
 
 type SendStatus = "idle" | "sending" | "sent" | "error"
 
-export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
+function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const { t } = useTranslation()
   const [stage, setStage] = useState<1 | 2 | 3>(1)
   const [categoryValue, setCategoryValue] = useState("")

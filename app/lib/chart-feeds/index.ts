@@ -1,15 +1,7 @@
 /**
- * Central chart data layer.
- *
- * Every hero chart on the platform (portfolio, borrow pool, borrow asset)
- * reads its data from one of the `get*HeroFeed` functions below. They all
- * return the same `ChartFeed` contract that the universal `MarketHeroChart`
- * renders.
- *
- * Today these return deterministic mock data generated from a seed so the UI
- * is stable and each entity looks distinct. When the API is ready, swap the
- * body of each function for a fetch that maps the response into a `ChartFeed`
- * — nothing in the UI layer needs to change.
+ * Every hero chart reads from a `get*HeroFeed` here and gets the same `ChartFeed` contract
+ * that `MarketHeroChart` renders. Data is seeded deterministic mock, so swapping in a real
+ * fetch that maps into `ChartFeed` needs no UI change.
  */
 
 import {
@@ -54,7 +46,7 @@ function formatConvexPointLabel(value: string, range: ChartRangeOption): string 
 // Portfolio
 // ---------------------------------------------------------------------------
 
-export type PortfolioFeedInput = {
+type PortfolioFeedInput = {
   /** Pre-formatted balance, e.g. "$883.74". */
   balance: string
   /** Pre-formatted delta, e.g. "$6.89 (0.78%) today". */
@@ -145,12 +137,10 @@ export function getLendMarketHeroFeed(marketId: string): ChartFeed {
 // ---------------------------------------------------------------------------
 
 /**
- * Build a hero `ChartFeed` from a Convex daily series (points `{t: "YYYY-MM-DD", v}`).
- * Used for the borrow pool hero (TVL / total supplied) and asset hero (total
- * borrows). Daily granularity can't carry a real intraday `1D` window, so the
- * `1D` range is synthesized around the latest value (the chart defaults to it);
- * every other range slices the real history. Returns null when there's no data
- * so callers can fall back to the local mock feed.
+ * Build a hero `ChartFeed` from a Convex daily series (`{t: "YYYY-MM-DD", v}`). Daily
+ * granularity can't carry a real intraday window, so `1D` is SYNTHESIZED around the latest
+ * value while every other range slices real history. Null when there's no data, so callers can
+ * fall back to the mock feed.
  */
 export function buildHeroFeedFromConvexSeries(
   points: ReadonlyArray<{ t: string; v: number }>,

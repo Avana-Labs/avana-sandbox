@@ -1,10 +1,9 @@
 import type { LanguageCode } from "@/app/components/display-preferences"
 
 /**
- * Map our language codes to a valid BCP-47 tag for the document `lang` attribute and for
- * Intl formatting. Kept in its own tiny module (NOT in translations.ts) so importing it does
- * not drag the ~288KB of 13-locale dictionaries into the caller's bundle — those load lazily
- * via `use-translation` only when a non-English language is active.
+ * Language code → BCP-47 tag for the document `lang` attribute and Intl formatting.
+ * Must stay out of translations.ts: importing that drags ~288KB of locale dictionaries
+ * into the caller's bundle instead of loading them lazily.
  */
 export const LANGUAGE_HTML_LANG: Record<LanguageCode, string> = {
   EN: "en",
@@ -23,14 +22,8 @@ export const LANGUAGE_HTML_LANG: Record<LanguageCode, string> = {
   RU: "ru",
 }
 
-/**
- * Which of the 13 languages are written right-to-left. `display-preferences`
- * mirrors this into `document.documentElement.dir` alongside the `lang`
- * attribute so a viewer switching to Arabic sees the app in RTL. Kept in this
- * lightweight module (no locale-dict dependency) so the RTL flag can be
- * consulted anywhere without pulling in translation payloads.
- */
-export const RTL_LANGUAGES: ReadonlySet<LanguageCode> = new Set(["AR"])
+/** `display-preferences` mirrors this into `document.documentElement.dir`. */
+const RTL_LANGUAGES: ReadonlySet<LanguageCode> = new Set(["AR"])
 
 export function isRtlLanguage(language: LanguageCode): boolean {
   return RTL_LANGUAGES.has(language)

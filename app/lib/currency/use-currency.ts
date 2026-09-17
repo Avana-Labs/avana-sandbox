@@ -11,7 +11,7 @@ import {
   type CurrencyContext,
 } from "@/app/lib/currency/format"
 
-export type CurrencyFormatter = {
+type CurrencyFormatter = {
   ctx: CurrencyContext
   /** USD → active currency, compact (e.g. ¥11.5M). */
   compact: (usd: number) => string
@@ -25,9 +25,8 @@ export type CurrencyFormatter = {
 }
 
 /**
- * Currency formatter bound to the header switcher. The app computes everything in
- * USD (oracle prices are USD); this converts at the display layer so switching to,
- * say, CNY re-renders amounts in ¥ using the active FX rate.
+ * Currency formatter bound to the header switcher. All computation stays in USD
+ * (oracle prices are USD); conversion happens only at the display layer.
  */
 export function useCurrency(): CurrencyFormatter {
   const preferences = useOptionalLocaleDisplayPreferences()

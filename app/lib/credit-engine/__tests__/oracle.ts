@@ -1,5 +1,5 @@
 import Decimal from "decimal.js"
-import { RAY_DECIMALS, TOKEN_DECIMALS, USD_DECIMALS, WAD_DECIMALS, formatFixed } from "@/app/lib/credit-engine"
+import { RAY_DECIMALS, TOKEN_DECIMALS, WAD_DECIMALS, formatFixed } from "@/app/lib/credit-engine"
 
 Decimal.set({
   precision: 80,
@@ -12,11 +12,11 @@ function scaleFactor(decimals: number) {
   return new Decimal(10).pow(decimals)
 }
 
-export function bigintToDecimal(value: bigint, decimals: number) {
+function bigintToDecimal(value: bigint, decimals: number) {
   return new Decimal(formatFixed(value, decimals))
 }
 
-export function decimalToBigint(value: Decimal.Value, decimals: number) {
+function decimalToBigint(value: Decimal.Value, decimals: number) {
   return BigInt(new Decimal(value).mul(scaleFactor(decimals)).floor().toFixed(0))
 }
 
@@ -40,8 +40,4 @@ export function oracleAccrueLinearIndex(indexRay: bigint, aprWad: bigint, elapse
     .div(new Decimal(365 * 24 * 60 * 60))
 
   return decimalToBigint(bigintToDecimal(indexRay, RAY_DECIMALS).mul(new Decimal(1).plus(growth)), RAY_DECIMALS)
-}
-
-export function oracleUsd(value: Decimal.Value) {
-  return decimalToBigint(value, USD_DECIMALS)
 }

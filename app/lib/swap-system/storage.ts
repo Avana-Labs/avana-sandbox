@@ -1,8 +1,8 @@
-import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { safeReadParsed, safeSetItem } from "@/app/lib/safe-local-storage"
 import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 import type { SwapSystemState } from "./transaction-adapter"
 
-export type PersistedSwapSession = SwapSystemState & { revision: number }
+type PersistedSwapSession = SwapSystemState & { revision: number }
 
 const SWAP_STATE_PREFIX = `avana.swap.session.${SESSION_CACHE_VERSION}`
 
@@ -67,10 +67,6 @@ export function writeSwapSessionState(
   safeSetItem(stateKey(walletId), JSON.stringify(payload))
   notifySwapSessionUpdated(walletId)
   return payload
-}
-
-export function clearSwapSessionState(walletId: string) {
-  safeRemoveItem(stateKey(walletId))
 }
 
 function notifySwapSessionUpdated(walletId: string) {

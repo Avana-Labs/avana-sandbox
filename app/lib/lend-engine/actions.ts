@@ -1,10 +1,4 @@
-import {
-  calculateAvailableLiquidity,
-  calculateCurrentSuppliedBalance,
-  calculateInterestEarned,
-  calculateSuppliedValueUsd,
-  calculateUtilization,
-} from "./formulas"
+import { calculateAvailableLiquidity, calculateUtilization } from "./formulas"
 import { simulateDeposit, simulateWithdraw } from "./simulation"
 import type {
   LendAction,
@@ -268,18 +262,5 @@ function applyClaimRewards(
         at: now,
       },
     ],
-  }
-}
-
-export function refreshPositionMetrics(
-  position: LendPosition,
-  market: LendSystemState["markets"][string],
-): LendPosition {
-  const currentSuppliedAmount = calculateCurrentSuppliedBalance(position.scaledBalance, market.liquidityIndex)
-  return {
-    ...position,
-    currentSuppliedAmount,
-    interestEarned: calculateInterestEarned(currentSuppliedAmount, position.principalAmount),
-    suppliedValueUsd: calculateSuppliedValueUsd(currentSuppliedAmount, market.assetPriceUsd),
   }
 }

@@ -27,11 +27,9 @@ import {
 import { LEND_SESSION_SYNC_EVENT } from "./session-sync"
 
 /**
- * Convert a Convex lend position's USD figures into the token-denominated amounts the engine
- * state expects. The server stores supplied/earned in USD6; `suppliedAmount`, `principalAmount`,
- * and `interestEarned` are TOKEN amounts (consumers re-multiply by the asset price to get USD).
- * Dividing by the asset price is required — omitting it (the previous behavior) both mis-derived
- * principal and inflated interest by the price factor for any non-$1 asset (e.g. ~1934× for ETH).
+ * Convert a Convex lend position's USD figures into the token amounts the engine state expects.
+ * The server stores USD6; `suppliedAmount`/`principalAmount`/`interestEarned` are TOKEN amounts
+ * that consumers re-multiply by the price, so dividing by the asset price here is required.
  */
 export function deriveLendPositionAmounts(
   suppliedValueUsd: number,
@@ -56,7 +54,7 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
   return [nextReceipt, ...receipts.filter((receipt) => receipt.id !== nextReceipt.id)]
 }
 
-export type ConvexLendWalletData = {
+type ConvexLendWalletData = {
   /** Canonical unallocated wallet holdings from wallet.productBalances.listForWallet. */
   balances?: Array<{
     assetId: string
@@ -126,10 +124,8 @@ export function useLendSession({
   const stateRef = useRef(state)
   stateRef.current = state
   const isPersistingRef = useRef(false)
-  // Track the exact serialized state/metadata this tab last wrote, so a cross-tab
-  // `storage` event that merely echoes our own write is ignored. Without this, the 30s
-  // accrual tick in one tab writes storage → other tab reloads + re-persists → first tab
-  // reloads + re-persists … a reload ping-pong across every open tab (issue #142).
+  // Track what this tab last wrote so a cross-tab `storage` event echoing our own write is
+  // ignored; otherwise the 30s accrual tick ping-pongs reloads across every open tab.
   const lastPersistedStateRef = useRef<string | null>(null)
   const lastPersistedMetadataRef = useRef<string | null>(null)
   const inFlightRef = useRef(0)
@@ -251,10 +247,9 @@ export function useLendSession({
       })
     }
 
-    // Only accrue while the tab is visible. accrueLendSystemState integrates from each position's
-    // lastAccrualTimestamp to now, so a single catch-up tick on refocus recovers everything missed
-    // while hidden — no accrual is lost, and backgrounded tabs stop spinning a 30s render+persist
-    // loop (wasted work multiplied across many open tabs).
+    // Only accrue while visible. accrueLendSystemState integrates from each position's
+    // lastAccrualTimestamp, so one catch-up tick on refocus recovers everything missed while
+    // hidden — no accrual is lost and backgrounded tabs stop spinning the 30s persist loop.
     const tickIfVisible = () => {
       if (document.visibilityState === "visible") tick()
     }
@@ -361,10 +356,8 @@ export function useLendSession({
             kind,
             status: transaction.status,
             asset: market?.asset.symbol ?? "",
-            // `amount` is a TOKEN quantity — the read-model values a supply/withdraw row as
-            // `amount × assetPriceUsd`. The Convex transaction only records USD, so convert back
-            // to tokens here; without it a $37.5k ETH/cbBTC deposit rendered as amountUsd × price
-            // (e.g. $2.4B). Claims are already USD-denominated and pass through unchanged.
+            // `amount` is a TOKEN quantity (the read-model multiplies it by assetPriceUsd) but the
+            // Convex row records USD, so convert back here. Claims are USD and pass through.
             amount:
               kind === "claim" || !(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd,
             simulated: transaction.simulated,

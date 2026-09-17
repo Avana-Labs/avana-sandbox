@@ -60,12 +60,7 @@ export function buildFeedFromRangeSeries(
   }
 }
 
-export function shortenAddressFromUrl(url?: string): string | null {
-  const address = addressFromExplorerUrl(url)
-  return address ? formatHeroContractLabel(address) : null
-}
-
-export function addressFromExplorerUrl(url?: string): string | null {
+function addressFromExplorerUrl(url?: string): string | null {
   return url?.match(/0x[a-fA-F0-9]{40}/)?.[0] ?? null
 }
 
@@ -89,10 +84,8 @@ export function resolveHeroContractLabel(id: string, explorerUrl?: string): stri
 }
 
 /**
- * Synthetic contract addresses are built as an 8-hex chunk repeated five times
- * (see convex-seed/inputs/contract-addresses-seed.ts), e.g.
- * 0x730DF60E730DF60E730DF60E730DF60E730DF60E. They point at no real contract, so
- * the detail-page hero must not offer an Etherscan link or a copy action for them.
+ * Seeded synthetic addresses are an 8-hex chunk repeated five times. They point at no
+ * real contract, so the hero must not offer an explorer link or copy action for them.
  */
 export function isPlaceholderHeroContractAddress(address?: string | null): boolean {
   const body = address?.match(/^0x([a-fA-F0-9]{40})$/)?.[1]
@@ -101,11 +94,7 @@ export function isPlaceholderHeroContractAddress(address?: string | null): boole
   return body.toLowerCase() === chunk.repeat(5)
 }
 
-/**
- * Whether an explorer/website URL is safe to open. Unsafe when it only wraps a
- * synthetic placeholder contract address (a fake Etherscan link); a real project
- * website or a real on-chain address stays safe.
- */
+/** Unsafe only when the URL wraps a synthetic placeholder address (a fake explorer link). */
 export function isSafeHeroLink(url?: string | null): boolean {
   if (!url) return false
   return !isPlaceholderHeroContractAddress(addressFromExplorerUrl(url))

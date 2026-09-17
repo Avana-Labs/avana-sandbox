@@ -1,16 +1,10 @@
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 
 /**
- * Deterministic Ask AI position engine.
- *
- * This module is the single source of every financial number an Ask AI "mode" run
- * displays. It is intentionally pure and dependency-light: no Convex, no React, no
- * network. Callers build one immutable {@link PositionContext} per run (the Phase 0
- * snapshot) and then read every widget's numbers from the `compute*` functions below,
- * so a single answer can never mix two timestamps or two position states.
- *
- * Nothing imports this module yet — it is wired in incrementally by later commits so
- * the existing Ask AI chat path is untouched.
+ * Single source of every financial number an Ask AI mode run displays. Pure — no Convex,
+ * React or network. Callers build ONE immutable {@link PositionContext} per run and read all
+ * widget numbers from the `compute*` functions, so one answer can never mix two timestamps
+ * or two position states.
  */
 
 const DAYS_PER_YEAR = 365
@@ -179,7 +173,7 @@ export function computeBorrowCapacity(
   }
 }
 
-export type LiquidationBuffer = {
+type LiquidationBuffer = {
   healthFactor: number | null
   currentLtv: number
   liquidationThresholdPct: number
@@ -213,7 +207,7 @@ export function addCollateralToReachHealthFactor(ctx: PositionContext, targetHea
   return Math.max(0, targetCollateralUsd - ctx.collateralValueUsd)
 }
 
-export type InterestPerDay = {
+type InterestPerDay = {
   debtUsd: number
   borrowApyPct: number | null
   /** null when there is debt but the rate is unknown; 0 when there is no debt. */
@@ -230,7 +224,7 @@ export function computeInterestPerDay(ctx: PositionContext): InterestPerDay {
   return { debtUsd: ctx.debtValueUsd, borrowApyPct: ctx.borrowApyPct, interestPerDayUsd }
 }
 
-export type FeePerDay = {
+type FeePerDay = {
   lpValueUsd: number
   feeApr7dPct: number | null
   /** null when no fee data is available for the position. */

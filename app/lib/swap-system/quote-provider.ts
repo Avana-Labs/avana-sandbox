@@ -45,16 +45,15 @@ export type SwapProvider = {
   getQuote(request: SwapQuoteRequest): Promise<SwapQuote>
 }
 
-export type MockSwapProviderOptions = {
+type MockSwapProviderOptions = {
   now?: () => number
   quoteTtlMs?: number
   networkFeeUsd?: number
   priceImpactMultiplier?: number
 }
 
-// A 30s TTL expired mid-review — before the user finished reading the multi-step
-// transacting summary — forcing a re-quote and amount flicker. 2 minutes comfortably
-// covers review + confirmation; submit still auto-refreshes a stale quote. (#32)
+// The quote TTL must outlast the multi-step review, or it expires mid-read and flickers the
+// amount; 2 minutes covers review + confirmation. Submit still auto-refreshes a stale quote.
 function quoteId(request: SwapQuoteRequest, createdAt: number) {
   return `quote-${request.walletId}-${request.inputAssetId}-${request.outputAssetId}-${request.inputAmount}-${request.slippageBps}-${createdAt}`
 }

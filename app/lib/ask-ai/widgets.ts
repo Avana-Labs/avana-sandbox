@@ -19,15 +19,10 @@ import {
 } from "./position-context"
 
 /**
- * Typed Ask AI mode-run widgets (Phase 1).
- *
- * Every widget is a discriminated-union member whose numbers come straight from the
- * `position-context` engine. Widgets can only be produced by the `build*Widget`
- * functions below, each of which takes a {@link PositionContext} — so at the type
- * level there is no way to render a financial number that did not come from the engine
- * on the run's single snapshot. Widgets carry raw numbers; formatting stays in the UI.
- *
- * Nothing imports this module yet; it is wired into rendering by a later commit.
+ * Typed Ask AI widgets. Each is only constructible by a `build*Widget` taking a
+ * {@link PositionContext}, so the type system alone rules out rendering a financial number
+ * that didn't come from the engine's single run snapshot. Widgets carry raw numbers;
+ * formatting stays in the UI.
  */
 
 /** Length of the trailing fee-APR window the carry/fee widgets assume. */
@@ -54,7 +49,7 @@ export type AskAiWidget =
       provenance: string
     }
 
-export type AskAiWidgetType = AskAiWidget["type"]
+type AskAiWidgetType = AskAiWidget["type"]
 
 /** Every known widget discriminant. The `satisfies` keeps it in sync with the union. */
 export const ASK_AI_WIDGET_TYPES = [

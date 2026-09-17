@@ -28,8 +28,8 @@ const catalogSources = createCatalogPageSources({
   mockWalletId: getDefaultWalletProfileId(),
 })
 
-export const mockBorrowPageAdapter = catalogSources.mockAdapter
-export const liveBorrowPageAdapter = catalogSources.liveAdapter
+const mockBorrowPageAdapter = catalogSources.mockAdapter
+const liveBorrowPageAdapter = catalogSources.liveAdapter
 
 export const mockBorrowPageSource: BorrowPageSource = {
   adapter: mockBorrowPageAdapter,

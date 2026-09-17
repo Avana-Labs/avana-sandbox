@@ -452,7 +452,7 @@ export function buildHomeClaimPreview(
   )
 }
 
-export type SupplyPreview = {
+type SupplyPreview = {
   amountUsd: number
   isEmpty: boolean
   isValid: boolean

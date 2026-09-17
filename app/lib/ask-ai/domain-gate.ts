@@ -23,10 +23,10 @@ export const ASK_AI_INTENTS = [
   "unsupported",
 ] as const
 
-export type AskAIDomainCategory = (typeof ASK_AI_DOMAIN_CATEGORIES)[number]
-export type AskAIIntent = (typeof ASK_AI_INTENTS)[number]
+type AskAIDomainCategory = (typeof ASK_AI_DOMAIN_CATEGORIES)[number]
+type AskAIIntent = (typeof ASK_AI_INTENTS)[number]
 
-export type DomainResult = {
+type DomainResult = {
   allowed: boolean
   category: AskAIDomainCategory
   intent: AskAIIntent
@@ -176,11 +176,11 @@ const PROTOCOL_TOPIC_PATTERN = new RegExp(
 const GREETING_PATTERN =
   /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo|sup)(?:\s+(?:there|avana))?|what(?:'s| is)\s+up)[!.?\s]*$/i
 
-export function isAskAIClarificationPrompt(message: string) {
+function isAskAIClarificationPrompt(message: string) {
   return /^(?:\?|huh\??|what\??|why\??|how so\??)$/i.test(message.trim())
 }
 
-export function isAskAIGreeting(message: string) {
+function isAskAIGreeting(message: string) {
   return GREETING_PATTERN.test(message.trim())
 }
 
@@ -263,13 +263,9 @@ export function classifyAskAIDomain(message: string): DomainResult {
     }
   }
 
-  // Lookup language wins over the generic "what is" education pattern. This
-  // keeps "What is the Aave token price right now?" on cached Convex data. A
-  // bare "aave" mention, though, is NOT automatically a market-data request:
-  // compare and educational asks keep their own intents, an actual market signal
-  // routes to the market card path, and anything else ("who created aave", "is
-  // aave safe") falls through to the conversational handling below so it never
-  // renders an unrequested price chart or market table.
+  // A bare "aave" mention is NOT a market-data request: compare/education keep their own
+  // intents, only a real market signal takes the market-card path, and anything else ("who
+  // created aave") falls through — otherwise the turn renders an unrequested price chart.
   if (/\baave\b/i.test(normalized)) {
     if (/\bcompare\b/i.test(normalized))
       return { allowed: true, category: "aave", intent: "comparison", confidence: 0.97 }
@@ -305,12 +301,9 @@ export function classifyAskAIDomain(message: string): DomainResult {
     }
   }
 
-  // Safety net, deliberately last so market, pool and education keep their own
-  // intents. A first-person money question — or one about "the portfolio" /
-  // "the dashboard", which here can only mean the signed-in user's — must never
-  // reach `unsupported`, because that plans zero tools and the model then
-  // answers from nothing. That is how "how much in my portfolio?" produced
-  // "I don't have a portfolio balance available" for a funded wallet.
+  // Safety net, deliberately LAST so market/pool/education keep their own intents. A
+  // first-person money question must never reach `unsupported`: that plans zero tools, and the
+  // model then answers from nothing ("I don't have a portfolio balance") for a funded wallet.
   if (
     (PERSONAL_SUBJECT_PATTERN.test(normalized) &&
       (HOLDINGS_TOPIC_PATTERN.test(normalized) || PROJECTION_PATTERN.test(normalized))) ||
@@ -329,11 +322,10 @@ export function classifyAskAIDomain(message: string): DomainResult {
 }
 
 /**
- * The eight tools registered on the Ask AI agent. A turn is routed to the
- * smallest subset that can answer it, so a price question never loads the
- * portfolio/risk tools and a personal question never loads web search.
+ * Every tool registered on the Ask AI agent. A turn is routed to the smallest subset that can
+ * answer it, so a price question never loads the portfolio/risk tools.
  */
-export type AskAIToolName =
+type AskAIToolName =
   | AaveModelTool
   | "web_search"
   | "search_avana_knowledge"
@@ -348,7 +340,7 @@ export type AskAIToolName =
 
 export type AskAIModelTier = "fast" | "reasoning"
 
-export type AskAITurnRoute = {
+type AskAITurnRoute = {
   category: AskAIDomainCategory
   intent: AskAIIntent
   confidence: number
@@ -368,21 +360,15 @@ export function toolChoiceForAskAIStep(route: AskAITurnRoute, stepNumber: number
   return route.tools.length > 0 ? "auto" : "none"
 }
 
-// Only turn on web search when the user is clearly asking about recent public
-// events. Prices, pools, balances, and risk are answered from Convex data — web
-// search is never a substitute for a Convex tool (see agent-instructions.ts).
-// Current public events, incidents, and "what's going on" style asks route to
-// web search. This deliberately covers security incidents ("hack", "exploit")
-// and recency cues ("latest", "right now"); routeAskAITurn only honors it for
-// otherwise-unsupported turns, so a price/position/pool question phrased with a
-// time cue still uses Convex data rather than the web.
+// Web search is never a substitute for a Convex tool: prices, pools, balances and risk come
+// from Convex. This pattern covers recent public events and recency cues, and routeAskAITurn
+// honors it ONLY for otherwise-unsupported turns, so "price right now" still uses Convex.
 const NEWS_EVENT_PATTERN =
   /\b(news|headlines?|announc(?:e|ed|ement|ing)|breaking|events?|what happened|happening|going on|latest|recently|trending|hacks?|hacked|exploits?|exploited|attacks?|attacked|breach(?:es|ed)?|drained|rug ?pulls?|rugged|vulnerabilit(?:y|ies)|incidents?|this week|this month|right now)\b/i
 
 /**
- * Deterministic, zero-cost turn router. Topic scope (politely redirecting
- * clearly-unrelated asks) is owned by the agent instructions, NOT here — this
- * function only decides how much machinery a turn is allowed to spend.
+ * Deterministic, zero-cost turn router: it only decides how much machinery a turn may spend.
+ * Topic scope (redirecting unrelated asks) belongs to the agent instructions, NOT here.
  */
 export function routeAskAITurn(message: string): AskAITurnRoute {
   const { category, intent, confidence } = classifyAskAIDomain(message)

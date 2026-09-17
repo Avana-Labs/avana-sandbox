@@ -13,7 +13,7 @@ const UMBRELLA_ACTION_TAB_KEYS = [
   { id: "unstake", labelKey: "Unstake" },
 ] as const
 
-export type UmbrellaActionTab = (typeof UMBRELLA_ACTION_TAB_KEYS)[number]["id"]
+type UmbrellaActionTab = (typeof UMBRELLA_ACTION_TAB_KEYS)[number]["id"]
 
 export function UmbrellaSidebar({
   moduleId,

@@ -11,17 +11,12 @@ import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspa
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
 
 /**
- * Client-gated loading skeletons.
+ * Client-gated loading skeletons — shown only while a page's client data isn't ready.
+ * Deliberately NOT route-level `loading.tsx`, which flashed on every navigation;
+ * `page-loading-bar.tsx` owns page-to-page transitions.
  *
- * These are shown only while a page's client-side data genuinely isn't ready yet
- * (the home workspace waiting on the session, rewards waiting on hydrated storage)
- * — NOT as route-level `loading.tsx` fallbacks, which flashed on every navigation.
- * Normal page-to-page transitions are handled by the top progress bar
- * (`app/components/page-loading-bar.tsx`).
- *
- * Guiding rule: each skeleton is a structural stand-in, not decoration. Its wrapper
- * (width, padding, alignment) and block layout (section order, card counts, heights,
- * grid columns) mirror the real page so the content reveals in place with no shift.
+ * Each skeleton's wrapper and block layout must mirror the real page so content
+ * reveals in place with no shift.
  */
 
 type BlockProps = {
@@ -30,10 +25,8 @@ type BlockProps = {
 }
 
 /**
- * Shared page shell. The width + padding here must match the real route so the
- * loaded page reveals in place with no shift: rewards wraps content in
- * `mx-auto max-w-[1152px]` under a `container mx-auto px-4` main. `mainClassName`
- * lets the route override the padding to match its own main.
+ * Shared page shell. Width + padding must match the real route or the page shifts on
+ * reveal; `mainClassName` lets a route override the padding to match its own main.
  */
 function Page({ children, className, mainClassName }: BlockProps & { mainClassName?: string }) {
   const { t } = useTranslation()
@@ -54,13 +47,8 @@ function Surface({ children, className }: BlockProps) {
   return <section className={cn("rounded-radius-md border-0 bg-card shadow-none", className)}>{children}</section>
 }
 
-// -----------------------------------------------------------------------------
-// home (`/`) — the express workspace card: a centered `max-w-[480px]` column with
-// a mode-tab row, a collateral→amount swap-style field stack, and a primary CTA.
-// This mirrors `HomeWorkspaceCard` + the embedded borrow action 1:1 (same wrapper
-// alignment, padding, field boxes and heights) so the real card reveals in place
-// with no jump. It is NOT wrapped in `Page` — the home layout is its own shell.
-// -----------------------------------------------------------------------------
+// home (`/`) — mirrors `HomeWorkspaceCard` + the embedded borrow action 1:1.
+// NOT wrapped in `Page`: the home layout is its own shell.
 
 /** One swap-style field box (sell / buy) — matches `SwapStyleField`. */
 function HomeFieldSkeleton({ children, tone }: { children: ReactNode; tone: "raised" | "inset" }) {
@@ -95,10 +83,8 @@ export function HomeWorkspaceSkeleton() {
       <span className="sr-only">{t("Loading…")}</span>
       <section className="flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
-          {/* Mirror the real card's icon tab strip 1:1 (same ActionWorkspaceTabs,
-              Swap active) so the skeleton shows icons and the card reveals with
-              zero shift. Non-interactive placeholder — the root status region
-              already announces the load. */}
+          {/* Same ActionWorkspaceTabs as the real card so it reveals with zero shift.
+              Non-interactive — the root status region already announces the load. */}
           <div className="pointer-events-none flex items-center justify-between gap-2" aria-hidden>
             <ActionWorkspaceTabs
               items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: item.label }))}
@@ -164,11 +150,7 @@ export function HomeWorkspaceSkeleton() {
   )
 }
 
-// -----------------------------------------------------------------------------
-// umbrella (`/umbrella`) — hero (4 metric tiles) + positions table on the left,
-// a sticky 360px action sidebar (4 tabs + action panel) on the right. Mirrors
-// `app/umbrella/page.tsx` 1:1 so the real page reveals in place with no shift.
-// -----------------------------------------------------------------------------
+// umbrella (`/umbrella`) — mirrors `app/umbrella/page.tsx` 1:1.
 
 export function UmbrellaPageSkeleton() {
   return (
@@ -238,16 +220,10 @@ export function UmbrellaPageSkeleton() {
   )
 }
 
-// -----------------------------------------------------------------------------
-// dashboard (`/dashboard`) — full-width portfolio stat cards on top, then a two
-// column body: left = tab strip + positions table, right = rewards cards +
-// activity list. Mirrors `dashboard-page-client.tsx` so the real page reveals in
-// place. Rendered BARE (no Page wrapper): the dashboard route already wraps its
-// content in `main.container > div.max-w-[1152px]`, so this must slot inside that
-// same wrapper — double-wrapping is exactly what shifted the old skeleton down.
-// -----------------------------------------------------------------------------
-
-export function DashboardPageSkeleton() {
+// Mirrors `dashboard-page-client.tsx` so the real page reveals in place. Rendered BARE
+// (no Page wrapper): the route already wraps content in `main.container >
+// div.max-w-[1152px]`, and double-wrapping shifts the skeleton down.
+function DashboardPageSkeleton() {
   return (
     <div className={detailSectionStackClass}>
       <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
@@ -329,12 +305,9 @@ export function DashboardPageSkeleton() {
 }
 
 /**
- * Client-side dashboard loading state, rendered by `dashboard-page-client.tsx` while
- * hydrated storage / the snapshot are still pending. Wraps the bare skeleton in a polite
- * status region so assistive tech announces the load (the skeleton blocks themselves are
- * decorative), and — because a stuck snapshot would otherwise spin silently forever —
- * surfaces a "taking longer than usual" notice with a retry after ~12s. Rendered bare (no
- * `Page` wrapper) because the dashboard route already supplies `main.container > div`.
+ * Dashboard loading state for `dashboard-page-client.tsx`. Surfaces a retry notice after
+ * ~12s so a stuck snapshot does not spin silently forever. Rendered bare (no `Page`
+ * wrapper): the dashboard route already supplies `main.container > div`.
  */
 export function DashboardLoading({ onRetry }: { onRetry?: () => void }) {
   const { t } = useTranslation()
@@ -365,11 +338,8 @@ export function DashboardLoading({ onRetry }: { onRetry?: () => void }) {
   )
 }
 
-// -----------------------------------------------------------------------------
-// product indexes — each mirrors the real route's metric strip, horizontal
-// discovery cards, controls, and market table. These live at the provider/auth
-// boundary only; there are deliberately no route `loading.tsx` files.
-// -----------------------------------------------------------------------------
+// product indexes — these live at the provider/auth boundary only; there are
+// deliberately no route `loading.tsx` files.
 
 function ProductMetricStripSkeleton() {
   return (
@@ -390,7 +360,7 @@ function ProductMetricStripSkeleton() {
   )
 }
 
-export function BorrowPageSkeleton() {
+function BorrowPageSkeleton() {
   return (
     <Page mainClassName="px-4 py-8">
       <div data-testid="borrow-page-skeleton">
@@ -496,7 +466,7 @@ export function BorrowPageSkeleton() {
   )
 }
 
-export function LendPageSkeleton() {
+function LendPageSkeleton() {
   return (
     <Page mainClassName="px-4 py-8">
       <div data-testid="lend-page-skeleton">
@@ -545,7 +515,7 @@ export function LendPageSkeleton() {
   )
 }
 
-export function MultiplyPageSkeleton() {
+function MultiplyPageSkeleton() {
   return (
     <Page mainClassName="px-4 py-8">
       <div data-testid="multiply-page-skeleton">
@@ -669,11 +639,7 @@ function MarketGroupSkeleton({
   )
 }
 
-// -----------------------------------------------------------------------------
-// market details — breadcrumb + identity span both columns, followed by the
-// chart/about/stat stack and the sticky product action rail. Pair/single-token
-// identities match each real detail route.
-// -----------------------------------------------------------------------------
+// market details — pair/single-token identities match each real detail route.
 
 function DetailIdentitySkeleton({ paired }: { paired: boolean }) {
   return (
@@ -780,28 +746,26 @@ function DetailPageSkeleton({ testId, paired }: { testId: string; paired: boolea
   )
 }
 
-export function BorrowPoolDetailSkeleton() {
+function BorrowPoolDetailSkeleton() {
   return <DetailPageSkeleton testId="borrow-pool-detail-skeleton" paired />
 }
 
-export function BorrowAssetDetailSkeleton() {
+function BorrowAssetDetailSkeleton() {
   return <DetailPageSkeleton testId="borrow-asset-detail-skeleton" paired={false} />
 }
 
-export function LendMarketDetailSkeleton() {
+function LendMarketDetailSkeleton() {
   return <DetailPageSkeleton testId="lend-market-detail-skeleton" paired={false} />
 }
 
-export function MultiplyMarketDetailSkeleton() {
+function MultiplyMarketDetailSkeleton() {
   return <DetailPageSkeleton testId="multiply-market-detail-skeleton" paired />
 }
 
 /**
- * Route-aware content skeleton. Rendered BELOW the persistent site header (the
- * header lives above the session/auth gates now), so each product route reveals
- * its own layout-matched skeleton while the session chunk / Convex data attaches
- * — never a generic block that swaps the whole page. Falls back to the neutral
- * product skeleton for routes without a bespoke one.
+ * Route-aware content skeleton, rendered BELOW the persistent site header (which sits
+ * above the session/auth gates) so a skeleton never swaps the whole page. Falls back to
+ * the neutral product skeleton for routes without a bespoke one.
  */
 export function RouteContentSkeleton() {
   const pathname = usePathname()
@@ -811,9 +775,8 @@ export function RouteContentSkeleton() {
     pathname === "/actions" ||
     pathname.startsWith("/actions/")
   ) {
-    // Ask and action pages own their client/auth initialization states. Showing
-    // the generic product/table skeleton here creates a large, unrelated
-    // placeholder before their focused shells mount.
+    // Ask and action pages own their init states; the generic skeleton would flash a
+    // large unrelated placeholder before their focused shells mount.
     return <div data-testid="focused-route-pending" className="min-h-[100dvh] bg-background" aria-hidden />
   }
   if (pathname.startsWith("/borrow/markets/") || pathname.startsWith("/borrow/pool/")) {
@@ -830,9 +793,8 @@ export function RouteContentSkeleton() {
   if (pathname === "/") return <HomeWorkspaceSkeleton />
   if (pathname === "/umbrella" || pathname.startsWith("/umbrella/")) return <UmbrellaPageSkeleton />
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
-    // Same wrapper the dashboard route uses (`main.container px-3 py-6 sm:px-4
-    // md:py-10 > div.max-w-[1152px]`) so the route-level skeleton, the client's
-    // own skeleton, and the real content all paint at the identical position.
+    // Must match the dashboard route's own wrapper so the route skeleton, the client's
+    // skeleton and the real content all paint at the identical position.
     return (
       <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
         <DashboardPageSkeleton />
@@ -843,12 +805,9 @@ export function RouteContentSkeleton() {
   return <ProductRoutePending />
 }
 
-// -----------------------------------------------------------------------------
-// rewards (`/rewards`) — balance hero + underline tabs + quest grid. Shown by the
-// rewards client while storage hydrates / the snapshot loads.
-// -----------------------------------------------------------------------------
+// rewards (`/rewards`) — shown by the rewards client while storage/snapshot load.
 
-export function RewardsPageSkeleton() {
+function RewardsPageSkeleton() {
   return (
     <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
       <div className="mb-12">
@@ -921,11 +880,10 @@ export function RewardsPageSkeleton() {
 }
 
 /**
- * Instant Paint — layout-stable product chrome while session/auth chunks attach.
- * Used only as a Suspense / dynamic() fallback (not route `loading.tsx`, which
- * still flashes on every soft navigation — see file header).
+ * Layout-stable product chrome while session/auth chunks attach. Suspense / dynamic()
+ * fallback only — route `loading.tsx` still flashes on every soft navigation.
  */
-export function ProductRoutePending() {
+function ProductRoutePending() {
   return (
     <Page>
       <div data-testid="product-route-pending" className="space-y-8">

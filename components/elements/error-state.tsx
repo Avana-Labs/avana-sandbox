@@ -5,7 +5,7 @@ import { CircleAlertIcon, RefreshCwIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ShimmerLabel } from "@/lib/surfaces"
 
-export interface ErrorStateProps extends Omit<ComponentProps<"div">, "children" | "role"> {
+interface ErrorStateProps extends Omit<ComponentProps<"div">, "children" | "role"> {
   title: string
   detail: string
   retrying: boolean

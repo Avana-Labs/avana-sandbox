@@ -59,7 +59,7 @@ function serializeSessionSnapshot(
   )
 }
 
-export type ConvexBorrowWalletData = {
+type ConvexBorrowWalletData = {
   balances?: Array<{ valueUsd: number }>
   borrowBalances?: Array<{
     marketId?: string
@@ -247,11 +247,8 @@ export function useBorrowSession({
       if (event.key == null || !event.key.endsWith(`:${walletId}`)) return
 
       const metadata = readBorrowSessionMetadata(walletId)
-      // Multi-tab guard by CONTENT, not clock: apply only when the persisted history/receipts
-      // actually differ from what this tab already holds. A millisecond timestamp let two tabs
-      // writing in the same ms drop each other's change; comparing content also makes a
-      // self-echo re-persist a no-op. (localStorage is last-writer-wins, so this read reflects
-      // the newest snapshot.)
+      // Multi-tab guard by CONTENT, not clock: two tabs writing in the same millisecond drop each
+      // other's change under a timestamp guard, and comparing content makes a self-echo a no-op.
       const incomingSerialized = serializeSessionSnapshot(metadata.transactionHistory, metadata.receipts)
       if (incomingSerialized === lastSerializedRef.current) return
       lastSerializedRef.current = incomingSerialized
@@ -278,11 +275,8 @@ export function useBorrowSession({
   }, [seededState, shouldPersistState, walletId])
 
   /**
-   * Overlay Convex market reference data (liquidity/rates) onto the session so the
-   * list, previews, and health factor all read the single source of truth. Wallet
-   * positions are untouched. No-ops when there's no change (same state ref). The
-   * caller (BorrowMarketHydrator) only invokes this when the Convex snapshot set
-   * changes, so this never loops.
+   * Overlay Convex market reference data (liquidity/rates) onto the session so list, previews and
+   * health factor share one source. Wallet positions are untouched; no-ops when nothing changed.
    */
   const hydrateMarketData = useCallback((snapshots: readonly ConvexMarketSnapshot[]) => {
     setState((prev) => mergeConvexMarketSnapshots(prev, snapshots))
@@ -322,15 +316,12 @@ export function useBorrowSession({
       setState((current) => {
         const account = current.accounts[walletId]
         if (!account) return current
-        // Convex rows are authoritative at hydration time. Leaving the catalog seed's
-        // historical `state.now` in place makes the next action accrue months of phantom
-        // interest before applying the user's request, so the preview and persisted position
-        // disagree after a refresh.
+        // Convex rows are authoritative here; keeping the catalog seed's historical `state.now`
+        // would accrue months of phantom interest on the next action.
         const hydrationNow = Date.now()
-        // Each debt's own open time, from the durable ledger: the earliest borrow on its market,
-        // else the wallet's earliest transaction (onboarding time for a seeded debt). Lets the
-        // Interest Owed display accrue from when a loan was actually taken — the way Lend/Multiply
-        // accrue from openedAt — instead of the account-wide engine clock any action resets.
+        // Each debt's own open time from the durable ledger (earliest borrow on its market, else
+        // the wallet's earliest transaction) so Interest Owed accrues from when the loan was taken
+        // rather than the account-wide engine clock, which every action resets.
         const earliestBorrowAtByMarket = new Map<string, number>()
         let walletEarliestTxAt: number | undefined
         for (const transaction of data.transactions ?? []) {
@@ -351,10 +342,9 @@ export function useBorrowSession({
           for (const collateral of position.collateral) {
             let collateralShares = BigInt(collateral.collateralShares)
             let principalTokenAmount = BigInt(collateral.principalTokenAmount)
-            // Onboarding-seeded collateral is stored as 0 shares + a USD value, because the
-            // seed has no access to the client's catalog LP prices. Derive real shares here
-            // from that USD using the live market price so the position values to the intended
-            // USD. Real supplied positions already carry correct (non-zero) shares.
+            // Onboarding-seeded collateral carries 0 shares + a USD value (the seed has no LP
+            // prices), so derive shares from that USD at the live price. Real supplied positions
+            // already carry non-zero shares and skip this.
             const market = current.markets[collateral.marketSlug]
             if (collateralShares === 0n && collateral.collateralValueUsd6 && market) {
               const priceUsd6 = market.snapshot.lpTokenPriceUsd6
@@ -380,10 +370,8 @@ export function useBorrowSession({
               baseAssetId: debt.baseAssetId,
               spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
               marketId: debt.marketSlug,
-              // Legacy repayment rows were written before the debt asset was persisted. If
-              // that row was also processed while the client clock was stale, the old action
-              // accrued phantom interest before subtracting the repayment. Rebuild only that
-              // legacy path from the durable borrow/repay ledger; current rows remain untouched.
+              // Legacy repayment rows (written before the debt asset was persisted) can carry
+              // phantom interest, so rebuild only those from the durable ledger.
               debtSharesUsd6:
                 reconciledPrincipal === undefined
                   ? BigInt(debt.debtSharesUsd6)
@@ -439,12 +427,9 @@ export function useBorrowSession({
             openedAt: debtOpenedAt(row.marketId),
           })
         }
-        // Anchor the engine clock to the last PERSISTED moment rather than jumping it to
-        // `hydrationNow`. The read model calls accrueBorrowSystemState(state, Date.now()), which
-        // advances supply/debt indices by (now - state.now). Jumping the clock here made that span
-        // zero on every hydration, so `debtIndexRay` never moved and Interest Owed was pinned at
-        // ~$0 no matter how long a loan had been open (a 14-day-old GHO debt still read $0.0000).
-        // Accruing from the last real activity restores interest across the offline gap.
+        // Anchor the engine clock to the last PERSISTED moment, not `hydrationNow`. The read model
+        // accrues by (Date.now() - state.now), so jumping the clock here zeroes that span on every
+        // hydration and pins Interest Owed at ~$0 however long a loan has been open.
         const persistedMoment = Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0)
         const accrualAnchor = persistedMoment > 0 ? Math.min(persistedMoment, hydrationNow) : hydrationNow
         return {
@@ -466,12 +451,9 @@ export function useBorrowSession({
               walletLpBalancesUsd6,
               collateralPositions,
               debtPositions,
-              // Reduce each seeded reward position's claimable to the persisted remaining
-              // from prior claims, so claimable does not reset to full on reload. Wallets
-              // with no persisted claims keep the seeded (full) claimable. When Convex
-              // returns walletClaimPositions rows, use THOSE as the seeded set — the mock
-              // rewardPositions (rewardPositionsFromHomeClaims) only survive for wallets
-              // whose Convex response is empty (the home-demo landing).
+              // Reduce each seeded claimable to the persisted remaining so it does not reset to
+              // full on reload; wallets with no persisted claims keep the seeded amount. Mock
+              // rewardPositions only survive when the Convex response is empty (home-demo).
               rewardPositions: productRewardPositions.map((position) => {
                 const claim = (data.rewardClaims ?? []).find((entry) => entry.rewardPositionId === position.id)
                 if (!claim) return position

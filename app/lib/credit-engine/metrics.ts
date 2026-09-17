@@ -14,10 +14,8 @@ const COLLATERAL_RISK_MULTIPLIER_WAD = parseFixed("0.04", 18)
 const UTILIZATION_PREMIUM_MULTIPLIER_WAD = parseFixed("0.03", 18)
 const LOW_HEALTH_TRIGGER_WAD = parseFixed("1.5", 18)
 const LOW_HEALTH_MULTIPLIER_WAD = parseFixed("0.05", 18)
-// Net APY divides annual carry by net equity. As equity approaches zero the ratio
-// explodes into meaningless territory (e.g. $1 equity → −2990% headline). Clamp the
-// magnitude so the dashboard stays sane; ±1000% is far above any legitimate net APY
-// in this system, so real values are never clipped.
+// Net APY = annual carry / net equity, so a near-zero equity denominator explodes.
+// ±1000% is above any legitimate net APY here, so real values are never clipped.
 export const MAX_NET_APY_MAGNITUDE_WAD = parseFixed("10", 18)
 
 /** Bound net APY to ±1000% so a near-zero-equity denominator can't produce an absurd headline. */
@@ -27,7 +25,7 @@ export function clampNetApyWad(rawWad: bigint): bigint {
   return rawWad
 }
 
-export type BorrowCreditMetrics = {
+type BorrowCreditMetrics = {
   netAccountValueUsd6: bigint
   poolCollateralValueUsd6: bigint
   creditLimitUsd6: bigint
@@ -80,8 +78,7 @@ function scopeAccountBySpoke(
 
 function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAccountState): BorrowCreditMetrics {
   const poolCollateralValueUsd6 = totalCollateralValueUsd6(account, state.markets)
-  // Reprice debt to each borrowed asset's current spot price (§7). A no-op when prices are
-  // unchanged, so a volatile/depegged debt moves HF but a stable position is unaffected.
+  // Reprices debt to each borrowed asset's spot price, so a depegged debt moves the health factor.
   const totalBorrowedUsd6 = totalDebtValueUsd6(account, state.assets)
   const interestEarnedUsd6 = totalInterestEarnedUsd6(account, state.markets)
   const interestOwedUsd6 = totalInterestOwedUsd6(account)
@@ -96,10 +93,8 @@ function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAcc
     const market = state.markets[position.marketId]
     if (!market) continue
     const valueUsd6 = currentCollateralValueUsd6(position, market)
-    // Borrow capacity is capped on the COLLATERAL FACTOR (a.k.a. max LTV), not the
-    // liquidation threshold. The liquidation threshold is strictly higher and is
-    // used only below for the liquidation value / health factor — never to size how
-    // much a user may borrow.
+    // Borrow capacity uses the collateral factor (max LTV), never the (strictly higher)
+    // liquidation threshold — that one only sizes the liquidation value / health factor.
     creditLimitUsd6 += mulDiv(valueUsd6, market.riskConfig.collateralFactorWad, WAD)
     liquidationValueUsd6 += mulDiv(valueUsd6, market.riskConfig.liquidationThresholdWad, WAD)
     weightedRiskNumerator += valueUsd6 * market.riskConfig.riskScoreWad

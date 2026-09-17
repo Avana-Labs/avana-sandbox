@@ -12,12 +12,6 @@ export type LendAsset = {
   decimals?: number
 }
 
-export type LendRiskParams = {
-  reserveFactor: number
-  riskTier: LendRiskTier
-  supplyCap?: number
-}
-
 export type LendMarket = {
   marketId: string
   chainId: number
@@ -61,7 +55,7 @@ export type LendPosition = {
   status: LendPositionStatus
 }
 
-export type LendTransactionKind = "deposit" | "withdraw" | "claim"
+type LendTransactionKind = "deposit" | "withdraw" | "claim"
 
 export type LendTransaction = {
   id: string

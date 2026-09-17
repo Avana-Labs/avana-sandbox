@@ -1,27 +1,19 @@
 /**
- * Token registry — the SINGLE place a NEW token is declared.
+ * Token registry — the single place a NEW token is declared. The price fixture, icon maps and
+ * product catalogs spread these entries in, so onboarding a token is one entry here. Must stay a
+ * leaf module (no app-side imports) to avoid cycles.
  *
- * Historically a new symbol had to be added to ~5 parallel symbol-keyed maps before the seed
- * assembler could pick it up: `prices/price-fixture.ts` (baseline USD), `token-icons.ts`
- * (TOKEN_MAP colors), `local-asset-icons.ts` (icon file), plus per-product catalogs. This module
- * is a leaf (it imports nothing app-side, so there are no cycles) that those maps now spread in
- * additively — so onboarding a token is ONE entry here, not a coordinated multi-file edit.
- *
- * Existing crypto tokens are intentionally NOT migrated here; they keep their hand-written map
- * entries. The registry is for tokens added going forward (currently the tokenized-stock
- * collateral for the Aerodrome / Uniswap stock spokes).
- *
- * Keys are canonical UPPERCASE symbols (matching the canonical price store). A tokenized-stock
- * "…c" variant (Aerodrome, e.g. NVDAc) is keyed by its uppercase form (NVDAC) with a
- * `displaySymbol` that preserves the trailing lowercase c.
+ * Existing crypto tokens are deliberately NOT migrated; they keep their hand-written map entries.
+ * Keys are canonical UPPERCASE symbols; an Aerodrome "…c" variant is keyed uppercase (NVDAC) with
+ * a `displaySymbol` preserving the trailing lowercase c.
  */
 
-export type TokenPriceSource =
+type TokenPriceSource =
   | "defillama" // live via the Convex DefiLlama oracle (crypto)
   | "stock" // live via the client-side stock-price route (public equities)
   | "fixture" // no live source — the baseline value is authoritative (e.g. private SpaceX)
 
-export type TokenDef = {
+type TokenDef = {
   /** Canonical UPPERCASE key. */
   symbol: string
   /** User-facing ticker casing (e.g. "NVDAc"). Defaults to `symbol`. */
@@ -45,11 +37,8 @@ const STOCK_BG = "bg-slate-100"
 const STOCK_TEXT = "text-slate-700"
 
 /**
- * Tokenized-stock underlyings. `c: true` also emits an Aerodrome "…c" variant (same underlying
- * price/icon/live-source). `priceSource` is "stock" for public tickers (pulled live by the
- * client-side route) and "fixture" for SpaceX, which is private and on no public price API.
- * Baseline prices are real Sept-2026 quotes from app.uniswap.org/explore/tokens?category=stocks;
- * the live route overlays them for the public names.
+ * Tokenized-stock underlyings. `c: true` also emits an Aerodrome "…c" variant off the same
+ * underlying. Baseline prices are Sept-2026 Uniswap quotes, overlaid live for `priceSource: "stock"`.
  */
 const STOCK_UNDERLYINGS: Array<{
   sym: string
@@ -103,15 +92,11 @@ function buildRegistry(): Record<string, TokenDef> {
   return out
 }
 
-export const TOKEN_REGISTRY: Record<string, TokenDef> = buildRegistry()
+const TOKEN_REGISTRY: Record<string, TokenDef> = buildRegistry()
 
 export function getRegistryToken(symbol: string): TokenDef | undefined {
   if (!symbol) return undefined
   return TOKEN_REGISTRY[symbol.trim().toUpperCase()]
-}
-
-export function allRegistryTokens(): readonly TokenDef[] {
-  return Object.values(TOKEN_REGISTRY)
 }
 
 /** Full public icon path for a registered symbol, or undefined. */
