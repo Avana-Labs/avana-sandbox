@@ -23,7 +23,7 @@ const writeRateLimiter = new RateLimiter(components.rateLimiter, {
 
 /** Consume one write token for `key` (e.g. `wallet:0x…` or `subject:…`); throw when the bucket is dry. */
 export async function consumeWriteBudget(ctx: MutationCtx, key: string): Promise<void> {
-  let allowed = true
+  let allowed: boolean
   try {
     allowed = (await writeRateLimiter.limit(ctx, "perIdentityWrite", { key })).ok
   } catch {
