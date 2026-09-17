@@ -26,6 +26,14 @@ export type AssetHeroPreloads = Record<AssetMetric, Preloaded<typeof api.markets
 
 type HeroFeeds = { heroFeed?: ChartFeed; heroBorrowedFeed?: ChartFeed; heroUtilizationFeed?: ChartFeed }
 
+/**
+ * Server render window for the hero series. Every range is sliced from one series and the
+ * hero defaults to a short range, so preloading "3M" instead of "ALL" cuts the RSC payload
+ * ~8x (90 vs 720 daily points). The longest tabs (1Y/All) fall back to this window since
+ * there's no per-range client fetch; the default-visible 1M/3M views stay exact.
+ */
+const SSR_HERO_RANGE = "3M" as const
+
 function hasConvexUrl() {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   return Boolean(url && /^https?:\/\//.test(url))
@@ -43,9 +51,9 @@ export async function preloadPoolHero(slug: string): Promise<{ preloads: PoolHer
   if (!hasConvexUrl()) return { preloads: null, feeds: {} }
   try {
     const [tvl, borrowed, utilization] = await Promise.all([
-      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "tvl", range: "ALL" }),
-      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "borrowed", range: "ALL" }),
-      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "utilization", range: "ALL" }),
+      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "tvl", range: SSR_HERO_RANGE }),
+      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "borrowed", range: SSR_HERO_RANGE }),
+      preloadQuery(api.markets.getPoolHeroSeries, { slug, metric: "utilization", range: SSR_HERO_RANGE }),
     ])
     return {
       preloads: { tvl, borrowed, utilization },
@@ -67,9 +75,9 @@ export async function preloadAssetHero(
   if (!hasConvexUrl()) return { preloads: null, feeds: {} }
   try {
     const [supply, borrow, utilization] = await Promise.all([
-      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "supply", range: "ALL" }),
-      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "borrow", range: "ALL" }),
-      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "utilization", range: "ALL" }),
+      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "supply", range: SSR_HERO_RANGE }),
+      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "borrow", range: SSR_HERO_RANGE }),
+      preloadQuery(api.markets.getAssetHeroSeries, { slug, metric: "utilization", range: SSR_HERO_RANGE }),
     ])
     return {
       preloads: { supply, borrow, utilization },
