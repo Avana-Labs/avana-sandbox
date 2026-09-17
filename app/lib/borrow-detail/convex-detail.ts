@@ -14,7 +14,6 @@ import {
   fetchBorrowRiskParametersForSlugs,
   fetchContent,
   fetchConvexMarketSnapshot,
-  fetchHistoricalUtilization,
   fetchPoolContractAddresses,
   fetchRecentTransactions,
   fetchRisk,
@@ -129,6 +128,20 @@ export function injectPoolOraclePrice(
  * shows two different values for the one metric. The mock quick stat comes from the
  * catalog row while risk is overlaid from Convex; without this they can disagree.
  */
+/**
+ * Derive the asset `historicalUtilization` series from the `supplyBorrow` utilization series.
+ *
+ * `getHistoricalUtilization` used to read a SECOND, identical 1Y window of the same asset's
+ * daily rows just to project `utilizationPct` — the exact series `getSupplyBorrow` already
+ * builds from those same rows. Convex reported both queries at 16.6 MB: the same bytes,
+ * twice, on every asset detail render. The points are identical, so only the id suffix is
+ * restated, keeping downstream series keys byte-for-byte what they were.
+ */
+export function deriveHistoricalUtilization<T extends { id: string }>(utilization: T | null | undefined): T | null {
+  if (!utilization) return null
+  return { ...utilization, id: utilization.id.replace(/:sb:utilization$/, ":historical-utilization") }
+}
+
 export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: number): QuickStat[] {
   const value = formatBpsAsPct(premiumBps)
   return quickStats.map((s) => (s.id === "riskPremium" ? { ...s, value } : s))
@@ -405,7 +418,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   // cashflowTrend stays here (no matching page preload yet).
   const [
     supplyBorrow,
-    historicalUtilization,
     cashflowTrend,
     transactions,
     allocation,
@@ -417,7 +429,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     contractAddresses,
   ] = await Promise.all([
     fetchSupplyBorrow(slug),
-    fetchHistoricalUtilization(slug),
     fetchAssetCashflowTrend(slug),
     fetchRecentTransactions("asset", slug),
     fetchAllocation(slug),
@@ -428,6 +439,8 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     fetchBorrowMarket(slug),
     fetchAssetContractAddresses(slug),
   ])
+
+  const historicalUtilization = deriveHistoricalUtilization(supplyBorrow?.utilization)
 
   const allocationWithCf = await enrichAllocationWithCollateralFactors(allocation, slug)
 
