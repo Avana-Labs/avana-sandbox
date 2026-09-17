@@ -283,8 +283,11 @@ export function buildPortfolioLendData(
       earnedUsd: position.interestEarned * market.assetPriceUsd + position.rewardsEarnedUsd,
       interestUsd: position.interestEarned * market.assetPriceUsd,
       rewardsEarnedUsd: position.rewardsEarnedUsd,
-      dailyEarnedUsd: (position.suppliedValueUsd * market.totalApy) / 365,
-      apyPct: market.totalApy * 100,
+      // Supply APY is the canonical lend rate — the same number /lend and the deposit action's "APY"
+      // line show (rewards are surfaced separately). The dashboard row previously showed totalApy
+      // (supply + rewards), so USDC read 4.85% here vs 4.58% on /lend for the same market.
+      dailyEarnedUsd: (position.suppliedValueUsd * market.supplyApy) / 365,
+      apyPct: market.supplyApy * 100,
       principalAmount: position.principalAmount,
       interestEarned: position.interestEarned,
       availableToWithdraw: maxWithdrawable,
