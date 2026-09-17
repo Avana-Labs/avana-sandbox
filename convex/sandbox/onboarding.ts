@@ -17,6 +17,7 @@ import { replaceProductBalanceRows } from "../wallet/productBalances"
 import { readWalletSession, upsertWalletSession } from "../wallet/sessions"
 import { upsertPortfolioCurrent } from "./transactions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertCatalogCanSatisfyStarter,
   buildStarterAllocationPlan,
@@ -394,7 +395,7 @@ export const getOnboardingGateState = query({
 export const beginAnalysis = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const existing = await profileForWallet(ctx, wallet)
     if (existing) {
       if (existing.onboardingStep === "done" || existing.onboardingStep === "waitlisted") return existing.onboardingStep
@@ -415,7 +416,7 @@ export const beginAnalysis = mutation({
 export const startAnalysis = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
     const { tier, seed } = deriveTier(wallet, economy.minMultiplier, economy.maxMultiplier)
 
@@ -445,7 +446,7 @@ export const startAnalysis = mutation({
 export const startTweet = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -462,7 +463,7 @@ export const startTweet = mutation({
 export const confirmTweet = mutation({
   args: { wallet: v.string(), xHandle: v.optional(v.string()), tweetUrl: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -480,7 +481,7 @@ export const confirmTweet = mutation({
 export const skipTweet = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before continuing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -493,7 +494,7 @@ export const skipTweet = mutation({
 export const beginClaim = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
     if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
@@ -506,7 +507,7 @@ export const beginClaim = mutation({
 export const claim = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
     await getOrSeedConfig(ctx)
     const profile = await profileForWallet(ctx, wallet)

@@ -31,6 +31,7 @@ import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
 import { resolveWriteBackPriceUsd } from "./writeBackPrice"
 import { canonicalTokenSymbolOrUpper } from "../../app/lib/tokens/canonical-symbol"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertClose,
   BORROW_FALLBACK_LIQUIDATION_PCT,
@@ -1402,7 +1403,7 @@ export const recordRewardsClaim = mutation({
     syntheticTxHashes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     requireBoundedIdentifier(args.intentId, "intentId")
     requireBoundedIdentifier(args.syntheticTxHash, "syntheticTxHash")
     if (args.taskIds.length > 32) throw new Error("INVALID_CLAIM: at most 32 task ids may be claimed at once")

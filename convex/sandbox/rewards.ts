@@ -1,6 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
+import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 
 const MAX_REWARD_EVENTS = 10_000
@@ -90,7 +91,7 @@ export const saveState = mutation({
     expectedRevision: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     if (args.stateJson.length > 1_000_000) throw new Error("REWARDS_STATE_TOO_LARGE")
     const parsed = parseRewardsState(args.stateJson, wallet)
     const existing = await ctx.db
