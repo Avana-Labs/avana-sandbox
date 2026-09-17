@@ -51,7 +51,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbbtc-wbtc",
     rank: 2,
-    collateral: "CBBTC",
+    collateral: "cbBTC",
     collateralName: "Coinbase Wrapped BTC",
     borrow: "WBTC",
     borrowName: "Wrapped BTC",
@@ -71,7 +71,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbbtc-usdt",
     rank: 3,
-    collateral: "CBBTC",
+    collateral: "cbBTC",
     collateralName: "Coinbase Wrapped BTC",
     borrow: "USDT",
     borrowName: "Tether",
@@ -91,7 +91,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "cbeth-eth",
     rank: 4,
-    collateral: "CBETH",
+    collateral: "cbETH",
     collateralName: "Coinbase Wrapped Staked ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -193,7 +193,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
     rank: 9,
     collateral: "ETH",
     collateralName: "Ether",
-    borrow: "WSTETH",
+    borrow: "wstETH",
     borrowName: "Wrapped stETH",
     supplyApy: 0.0382,
     borrowApy: 0.034,
@@ -272,7 +272,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "reth-eth",
     rank: 13,
-    collateral: "RETH",
+    collateral: "rETH",
     collateralName: "Rocket Pool ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -292,7 +292,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "steth-eth",
     rank: 14,
-    collateral: "STETH",
+    collateral: "stETH",
     collateralName: "Lido Staked ETH",
     borrow: "ETH",
     borrowName: "Ether",
@@ -375,7 +375,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
     rank: 18,
     collateral: "WBTC",
     collateralName: "Wrapped BTC",
-    borrow: "CBBTC",
+    borrow: "cbBTC",
     borrowName: "Coinbase Wrapped BTC",
     supplyApy: 0.0348,
     borrowApy: 0.039,
@@ -413,7 +413,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "wsteth-eth",
     rank: 20,
-    collateral: "WSTETH",
+    collateral: "wstETH",
     collateralName: "Wrapped stETH",
     borrow: "ETH",
     borrowName: "Ether",

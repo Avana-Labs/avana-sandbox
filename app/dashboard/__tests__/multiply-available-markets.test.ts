@@ -24,7 +24,7 @@ describe("Multiply dashboard available markets", () => {
     })
 
     expect(row?.market.id).toBe("wsteth-eth")
-    expect(row?.market.collateralAsset.symbol).toBe("WSTETH")
+    expect(row?.market.collateralAsset.symbol).toBe("wstETH")
     expect(row?.market.borrowAsset.symbol).toBe("ETH")
     expect(row?.amount).toBeCloseTo(2, 6)
     expect(row?.valueUsd).toBeCloseTo(5_964.36, 6)

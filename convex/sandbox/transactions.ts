@@ -30,6 +30,7 @@ import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
 import { resolveWriteBackPriceUsd } from "./writeBackPrice"
+import { canonicalTokenSymbolOrUpper } from "../../app/lib/tokens/canonical-symbol"
 import {
   assertClose,
   BORROW_FALLBACK_LIQUIDATION_PCT,
@@ -272,7 +273,7 @@ async function syncBorrowProductCollateralRows(
   )
   const availableUsd = Math.max(0, totalPoolUsd - pledgedUsd)
   const poolId = sibling?.poolId ?? marketSlug
-  const symbol = sibling?.symbol ?? marketSlug.toUpperCase()
+  const symbol = sibling?.symbol ?? canonicalTokenSymbolOrUpper(marketSlug)
   const [pool, market] = sibling
     ? [null, null]
     : await Promise.all([
@@ -1357,7 +1358,7 @@ export const recordTransaction = mutation({
         if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
-        await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
+        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now)
       }
       if (multiplyDebit) {
         await applyLiquidAssetDelta(
@@ -1578,7 +1579,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "available" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         -args.amountUsd,
         now,
       )
@@ -1587,7 +1588,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "deposited" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         args.amountUsd,
         now,
       )
@@ -1597,7 +1598,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "deposited" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         -args.amountUsd,
         now,
       )
@@ -1606,7 +1607,7 @@ async function applyProductBucketDelta(
         "walletLendBalances",
         wallet,
         { marketId: marketSlug, assetId, state: "available" },
-        assetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(assetId),
         args.amountUsd,
         now,
       )
@@ -1625,7 +1626,7 @@ async function applyProductBucketDelta(
           "walletBorrowBalances",
           wallet,
           { marketId: marketSlug, state: "poolAvailable" },
-          marketSlug.toUpperCase(),
+          canonicalTokenSymbolOrUpper(marketSlug),
           -signed,
           now,
         )
@@ -1634,7 +1635,7 @@ async function applyProductBucketDelta(
           "walletBorrowBalances",
           wallet,
           { marketId: marketSlug, state: "collateral" },
-          marketSlug.toUpperCase(),
+          canonicalTokenSymbolOrUpper(marketSlug),
           signed,
           now,
         )
@@ -1647,7 +1648,7 @@ async function applyProductBucketDelta(
         "walletBorrowBalances",
         wallet,
         { marketId: marketSlug, assetId: debtAssetId, state: "debt" },
-        debtAssetId.toUpperCase(),
+        canonicalTokenSymbolOrUpper(debtAssetId),
         args.kind === "borrow" ? args.amountUsd : -args.amountUsd,
         now,
       )
@@ -1700,7 +1701,7 @@ async function applyProductBucketDelta(
       "walletMultiplyBalances",
       wallet,
       { marketId: marketSlug, assetId: baseAsset, state: "available" },
-      baseAsset.toUpperCase(),
+      canonicalTokenSymbolOrUpper(baseAsset),
       previousEquityUsd - nextEquityUsd,
       now,
       multiplyPriceUsd,
@@ -1708,7 +1709,7 @@ async function applyProductBucketDelta(
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
-      symbol: baseAsset.toUpperCase(),
+      symbol: canonicalTokenSymbolOrUpper(baseAsset),
       amount: collateralAmount,
       valueUsd: collateralValueUsd,
       state: "position",
@@ -1716,7 +1717,7 @@ async function applyProductBucketDelta(
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
-      symbol: baseAsset.toUpperCase(),
+      symbol: canonicalTokenSymbolOrUpper(baseAsset),
       amount: collateralAmount,
       valueUsd: collateralValueUsd,
       state: "collateral",
@@ -1744,7 +1745,7 @@ async function applyProductBucketDelta(
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: debtAssetId,
-      symbol: existingMultiplyDebt?.symbol ?? assetId.toUpperCase(),
+      symbol: existingMultiplyDebt?.symbol ?? canonicalTokenSymbolOrUpper(assetId),
       amount: debtAmount,
       valueUsd: debtValueUsd,
       state: "debt",
