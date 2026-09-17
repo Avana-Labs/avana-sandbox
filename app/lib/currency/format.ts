@@ -71,8 +71,16 @@ export function formatTokenQuantity(value: number, symbol: string): string {
 export function formatActivityTokenAmount(amount: number, symbol: string): string {
   if (!Number.isFinite(amount)) return `0 ${symbol}`
   const abs = Math.abs(amount)
-  const decimals = abs >= 1_000 ? 0 : abs >= 1 ? 2 : 6
-  const rounded = formatNumber(amount, { maximumFractionDigits: decimals })
+  // The executed token amount is reconstructed from the transaction's USD value, so its low-order
+  // digits are oracle-drift noise (~1% relative), not real precision. Below 1,000 units round to 3
+  // significant figures — enough to hide that noise, so a round-number action reads cleanly
+  // ("100.0135 USDC" → "100", "50.01 USDC" → "50", "1.0004 GHO" → "1") while a fractional balance
+  // stays legible ("0.492 cbBTC"). At/above 1,000 units keep the integer so a large deposit still
+  // reads naturally ("12,513 GHO") instead of collapsing to 3 figures.
+  const rounded =
+    abs >= 1_000
+      ? formatNumber(amount, { maximumFractionDigits: 0 })
+      : formatNumber(amount, { maximumSignificantDigits: 3 })
   return `${rounded} ${symbol}`
 }
 
