@@ -9,7 +9,7 @@ export type SiloedMarketIdentity = {
   venueLabel?: string
   explorerUrl?: string
   description?: string
-  category?: "stable" | "crypto"
+  category?: "stable" | "crypto" | "stock"
   feeTier?: string
   iconUrl?: string
   reserveFactorPct?: number
