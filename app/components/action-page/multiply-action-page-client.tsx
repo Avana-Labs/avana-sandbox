@@ -247,6 +247,7 @@ export function MultiplyActionPageClient({
                 market.borrowAsset.symbol,
               ),
               collateralSymbol: market.collateralAsset.symbol,
+              liveCollateralValueUsd: position.collateralAmount * collateralPriceUsd,
             }),
           )
         })
@@ -513,6 +514,7 @@ export function MultiplyActionPageClient({
             ? mapClosePreviewToActionUi(preview, {
                 marketLabel,
                 collateralSymbol: market.collateralAsset.symbol,
+                liveCollateralValueUsd: position ? position.collateralAmount * collateralPriceUsd : undefined,
               })
             : mapDeleveragePreviewToActionUi(preview, {
                 marketLabel,
