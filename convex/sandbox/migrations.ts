@@ -126,7 +126,6 @@ export const backfillProductBalanceAmountUnits = internalMutation({
   ): Promise<{
     scope: "wallet" | "all"
     wallet?: string
-    table?: string
     scanned: number
     migrated: number
     isDone: boolean
@@ -176,10 +175,95 @@ export const backfillProductBalanceAmountUnits = internalMutation({
     if (target === "walletMultiplyBalances") {
       const page = await ctx.db.query("walletMultiplyBalances").paginate({ cursor: cursor ?? null, numItems })
       await applyMultiply(page.page)
-      return { scope: "all", table: target, scanned, migrated, isDone: page.isDone, continueCursor: page.continueCursor }
+      return { scope: "all", scanned, migrated, isDone: page.isDone, continueCursor: page.continueCursor }
     }
     const page = await ctx.db.query("walletLendBalances").paginate({ cursor: cursor ?? null, numItems })
     await applyLend(page.page)
-    return { scope: "all", table: target, scanned, migrated, isDone: page.isDone, continueCursor: page.continueCursor }
+    return { scope: "all", scanned, migrated, isDone: page.isDone, continueCursor: page.continueCursor }
+  },
+})
+
+/**
+ * Rebase onboarding cost-basis snapshots that were pinned to a stale static-fixture price.
+ *
+ * The wallet P/L reads `sandboxProfiles.basketSnapshot[].priceUsdAtClaim` as the per-token cost basis
+ * (app/lib/swap-system/use-convex-wallet-balances.ts → dashboard-wallet-tab.tsx). Wallets onboarded
+ * BEFORE a token gained live oracle coverage stored the SANDBOX_TOKEN_PRICE_USD fallback as the basis
+ * (e.g. LINK $18), so the leg now valued at a lower LIVE price shows a fake loss (LINK −37%). The claim
+ * path already prefers the live oracle for new claims; this heals the legacy snapshots.
+ *
+ * SAFETY: only a leg whose stored basis still equals the static fixture value it would have fallen
+ * back to (`SANDBOX_TOKEN_PRICE_USD[token] ?? 1`) is rebased — a basis captured from a live claim is
+ * left alone, so genuine P/L is never erased. Rebasing to the current live price makes a just-granted
+ * synthetic leg read ~0 P/L (sane) and accrues correctly from here. Idempotent: after a rebase the
+ * basis no longer matches the fixture signature, so a re-run is a no-op. Scoped to the tokens that
+ * gained coverage after launch; override `tokens` to widen or narrow. `amount` is untouched (the leg's
+ * under/over-grant sizing is a separate reseed concern).
+ */
+const DEFAULT_STALE_BASIS_TOKENS = ["link", "arb", "op", "ldo", "crv", "bal", "aero", "eurc"]
+
+export const rebaseOnboardingStaleBasis = internalMutation({
+  args: {
+    // Optional single-wallet run (validate on the test wallet first).
+    wallet: v.optional(v.string()),
+    // Token ids (lowercased) to rebase; defaults to the set that gained live coverage after launch.
+    tokens: v.optional(v.array(v.string())),
+    // Pagination for the all-wallets sweep.
+    cursor: v.optional(v.union(v.string(), v.null())),
+    batchSize: v.optional(v.number()),
+  },
+  handler: async (
+    ctx,
+    { wallet, tokens, cursor, batchSize },
+  ): Promise<{
+    scope: "wallet" | "all"
+    wallet?: string
+    scanned: number
+    rebased: number
+    isDone: boolean
+    continueCursor: string | null
+  }> => {
+    const now = Date.now()
+    const targetTokens = new Set((tokens ?? DEFAULT_STALE_BASIS_TOKENS).map((token) => token.toLowerCase()))
+    let scanned = 0
+    let rebased = 0
+
+    const applyProfile = async (profile: Doc<"sandboxProfiles">) => {
+      const basket = profile.basketSnapshot
+      if (!basket || basket.length === 0) return
+      let changed = false
+      const nextBasket = [...basket]
+      for (let index = 0; index < nextBasket.length; index++) {
+        const leg = nextBasket[index]
+        const tokenId = leg.tokenId.toLowerCase()
+        if (!targetTokens.has(tokenId)) continue
+        scanned++
+        const live = await validatedTokenPriceUsd(ctx, tokenId, now)
+        if (!live || !(live > 0)) continue
+        const fixtureBasis = SANDBOX_TOKEN_PRICE_USD[tokenId] ?? 1
+        const isStaleFixture =
+          leg.priceUsdAtClaim > 0 && Math.abs(leg.priceUsdAtClaim - fixtureBasis) <= fixtureBasis * 1e-3
+        if (!isStaleFixture) continue
+        // Already at the live basis (idempotent re-run, or fixture coincidentally equals live).
+        if (Math.abs(live - leg.priceUsdAtClaim) <= leg.priceUsdAtClaim * 1e-6) continue
+        nextBasket[index] = { ...leg, priceUsdAtClaim: live }
+        changed = true
+        rebased++
+      }
+      if (changed) await ctx.db.patch(profile._id, { basketSnapshot: nextBasket })
+    }
+
+    if (wallet) {
+      const profile = await ctx.db
+        .query("sandboxProfiles")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet.toLowerCase()))
+        .unique()
+      if (profile) await applyProfile(profile)
+      return { scope: "wallet", wallet, scanned, rebased, isDone: true, continueCursor: null }
+    }
+
+    const page = await ctx.db.query("sandboxProfiles").paginate({ cursor: cursor ?? null, numItems: batchSize ?? 200 })
+    for (const profile of page.page) await applyProfile(profile)
+    return { scope: "all", scanned, rebased, isDone: page.isDone, continueCursor: page.continueCursor }
   },
 })
