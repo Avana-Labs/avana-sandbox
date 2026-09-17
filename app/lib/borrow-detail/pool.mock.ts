@@ -20,6 +20,7 @@ import {
   getSpokeById,
 } from "@/app/lib/borrow-sim"
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatPairRate } from "./formatters"
@@ -537,7 +538,7 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
 
 function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCard["governanceParameters"]> {
   const ltvPct = row.ltv
-  const liquidationThresholdPct = Math.min(95, Math.round((row.ltv + 5) * 10) / 10)
+  const liquidationThresholdPct = Math.round(liquidationThresholdPctFromMaxLtvPct(row.ltv) * 10) / 10
   const liquidationBonusPct = isStablePool(row) ? 5 : 7
   const suppliedUsd = getSpokeById(row.spoke).liquidityUsd
   const supplyCapUsd = Math.max(25_000_000, Math.ceil((suppliedUsd * 1.75) / 1_000_000) * 1_000_000)

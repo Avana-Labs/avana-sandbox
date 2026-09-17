@@ -1,5 +1,6 @@
 import type { AboutCard, QuickStat } from "@/app/lib/borrow-detail"
 import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 
 type ParameterInput = Pick<ProtocolParameterRow, "id" | "label" | "value"> | Pick<QuickStat, "id" | "label" | "value">
 type GovernanceParameters = NonNullable<AboutCard["governanceParameters"]>
@@ -162,7 +163,7 @@ export function normalizeGovernanceParameters(about: AboutCard): GovernanceParam
   if (cf != null && parameters[ltIndex]?.value === ltSpec.fallback) {
     parameters[ltIndex] = {
       ...parameters[ltIndex]!,
-      value: formatPctValue(Math.min(95, Math.round((cf + 5) * 10) / 10)),
+      value: formatPctValue(Math.round(liquidationThresholdPctFromMaxLtvPct(cf) * 10) / 10),
     }
   }
 
@@ -247,7 +248,7 @@ export function buildRiskParameterSet(input: {
   collateralFactorDescription?: string
 }): GovernanceParameter[] {
   const cf = input.collateralFactorPct
-  const lt = input.liquidationThresholdPct ?? Math.min(95, Math.round((cf + 5) * 10) / 10)
+  const lt = input.liquidationThresholdPct ?? Math.round(liquidationThresholdPctFromMaxLtvPct(cf) * 10) / 10
   const collateralRisk = Math.max(0, Math.round((lt - cf) * 100) / 100)
   const targetHf = Math.max(1.1, Math.round((1 / Math.max(0.5, cf / 100)) * 100) / 100)
   const penaltyHigh = Math.round(input.liquidationPenaltyPct * 1.11 * 100) / 100

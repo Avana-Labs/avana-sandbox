@@ -29,6 +29,7 @@ import {
 } from "@/app/lib/data/borrow-domain"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { formatApy } from "@/app/lib/format"
@@ -173,12 +174,12 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   )
 }
 
-// Borrow pools store a single risk ratio (max LTV, which is the collateral
-// factor). Real lending markets sit the liquidation threshold a few points above
-// the collateral factor, so derive a display LT that way — this lets the CF column
-// read like the multiply table's (CF on top, small "LT:" below).
+// Borrow pools store a single risk ratio (max LTV, which is the collateral factor). The
+// liquidation threshold sits a fixed spread above it — derive the display LT through the
+// canonical helper so it matches the credit engine's enforced threshold. This lets the CF
+// column read like the multiply table's (CF on top, small "LT:" below).
 function poolLiquidationThresholdPct(pool: BorrowPoolRow) {
-  return Math.min(97, Math.round(pool.ltv) + 5)
+  return liquidationThresholdPctFromMaxLtvPct(pool.ltv)
 }
 
 // Memoized pool row: router/currency/translation are read from hooks internally, so the
@@ -223,7 +224,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
           {formatLtvPct(pool.ltv)}
         </div>
         <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
-          {t("LT")}: {poolLiquidationThresholdPct(pool)}%
+          {t("LT")}: {formatLtvPct(poolLiquidationThresholdPct(pool))}
         </div>
       </td>
       <td
