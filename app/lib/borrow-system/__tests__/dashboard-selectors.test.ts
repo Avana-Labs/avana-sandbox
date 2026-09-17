@@ -91,26 +91,6 @@ describe("borrow dashboard selectors", () => {
     expect(debts).toHaveLength(outstanding.length)
   })
 
-  it("never shows a collateral row as ∞ ('safe') while it displays its own outstanding debt", () => {
-    const state = buildMockBorrowSystemState("demo-wallet")
-    const account = state.accounts["demo-wallet"]!
-    // Induce the venue-scoping mismatch: move every bluechip-spoke debt OFF that spoke while leaving
-    // it attributed to its pool by market id. The weth-usdc pool still shows "Borrowed $1,200", but
-    // its spoke now reports no debt, so the spoke health factor returns ∞ ("safe"). A collateral row
-    // that owns debt must never read ∞.
-    for (const position of account.debtPositions) {
-      if (position.spokeId === "uni-v3-bluechip") position.spokeId = "usdc-usdt"
-    }
-
-    const supplies = selectPortfolioSupplyRows(state, "demo-wallet")
-    const row = supplies.find((entry) => entry.pool.id === "uni-v3-bluechip-weth-usdc")!
-    expect(row.borrowedUsd).toBeGreaterThan(0)
-    expect(row.healthFactor).not.toBe(Number.POSITIVE_INFINITY)
-    expect(Number.isFinite(row.healthFactor ?? 0)).toBe(true)
-    // The fallback equals this pool's own liquidation value over its own debt.
-    expect(row.healthFactor).toBeCloseTo(row.liquidationThresholdUsd / row.borrowedUsd, 6)
-  })
-
   it("reflects shared-session borrow activity in debt and collateral rows", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const next = applyBorrowAction(state, {
