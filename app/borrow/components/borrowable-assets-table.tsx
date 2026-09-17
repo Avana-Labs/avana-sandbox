@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useMemo, useState } from "react"
+import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -247,7 +248,13 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
         {index + 1}
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="flex min-w-0 items-center gap-4">
+        {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
+            navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
+        <Link
+          href={borrowAssetDetailPath(asset.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="flex min-w-0 items-center gap-4 rounded-radius-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" eager={index < 2} />
           <div className="min-w-0">
             <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
@@ -257,7 +264,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
               {compact(asset.totalBorrowedUsd + asset.availableUsd)} {t("Supply")}
             </div>
           </div>
-        </div>
+        </Link>
       </td>
       <td
         className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
@@ -485,16 +492,24 @@ const AssetsRow = memo(function AssetsRow({
         {index + 1}
       </td>
       <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
-        <TokenSingleCell
-          visual={asset.visual}
-          name={asset.name}
-          subtitle={(() => {
-            const p = priceFor(asset.symbol)
-            return p !== undefined ? formatTokenPrice(p) : asset.subtitle
-          })()}
-          size="md"
-          eager={index < 2}
-        />
+        {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
+            navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
+        <Link
+          href={borrowAssetDetailPath(asset.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="block rounded-radius-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <TokenSingleCell
+            visual={asset.visual}
+            name={asset.name}
+            subtitle={(() => {
+              const p = priceFor(asset.symbol)
+              return p !== undefined ? formatTokenPrice(p) : asset.subtitle
+            })()}
+            size="md"
+            eager={index < 2}
+          />
+        </Link>
       </td>
       <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
         <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
