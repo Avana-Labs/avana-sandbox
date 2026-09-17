@@ -1,7 +1,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { formatTokenQuantity } from "@/app/lib/currency/format"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
-import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
+import { calculateMaxLeverageApy, calculateMultiplyHealthFactor } from "@/app/lib/multiply-engine"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
@@ -257,11 +257,24 @@ export function buildPortfolioMultiplyData(
     const liveUsd = position.collateralAmount * priceUsd
     return Number.isFinite(liveUsd) && liveUsd > 0 ? liveUsd : position.collateralValueUsd
   }
+  // Health factor, leverage and LTV are RECOMPUTED from the live-repriced collateral (never read
+  // from the value frozen at open), so the per-row risk metrics move with the collateral value
+  // shown beside them and agree with the live headline. Matches the ltvPct recompute below and the
+  // "recompute rate/risk metrics, never read a stored per-position figure" rule the dashboard uses.
+  const liveHealthFactorOf = (position: (typeof positions)[number]): number => {
+    const market = state.markets[position.marketId]
+    if (!market) return position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor
+    const hf = calculateMultiplyHealthFactor(collateralUsdOf(position), position.debtValueUsd, market.risk.liquidationThreshold)
+    return hf === "infinity" ? Number.POSITIVE_INFINITY : hf
+  }
+  const liveMultiplierOf = (position: (typeof positions)[number]): number => {
+    const collateralUsd = collateralUsdOf(position)
+    const equityUsd = collateralUsd - position.debtValueUsd
+    return equityUsd > 0 ? collateralUsd / equityUsd : position.multiplier
+  }
   const totalCollateralUsd = positions.reduce((sum, position) => sum + collateralUsdOf(position), 0)
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
-  const mappedHealthFactors = positions.map((position) =>
-    position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
-  )
+  const mappedHealthFactors = positions.map((position) => liveHealthFactorOf(position))
   // Worst-position, not average (see worstMultiplyHealthFactor). Field name kept as
   // averageHealthFactor for now to avoid a repo-wide contract rename.
   const averageHealthFactor = worstMultiplyHealthFactor(mappedHealthFactors, positions.length)
@@ -284,11 +297,12 @@ export function buildPortfolioMultiplyData(
         label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         collateralToken: market.collateralAsset.symbol,
         borrowableToken: market.borrowAsset.symbol,
-        multiplier: position.multiplier,
+        // Live leverage off the repriced collateral, consistent with the headline multiplier.
+        multiplier: liveMultiplierOf(position),
         protocol: "Avana Multiply",
-        // Real value: a zero-debt position is genuinely infinite. The table renders
-        // non-finite health factors as "∞" rather than a fabricated number.
-        healthFactor: position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
+        // Live health factor off the repriced collateral. A zero-debt position is genuinely
+        // infinite; the table renders non-finite health factors as "∞".
+        healthFactor: liveHealthFactorOf(position),
         collateralUsd,
         borrowPowerUsd: Math.max(0, collateralUsd - position.debtValueUsd),
         debtUsd: position.debtValueUsd,
@@ -313,7 +327,7 @@ export function buildPortfolioMultiplyData(
         symbol: market.collateralAsset.symbol,
         label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         side: "long" as const,
-        leverage: position.multiplier,
+        leverage: liveMultiplierOf(position),
         collateralUsd,
         exposureUsd: collateralUsd,
         pnlUsd,
