@@ -243,12 +243,20 @@ export function simulateDeleverage(params: {
   position: MultiplyPosition
   targetMultiplier: number
   repayAmountUsd?: number
+  collateralPriceOverrideUsd?: number
 }): DeleverageSimulation {
-  const { market, position, targetMultiplier, repayAmountUsd } = params
-  const collateralPriceUsd = market.collateralAsset.priceUsd
-  const currentCollateralValueUsd = position.collateralValueUsd
-  const currentDebtValueUsd = position.debtValueUsd
-  const currentMultiplier = position.multiplier
+  const { market, position, targetMultiplier, repayAmountUsd, collateralPriceOverrideUsd } = params
+  const collateralPriceUsd =
+    collateralPriceOverrideUsd != null && Number.isFinite(collateralPriceOverrideUsd) && collateralPriceOverrideUsd > 0
+      ? collateralPriceOverrideUsd
+      : market.collateralAsset.priceUsd
+  // Reprice the position at this live price before sizing the unwind — see simulateMultiply's
+  // repricedExisting. A stale, catalog-fixture-priced position doesn't just misreport health
+  // factor here; it also sizes how much collateral/debt to unwind to reach the target multiplier.
+  const repriced = revalueMultiplyPosition(position, market, collateralPriceUsd)
+  const currentCollateralValueUsd = repriced.collateralValueUsd
+  const currentDebtValueUsd = repriced.debtValueUsd
+  const currentMultiplier = repriced.multiplier
 
   const priceImpactPct = calculatePriceImpact({
     baseImpact: DEFAULT_BASE_IMPACT,
@@ -311,13 +319,14 @@ export function simulateDeleverage(params: {
     before: {
       collateralValueUsd: currentCollateralValueUsd,
       debtValueUsd: currentDebtValueUsd,
-      ltv: position.ltv,
-      healthFactor: position.healthFactor,
+      ltv: repriced.ltv,
+      healthFactor: repriced.healthFactor,
       multiplier: currentMultiplier,
-      liquidationPrice: position.liquidationPrice,
+      liquidationPrice: repriced.liquidationPrice,
     },
     after: {
       collateralValueUsd: newCollateralValueUsd,
+      collateralAmount: newCollateralAmount,
       debtValueUsd: newDebtValueUsd,
       debtRepaidUsd: debtToRepayUsd,
       collateralUnwoundUsd: collateralToUnwindUsd,

@@ -257,7 +257,12 @@ export function MultiplyActionPageClient({
         })
         return
       }
-      const intent = session.createIntent({ type: "close", walletId, positionId: position.id })
+      const intent = session.createIntent({
+        type: "close",
+        walletId,
+        positionId: position.id,
+        collateralPriceUsd,
+      })
       void session
         .previewTransaction(intent)
         .then((preview) => {
@@ -400,6 +405,7 @@ export function MultiplyActionPageClient({
       walletId,
       positionId: position.id,
       targetMultiplier: parsedMultiplier,
+      collateralPriceUsd,
     }
 
     void session
@@ -509,12 +515,14 @@ export function MultiplyActionPageClient({
                 type: "close" as const,
                 walletId,
                 positionId: position!.id,
+                collateralPriceUsd,
               }
             : {
                 type: "deleverage" as const,
                 walletId,
                 positionId: position!.id,
                 targetMultiplier: parsedMultiplier!,
+                collateralPriceUsd,
               }
 
       const intent = session.createIntent(action)
@@ -630,6 +638,7 @@ export function MultiplyActionPageClient({
         type: "close" as const,
         walletId,
         positionId: closingPosition.id,
+        collateralPriceUsd,
       }
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
@@ -674,7 +683,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [isPending, market, previewUi, session, walletId, walletPositions])
+  }, [collateralPriceUsd, isPending, market, previewUi, session, walletId, walletPositions])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (

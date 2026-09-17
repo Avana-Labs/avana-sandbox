@@ -100,6 +100,10 @@ export type MultiplyAction =
       positionId: string
       targetMultiplier: number
       repayAmountUsd?: number
+      // Live oracle price for the collateral asset — see the "multiply" variant. Without it
+      // the position's stale, catalog-priced collateralValueUsd sizes the unwind and the
+      // resulting health factor off the wrong number.
+      collateralPriceUsd?: number
       at?: number
     }
   | {
@@ -108,6 +112,9 @@ export type MultiplyAction =
       type: "close"
       walletId: string
       positionId: string
+      // Live oracle price for the collateral asset — see the "multiply" variant. Without it
+      // the cash credited back to the wallet is sized off a stale catalog price.
+      collateralPriceUsd?: number
       at?: number
     }
 
@@ -175,6 +182,7 @@ export type DeleverageSimulation = {
   }
   after: {
     collateralValueUsd: number
+    collateralAmount: number
     debtValueUsd: number
     debtRepaidUsd: number
     collateralUnwoundUsd: number
