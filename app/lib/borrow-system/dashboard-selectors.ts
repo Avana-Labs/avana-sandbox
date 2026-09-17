@@ -30,6 +30,30 @@ function spokeHealthFactor(state: BorrowSystemState, walletId: string, marketId:
   return healthFactorWad != null ? fixedToNumber(healthFactorWad, 18) : Number.POSITIVE_INFINITY
 }
 
+// Per-pool health factor from this pool's own liquidation value and its own displayed debt:
+// HF = collateral·liqThreshold / debt. Used only as a fallback (see below).
+function poolHealthFactor(liquidationUsd: number, borrowedUsd: number): number {
+  if (borrowedUsd <= 0) return Number.POSITIVE_INFINITY
+  return liquidationUsd / borrowedUsd
+}
+
+// Health factor for a collateral row. Uses the spoke-level engine HF (the intended cross-collateral
+// model), but a pool that shows its OWN outstanding debt can never be ∞ ("safe"): when the debt is
+// attributed to the pool by market id yet not to that pool's spoke (the venue-scoping mismatch), the
+// spoke reports no debt and returns ∞ beside a "Borrowed $10". In that case fall back to the per-pool
+// HF so the row's Health agrees with its own Borrowed figure.
+function collateralRowHealthFactor(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+  liquidationUsd: number,
+  borrowedUsd: number,
+): number {
+  const spokeHf = spokeHealthFactor(state, walletId, marketId)
+  if (!Number.isFinite(spokeHf) && borrowedUsd > 0) return poolHealthFactor(liquidationUsd, borrowedUsd)
+  return spokeHf
+}
+
 export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: string): SupplyRowContext[] {
   const pools = selectBorrowCollateralPools(state, walletId)
   const debts = selectInitialBorrowDebts(state, walletId)
@@ -54,7 +78,7 @@ export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: st
       borrowedUsd,
       remainingBorrowPowerUsd,
       liquidationThresholdUsd: pool.liquidationUsd,
-      healthFactor: spokeHealthFactor(state, walletId, pool.id),
+      healthFactor: collateralRowHealthFactor(state, walletId, pool.id, pool.liquidationUsd, borrowedUsd),
       pairApr: pool.pairApr,
       feesUsd,
       feesLabel: formatUsdExact(feesUsd),
