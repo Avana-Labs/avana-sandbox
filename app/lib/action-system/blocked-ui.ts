@@ -56,6 +56,9 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
   if (r.includes("no deposited position") || r.includes("position does not exist")) {
     return { label: "Nothing to withdraw" }
   }
+  if (r.includes("nothing to repay") || r.includes("no debt")) return { label: "Nothing to repay" }
+  if (r.includes("nothing to remove")) return { label: "Nothing to remove" }
+  if (r.includes("nothing to withdraw")) return { label: "Nothing to withdraw" }
   if (r.includes("positive") || r.includes("greater than zero")) return { label: "Enter an amount" }
 
   // Non-alarming catch-all — most remaining blocks are "amount is too big".

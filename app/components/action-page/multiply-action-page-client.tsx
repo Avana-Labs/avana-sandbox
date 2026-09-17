@@ -815,6 +815,7 @@ export function MultiplyActionPageClient({
           stage={stage === "error" ? "configure" : stage}
           verb={descriptor.primaryVerb}
           inputLabel="Collateral"
+          emptyReason={isExitKind && walletPositions.length === 0 ? "No open position" : undefined}
           amount={amount}
           // Read-only informational value; `amount` still drives validation, so showing the
           // position's collateral cannot make an unfilled form report as filled in.

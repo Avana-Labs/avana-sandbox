@@ -520,6 +520,7 @@ export function LendActionPageClient({
           amount={amount}
           onAmountChange={setAmount}
           preview={previewUi}
+          emptyReason={kind === "withdraw" && withdrawItems.length === 0 ? "Nothing to withdraw" : undefined}
           assetSymbol={market.asset.symbol}
           assetOptions={depositAssetOptions}
           selectedAssetId={market.marketId}

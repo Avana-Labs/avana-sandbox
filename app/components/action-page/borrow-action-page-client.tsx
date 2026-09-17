@@ -1367,6 +1367,7 @@ export function BorrowActionPageClient({
           onAmountChange={kind === "remove" ? setPercent : setAmount}
           inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
           preview={previewUi}
+          emptyReason={kind === "repay" && !debtPosition ? "Nothing to repay" : undefined}
           // Pass the base COLLATERAL symbol (visuals[0]) for the ICON — not the pool display
           // name ("WETH / USDC"), which made the left bubble render pair-initials ("WU") instead
           // of the WETH icon on the Pledge/supply amount card. The pill TEXT keeps the pair

@@ -109,6 +109,9 @@ type ActionConfigureStageProps = {
   animateDetails?: boolean
   /** Keep the asset picker interactive even when the amount is read-only (Claim). */
   allowAssetSwitchWhenReadOnly?: boolean
+  /** Reason shown on the CTA when there is no position to act on and the preview is therefore
+   *  null (e.g. "Nothing to repay"). Mapped to a short label via blockedCtaLabel. */
+  emptyReason?: string | null
 }
 
 export function ActionConfigureAmountSection({
@@ -265,6 +268,7 @@ export function ActionConfigureStage({
   deferDetailsUntilAmount = false,
   animateDetails = true,
   allowAssetSwitchWhenReadOnly = false,
+  emptyReason,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
   const configureStage = stage === "error" ? "configure" : stage
@@ -272,7 +276,10 @@ export function ActionConfigureStage({
   // Progressive disclosure (opt-in): keep the risk banner + network-fee row hidden
   // until an amount is entered, so the empty state stays clean.
   const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
-  const blockedReason = preview?.blockedReason ?? null
+  // When there is no position to reduce (e.g. repay with no debt, withdraw with nothing
+  // supplied), the preview is null — surface the caller's reason ("Nothing to repay") on the
+  // CTA instead of the generic "Enter a valid amount", which reads like a bug.
+  const blockedReason = preview?.blockedReason ?? emptyReason ?? null
   const amountEntered = parsePositiveActionAmount(amount) != null
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
