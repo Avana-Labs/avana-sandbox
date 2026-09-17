@@ -296,7 +296,7 @@ function buildQuickStats(
       delta: deltaFromPct(0.1),
     },
     { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
-    { id: "borrowApy", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
+    { id: "borrowApy", label: "Borrow APR", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
     { id: "reserveFactor", label: "Reserve Factor", value: `${reserveFactorPct(asset)}%` },
   ]
   if (!fixture?.quickStats) return defaults

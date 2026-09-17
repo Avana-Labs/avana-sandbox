@@ -401,7 +401,7 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     // borrow rates). getQuickStats emits `borrowApy` from Convex's implied rate;
     // mergeConvexQuickStats replaces this placeholder. Live-mode without a snapshot
     // fails closed via shouldFailClosedWithoutSnapshots — never shows the em dash to a user.
-    { id: "borrowApy", label: "Borrow APY", value: "—" },
+    { id: "borrowApy", label: "Borrow APR", value: "—" },
     { id: "reserveFactor", label: "Reserve Factor", value: isStablePool(row) ? "10%" : "15%" },
   ]
 }
