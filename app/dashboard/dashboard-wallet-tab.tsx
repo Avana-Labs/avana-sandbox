@@ -180,7 +180,7 @@ function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; market
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+          <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>{row.name}</div>
           <div className={TABLE_CELL_SECONDARY}>{detail.protocol}</div>
         </div>
       </div>
@@ -482,10 +482,10 @@ function WalletBalanceSection({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[27%]" />
-            <col className="w-[20%]" />
-            <col className="w-[27%]" />
+            <col className="w-[33%]" />
+            <col className="w-[19%]" />
             <col className="w-[26%]" />
+            <col className="w-[22%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -516,7 +516,7 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>{row.name}</div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
                         {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                       </div>
