@@ -130,7 +130,9 @@ export function mapBorrowTransactionPreviewToActionUi(
     amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
-    rateLabel: options.rateLabel ?? "Borrow APY",
+    // The borrow rate is a simple-interest APR (baseBorrowAprWad / resolveBorrowAprPct), so label it
+    // APR — matching the dashboard debt row — not APY.
+    rateLabel: options.rateLabel ?? "Borrow APR",
     rateValue: formatActionPercent(options.ratePct),
     marketLabel: "Market",
     marketValue: options.marketLabel,
