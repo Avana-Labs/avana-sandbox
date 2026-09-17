@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -324,6 +324,43 @@ export function DashboardPageSkeleton() {
           </Surface>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Client-side dashboard loading state, rendered by `dashboard-page-client.tsx` while
+ * hydrated storage / the snapshot are still pending. Wraps the bare skeleton in a polite
+ * status region so assistive tech announces the load (the skeleton blocks themselves are
+ * decorative), and — because a stuck snapshot would otherwise spin silently forever —
+ * surfaces a "taking longer than usual" notice with a retry after ~12s. Rendered bare (no
+ * `Page` wrapper) because the dashboard route already supplies `main.container > div`.
+ */
+export function DashboardLoading({ onRetry }: { onRetry?: () => void }) {
+  const { t } = useTranslation()
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 12_000)
+    return () => clearTimeout(timer)
+  }, [])
+  return (
+    <div role="status" aria-busy="true" aria-live="polite" aria-label={t("Loading")}>
+      <span className="sr-only">{t("Loading dashboard…")}</span>
+      {slow ? (
+        <div className="mb-6 flex flex-col items-center gap-2 rounded-radius-md border border-border/60 bg-card px-4 py-5 text-center">
+          <p className="text-[13px] text-muted-foreground">{t("This is taking longer than usual.")}</p>
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-[13px] font-normal text-foreground underline underline-offset-4 hover:no-underline"
+            >
+              {t("Try again")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <DashboardPageSkeleton />
     </div>
   )
 }

@@ -23,7 +23,7 @@ import {
   getTaskDeepLink,
   isReferralTaskAction,
 } from "@/app/lib/rewards-engine/task-actions"
-import { DashboardPageSkeleton } from "@/app/components/loading-states"
+import { DashboardLoading } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { useDurableRewardsClaim } from "@/app/lib/rewards-system"
 import { PortfolioStatCards } from "@/app/dashboard/portfolio-stat-cards"
@@ -532,9 +532,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   )
 
   if (!hasHydratedStorage || !snapshot) {
-    // Bare skeleton — the dashboard route already provides the page wrapper, so
-    // wrapping again would shift it below/narrower than the real content.
-    return <DashboardPageSkeleton />
+    // Bare loading state — the dashboard route already provides the page wrapper, so
+    // wrapping again would shift it below/narrower than the real content. Announces the
+    // load to assistive tech and offers a retry if the snapshot is slow to arrive.
+    return <DashboardLoading onRetry={reloadSnapshot} />
   }
 
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined

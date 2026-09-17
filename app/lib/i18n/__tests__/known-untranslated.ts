@@ -31,6 +31,9 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   // Borrow "My Collaterals" table — column (i) help text.
   // Multiply Positions table — redesigned column (i) help text + Value caption.
   "Exp.",
+  // Dashboard loading status — new copy awaiting the locale backfill.
+  "Loading dashboard…",
+  "This is taking longer than usual.",
   // Multiply Balance — Interest Earned tile help text.
   // Umbrella hero — Weighted APY tile (i) help text.
   "1 Day",
