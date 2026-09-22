@@ -15,15 +15,18 @@ const INK = "#F4F6F8"
 const MUTED = "#8B93A7"
 const VOID = "#050608"
 
-async function loadPngDataUrl(relativePath: string) {
-  const bytes = await readFile(join(process.cwd(), relativePath))
+function toPngDataUrl(bytes: Buffer) {
   return `data:image/png;base64,${bytes.toString("base64")}`
 }
 
 export default async function OpengraphImage() {
+  // Keep each path a literal inside join(): output file tracing resolves those statically.
+  // A variable path made the tracer include the whole working directory (1,051 repo files,
+  // README and tests included), and because Next imports this metadata module into every
+  // page, each page function shipped that copy of the repo.
   const [wordmark, icon] = await Promise.all([
-    loadPngDataUrl("public/avana-wordmark-440.png"),
-    loadPngDataUrl("public/avana-icon.png"),
+    readFile(join(process.cwd(), "public/avana-wordmark-440.png")).then(toPngDataUrl),
+    readFile(join(process.cwd(), "public/avana-icon.png")).then(toPngDataUrl),
   ])
 
   return new ImageResponse(
