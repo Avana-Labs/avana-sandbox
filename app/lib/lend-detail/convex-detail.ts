@@ -35,6 +35,7 @@ import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-para
 import { alignRiskSupplyApyMetric, buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 import type { QuickStat } from "@/app/lib/borrow-detail"
+import { formatPercent } from "@/app/lib/format"
 
 /**
  * Server-only Convex-hydrated lend detail builder. The lend detail page calls this
@@ -57,10 +58,6 @@ function mergeConvexQuickStats(
   return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.lend)
 }
 
-function formatPct(value: number, digits = 2) {
-  return `${value.toFixed(digits)}%`
-}
-
 function irmProtocolParameters(irm: {
   optimalUtilizationPct: number
   slopeBelowOptimalPct: number
@@ -68,10 +65,10 @@ function irmProtocolParameters(irm: {
   baseBorrowRatePct: number
 }): ProtocolParameterRow[] {
   return [
-    { id: "optimalUtilization", label: "Optimal utilization", value: formatPct(irm.optimalUtilizationPct) },
-    { id: "slopeBelowOptimal", label: "Slope below optimal", value: formatPct(irm.slopeBelowOptimalPct) },
-    { id: "slopeAboveOptimal", label: "Slope above optimal", value: formatPct(irm.slopeAboveOptimalPct) },
-    { id: "baseBorrowRate", label: "Base borrow rate", value: formatPct(irm.baseBorrowRatePct) },
+    { id: "optimalUtilization", label: "Optimal utilization", value: formatPercent(irm.optimalUtilizationPct) },
+    { id: "slopeBelowOptimal", label: "Slope below optimal", value: formatPercent(irm.slopeBelowOptimalPct) },
+    { id: "slopeAboveOptimal", label: "Slope above optimal", value: formatPercent(irm.slopeAboveOptimalPct) },
+    { id: "baseBorrowRate", label: "Base borrow rate", value: formatPercent(irm.baseBorrowRatePct) },
   ]
 }
 

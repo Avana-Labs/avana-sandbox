@@ -10,6 +10,7 @@ import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_gen
 import type { Doc, Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
 import { foldDeltas, appendLiquidityDelta } from "./liquidity"
+import { formatCompactUsdStatic } from "../app/lib/format-usd-static"
 
 /** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
 const SNAPSHOTS_SINGLETON = "markets"
@@ -158,19 +159,19 @@ export const getQuickStats = query({
       {
         id: "supplied",
         label: scope === "pool" ? "TVL" : "Total Supplied",
-        value: formatCompactUsd(suppliedUsd),
+        value: formatCompactUsdStatic(suppliedUsd),
         delta: toDelta(pct(suppliedUsd, prev?.suppliedUsd)),
       },
       {
         id: "borrowed",
         label: "Total Borrowed",
-        value: formatCompactUsd(borrowedUsd),
+        value: formatCompactUsdStatic(borrowedUsd),
         delta: toDelta(pct(borrowedUsd, prev?.borrowedUsd)),
       },
       {
         id: "available",
         label: "Available Liquidity",
-        value: formatCompactUsd(availableUsd),
+        value: formatCompactUsdStatic(availableUsd),
         delta: toDelta(pct(availableUsd, prevAvailableUsd)),
       },
       {
@@ -704,7 +705,7 @@ export const getRecentTransactions = query({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
         kind: mapSandboxTxKind(scope, r.kind),
-        amountLabel: formatCompactUsd(r.amountUsd),
+        amountLabel: formatCompactUsdStatic(r.amountUsd),
         amountUsd: r.amountUsd,
         ...(await tokenFieldsFromSandboxRow(ctx, r, scope, marketsBySlug)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
@@ -742,7 +743,7 @@ export const getRecentTransactions = query({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
         kind: mapSeedWalletEventKind(scope, r.kind),
-        amountLabel: formatCompactUsd(r.amountUsd),
+        amountLabel: formatCompactUsdStatic(r.amountUsd),
         amountUsd: r.amountUsd,
         ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
@@ -1206,11 +1207,4 @@ function toDelta(pct: number) {
   if (pct === 0) return { value: 0, direction: "flat" as const, label: "0.0%" }
   if (pct > 0) return { value: pct, direction: "up" as const, label: `+${pct.toFixed(1)}%` }
   return { value: pct, direction: "down" as const, label: `${pct.toFixed(1)}%` }
-}
-
-function formatCompactUsd(v: number): string {
-  if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(2)}B`
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(2)}K`
-  return `$${v.toFixed(2)}`
 }

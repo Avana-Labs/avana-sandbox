@@ -5,6 +5,7 @@ import type { InterestRateCurve, InterestRateModelProbe } from "@/app/lib/borrow
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { cn } from "@/lib/utils"
+import { formatPercent } from "@/app/lib/format"
 
 const X_TICKS = [0, 25, 50, 75, 100]
 const VIEW_W = 640
@@ -20,10 +21,6 @@ function plotX(utilization: number) {
 
 function plotY(apr: number, maxApr: number) {
   return PLOT_BOTTOM - (apr / Math.max(maxApr, 1e-9)) * (PLOT_BOTTOM - PLOT_TOP)
-}
-
-function formatPct(value: number, digits = 2) {
-  return `${value.toFixed(digits)}%`
 }
 
 function snapUtilization(raw: number) {
@@ -203,7 +200,7 @@ export function InterestRateModelChart({ curve, currentUtilization, probe, onPro
             textAnchor="middle"
             className="fill-muted-foreground text-[12px] font-medium"
           >
-            {t("Current {value}%").replace("{value}", formatPct(currentUtilization, 2).replace("%", ""))}
+            {t("Current {value}%").replace("{value}", formatPercent(currentUtilization, { dp: 2 }).replace("%", ""))}
           </text>
         </svg>
 
@@ -215,17 +212,20 @@ export function InterestRateModelChart({ curve, currentUtilization, probe, onPro
           >
             <div className="text-[12px] text-muted-foreground">{t("Utilization Rate")}</div>
             <div className="mt-0.5 font-data text-[14px] font-medium tabular-nums text-foreground">
-              {formatPct(probe.utilizationPct, 1)}
+              {formatPercent(probe.utilizationPct, { dp: 1 })}
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
               <span className="inline-block size-2 rounded-[2px] bg-[hsl(var(--brand))]" aria-hidden />
               {t("Borrow APY")}
             </div>
             <div className="mt-0.5 font-data text-[14px] font-medium tabular-nums text-foreground">
-              {formatPct(probe.borrowAprPct)}
+              {formatPercent(probe.borrowAprPct)}
             </div>
             <div className="mt-2 text-[11px] leading-snug text-muted-foreground">
-              {t("Borrow amount to reach {value} Util.").replace("{value}", formatPct(probe.utilizationPct, 1))}
+              {t("Borrow amount to reach {value} Util.").replace(
+                "{value}",
+                formatPercent(probe.utilizationPct, { dp: 1 }),
+              )}
             </div>
             <div className="mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground">
               {formatCompactUsd(probe.borrowDeltaUsd)}

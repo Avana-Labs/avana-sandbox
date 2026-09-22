@@ -10,6 +10,7 @@
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow, getDexById } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import type { AllocationRow, RiskLevel } from "./types"
+import { formatPercent } from "@/app/lib/format"
 
 /**
  * Maps a risk premium (bps) to a qualitative bucket. The bounds are kept in
@@ -150,8 +151,7 @@ export function computeAssetAllocation(
 
 /** Compact percentage label with fixed digits (e.g. "68.4%"). */
 export function formatPct(value: number, digits = 1): string {
-  if (!Number.isFinite(value)) return "—"
-  return `${value.toFixed(digits)}%`
+  return formatPercent(value, { dp: digits })
 }
 
 /** Compact bps label (e.g. "+0.80%"). */

@@ -5,6 +5,7 @@
 
 import { v } from "convex/values"
 import { internalMutation, query } from "../_generated/server"
+import { formatCompactUsdStatic } from "../../app/lib/format-usd-static"
 
 type Totals = {
   liquidationsCount: number
@@ -16,14 +17,6 @@ type Totals = {
   walletsEligibleForLiquidation: number
   badDebtUsd: number
   walletsWithBadDebt: number
-}
-
-function formatCompactUsd(value: number): string {
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(2)}K`
-  return `$${value.toFixed(2)}`
 }
 
 function formatCount(value: number): string {
@@ -40,9 +33,9 @@ function foldStats(latest: Totals, previous?: Totals | null) {
     return {
       id,
       label,
-      value: format === "usd" ? formatCompactUsd(curr) : formatCount(curr),
+      value: format === "usd" ? formatCompactUsdStatic(curr) : formatCount(curr),
       deltaValue,
-      deltaLabel: format === "usd" ? formatCompactUsd(abs) : formatCount(abs),
+      deltaLabel: format === "usd" ? formatCompactUsdStatic(abs) : formatCount(abs),
       goodDirection: "down" as const,
       format,
     }

@@ -14,12 +14,9 @@ import type {
   LendBalanceMetrics,
   MultiplyBalanceMetrics,
 } from "./dashboard-tab-metrics"
+import { formatPercent } from "@/app/lib/format"
 
 const MASK = "••••"
-
-function formatPct(value: number) {
-  return `${value.toFixed(2)}%`
-}
 
 function formatLeverage(value: number) {
   if (!Number.isFinite(value) || value <= 0) return "—"
@@ -137,7 +134,7 @@ export function DashboardCreditOverviewSection({
     },
     {
       label: t("Net APY"),
-      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+      value: showDollarAmounts ? formatPercent(metrics.netApyPct) : MASK,
       description: t("Weighted average APY across all active positions"),
     },
     {
@@ -218,7 +215,7 @@ export function DashboardMultiplyBalanceSection({
     },
     {
       label: t("Net APY"),
-      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+      value: showDollarAmounts ? formatPercent(metrics.netApyPct) : MASK,
       description: t("Equity-weighted net APY after supply yield and borrow cost"),
     },
     {
@@ -272,7 +269,7 @@ export function DashboardPerformanceSection({
           },
           {
             label: t("Net APY"),
-            value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+            value: showDollarAmounts ? formatPercent(metrics.netApyPct) : MASK,
             description: t("Weighted average APY across all active positions"),
           },
           {
@@ -316,7 +313,7 @@ export function DashboardLendPerformanceSection({
     },
     {
       label: t("Net APY"),
-      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+      value: showDollarAmounts ? formatPercent(metrics.netApyPct) : MASK,
       description: t("Weighted average APY across all supplied positions"),
     },
     {

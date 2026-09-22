@@ -2,6 +2,7 @@ import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine/formulas"
 import { MULTIPLY_ACTION_MAX_LEVERAGE } from "@/app/lib/multiply-system/leverage-limits"
+import { formatPercent } from "@/app/lib/format"
 
 export const MULTIPLY_TOKEN_LOGOS = {
   ETH: getLocalAssetIcon("ETH"),
@@ -173,10 +174,6 @@ function parsePct(value?: string) {
   return Number.parseFloat(value.replace("%", "")) || 0
 }
 
-function formatPct(value: number) {
-  return `${value.toFixed(2)}%`
-}
-
 function formatFactor(value: number) {
   return `${value.toFixed(2)}x`
 }
@@ -223,7 +220,7 @@ export function buildMultiplyMarketRow(
     asset: borrowable,
     kind: "Loop",
     // calculateMaxLeverageApy returns a ratio; formatPct expects percent units.
-    apy: formatPct(maxLoopApy * 100),
+    apy: formatPercent(maxLoopApy * 100),
     apyLabel: "APY derived from supply and borrow APRs",
     points: formatCompactUsd(availableUsd),
     rewardRows: [

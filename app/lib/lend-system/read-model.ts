@@ -10,10 +10,7 @@ import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { LEND_MARKET_CATALOG } from "./catalog"
 import { formatReliableLendApyLabel } from "./illiquid-apy"
 import type { LendTransactionHistoryItem, LendWalletReadSnapshot, LendYieldSnapshot } from "./contracts"
-
-function formatPct(value: number) {
-  return `${(value * 100).toFixed(2)}%`
-}
+import { formatPercent } from "@/app/lib/format"
 
 function formatTokenQuantity(value: number, symbol: string) {
   if (value > 0 && value < 0.01) return `<0.01 ${symbol}`
@@ -75,7 +72,7 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
       symbol: featured.symbol,
       displayName: featured.displayName,
       eyebrow: featured.eyebrow,
-      apyLabel: formatPct(apy),
+      apyLabel: formatPercent(apy * 100),
       apyPct: apy * 100,
       supplyApyPct: supplyApy * 100,
       tone: featured.tone,
@@ -86,12 +83,14 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
   })
 }
 
+const formatFractionPct = (value: number) => formatPercent(value * 100)
+
 function formatSandboxSupplyApyLabel(supplyApy: number, tvlUsd: number) {
-  return formatReliableLendApyLabel(supplyApy, tvlUsd, formatPct)
+  return formatReliableLendApyLabel(supplyApy, tvlUsd, formatFractionPct)
 }
 
 function formatTotalApyLabel(totalApy: number, tvlUsd: number) {
-  return formatReliableLendApyLabel(totalApy, tvlUsd, formatPct)
+  return formatReliableLendApyLabel(totalApy, tvlUsd, formatFractionPct)
 }
 
 export function catalogMarketToRow(market: LendMarket): LendMarketRow {
@@ -103,12 +102,12 @@ export function catalogMarketToRow(market: LendMarket): LendMarketRow {
     assetName: market.asset.name,
     logoSrc: getLocalAssetIcon(market.asset.symbol),
     supplyApyLabel: formatSandboxSupplyApyLabel(market.supplyApy, tvlUsd),
-    rewardsApyLabel: market.rewardsApy > 0 ? formatPct(market.rewardsApy) : "No rewards",
+    rewardsApyLabel: market.rewardsApy > 0 ? formatPercent(market.rewardsApy * 100) : "No rewards",
     totalApyLabel: formatTotalApyLabel(market.totalApy, tvlUsd),
     totalSuppliedLabel: formatCompactUsd(market.totalSupplied * market.assetPriceUsd),
     availableLiquidityLabel: formatCompactUsd(market.availableLiquidity * market.assetPriceUsd),
-    utilizationLabel: formatPct(market.utilization),
-    reserveFactorLabel: formatPct(market.reserveFactor),
+    utilizationLabel: formatPercent(market.utilization * 100),
+    reserveFactorLabel: formatPercent(market.reserveFactor * 100),
     status: market.status,
     supplyApy: market.supplyApy,
     rewardsApy: market.rewardsApy,
