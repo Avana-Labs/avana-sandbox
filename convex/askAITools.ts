@@ -14,6 +14,7 @@ import {
 } from "../app/lib/ask-ai/engine-calculations"
 import { internalQuery, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { calculatePriceDropToLiquidationPct } from "../app/lib/multiply-engine/formulas"
+import { catalogMultiplyNetApyPct } from "../app/lib/multiply-system/catalog"
 import { getAuthedWallet } from "./sandbox/auth"
 import { computePortfolioNetApyPct } from "./sandbox/transactions"
 import type { Id } from "./_generated/dataModel"
@@ -298,7 +299,7 @@ export async function readAskAIEngineSnapshot(
         equityUsd: collateralValueUsd - (position.debtValueUsd ?? 0),
         // Leverage / net APY / liquidation price were on the doc but never reached the model.
         multiplier: position.multiplier ?? null,
-        netApyPct: position.netApyPct ?? null,
+        netApyPct: catalogMultiplyNetApyPct(position.marketSlug, collateralValueUsd, position.debtValueUsd ?? 0),
         liquidationPrice: position.liquidationPrice ?? null,
         priceDropToLiquidationPct: calculatePriceDropToLiquidationPct(
           position.liquidationPrice ?? null,
@@ -482,6 +483,7 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
     const collateralAmount = position.collateralAmount ?? 0
     const liquidationPrice = position.liquidationPrice ?? null
     const collateralPriceUsd = collateralAmount > 0 ? collateralValueUsd / collateralAmount : 0
+    const debtValueUsd = position.debtValueUsd ?? usd6(position.debtValueUsd6)
     return {
       positionId: position._id,
       product: position.product,
@@ -489,12 +491,15 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
       assetId: position.assetId ?? null,
       status: position.status,
       collateralValueUsd,
-      debtValueUsd: position.debtValueUsd ?? usd6(position.debtValueUsd6),
+      debtValueUsd,
       suppliedUsd: usd6(position.suppliedUsd6),
       earnedUsd: usd6(position.earnedUsd6),
       ltv: position.ltv ?? null,
       multiplier: position.multiplier ?? null,
-      netApyPct: position.netApyPct ?? null,
+      netApyPct:
+        position.product === "multiply"
+          ? catalogMultiplyNetApyPct(position.marketSlug, collateralValueUsd, debtValueUsd)
+          : (position.netApyPct ?? null),
       supplyApyPct: position.supplyApyPct ?? null,
       liquidationPrice,
       // "How far can ETH fall before I'm liquidated?" as a fraction of price.

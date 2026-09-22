@@ -27,6 +27,7 @@ import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
 import { resolveWriteBackPriceUsd } from "./writeBackPrice"
 import { canonicalTokenSymbolOrUpper } from "../../app/lib/tokens/canonical-symbol"
+import { catalogMultiplyNetApyPct } from "../../app/lib/multiply-system/catalog"
 import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertClose,
@@ -2354,10 +2355,14 @@ export async function computePortfolioNetApyPct(
     } else if (position.product === "multiply") {
       const base = (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)
       if (base > 0) {
-        // Persistence stores multiply netApy as a fraction on `netApyPct`; lend stores percent.
-        const raw = position.netApyPct ?? 0
-        const rate = Math.abs(raw) <= 1 ? raw * 100 : raw
-        legs.push({ weight: base, rate })
+        // Recompute from market economics: the persisted `netApyPct` is 0 on most loops and a
+        // fraction on the rest. Skip an unknown market rather than blending a fake 0%.
+        const rate = catalogMultiplyNetApyPct(
+          position.marketSlug,
+          position.collateralValueUsd ?? 0,
+          position.debtValueUsd ?? 0,
+        )
+        if (rate != null) legs.push({ weight: base, rate })
       }
     } else if (position.product === "borrow") {
       const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
