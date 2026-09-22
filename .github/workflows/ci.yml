@@ -152,7 +152,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # Real production build + first-load JS budget for `/`. Catches critical-path
+  # Real production build + first-load JS budgets for `/` and the product routes
+  # (scripts/check-route-bundle-budgets.mjs). Catches critical-path
   # regressions (accidental wagmi/Sentry/framer-motion on the guest `/` chunk group)
   # without running a flaky full Lighthouse pass. Local real-build Lighthouse is
   # `npm run lighthouse:build && npm run lighthouse:serve` then `npm run lighthouse:budgets`.
@@ -182,7 +183,7 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
-      - name: First-load JS budget for /
+      - name: First-load JS budgets (/ and product routes)
         run: npm run perf:bundle-budget
 
   # The main-branch ruleset requires a status check named `build`. No job reported one, so the
