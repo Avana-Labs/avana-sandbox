@@ -5,7 +5,6 @@ import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-he
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { QuickStatsProduct } from "@/app/lib/detail-page/live-quick-stats"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -18,8 +17,6 @@ type QuickStatLike = {
 
 type Props = {
   detail: { quickStats: QuickStatLike[] }
-  /** Preloaded getQuickStats token + product enable the live variant (connected sessions). */
-  quickStatsPreload?: QuickStatsPreload | null
   product?: QuickStatsProduct
   className?: string
   hideRisk?: boolean
@@ -93,12 +90,7 @@ export function FlatStatsGrid({
   )
 }
 
-function QuickStatsGridView({
-  detail,
-  className,
-  hideRisk = false,
-  columns = 3,
-}: Omit<Props, "quickStatsPreload" | "product">) {
+function QuickStatsGridView({ detail, className, hideRisk = false, columns = 3 }: Omit<Props, "product">) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 

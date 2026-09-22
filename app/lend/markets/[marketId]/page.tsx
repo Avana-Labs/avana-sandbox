@@ -63,7 +63,7 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
     cashflow: readPreloadedCashflow(cashflowPreload),
     baselinePriceSymbol: detailRaw.hero.symbol,
   })
-  const { preloads: heroPreloads, feeds } = heroBundle
+  const { feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `${SITE_URL}/lend/markets/${marketId}`
   return (
@@ -83,12 +83,7 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <LendMarketDetailClientShell
-        detail={detailWithFeeds}
-        heroPreloads={heroPreloads}
-        quickStatsPreload={quickStatsPreload}
-        cashflowPreload={cashflowPreload}
-      />
+      <LendMarketDetailClientShell detail={detailWithFeeds} />
     </>
   )
 }

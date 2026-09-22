@@ -10,13 +10,14 @@ import type { ChartFeed } from "@/app/components/charts"
  *
  * Previously the composite detail builder fetched the three hero series (to build the
  * `heroFeed` props) AND the live hero re-subscribed the same series on the client — a
- * redundant fetch. Here we `preloadQuery` each series exactly once on the server, build
- * the initial `heroFeed` props from the preloaded value via `preloadedQueryResult` (no
- * second fetch), and hand the `Preloaded` tokens to the client so the live hero uses
- * `usePreloadedQuery` (hydrates from the preload, subscribes for updates, never re-fetches).
+ * redundant fetch. Here we `preloadQuery` each series exactly once on the server and build
+ * the `heroFeed` props from the preloaded value via `preloadedQueryResult` (no second
+ * fetch). The page merges `feeds` into `detail` on the server; the `Preloaded` tokens are
+ * NOT passed to client components (each would re-serialize the full series into the RSC
+ * payload, and nothing on the client reads them).
  *
- * Returns `preloads: null` when no Convex deployment URL is configured (CI/Lighthouse),
- * so the hero falls back to its client-side deterministic feed and nothing throws.
+ * Returns `preloads: null` / empty `feeds` when no Convex deployment URL is configured
+ * (CI/Lighthouse), so the hero falls back to its client-side deterministic feed.
  */
 type PoolMetric = "tvl" | "borrowed" | "utilization"
 type AssetMetric = "supply" | "borrow" | "utilization"

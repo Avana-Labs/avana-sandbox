@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import {
   formatChartPointLabel,
@@ -26,7 +25,6 @@ import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-f
 
 type LendHeroProps = {
   detail: LendMarketDetail
-  heroPreloads?: LendHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string

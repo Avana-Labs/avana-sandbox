@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -22,7 +21,6 @@ import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-f
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
-  heroPreloads?: MultiplyHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string

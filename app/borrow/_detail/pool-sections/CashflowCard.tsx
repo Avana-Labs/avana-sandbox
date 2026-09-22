@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils"
 import type { CashflowCard as CashflowCardData } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionCard } from "../ui"
 
@@ -11,8 +10,6 @@ import { SectionCard } from "../ui"
 // carrying a `cashflow: CashflowCard` (borrow pool, lend market) can reuse this.
 type Props = {
   detail: { cashflow: CashflowCardData }
-  /** Preloaded cashflow-breakdown token enables the live variant (connected sessions). */
-  cashflowPreload?: CashflowPreload | null
 }
 
 function parseCompactUsd(value: string) {

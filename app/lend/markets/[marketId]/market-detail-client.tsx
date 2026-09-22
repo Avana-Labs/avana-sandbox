@@ -13,9 +13,6 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowTxRow, mapLendSessionRows } from "@/app/lib/detail-page/transaction-history"
 import {
@@ -53,9 +50,6 @@ const DetailMarketTransactionsDeferred = dynamic(
 
 type Props = {
   detail: LendMarketDetail
-  heroPreloads?: LendHeroPreloads | null
-  quickStatsPreload?: QuickStatsPreload | null
-  cashflowPreload?: CashflowPreload | null
 }
 
 /** Map a wallet's own sandbox lend actions into detail transaction rows. */
@@ -69,12 +63,7 @@ function mapSessionRows(
   return mapLendSessionRows(history, marketId, assetSymbol, priceUsd, walletAddress)
 }
 
-export function LendMarketDetailClient({
-  detail,
-  heroPreloads = null,
-  quickStatsPreload = null,
-  cashflowPreload = null,
-}: Props) {
+export function LendMarketDetailClient({ detail }: Props) {
   const session = useLendSessionContext()
   const { walletAddress } = useAvanaIdentity()
   const { t } = useTranslation()
@@ -117,7 +106,7 @@ export function LendMarketDetailClient({
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
+                <LendHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -132,7 +121,7 @@ export function LendMarketDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
+                        <QuickStatsGrid detail={detail} product="lend" />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -153,7 +142,7 @@ export function LendMarketDetailClient({
                         detail.supplyBorrow.supplied.aggregate ?? detail.supplyBorrow.supplied.points.at(-1)?.v
                       }
                     />
-                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
+                    <CashflowCard detail={detail} />
                     <DetailMarketTransactionsDeferred
                       scope="lend"
                       slug={marketId}

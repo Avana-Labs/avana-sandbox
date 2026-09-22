@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
@@ -22,7 +21,6 @@ import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-f
 
 type Props = {
   detail: AssetDetail
-  heroPreloads?: AssetHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string

@@ -5,9 +5,6 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
@@ -62,17 +59,9 @@ function DeferredBlock({ className }: { className?: string }) {
 
 type Props = {
   detail: AssetDetail
-  heroPreloads?: AssetHeroPreloads | null
-  quickStatsPreload?: QuickStatsPreload | null
-  cashflowPreload?: CashflowPreload | null
 }
 
-export function AssetDetailClient({
-  detail,
-  heroPreloads = null,
-  quickStatsPreload = null,
-  cashflowPreload = null,
-}: Props) {
+export function AssetDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const { walletAddress } = useAvanaIdentity()
   const session = useBorrowSessionContext()
@@ -107,7 +96,7 @@ export function AssetDetailClient({
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <AssetHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
+                <AssetHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}
@@ -122,12 +111,7 @@ export function AssetDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid
-                          detail={detail}
-                          quickStatsPreload={quickStatsPreload}
-                          product="borrow"
-                          hideRisk
-                        />
+                        <QuickStatsGrid detail={detail} product="borrow" hideRisk />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -139,7 +123,7 @@ export function AssetDetailClient({
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                     <AllocationBreakdownCard detail={detail} />
-                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
+                    <CashflowCard detail={detail} />
                     <DetailMarketTransactionsDeferred
                       scope="asset"
                       slug={detail.row.id}
