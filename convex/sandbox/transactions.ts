@@ -20,7 +20,7 @@ import { mutation, query } from "../_generated/server"
 import { appendLiquidityDelta } from "../liquidity"
 import { liquidBalanceView, readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
-import { computeSwapQuoteMath } from "./swapQuoteEngine"
+import { computeSwapQuoteMath, getSwapEngineAsset, isSwapPairRoutable } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
@@ -1812,10 +1812,17 @@ export const recordSwap = mutation({
     // never determine the result. There is no client-valued or missing-balance success path.
     let executedOutputAmount = args.outputAmount
     let executedAmountUsd = args.amountUsd
+    // Symbols come from the asset ids, never from the client: pricing one asset while moving
+    // another (inputSymbol "WBTC" on an inputAssetId "usdc" leg) would mint the difference.
+    const inputSymbol = getSwapEngineAsset(args.inputAssetId)?.symbol ?? args.inputSymbol
+    const outputSymbol = getSwapEngineAsset(args.outputAssetId)?.symbol ?? args.outputSymbol
     if (status === "success") {
+      if (!isSwapPairRoutable(args.inputAssetId, args.outputAssetId)) {
+        throw new Error("INVALID_SWAP: this pair is not swap-routable.")
+      }
       const [inputPrice, outputPrice] = await Promise.all([
-        validatedTokenPriceUsd(ctx, args.inputSymbol, now),
-        validatedTokenPriceUsd(ctx, args.outputSymbol, now),
+        validatedTokenPriceUsd(ctx, inputSymbol, now),
+        validatedTokenPriceUsd(ctx, outputSymbol, now),
       ])
       if (!inputPrice || !outputPrice) {
         throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
@@ -1847,8 +1854,8 @@ export const recordSwap = mutation({
       requestedAmountUsd6: requestedUsd6,
       executedAmountUsd6: executedUsd6,
       amountUsd: status === "success" ? executedAmountUsd : 0,
-      swapInputSymbol: args.inputSymbol,
-      swapOutputSymbol: args.outputSymbol,
+      swapInputSymbol: inputSymbol,
+      swapOutputSymbol: outputSymbol,
       swapInputAmount: args.inputAmount,
       swapOutputAmount: status === "success" ? executedOutputAmount : args.outputAmount,
       swapProvider: args.provider,
@@ -1867,7 +1874,7 @@ export const recordSwap = mutation({
       await applySwapBalanceDelta(
         ctx,
         wallet,
-        { ...args, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
+        { ...args, inputSymbol, outputSymbol, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
         now,
       )
     }
