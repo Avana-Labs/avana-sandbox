@@ -6,6 +6,8 @@ import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
+import { isGuestRequest } from "@/app/lib/siwe/guest-request"
+import { GuestPagePlaceholder } from "@/app/components/sandbox/guest-page-placeholder"
 
 export const metadata: Metadata = buildSeoMetadata({
   title: "Multiply",
@@ -29,6 +31,9 @@ export default async function MultiplyPage() {
       </>
     )
   }
+
+  // Guests only ever see the gate's onboarding flow; skip the Convex reads for them.
+  if (await isGuestRequest()) return <GuestPagePlaceholder />
 
   const [pageData, requestHeaders, { MultiplyClient }] = await Promise.all([
     fetchMultiplyPage(),
