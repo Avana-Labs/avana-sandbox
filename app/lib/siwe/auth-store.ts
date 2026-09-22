@@ -155,6 +155,10 @@ export async function fetchSiweAccessToken(forceRefresh = false): Promise<string
       accessToken = { jwt: next.token, wallet: current.wallet }
       return next.token
     })
+    // Never reject: Convex pauses its socket while it awaits this token and only resumes it on
+    // success (authentication_manager.setConfig has no catch), so a network blip or a 5xx here
+    // left every signed-in query hanging until a reload. Keep a still-valid token; else none.
+    .catch(() => getSiweToken()?.jwt ?? null)
     .finally(() => {
       refreshPromise = null
     })
