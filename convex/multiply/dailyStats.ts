@@ -27,12 +27,18 @@ const dailyStatFields = {
  * to multiplyDailyStats — feeds the multiply detail's historicalUtilization chart
  * so it stops falling back to the mock series.
  */
+// Series readers return the trailing year, as the doc comments promise; the table gains a row per
+// market per day, so an unbounded read grew every payload forever (405 days per market on 2026-09-22).
+function oneYearAgoDay() {
+  return new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
+}
+
 export const getHistoricalUtilization = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
     const rows = await ctx.db
       .query("multiplyDailyStats")
-      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).gte("day", oneYearAgoDay()))
       .order("asc")
       .collect()
     if (rows.length === 0) return null
@@ -53,7 +59,7 @@ export const getSupplyBorrow = query({
   handler: async (ctx, { slug }) => {
     const rows = await ctx.db
       .query("multiplyDailyStats")
-      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).gte("day", oneYearAgoDay()))
       .order("asc")
       .collect()
     if (rows.length === 0) return null

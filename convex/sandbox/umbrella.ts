@@ -377,7 +377,8 @@ export const getSessionState = query({
           .query("transactions")
           .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
           .order("desc")
-          .collect(),
+          // Display history only; same cap as the session transaction feed.
+          .take(500),
         // Every wallet's staked / cooldown USD per market, so Coverage and Amount-in-cooldown
         // move with activity, added on top of the catalog baseline (which stands for pre-existing
         // external liquidity). Read from the running totals row: scanning all wallets' positions
