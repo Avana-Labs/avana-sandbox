@@ -1,6 +1,6 @@
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
-import { internalMutation, mutation, query } from "../_generated/server"
+import { internalMutation, internalQuery, mutation, query } from "../_generated/server"
 import type { Doc, Id } from "../_generated/dataModel"
 import { requireSandboxWallet } from "./auth"
 import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
@@ -134,6 +134,26 @@ function numberFromUsd6(value?: string) {
 
 function tokenAmountFromUsd(usd: number, priceUsd: number) {
   return priceUsd > 0 ? usd / priceUsd : usd
+}
+
+/**
+ * Umbrella principal and cooldown tranches (`suppliedUsd6`, `cooldownAmountUsd6`, tranche
+ * `amountUsd6`) are a TOKEN ledger kept in USD6 at the market's fixed reference price
+ * (`UMBRELLA_MARKETS[m].priceUsd`; $1 for the stables). Converting at the LIVE price instead
+ * made stake and unstake disagree for WETH: 1 WETH staked at $2,000 could only be unstaked as
+ * 0.5 WETH after WETH doubled, and as 2 WETH after it halved. Live prices are only for display.
+ */
+function ledgerUsdFromTokens(marketId: UmbrellaMarketId, amount: number) {
+  return amount * UMBRELLA_MARKETS[marketId].priceUsd
+}
+
+function tokensFromLedgerUsd(marketId: UmbrellaMarketId, ledgerUsd: number) {
+  return tokenAmountFromUsd(ledgerUsd, UMBRELLA_MARKETS[marketId].priceUsd)
+}
+
+/** Live USD value of a ledger amount, for display. */
+function liveUsdFromLedgerUsd(marketId: UmbrellaMarketId, ledgerUsd: number, livePriceUsd: number) {
+  return tokensFromLedgerUsd(marketId, ledgerUsd) * livePriceUsd
 }
 
 function rewardAccruedUsd(position: Doc<"positions">, now: number) {
@@ -315,6 +335,82 @@ async function applyUmbrellaTotalsDelta(
 }
 
 /** Recompute every market's totals from the positions (deploy-time seed / drift repair). */
+/**
+ * One-off migration for WETH stakes written before the ledger used the reference price: their
+ * `suppliedUsd6` holds USD at the stake-time LIVE price. The plan proposes the token count that
+ * USD bought, at the WETH daily close on the stake day (`tokenPricesHistory`), falling back to
+ * the reference price. Read-only; review it, then pass the rows to the apply mutation.
+ */
+export const planUmbrellaWethLedgerMigration = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const positions = await ctx.db
+      .query("positions")
+      .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", "weth"))
+      .collect()
+    const plan = []
+    for (const position of positions) {
+      if (position.status !== "open") continue
+      const day = new Date(position.openedAt).toISOString().slice(0, 10)
+      const close = await ctx.db
+        .query("tokenPricesHistory")
+        .withIndex("by_symbol_day", (q) => q.eq("symbol", "weth").lte("day", day))
+        .order("desc")
+        .first()
+      const stakePriceUsd = close?.priceUsd ?? UMBRELLA_MARKETS.weth.priceUsd
+      const suppliedUsd = numberFromUsd6(position.suppliedUsd6)
+      const tokens = suppliedUsd / stakePriceUsd
+      plan.push({
+        positionId: position._id,
+        expectedSuppliedUsd6: position.suppliedUsd6 ?? "0",
+        stakeDay: close?.day ?? null,
+        stakePriceUsd,
+        tokens,
+        nextSuppliedUsd6: usd6(ledgerUsdFromTokens("weth", tokens)),
+      })
+    }
+    return plan
+  },
+})
+
+/**
+ * Applies reviewed rows from `planUmbrellaWethLedgerMigration`. Each row patches only while the
+ * position still holds `expectedSuppliedUsd6`, so a re-run is a no-op. Refuses positions with
+ * active cooldown tranches (none existed when this was written); those need a tranche-aware pass.
+ */
+export const applyUmbrellaWethLedgerMigration = internalMutation({
+  args: {
+    rows: v.array(v.object({ positionId: v.id("positions"), expectedSuppliedUsd6: v.string(), tokens: v.number() })),
+  },
+  handler: async (ctx, { rows }) => {
+    const now = Date.now()
+    let migrated = 0
+    let skipped = 0
+    for (const row of rows) {
+      const position = await ctx.db.get(row.positionId)
+      if (!position || position.product !== "umbrella" || position.marketSlug !== "weth") {
+        throw new Error(`not a WETH umbrella position: ${row.positionId}`)
+      }
+      if (position.suppliedUsd6 !== row.expectedSuppliedUsd6) {
+        skipped++
+        continue
+      }
+      if (!(row.tokens > 0) || !Number.isFinite(row.tokens)) throw new Error(`invalid tokens for ${row.positionId}`)
+      const tranches = await listActiveTranches(ctx, position.wallet, "weth")
+      if (tranches.some((tranche) => BigInt(tranche.amountUsd6) > 0n)) {
+        throw new Error(`position ${row.positionId} has active cooldown tranches`)
+      }
+      await ctx.db.patch(position._id, {
+        suppliedUsd6: usd6(ledgerUsdFromTokens("weth", row.tokens)),
+        revision: (position.revision ?? 0) + 1,
+      })
+      await applyUmbrellaTotalsDelta(ctx, "weth", position, await ctx.db.get(position._id), now)
+      migrated++
+    }
+    return { migrated, skipped }
+  },
+})
+
 export const rebuildUmbrellaMarketTotals = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -452,7 +548,7 @@ export const getSessionState = query({
           .filter((row) => row.positionId === position._id && row.status !== "consumed")
           .map((row) => ({
             _id: row._id,
-            amountUsd: numberFromUsd6(row.amountUsd6),
+            amountUsd: liveUsdFromLedgerUsd(marketId, numberFromUsd6(row.amountUsd6), liveMarkets[marketId].priceUsd),
             startedAt: row.startedAt,
             endsAt: row.endsAt,
             windowEndsAt: row.windowEndsAt,
@@ -464,7 +560,14 @@ export const getSessionState = query({
         // Rollups come from the tranches (source of truth); the stored aggregate is only a
         // fallback for pre-tranche seed rows.
         const trancheTotalUsd = positionTranches.reduce((sum, t) => sum + t.amountUsd, 0)
-        const cooldownUsd = positionTranches.length > 0 ? trancheTotalUsd : numberFromUsd6(position.cooldownAmountUsd6)
+        const cooldownUsd =
+          positionTranches.length > 0
+            ? trancheTotalUsd
+            : liveUsdFromLedgerUsd(
+                marketId,
+                numberFromUsd6(position.cooldownAmountUsd6),
+                liveMarkets[marketId].priceUsd,
+              )
         const activeEndsCandidates = positionTranches.filter((t) => t.status !== "expired").map((t) => t.endsAt)
         const readyWindowCandidates = positionTranches.filter((t) => t.status === "ready").map((t) => t.windowEndsAt)
         const cooldownEndsAt =
@@ -486,8 +589,12 @@ export const getSessionState = query({
         return {
           _id: position._id,
           marketId,
-          suppliedUsd: numberFromUsd6(position.suppliedUsd6),
-          amount: tokenAmountFromUsd(numberFromUsd6(position.suppliedUsd6), liveMarkets[marketId].priceUsd),
+          suppliedUsd: liveUsdFromLedgerUsd(
+            marketId,
+            numberFromUsd6(position.suppliedUsd6),
+            liveMarkets[marketId].priceUsd,
+          ),
+          amount: tokensFromLedgerUsd(marketId, numberFromUsd6(position.suppliedUsd6)),
           pendingRewardsUsd: numberFromUsd6(position.earnedUsd6) + rewardAccruedUsd(position, now),
           claimedRewardsUsd: numberFromUsd6(position.claimedRewardsUsd6),
           cooldownUsd,
@@ -555,9 +662,10 @@ export const recordAction = mutation({
     const earnedUsd = position ? numberFromUsd6(position.earnedUsd6) + accruedUsd : 0
     const suppliedUsd = position ? numberFromUsd6(position.suppliedUsd6) : 0
     const cooldownUsd = position ? numberFromUsd6(position.cooldownAmountUsd6) : 0
-    const amountUsd = amount * (livePriceUsd ?? market.priceUsd)
+    // `amountUsd` moves the token ledger; the receipt and activity rows carry the live USD value.
+    const amountUsd = ledgerUsdFromTokens(args.marketId, amount)
     let nextPositionId: Id<"positions"> | undefined = position?._id
-    let txAmountUsd = amountUsd
+    let txAmountUsd = amount * (livePriceUsd ?? market.priceUsd)
     const amountsBefore: UmbrellaAmounts = position
       ? { suppliedUsd6: position.suppliedUsd6, cooldownAmountUsd6: position.cooldownAmountUsd6 }
       : null
@@ -743,7 +851,14 @@ const UMBRELLA_TEST_FIXTURE = {
     },
     { marketId: "usdc" as const, suppliedUsd: 8_000, earnedUsd: 18.25, cooldownUsd: 0, cooldownOffsetMs: null },
     { marketId: "usdt" as const, suppliedUsd: 0, earnedUsd: 0, cooldownUsd: 0, cooldownOffsetMs: null },
-    { marketId: "weth" as const, suppliedUsd: 6_720, earnedUsd: 9.1, cooldownUsd: 0, cooldownOffsetMs: null },
+    // Ledger units (reference price): 3 WETH, the amount the original $6,720 at $2,240 staked.
+    {
+      marketId: "weth" as const,
+      suppliedUsd: 3 * UMBRELLA_MARKETS.weth.priceUsd,
+      earnedUsd: 9.1,
+      cooldownUsd: 0,
+      cooldownOffsetMs: null,
+    },
   ],
 } as const
 

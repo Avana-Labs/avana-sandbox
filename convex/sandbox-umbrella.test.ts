@@ -155,7 +155,8 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
       amount: 100,
     })
     const position = await readPosition(t, WALLET_A, "usdc")
-    expect(num(position?.suppliedUsd6)).toBe(90)
+    // The principal is a token ledger at the $1 reference price; the live $0.90 is display-only.
+    expect(num(position?.suppliedUsd6)).toBe(100)
     const liquid = await t.run(async (ctx) =>
       ctx.db
         .query("walletLiquidBalances")
@@ -169,7 +170,57 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
       .query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
     expect(hydrated.markets.usdc.priceUsd).toBe(0.9)
     expect(hydrated.positions.find((row) => row.marketId === "usdc")?.amount).toBe(100)
+    expect(hydrated.positions.find((row) => row.marketId === "usdc")?.suppliedUsd).toBeCloseTo(90, 6)
     expect(hydrated.transactions[0]?.amountUsd).toBe(90)
+  })
+
+  test("WETH — unstaking returns exactly the tokens staked after the price moves", async () => {
+    const t = convexTest(schema, modules)
+    process.env.SANDBOX_DEV_CONTROLS = "true"
+    const setWethPrice = (priceUsd: number) =>
+      t.run(async (ctx) => {
+        const row = await ctx.db
+          .query("tokenPrices")
+          .withIndex("by_symbol", (q) => q.eq("symbol", "weth"))
+          .unique()
+        if (row) await ctx.db.patch(row._id, { priceUsd, updatedAt: Date.now() })
+        else
+          await ctx.db.insert("tokenPrices", {
+            symbol: "weth",
+            llamaId: "test:weth",
+            priceUsd,
+            confidence: 0.99,
+            status: "fresh",
+            source: "test",
+            updatedAt: Date.now(),
+          })
+      })
+    await setWethPrice(2_000)
+    await t.run((ctx) =>
+      ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET_A.toLowerCase(),
+        assetId: "weth",
+        symbol: "WETH",
+        amount: 1,
+        valueUsd: 2_000,
+        state: "available",
+        updatedAt: Date.now(),
+      }),
+    )
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    const act = (intentId: string, kind: "stake" | "startCooldown" | "unstake", amount: number) =>
+      asUser.mutation(api.sandbox.umbrella.recordAction, { wallet: WALLET_A, intentId, kind, marketId: "weth", amount })
+    await act("w-stake", "stake", 1)
+    // WETH doubles: the old USD-at-live ledger only let 0.5 WETH out and stranded the rest.
+    await setWethPrice(4_000)
+    await act("w-cool", "startCooldown", 1)
+    await asUser.mutation(api.sandbox.dev.advanceCooldown, { wallet: WALLET_A, marketId: "weth", byMs: 21 * DAY_MS })
+    await setWethPrice(4_000)
+    await act("w-unstake", "unstake", 1)
+    expect(await readLiquid(t, WALLET_A, "weth")).toBeCloseTo(1, 9)
+    const position = await readPosition(t, WALLET_A, "weth")
+    expect(position?.status).toBe("closed")
+    delete process.env.SANDBOX_DEV_CONTROLS
   })
 
   test("stake — fails closed when the Convex price is expired", async () => {
@@ -1425,5 +1476,49 @@ describe("sandbox umbrella — market totals are maintained, not scanned per sub
     expect(market.totalStakedUsd - base.totalStakedUsd).toBeCloseTo(200, 6)
     const row = await t.run((ctx) => ctx.db.query("umbrellaMarketTotals").collect())
     expect(row.map((r) => [r.marketId, r.stakedUsd6])).toEqual([["usdc", "500000000"]])
+  })
+})
+
+describe("WETH ledger migration", () => {
+  test("converts a USD-at-live stake to tokens at the stake-day close, once", async () => {
+    const t = convexTest(schema, modules)
+    const openedAt = Date.parse("2026-08-31T11:40:00Z")
+    const positionId = await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPricesHistory", { symbol: "weth", day: "2026-08-31", priceUsd: 2_400, updatedAt: 1 })
+      return ctx.db.insert("positions", {
+        wallet: WALLET_A.toLowerCase(),
+        product: "umbrella",
+        marketSlug: "weth",
+        assetId: "weth",
+        status: "open",
+        suppliedUsd6: "6720000000",
+        earnedUsd6: "0",
+        cooldownAmountUsd6: "0",
+        openedAt,
+        lastUpdatedAt: openedAt,
+      })
+    })
+    const plan = await t.query(internal.sandbox.umbrella.planUmbrellaWethLedgerMigration, {})
+    expect(plan).toHaveLength(1)
+    expect(plan[0]).toMatchObject({ stakeDay: "2026-08-31", stakePriceUsd: 2_400 })
+    expect(plan[0].tokens).toBeCloseTo(2.8, 9)
+
+    const rows = plan.map(({ positionId, expectedSuppliedUsd6, tokens }) => ({
+      positionId,
+      expectedSuppliedUsd6,
+      tokens,
+    }))
+    await expect(t.mutation(internal.sandbox.umbrella.applyUmbrellaWethLedgerMigration, { rows })).resolves.toEqual({
+      migrated: 1,
+      skipped: 0,
+    })
+    await expect(t.mutation(internal.sandbox.umbrella.applyUmbrellaWethLedgerMigration, { rows })).resolves.toEqual({
+      migrated: 0,
+      skipped: 1,
+    })
+    const hydrated = await t
+      .withIdentity({ subject: WALLET_A })
+      .query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    expect(hydrated.positions.find((row) => row._id === positionId)?.amount).toBeCloseTo(2.8, 9)
   })
 })
