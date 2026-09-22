@@ -113,6 +113,14 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   // `state:"collateral"`, so a raw sum double-counts it. Drop the "collateral" row, exactly as
   // the dashboard does in app/lib/swap-system/use-convex-wallet-balances.ts.
   const multiplyRows = multiply.filter((row) => row.state !== "collateral")
+  // A lend withdrawal credits BOTH the liquid row and the lend `available` bucket, and unpledged
+  // LP sits in both the liquid row and borrow `poolAvailable`: the same tokens twice. The dashboard
+  // (aggregateNetValueUsd) skips those mirrors when a liquid row holds the asset; so does Net Value.
+  const liquidAssetIds = new Set(liquid.map((row) => row.assetId))
+  const lendForNetValue = lend.filter((row) => !(row.state === "available" && liquidAssetIds.has(row.assetId)))
+  const borrowForNetValue = borrow.filter(
+    (row) => !(row.state === "poolAvailable" && liquidAssetIds.has(row.poolId ?? row.assetId ?? row.marketId ?? "")),
+  )
   const sumState = (rows: readonly { valueUsd: number; state: string }[], ...states: string[]) =>
     sumUsd(rows.filter((row) => states.includes(row.state)))
   // "What is my biggest position?" — debt rows are obligations, not holdings.
@@ -186,7 +194,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       // Canonical Net Value, matching the dashboard hero (aggregateNetValueUsd): signed sum of
       // liquid + lend + borrow + multiply with debt negative. Umbrella is EXCLUDED there, so it
       // is excluded here too and reported separately as umbrellaUsd.
-      netValueUsd: netUsd(liquid) + netUsd(lend) + netUsd(borrow) + netUsd(multiplyRows),
+      netValueUsd: netUsd(liquid) + netUsd(lendForNetValue) + netUsd(borrowForNetValue) + netUsd(multiplyRows),
       // Cumulative; not derivable from the balances above.
       totalEarnedUsd: current?.totalEarnedUsd ?? 0,
       // The gross totals above deliberately mix states (lend "available" beside "deposited";
