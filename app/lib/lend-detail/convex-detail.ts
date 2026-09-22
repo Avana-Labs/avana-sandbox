@@ -129,7 +129,31 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   const slug = market.marketId
 
   const mode = resolveDataSourceMode()
-  const snapshot = await fetchLendMarketSnapshot(slug)
+  // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
+  // supplyBorrow from Convex replaces PRNG series on the live path (C05).
+  // The snapshot rides in the same batch: every key here comes from the catalog slug, so
+  // waiting for it first only added a Convex round trip to every detail SSR.
+  const [
+    snapshot,
+    transactions,
+    risk,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+    supplyBorrow,
+  ] = await Promise.all([
+    fetchLendMarketSnapshot(slug),
+    fetchLendRecentTransactions(slug),
+    fetchLendRisk(slug),
+    fetchLendContent(slug),
+    fetchLendRiskParameters(slug),
+    fetchLendInterestRateModel(slug),
+    fetchLendMarket(slug),
+    fetchLendContractAddresses(slug),
+    fetchLendSupplyBorrow(slug),
+  ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   if (shouldFailClosedInLive(mode, snapshot != null)) return null
@@ -146,28 +170,6 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
         }
       : undefined,
   )
-
-  // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  // supplyBorrow from Convex replaces PRNG series on the live path (C05).
-  const [
-    transactions,
-    risk,
-    content,
-    riskParameters,
-    interestRateModel,
-    siloedMarket,
-    contractAddresses,
-    supplyBorrow,
-  ] = await Promise.all([
-    fetchLendRecentTransactions(slug),
-    fetchLendRisk(slug),
-    fetchLendContent(slug),
-    fetchLendRiskParameters(slug),
-    fetchLendInterestRateModel(slug),
-    fetchLendMarket(slug),
-    fetchLendContractAddresses(slug),
-    fetchLendSupplyBorrow(slug),
-  ])
 
   const headline = resolveLendHeadlineRates({
     snapshotBacked: Boolean(snapshot),
