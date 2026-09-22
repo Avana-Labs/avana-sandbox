@@ -40,7 +40,6 @@ import {
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { formatMultiplyActivityMarketLabel } from "@/app/lib/multiply-system/market-labels"
-import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -317,8 +316,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     applyReferralCode,
   } = useRewardsSessionContext()
   const persistRewardsClaim = useDurableRewardsClaim()
-  // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
-  const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
   const [educationOpen, setEducationOpen] = useState(false)
@@ -551,8 +548,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       (row) => !sessionSwapIds.has(row.id),
     ),
   ]
-  // One combined "recent activity" table: live session actions + the full dashboard
-  // activity (all products) + reward claims. RecentActivity deduplicates by id and by the
+  // One combined "recent activity" table: live session actions + reward claims, merged by
+  // RecentActivity with its paginated Convex getActivity feed (all products). RecentActivity deduplicates by id and by the
   // composite hash/action/market identity, so distinct same-hash actions remain visible.
   const combinedActivityRows = [
     ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
@@ -572,7 +569,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
     ...swapActivityRows,
     ...buildUmbrellaActivityRows(umbrella.transactionHistory),
-    ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
   const seenIds = new Set<string>()
