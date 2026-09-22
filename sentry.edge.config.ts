@@ -12,10 +12,14 @@ Sentry.init({
   // Sampled at 10% in production to bound trace volume; raise locally if needed.
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
 
+  // Any `dataCollection` object, even an empty one, switches the SDK to collect EVERYTHING by
+  // default (cookies, request bodies, user IPs). The empty placeholder did exactly that, attaching
+  // the 7-day `avana_siwe` session JWT (its name matches none of the SDK's sensitive-key
+  // patterns), SIWE signatures and Ask AI prompts to every server error. Headers stay on: the SDK
+  // still redacts cookie/authorization headers by name.
   dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
+    cookies: false,
+    userInfo: false,
+    httpBodies: [],
   },
 })
