@@ -1,6 +1,6 @@
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
-import { mutation, query } from "../_generated/server"
+import { internalMutation, mutation, query } from "../_generated/server"
 import type { Doc, Id } from "../_generated/dataModel"
 import { requireSandboxWallet } from "./auth"
 import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
@@ -255,6 +255,82 @@ async function recomputePositionAggregate(
   })
 }
 
+type UmbrellaAmounts = { suppliedUsd6?: string; cooldownAmountUsd6?: string } | null
+
+/** Σ staked / cooldown usd6 over every wallet's position in one market (a full scan). */
+async function scanUmbrellaMarketTotals(ctx: QueryCtx | MutationCtx, marketId: UmbrellaMarketId) {
+  const rows = await ctx.db
+    .query("positions")
+    .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", marketId))
+    .collect()
+  let staked = 0n
+  let cooldown = 0n
+  for (const row of rows) {
+    staked += BigInt(row.suppliedUsd6 ?? "0")
+    cooldown += BigInt(row.cooldownAmountUsd6 ?? "0")
+  }
+  return { staked, cooldown }
+}
+
+async function readUmbrellaMarketTotals(ctx: QueryCtx | MutationCtx, marketId: UmbrellaMarketId) {
+  return ctx.db
+    .query("umbrellaMarketTotals")
+    .withIndex("by_market", (q) => q.eq("marketId", marketId))
+    .unique()
+}
+
+/**
+ * Keep a market's totals in step with one position write, in O(1). Call AFTER the write with the
+ * position's amounts before and after it. The first write to a market since the totals table
+ * existed seeds its row from a one-time scan, which already includes this write.
+ */
+async function applyUmbrellaTotalsDelta(
+  ctx: MutationCtx,
+  marketId: UmbrellaMarketId,
+  before: UmbrellaAmounts,
+  after: UmbrellaAmounts,
+  now: number,
+) {
+  const stakedDelta = BigInt(after?.suppliedUsd6 ?? "0") - BigInt(before?.suppliedUsd6 ?? "0")
+  const cooldownDelta = BigInt(after?.cooldownAmountUsd6 ?? "0") - BigInt(before?.cooldownAmountUsd6 ?? "0")
+  if (stakedDelta === 0n && cooldownDelta === 0n) return
+  const row = await readUmbrellaMarketTotals(ctx, marketId)
+  if (!row) {
+    const totals = await scanUmbrellaMarketTotals(ctx, marketId)
+    await ctx.db.insert("umbrellaMarketTotals", {
+      marketId,
+      stakedUsd6: totals.staked.toString(),
+      cooldownUsd6: totals.cooldown.toString(),
+      updatedAt: now,
+    })
+    return
+  }
+  const staked = BigInt(row.stakedUsd6) + stakedDelta
+  const cooldown = BigInt(row.cooldownUsd6) + cooldownDelta
+  await ctx.db.patch(row._id, {
+    stakedUsd6: (staked > 0n ? staked : 0n).toString(),
+    cooldownUsd6: (cooldown > 0n ? cooldown : 0n).toString(),
+    updatedAt: now,
+  })
+}
+
+/** Recompute every market's totals from the positions (deploy-time seed / drift repair). */
+export const rebuildUmbrellaMarketTotals = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now()
+    const markets = Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]
+    for (const marketId of markets) {
+      const totals = await scanUmbrellaMarketTotals(ctx, marketId)
+      const next = { stakedUsd6: totals.staked.toString(), cooldownUsd6: totals.cooldown.toString(), updatedAt: now }
+      const row = await readUmbrellaMarketTotals(ctx, marketId)
+      if (row) await ctx.db.patch(row._id, next)
+      else await ctx.db.insert("umbrellaMarketTotals", { marketId, ...next })
+    }
+    return { markets: markets.length }
+  },
+})
+
 /**
  * Live umbrella market-state overlay (deficit + slash counters) from `umbrellaMarketState`,
  * falling back to the frozen catalog when a market has no row yet.
@@ -302,22 +378,22 @@ export const getSessionState = query({
           .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
           .order("desc")
           .collect(),
-        // Sum every wallet's suppliedUsd6 / cooldownAmountUsd6 per market so Coverage and
-        // Amount-in-cooldown move with activity, added on top of the catalog baseline (which
-        // stands for pre-existing external liquidity).
+        // Every wallet's staked / cooldown USD per market, so Coverage and Amount-in-cooldown
+        // move with activity, added on top of the catalog baseline (which stands for pre-existing
+        // external liquidity). Read from the running totals row: scanning all wallets' positions
+        // here made every subscriber's read grow with the user count and re-run on any stake.
+        // A market with no totals row yet (no write since the table existed) falls back to the scan.
         Promise.all(
           marketIds.map(async (marketId) => {
-            const rows = await ctx.db
-              .query("positions")
-              .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", marketId))
-              .collect()
-            let stakedUsd = 0
-            let cooldownUsd = 0
-            for (const row of rows) {
-              stakedUsd += numberFromUsd6(row.suppliedUsd6)
-              cooldownUsd += numberFromUsd6(row.cooldownAmountUsd6)
+            const totals = await readUmbrellaMarketTotals(ctx, marketId)
+            const sums = totals
+              ? { staked: BigInt(totals.stakedUsd6), cooldown: BigInt(totals.cooldownUsd6) }
+              : await scanUmbrellaMarketTotals(ctx, marketId)
+            return {
+              marketId,
+              stakedUsd: numberFromUsd6(sums.staked.toString()),
+              cooldownUsd: numberFromUsd6(sums.cooldown.toString()),
             }
-            return { marketId, stakedUsd, cooldownUsd }
           }),
         ),
         Promise.all(marketIds.map((marketId) => readUmbrellaMarketOverlay(ctx, marketId))),
@@ -481,6 +557,9 @@ export const recordAction = mutation({
     const amountUsd = amount * (livePriceUsd ?? market.priceUsd)
     let nextPositionId: Id<"positions"> | undefined = position?._id
     let txAmountUsd = amountUsd
+    const amountsBefore: UmbrellaAmounts = position
+      ? { suppliedUsd6: position.suppliedUsd6, cooldownAmountUsd6: position.cooldownAmountUsd6 }
+      : null
 
     if (args.kind === "stake") {
       if (amount > liquid) throw new Error("INSUFFICIENT_BALANCE")
@@ -606,6 +685,8 @@ export const recordAction = mutation({
       })
       await recomputePositionAggregate(ctx, wallet, args.marketId, position._id, now)
     }
+    const amountsAfter = nextPositionId ? await ctx.db.get(nextPositionId) : null
+    await applyUmbrellaTotalsDelta(ctx, args.marketId, amountsBefore, amountsAfter, now)
 
     const syntheticTxHash = `sim-umbrella-${args.kind}-${args.marketId}-${now.toString(36)}`
     const receipt = await ctx.db.insert("transactions", {
@@ -705,6 +786,13 @@ export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: 
       openTxSynthetic: hash,
       revision: 1,
     })
+    await applyUmbrellaTotalsDelta(
+      ctx,
+      position.marketId,
+      null,
+      { suppliedUsd6: usd6(position.suppliedUsd), cooldownAmountUsd6: usd6(position.cooldownUsd) },
+      now,
+    )
     // A fixture position with cooldownUsd > 0 seeds exactly ONE tranche, keeping the
     // per-tranche truth consistent with the aggregate; splitting is startCooldown's job.
     if (
@@ -857,6 +945,7 @@ export const simulateSlash = mutation({
         revision: (row.revision ?? 0) + 1,
       })
       await recomputePositionAggregate(ctx, row.wallet, args.marketId, row._id, now)
+      await applyUmbrellaTotalsDelta(ctx, args.marketId, row, await ctx.db.get(row._id), now)
       await ctx.db.insert("sandboxActivity", {
         wallet: row.wallet,
         kind: "umbrella_slash",
