@@ -5,12 +5,33 @@
  * once `init` completes.
  */
 import { scheduleIdle } from "@/app/lib/web3/schedule-idle"
+import { describeBlockedEval } from "@/app/lib/monitoring/csp-violation"
 
 type SentryModule = typeof import("@sentry/nextjs")
 
 let modulePromise: Promise<SentryModule> | null = null
 let loaded: SentryModule | null = null
 const earlyErrors: unknown[] = []
+const reportedCspSources = new Set<string>()
+
+function onCspViolation(event: SecurityPolicyViolationEvent) {
+  const context = describeBlockedEval(event)
+  if (!context) return
+  const key = JSON.stringify(context)
+  // Browser extensions may repeatedly evaluate code; bound diagnostics per page load.
+  if (reportedCspSources.has(key) || reportedCspSources.size >= 5) return
+  reportedCspSources.add(key)
+  void loadSentry()
+    .then((Sentry) => {
+      Sentry.captureEvent({
+        message: "CSP blocked JavaScript evaluation",
+        level: "error",
+        contexts: { csp: context },
+        fingerprint: ["csp-blocked-eval", context.source_file],
+      })
+    })
+    .catch(() => undefined)
+}
 
 function onEarlyError(event: ErrorEvent) {
   earlyErrors.push(event.error ?? new Error(event.message))
@@ -45,6 +66,21 @@ function loadSentry(): Promise<SentryModule> {
         /REVISION_REQUIRED/,
         /UNAUTHENTICATED/,
       ],
+
+      // Wallet browser extensions evaluate injected code against the page's CSP, which surfaces
+      // as an unhandled EvalError the app cannot fix: the bundle ships no eval, and allowing
+      // 'unsafe-eval' would defeat the policy. Drop that rejection here. A genuine app-origin
+      // eval block is still reported by the securitypolicyviolation listener with a usable
+      // source location, so nothing actionable is suppressed.
+      beforeSend(event) {
+        const blockedEval = event.exception?.values?.some(
+          (value) =>
+            value.type === "EvalError" &&
+            typeof value.value === "string" &&
+            value.value.includes("'unsafe-eval' is not an allowed source"),
+        )
+        return blockedEval ? null : event
+      },
     })
     window.removeEventListener("error", onEarlyError)
     window.removeEventListener("unhandledrejection", onEarlyRejection)
@@ -80,6 +116,9 @@ export function scheduleSentryLoad() {
   if (typeof window === "undefined") return
   window.addEventListener("error", onEarlyError)
   window.addEventListener("unhandledrejection", onEarlyRejection)
+  // Anonymous EvalError stacks omit the caller. The browser's CSP event provides
+  // its source location without allowing eval or suppressing the original error.
+  window.addEventListener("securitypolicyviolation", onCspViolation)
   const start = () => scheduleIdle(() => void loadSentry().catch(() => undefined), 4000)
   if (document.readyState === "complete") start()
   else window.addEventListener("load", start, { once: true })
