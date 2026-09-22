@@ -1195,14 +1195,19 @@ export const recordTransaction = mutation({
     // Pre-transaction lend supplied from the product-balance ledger, which the transition check
     // must use instead of the positions row — that row can lag out of sync.
     let lendSuppliedBeforeUsd: number | undefined
+    // Token price implied by the supplied ledger (token-denominated since #296): the conversion
+    // fallback for a lend withdraw of an asset the oracle does not cover, such as stocks.
+    let lendLedgerPriceUsd: number | undefined
     if (args.product === "lend" && marketSlug && args.kind !== "claim") {
-      const lendRows = await ctx.db
-        .query("walletLendBalances")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .collect()
-      lendSuppliedBeforeUsd = lendRows
-        .filter((row) => row.marketId === marketSlug && row.state === "deposited")
-        .reduce((sum, row) => sum + row.valueUsd, 0)
+      const deposited = (
+        await ctx.db
+          .query("walletLendBalances")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .collect()
+      ).filter((row) => row.marketId === marketSlug && row.state === "deposited")
+      lendSuppliedBeforeUsd = deposited.reduce((sum, row) => sum + row.valueUsd, 0)
+      const depositedAmount = deposited.reduce((sum, row) => sum + row.amount, 0)
+      if (depositedAmount > 0 && lendSuppliedBeforeUsd > 0) lendLedgerPriceUsd = lendSuppliedBeforeUsd / depositedAmount
     }
 
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
@@ -1338,14 +1343,21 @@ export const recordTransaction = mutation({
         await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
       }
       // Keep liquid wallet balances durable for cash-moving actions (lend deposit/withdraw,
-      // borrow/repay). Token delta is derived from USD via the existing sandbox price.
+      // borrow/repay). The token delta is derived from USD at a real unit price: a missing or
+      // zero liquid row used to fall back to $1/token, so withdrawing a $37,500 rETH lend leg
+      // credited 37,500 rETH (~$120M). Same resolution as the product-balance writers (#296):
+      // the row's own price when plausible, else the oracle, else the lend ledger's price for
+      // assets the oracle does not cover; $1 only when no source exists at all.
       if (
         (args.product === "lend" && (args.kind === "deposit" || args.kind === "withdraw")) ||
         (args.product === "borrow" && (args.kind === "borrow" || args.kind === "repay"))
       ) {
         const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
         const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
-        const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
+        const impliedPriceUsd =
+          liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : null
+        const oraclePriceUsd = await validatedTokenPriceUsd(ctx, assetId, now)
+        const priceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd) ?? lendLedgerPriceUsd ?? 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
@@ -1354,7 +1366,7 @@ export const recordTransaction = mutation({
         if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
-        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now)
+        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now, priceUsd)
       }
       if (multiplyDebit) {
         await applyLiquidAssetDelta(

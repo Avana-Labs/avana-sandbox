@@ -1454,3 +1454,113 @@ describe("Multiply settles against the live collateral price, not the stored equ
     expect(await multiplyAvailableUsd(t)).toBeCloseTo(41_666, 0)
   })
 })
+
+describe("liquid credits convert USD to tokens at a real price, not $1/token", () => {
+  // Mirrors production lend legs: token-denominated ledger rows ($37,500 each) in assets the wallet
+  // holds no liquid row for, so the old $1 fallback credited the USD figure as a token count.
+  async function seedLendLeg(t: ReturnType<typeof convexTest>, asset: string, amount: number) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLendBalances", {
+        wallet: WALLET.toLowerCase(),
+        marketId: asset,
+        assetId: asset,
+        symbol: asset.toUpperCase(),
+        amount,
+        valueUsd: 37_500,
+        state: "deposited",
+        updatedAt: 1,
+      })
+    })
+  }
+
+  async function seedOraclePrice(t: ReturnType<typeof convexTest>, symbol: string, priceUsd: number) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol,
+        llamaId: `test:${symbol}`,
+        priceUsd,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+    })
+  }
+
+  async function liquidRow(t: ReturnType<typeof convexTest>, assetId: string) {
+    const rows = await t.run((ctx) => ctx.db.query("walletLiquidBalances").collect())
+    return rows.find((row) => row.wallet === WALLET.toLowerCase() && row.assetId === assetId)
+  }
+
+  function fullLendWithdraw(marketSlug: string) {
+    return borrowIntent(`withdraw-${marketSlug}`, {
+      product: "lend",
+      kind: "withdraw",
+      marketSlug,
+      assetId: undefined,
+      requestedAmountUsd6: "37500000000",
+      executedAmountUsd6: "37500000000",
+      amountUsd: 37_500,
+      position: { status: "closed", marketSlug, suppliedUsd6: "0", earnedUsd6: "0", supplyApyPct: 3 },
+    })
+  }
+
+  test("a lend withdraw into an asset with no liquid row credits tokens at the oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedLendLeg(t, "reth", 11.711816288454887)
+    await seedOraclePrice(t, "reth", 3208.75)
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, fullLendWithdraw("reth"))
+    const row = await liquidRow(t, "reth")
+    // $37,500 / $3,208.75 ≈ 11.687 rETH. The $1 fallback credited 37,500 rETH (~$120M live).
+    expect(row?.amount).toBeCloseTo(37_500 / 3208.75, 6)
+    expect(row?.valueUsd).toBeCloseTo(37_500, 2)
+  })
+
+  test("falls back to the lend ledger's price for an asset the oracle does not cover", async () => {
+    const t = convexTest(schema, modules)
+    await seedLendLeg(t, "tsla", 102.70877269863877) // stocks are priced outside tokenPrices
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, fullLendWithdraw("tsla"))
+    expect((await liquidRow(t, "tsla"))?.amount).toBeCloseTo(102.70877269863877, 6)
+  })
+
+  test("a borrow into an asset the wallet never held credits tokens at the oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
+    await seedOraclePrice(t, "weth", 2749.05)
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("borrow-weth", {
+        assetId: "uni-v2:weth",
+        position: {
+          status: "open",
+          marketSlug: "uni-v3-bluechip-weth-usdc",
+          debtValueUsd6: "1000000000",
+          collateral: [
+            {
+              marketSlug: "uni-v3-bluechip-weth-usdc",
+              collateralShares: "2000000000",
+              principalTokenAmount: "2000000000",
+              collateralEnabled: true,
+            },
+          ],
+          debt: [
+            {
+              assetId: "uni-v2:weth",
+              baseAssetId: "weth",
+              debtSharesUsd6: "1000000000",
+              debtIndexRay: "1000000000000000000000000000",
+              borrowRateWad: "50000000000000000",
+              principalBorrowedUsd6: "1000000000",
+            },
+          ],
+        },
+      }),
+    )
+    // $1,000 of WETH ≈ 0.3638 WETH, not 1,000 WETH.
+    expect((await liquidRow(t, "weth"))?.amount).toBeCloseTo(1000 / 2749.05, 6)
+  })
+})
