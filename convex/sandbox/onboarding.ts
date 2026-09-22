@@ -517,6 +517,23 @@ export const claim = mutation({
     // the app displays (AAVE seeded $91.74 vs valued $105 → ~$20k of phantom gain on render).
     const livePriceRows = await ctx.db.query("tokenPrices").collect()
     const livePriceBySymbol = new Map(livePriceRows.map((row) => [row.symbol.toLowerCase(), row.priceUsd]))
+    // Lend and LP legs are sized in tokens at claim, then valued at LIVE prices everywhere after.
+    // Sizing them off the cached starter catalog (priced when it was last rebuilt) showed a new
+    // wallet an instant phantom gain/loss — 15.5% on UNI the same day the catalog was rebuilt.
+    const liveLegPriceUsd = async (scope: "lend" | "pool", slug: string, symbol: string | undefined) => {
+      const catalogPriceUsd = catalogBySlug.get(slug)?.priceUsd
+      if (scope === "lend") {
+        const live = symbol ? livePriceBySymbol.get(symbol.toLowerCase()) : undefined
+        if (live && Number.isFinite(live) && live > 0) return live
+      } else {
+        const pool = await ctx.db
+          .query("markets")
+          .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", slug))
+          .unique()
+        if (pool?.priceUsd && Number.isFinite(pool.priceUsd) && pool.priceUsd > 0) return pool.priceUsd
+      }
+      return catalogPriceUsd && catalogPriceUsd > 0 ? catalogPriceUsd : 1
+    }
     const resolveGrantPriceUsd = (symbol: string, fallbackUsd?: number) => {
       const key = symbol.toLowerCase()
       const live = livePriceBySymbol.get(key)
@@ -593,7 +610,7 @@ export const claim = mutation({
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-pool-${index}`
       const market = marketBySlug.get(leg.marketSlug)
-      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      const priceUsd = await liveLegPriceUsd("pool", leg.marketSlug, market?.symbol)
       productBorrowRows.push({
         marketId: leg.marketSlug,
         poolId: leg.marketSlug,
@@ -648,7 +665,7 @@ export const claim = mutation({
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-lend-${index}`
       const market = marketBySlug.get(leg.marketSlug)
-      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      const priceUsd = await liveLegPriceUsd("lend", leg.marketSlug, market?.symbol)
       productLendRows.push({
         marketId: leg.marketSlug,
         assetId: leg.marketSlug,
