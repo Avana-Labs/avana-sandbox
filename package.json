@@ -32,6 +32,7 @@
     ]
   },
   "scripts": {
+    "postinstall": "node scripts/patch-walletconnect-timeout.mjs",
     "clean": "node scripts/clean-next.mjs",
     "dev": "node scripts/run-next.mjs dev",
     "dev:test": "NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 npm run dev",

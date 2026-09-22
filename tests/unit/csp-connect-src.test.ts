@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { TARGET_CHAIN } from "../../app/lib/web3/target-chain"
 
 async function resolveConnectSrc() {
   // The CSP is built in lib/content-security-policy.mjs (used by proxy.ts). connect-src reads
@@ -41,5 +42,19 @@ describe("CSP connect-src (#137)", () => {
     expect(sources).toContain("https://eth.merkle.io")
     expect(sources).toContain("wss://relay.walletconnect.org")
     expect(sources).toContain("https://*.coinbase.com")
+  })
+
+  it("allows the default RPC selected by the wallet transport", async () => {
+    const sources = await resolveConnectSrc()
+    for (const endpoint of TARGET_CHAIN.rpcUrls.default.http) {
+      expect(sources).toContain(new URL(endpoint).origin)
+    }
+  })
+
+  it("continues to block eval in production", async () => {
+    const { buildContentSecurityPolicy } = await import("../../lib/content-security-policy.mjs")
+    const csp = buildContentSecurityPolicy({ nonce: "test-nonce", isDev: false })
+    expect(csp).not.toContain("'unsafe-eval'")
+    expect(csp).toContain("'nonce-test-nonce' 'strict-dynamic'")
   })
 })
