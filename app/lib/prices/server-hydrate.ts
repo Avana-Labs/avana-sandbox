@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache"
 import { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 import { setCanonicalPrices } from "./canonical"
 import { waitForServerSeed } from "@/app/lib/performance/server-seed"
+import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
 
 /**
  * Cross-request cache for the oracle round-trip. The root layout awaits the price seed on every
@@ -51,8 +52,9 @@ export async function loadServerTokenPrices(): Promise<Record<string, number>> {
       setCanonicalPrices(prices)
       return prices
     }
-  } catch {
+  } catch (error) {
     // Leave the fixture in place; the client overlay still refreshes once mounted.
+    reportServerFetchFailure("loadServerTokenPrices", error)
   }
   return {}
 }
