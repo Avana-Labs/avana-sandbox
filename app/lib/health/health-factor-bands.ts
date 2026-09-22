@@ -104,11 +104,6 @@ export function healthFactorBand(hf: number | null | undefined): HealthBand {
   return HEALTH_BANDS.find((band) => hf >= band.min && hf < band.max) ?? HEALTH_BANDS[HEALTH_BANDS.length - 1]
 }
 
-/** Coarse tone for a health factor (default when unknown). */
-export function healthFactorTone(hf: number | null | undefined): ActionMetricTone {
-  return healthFactorBand(hf).tone
-}
-
 /** Canonical label for a health factor ("Safe" / "Moderate" / "Watch" / "At risk"). */
 export function healthFactorLabel(hf: number | null | undefined): string {
   return healthFactorBand(hf).label

@@ -71,14 +71,6 @@ function IntentLoadedSearch({ iconOnly = false, tone = "nav" }: { iconOnly?: boo
   return <SearchTrigger iconOnly={iconOnly} tone={tone} onIntent={() => void loadSearchCommand()} onClick={request} />
 }
 
-export function SearchCommandPlaceholder() {
-  return <SearchTrigger />
-}
-
-export function SearchCommandIconPlaceholder({ tone = "nav" }: { tone?: "nav" | "brand" } = {}) {
-  return <SearchTrigger iconOnly tone={tone} />
-}
-
 export function LazySearchCommand() {
   return <IntentLoadedSearch />
 }

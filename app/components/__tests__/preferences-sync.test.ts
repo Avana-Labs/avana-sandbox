@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest"
 import {
   applyRemotePreferences,
   normalizePreferences,
-  preferencesEqual,
   serializePreferences,
   snapshotLocalPreferences,
   type LocalPreferenceState,
@@ -50,7 +49,6 @@ describe("preferences-sync helpers", () => {
     const a = serializePreferences({ theme: "dark", language: "ES", currency: "EUR", showDollarAmounts: false })
     const b = serializePreferences({ theme: "dark", language: "ES", currency: "EUR", showDollarAmounts: false })
     expect(a).toBe(b)
-    expect(preferencesEqual({ theme: "dark" }, { theme: "dark", language: undefined })).toBe(true)
   })
 
   it("snapshotLocalPreferences copies the full local UI state", () => {

@@ -88,12 +88,3 @@ export function overlayHeroIdentity<T extends HeroNameFields>(
     ...(market.description && "subtitle" in hero ? { subtitle: market.description } : null),
   }
 }
-
-/** Prefer siloed description on About when present. */
-export function overlayAboutDescription<T extends { description: string }>(
-  about: T,
-  market: SiloedMarketIdentity | null | undefined,
-): T {
-  if (!market?.description) return about
-  return { ...about, description: market.description }
-}

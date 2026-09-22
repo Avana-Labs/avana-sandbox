@@ -8,12 +8,7 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type {
-  BorrowBalanceMetrics,
-  DashboardPerformanceMetrics,
-  LendBalanceMetrics,
-  MultiplyBalanceMetrics,
-} from "./dashboard-tab-metrics"
+import type { BorrowBalanceMetrics, LendBalanceMetrics, MultiplyBalanceMetrics } from "./dashboard-tab-metrics"
 import { formatPercent } from "@/app/lib/format"
 
 const MASK = "••••"
@@ -242,44 +237,6 @@ export function DashboardMultiplyBalanceSection({
         <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
-    </section>
-  )
-}
-
-export function DashboardPerformanceSection({
-  title,
-  metrics,
-}: {
-  title: string
-  metrics: DashboardPerformanceMetrics
-}) {
-  const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { t } = useTranslation()
-  const m = (value: string) => (showDollarAmounts ? value : MASK)
-
-  return (
-    <section className="space-y-4 pb-3">
-      <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
-      <MetricGrid
-        metrics={[
-          {
-            label: t("Pool Collateral"),
-            value: m(formatUsdExact(metrics.poolCollateralUsd)),
-            description: t("LP positions currently securing your loans"),
-          },
-          {
-            label: t("Net APY"),
-            value: showDollarAmounts ? formatPercent(metrics.netApyPct) : MASK,
-            description: t("Weighted average APY across all active positions"),
-          },
-          {
-            label: t("Interest Owed"),
-            tone: "down",
-            value: m(formatUsdExact(metrics.interestOwedUsd)),
-            description: t("Total interest accrued on your outstanding loans"),
-          },
-        ]}
-      />
     </section>
   )
 }

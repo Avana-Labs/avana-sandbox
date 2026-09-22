@@ -47,10 +47,6 @@ export function getSwapEligibility(balance: UserAssetBalance, context: SwapConte
   return { eligible: true, availableAmount: balance.amount }
 }
 
-export function getEligibleSwapBalances(balances: UserAssetBalance[], context: SwapContext) {
-  return balances.filter((balance) => getSwapEligibility(balance, context).eligible)
-}
-
 export function getMaxSwapInputAmount(balance: UserAssetBalance, context: SwapContext) {
   const eligibility = getSwapEligibility(balance, context)
   if (!eligibility.eligible) return 0

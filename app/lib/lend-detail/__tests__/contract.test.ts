@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  buildLendMarketDetail,
-  getLendMarketDetail,
-  listAllLendMarketDetails,
-  resolveLendMarket,
-} from "@/app/lib/lend-detail"
+import { buildLendMarketDetail, getLendMarketDetail, resolveLendMarket } from "@/app/lib/lend-detail"
 import { LEND_MARKET_CATALOG, getLendMarketById } from "@/app/lib/lend-system/catalog"
 
 describe("lend detail contract", () => {
@@ -24,9 +19,7 @@ describe("lend detail contract", () => {
   })
 
   it("exposes a detail for every catalog market (exact count)", () => {
-    const all = listAllLendMarketDetails()
-    expect(all.length).toBe(LEND_MARKET_CATALOG.length)
-    expect(all.length).toBeGreaterThan(20)
+    expect(LEND_MARKET_CATALOG.length).toBeGreaterThan(20)
     // Every catalog market id is renderable.
     for (const market of LEND_MARKET_CATALOG) {
       expect(getLendMarketDetail(market.marketId)?.id).toBe(market.marketId)

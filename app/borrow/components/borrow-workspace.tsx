@@ -33,12 +33,6 @@ export const SMART_SPOKES = new Set<string>([
 
 const BORROW_MARKETS_PAGE_SIZE = 12
 
-export function paginateBorrowMarkets<T>(rows: readonly T[], page: number, pageSize = BORROW_MARKETS_PAGE_SIZE) {
-  const safeSize = Math.max(1, pageSize)
-  const start = Math.max(0, page) * safeSize
-  return rows.slice(start, start + safeSize)
-}
-
 // Borrow pools carry multiple token visuals; categorise via the shared taxonomy so
 // filtering stays consistent with Lend / Multiply. A pool matches btc/eth/utility
 // if ANY leg is in that family; forex if EVERY leg is fiat-pegged.

@@ -75,17 +75,3 @@ export function canonicalPriceMap(): Record<string, number> {
   }
   return map
 }
-
-/**
- * Pool pair spot price: `base` in `quote` = P(base) / P(quote), derived from the canonical USD
- * prices so it always agrees with the token rows. `undefined` when either side is unpriced or
- * quote ≤ 0. Float division is fine — this is a display-only ratio; position math uses bigint
- * fixed-point (credit-engine/units.ts).
- */
-export function poolPairPriceUsd(base: string, quote: string): number | undefined {
-  const p0 = canonicalPriceUsd(base)
-  const p1 = canonicalPriceUsd(quote)
-  if (p0 === undefined || p1 === undefined) return undefined
-  if (!Number.isFinite(p0) || !Number.isFinite(p1) || p1 <= 0) return undefined
-  return p0 / p1
-}

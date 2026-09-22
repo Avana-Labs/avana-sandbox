@@ -3,7 +3,6 @@ import {
   formatRewardsApyLabel,
   injectAvailableUsdQuickStat,
   injectSiloedMarketQuickStats,
-  overlayAboutDescription,
   overlayHeroIdentity,
 } from "@/app/lib/detail-page/siloed-market-overlay"
 
@@ -60,13 +59,5 @@ describe("siloed-market-overlay", () => {
     )
     expect(stats.find((s) => s.id === "available")?.value).toBe("$1250000")
     expect(stats.find((s) => s.id === "price")?.value).toBe("$1.00")
-  })
-
-  it("overlays about description from siloed market", () => {
-    const about = overlayAboutDescription(
-      { description: "Catalog copy" },
-      { name: "X", symbol: "X", description: "Convex copy" },
-    )
-    expect(about.description).toBe("Convex copy")
   })
 })

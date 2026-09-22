@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
   NATIVE_GAS_RESERVE_ETH,
-  getEligibleSwapBalances,
   getMaxSwapInputAmount,
   getSwapEligibility,
   validateSwapInputAmount,
@@ -62,7 +61,7 @@ describe("swap eligibility", () => {
       availableAmount: 0,
       reason: "ineligible_active_loop",
     })
-    expect(getEligibleSwapBalances(balances, context)).toEqual([balances[1]])
+    expect(getSwapEligibility(balances[1]!, context).eligible).toBe(true)
   })
 
   it("rejects protocol-locked and unsupported assets", () => {

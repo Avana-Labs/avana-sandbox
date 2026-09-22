@@ -198,7 +198,6 @@ vi.mock("@/app/dashboard/use-dashboard-page", () => ({
 // This isolated test render doesn't mount a ConvexProvider, so stub the hook to
 // return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
-  useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
   useConvexClaimBasis: () => undefined,
   useConvexWalletOnboardingSummary: () => undefined,

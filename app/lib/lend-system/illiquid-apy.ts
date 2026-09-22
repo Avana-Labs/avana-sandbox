@@ -1,9 +1,3 @@
-const MIN_RELIABLE_LEND_TVL_USD = 10_000
-
-export function isIlliquidLendMarket(tvlUsd: number) {
-  return tvlUsd < MIN_RELIABLE_LEND_TVL_USD
-}
-
 // Always show the real APY, even on low-TVL markets: the detail page shows the number too, and
 // the low TVL is already visible in the row.
 export function formatReliableLendApyLabel(apy: number, _tvlUsd: number, formatter: (value: number) => string) {

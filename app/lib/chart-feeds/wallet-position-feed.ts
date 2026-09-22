@@ -39,14 +39,3 @@ export function buildWalletPositionFeed(currentValueUsd: number, events: WalletP
     valueFormat: "usdCompact",
   }
 }
-
-export function buildEmptyChartFeed(valueFormat: "usdCompact" | "percent" = "usdCompact"): ChartFeed {
-  const point = { time: Date.now(), value: 0, label: "No data" }
-  return {
-    headlineValue: formatChartValue(valueFormat, 0),
-    headlineDelta: "0.00%",
-    deltaTone: "positive",
-    rangeData: ranges([point]),
-    valueFormat,
-  }
-}

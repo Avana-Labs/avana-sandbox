@@ -64,46 +64,6 @@ export function snapMultiplierToStep(value: number, min: number, max: number, st
   return Number(clamped.toFixed(stepDecimals(safeStep)))
 }
 
-/** Analytic loop health factor at a given multiplier: LT·m / (m − 1). Infinite at ≤1x. */
-function analyticLoopHealthFactor(multiplier: number, liquidationThreshold: number): number {
-  if (multiplier <= 1) return Number.POSITIVE_INFINITY
-  return (liquidationThreshold * multiplier) / (multiplier - 1)
-}
-
-/**
- * The leverage the "Recommended up to Nx" marker points at: the largest value on the slider step
- * grid that stays within the market's safe max and still clears its minimum health factor.
- * Must FLOOR to the grid (and step down on a failing boundary) — rounding up lands on a leverage
- * whose HF is below the minimum, so dragging to the marker would be blocked.
- */
-export function resolveRecommendedActionLeverage(params: {
-  recommendedMaxMultiplier: number
-  liquidationThreshold: number
-  minHealthFactor: number
-  actionMax: number
-  step?: number
-}): number {
-  const step = Number.isFinite(params.step) && (params.step ?? 0) > 0 ? params.step! : 0.1
-  const precision = stepDecimals(step)
-  const actionMax = Number.isFinite(params.actionMax) ? params.actionMax : MULTIPLY_ACTION_MAX_LEVERAGE
-  const recommended = Number.isFinite(params.recommendedMaxMultiplier) ? params.recommendedMaxMultiplier : actionMax
-  const ceiling = Math.min(recommended, actionMax)
-  if (!Number.isFinite(ceiling) || ceiling <= MULTIPLY_ACTION_MIN_LEVERAGE) {
-    return MULTIPLY_ACTION_MIN_LEVERAGE
-  }
-  // Floor to the step grid so a drag to the marker never rounds UP past the ceiling.
-  let candidate = Math.floor((ceiling + 1e-9) / step) * step
-  // Safety net for the on-boundary case (ceiling exactly on a step where HF === minHF,
-  // which swap losses could tip under): step down until the HF gate is cleared.
-  while (
-    candidate > MULTIPLY_ACTION_MIN_LEVERAGE &&
-    analyticLoopHealthFactor(candidate, params.liquidationThreshold) < params.minHealthFactor
-  ) {
-    candidate -= step
-  }
-  return Number(Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, candidate).toFixed(precision))
-}
-
 export function getDefaultDeleverageMultiplier(currentMultiplier: number) {
   if (!Number.isFinite(currentMultiplier)) return String(MULTIPLY_ACTION_MIN_LEVERAGE)
   const lowered = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - 0.5)

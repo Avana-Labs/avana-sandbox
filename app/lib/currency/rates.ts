@@ -76,11 +76,6 @@ export function applyLiveRates(rates: Partial<Record<CurrencyCode, number>>): vo
   }
 }
 
-/** True once at least one live rate has been applied this session. */
-export function hasLiveRates(): boolean {
-  return Object.keys(liveRates).length > 0
-}
-
 export function exchangeRateFor(currency: CurrencyCode): number {
   if (currency === "USD") return 1
   const live = liveRates[currency]

@@ -1,5 +1,4 @@
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
-import { formatCompactUsd } from "@/app/lib/format"
 import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import { PRICE_FIXTURE } from "@/app/lib/prices/price-fixture"
 
@@ -100,11 +99,6 @@ function usdValueFromTokenAmount(
   return qty * livePriceUsdForSymbol(symbol, ctx)
 }
 
-function formatUsdFromValue(usd: number): string {
-  const label = formatCompactUsd(Math.abs(usd))
-  return usd < 0 ? `-${label}` : label
-}
-
 export function resolveTransactionTokenDisplay(
   row: DetailTransactionRow,
   opts?: TransactionPriceContext,
@@ -199,16 +193,6 @@ export function resolvePoolUsdValue(
   return signedUsdValue(usd0 + usd1, row)
 }
 
-export function resolvePoolUsdDisplay(
-  row: DetailTransactionRow,
-  token0Symbol: string,
-  token1Symbol: string,
-  opts?: TransactionPriceContext,
-): string | null {
-  const usd = resolvePoolUsdValue(row, token0Symbol, token1Symbol, opts)
-  return usd == null ? null : formatUsdFromValue(usd)
-}
-
 export function resolveTransactionUsdValue(
   row: DetailTransactionRow,
   opts?: TransactionPriceContext,
@@ -246,9 +230,4 @@ export function resolveTransactionUsdValue(
   }
 
   return null
-}
-
-export function resolveTransactionUsdDisplay(row: DetailTransactionRow, opts?: TransactionPriceContext): string | null {
-  const usd = resolveTransactionUsdValue(row, opts)
-  return usd == null ? null : formatUsdFromValue(usd)
 }

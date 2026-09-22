@@ -5,7 +5,6 @@ import {
   buildHomeClaimPreview,
   buildHomeRemovePreview,
   buildHomeRepayPreview,
-  selectHomeDebtContextForMarket,
   selectHomeDebtMap,
   selectHomeBorrowTokensForMarket,
 } from "@/app/lib/borrow-system/home-runtime"
@@ -44,14 +43,6 @@ describe("home runtime", () => {
     expect(preview.ctaLabel).toBe("Exceeds borrow power")
   })
 
-  it("returns the actual debt asset for the selected market context", () => {
-    const state = buildMockBorrowSystemState("demo-wallet")
-    const debt = selectHomeDebtContextForMarket(state, "demo-wallet", "uni-v3-stable-usdc-usdt")
-
-    expect(debt?.token.id).toBe("uni-v3-stable:usdt")
-    expect(debt?.amountUsd).toBe(800)
-  })
-
   it("flags unsafe removals when the selected spoke would fall below health factor 1", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const preview = buildHomeRemovePreview(state, "demo-wallet", "uni-v3-stable-usdc-usdt", 100)
@@ -71,16 +62,19 @@ describe("home runtime", () => {
 
   it("repay previews use the real debt position and improve health after repayment", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
-    const debt = selectHomeDebtContextForMarket(state, "demo-wallet", "uni-v3-bluechip-weth-usdc")
+    const spokeId = state.markets["uni-v3-bluechip-weth-usdc"]?.spokeId
+    const debt = state.accounts["demo-wallet"]?.debtPositions.find((position) => position.spokeId === spokeId)
     if (!debt) {
-      throw new Error("Expected bluechip debt context")
+      throw new Error("Expected bluechip debt position")
     }
+    const debtUsd = buildHomeRepayPreview(state, "demo-wallet", debt.id, 0).remainingDebtUsd
+    const borrowApr = (Number(debt.borrowRateWad) / 1e18) * 100
 
-    const preview = buildHomeRepayPreview(state, "demo-wallet", debt.position.id, 300)
+    const preview = buildHomeRepayPreview(state, "demo-wallet", debt.id, 300)
 
     expect(preview.isValid).toBe(true)
-    expect(preview.remainingDebtUsd).toBeLessThan(debt.amountUsd)
-    expect(preview.yearlyInterestSavedUsd).toBeCloseTo(300 * (debt.borrowApr / 100), 2)
+    expect(preview.remainingDebtUsd).toBeLessThan(debtUsd)
+    expect(preview.yearlyInterestSavedUsd).toBeCloseTo(300 * (borrowApr / 100), 2)
   })
 
   it("does not fabricate claimable rewards when the wallet has no reward positions", () => {

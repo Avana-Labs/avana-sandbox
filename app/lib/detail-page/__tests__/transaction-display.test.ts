@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest"
+import { formatCompactUsd } from "@/app/lib/format"
 import { setCanonicalPrices, resetCanonicalPrices } from "@/app/lib/prices/canonical"
 import {
   isUsdMirroredTokenLabel,
   resolvePoolTokenAmounts,
-  resolvePoolUsdDisplay,
+  resolvePoolUsdValue,
   resolveTransactionTokenDisplay,
-  resolveTransactionUsdDisplay,
   resolveTransactionUsdValue,
 } from "@/app/lib/detail-page/transaction-display"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
@@ -18,6 +18,9 @@ const baseRow = (overrides: Partial<DetailTransactionRow>): DetailTransactionRow
   txHashShort: "0x",
   ...overrides,
 })
+
+const usdLabel = (usd: number | null) =>
+  usd == null ? null : `${usd < 0 ? "-" : ""}${formatCompactUsd(Math.abs(usd))}`
 
 describe("transaction-display", () => {
   it("detects USD mirrored token labels", () => {
@@ -38,10 +41,10 @@ describe("transaction-display", () => {
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "378,041.33", symbol: "OP" })
 
     setCanonicalPrices({ OP: 1.46 })
-    expect(resolveTransactionUsdDisplay(row)).toBe("$551.9K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("$551.9K")
 
     setCanonicalPrices({ OP: 0.73 })
-    expect(resolveTransactionUsdDisplay(row)).toBe("$276.0K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("$276.0K")
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "378,041.33", symbol: "OP" })
 
     resetCanonicalPrices()
@@ -54,7 +57,7 @@ describe("transaction-display", () => {
       tokenSymbol: "GHO",
     })
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "37,500", symbol: "GHO" })
-    expect(resolveTransactionUsdDisplay(row)).toBe("$37.5K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("$37.5K")
   })
 
   it("values pool USD from each constituent leg at live prices", () => {
@@ -66,14 +69,14 @@ describe("transaction-display", () => {
       tokenSymbolSecondary: "USDT",
     })
     setCanonicalPrices({ WETH: 1934, USDT: 1 })
-    expect(resolvePoolUsdDisplay(row, "WETH", "USDT")).toBe("$44.0K")
+    expect(usdLabel(resolvePoolUsdValue(row, "WETH", "USDT"))).toBe("$44.0K")
     expect(resolvePoolTokenAmounts(row, "WETH", "USDT")).toEqual({
       token0Amount: "10.1831",
       token1Amount: "24,271.21",
     })
 
     setCanonicalPrices({ WETH: 1500, USDT: 1 })
-    expect(resolvePoolUsdDisplay(row, "WETH", "USDT")).toBe("$39.5K")
+    expect(usdLabel(resolvePoolUsdValue(row, "WETH", "USDT"))).toBe("$39.5K")
     expect(resolvePoolTokenAmounts(row, "WETH", "USDT").token0Amount).toBe("10.1831")
 
     resetCanonicalPrices()
@@ -85,7 +88,7 @@ describe("transaction-display", () => {
       tokenSymbol: "GHO",
     })
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "1200.0000", symbol: "GHO" })
-    expect(resolveTransactionUsdDisplay(row)).toBe("$1.2K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("$1.2K")
   })
 
   it("does not treat multiply collateral rows as pool legs", () => {
@@ -96,7 +99,7 @@ describe("transaction-display", () => {
       tokenSymbolSecondary: "USDC",
     })
     setCanonicalPrices({ WETH: 1934, USDC: 1 })
-    expect(resolveTransactionUsdDisplay(row)).toBe("$50.0K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("$50.0K")
     expect(resolveTransactionTokenDisplay(row)).toEqual({ amount: "25.8521", symbol: "WETH" })
     resetCanonicalPrices()
   })
@@ -135,6 +138,6 @@ describe("transaction-display", () => {
       tokenAmountLabel: "1,200",
       tokenSymbol: "GHO",
     })
-    expect(resolveTransactionUsdDisplay(row)).toBe("-$1.2K")
+    expect(usdLabel(resolveTransactionUsdValue(row))).toBe("-$1.2K")
   })
 })

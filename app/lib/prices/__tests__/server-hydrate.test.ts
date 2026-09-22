@@ -11,7 +11,7 @@ vi.mock("@/app/lib/borrow-system/market-hydration-server", () => ({ fetchTokenPr
 // same value, so the behavior asserted here is unchanged.
 vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: never[]) => unknown) => fn }))
 
-import { hydrateCanonicalPricesFromConvex, loadServerTokenPrices } from "@/app/lib/prices/server-hydrate"
+import { loadServerTokenPrices } from "@/app/lib/prices/server-hydrate"
 import { SERVER_SEED_WAIT_MS } from "@/app/lib/performance/server-seed"
 
 afterEach(() => {
@@ -20,7 +20,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe("hydrateCanonicalPricesFromConvex", () => {
+describe("loadServerTokenPrices", () => {
   it("releases SSR after the deadline without applying late oracle prices", async () => {
     vi.useFakeTimers()
     let resolve!: (prices: Record<string, number>) => void
@@ -39,7 +39,7 @@ describe("hydrateCanonicalPricesFromConvex", () => {
 
     // fetchTokenPrices emits lowercase symbol keys, like the Convex query does.
     fetchTokenPrices.mockResolvedValue({ aave: 88.25, weth: 1905.92 })
-    await hydrateCanonicalPricesFromConvex()
+    await loadServerTokenPrices()
 
     expect(canonicalPriceUsd("AAVE")).toBe(88.25)
     expect(canonicalPriceUsd("WETH")).toBe(1905.92)
@@ -47,13 +47,13 @@ describe("hydrateCanonicalPricesFromConvex", () => {
 
   it("keeps the fixture when the oracle is unavailable (null)", async () => {
     fetchTokenPrices.mockResolvedValue(null)
-    await hydrateCanonicalPricesFromConvex()
+    await loadServerTokenPrices()
     expect(canonicalPriceUsd("AAVE")).toBe(105)
   })
 
   it("never throws when the fetch rejects, leaving the fixture intact", async () => {
     fetchTokenPrices.mockRejectedValue(new Error("convex unreachable"))
-    await expect(hydrateCanonicalPricesFromConvex()).resolves.toBeUndefined()
+    await expect(loadServerTokenPrices()).resolves.toEqual({})
     expect(canonicalPriceUsd("AAVE")).toBe(105)
   })
 })

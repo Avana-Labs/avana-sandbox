@@ -155,12 +155,6 @@ type ExploreLoopsMarketsTableProps = {
   onOpenMultiply?: (href: string) => void
 }
 
-export function paginateMultiplyRows<T>(rows: readonly T[], page: number, pageSize: number) {
-  const safeSize = Math.max(1, pageSize)
-  const start = Math.max(0, page) * safeSize
-  return rows.slice(start, start + safeSize)
-}
-
 export function isNegativeMultiplyApy(apy?: string) {
   if (!apy) return false
   const value = Number.parseFloat(apy.replace(/[^0-9.-]/g, ""))

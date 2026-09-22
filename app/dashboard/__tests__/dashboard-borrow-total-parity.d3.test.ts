@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
 import { buildPortfolioBorrowData } from "@/app/lib/borrow-system/read-model"
-import { buildBorrowDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { buildBorrowBalanceMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-// D3: the dashboard net-portfolio HEADLINE debt (buildBorrowDashboardMetrics ->
-// overview.totalBorrowedUsd) must equal the Borrow tab's "Total Borrowed" — the sum of
+// D3: the dashboard net-portfolio HEADLINE debt (buildBorrowBalanceMetrics ->
+// totalBorrowedUsd) must equal the Borrow tab's "Total Borrowed" — the sum of
 // the debt rows' borrowedUsd. Both must be read at the SAME (current) debt index.
 describe("headline totalBorrowedUsd agrees with the Borrow-tab debt rows (D3)", () => {
   it("matches to the cent when both are read at the current index", () => {
@@ -16,7 +16,7 @@ describe("headline totalBorrowedUsd agrees with the Borrow-tab debt rows (D3)", 
     // split the headline ($6.73) from the tab ($6.80).
     const now = state.now + 120 * DAY_MS
 
-    const headlineTotal = buildBorrowDashboardMetrics(state, "wallet-1", now).overview.totalBorrowedUsd
+    const headlineTotal = buildBorrowBalanceMetrics(state, "wallet-1", now).totalBorrowedUsd
     const tab = buildPortfolioBorrowData(state, "wallet-1", now)
     const debtRowTotal = tab.debtPositions.reduce((sum, row) => sum + row.borrowedUsd, 0)
 
@@ -31,8 +31,8 @@ describe("headline totalBorrowedUsd agrees with the Borrow-tab debt rows (D3)", 
     const now = state.now + 120 * DAY_MS
 
     // Reading at the stored index (no accrual) is strictly lower — the old headline.
-    const staleTotal = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.totalBorrowedUsd
-    const currentTotal = buildBorrowDashboardMetrics(state, "wallet-1", now).overview.totalBorrowedUsd
+    const staleTotal = buildBorrowBalanceMetrics(state, "wallet-1", state.now).totalBorrowedUsd
+    const currentTotal = buildBorrowBalanceMetrics(state, "wallet-1", now).totalBorrowedUsd
 
     expect(currentTotal).toBeGreaterThan(staleTotal)
     // And the tab (already current-index) matches the current total, not the stale one.
