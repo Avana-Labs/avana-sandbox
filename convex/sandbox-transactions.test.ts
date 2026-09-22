@@ -1343,3 +1343,114 @@ describe("split session subscriptions", () => {
     }
   })
 })
+
+describe("Multiply settles against the live collateral price, not the stored equity", () => {
+  // Mirrors the onboarding-seeded loops in production: stored at the claim-time $83,333 /
+  // $41,667 with no assetId on the row, while the collateral price has moved since.
+  async function seedLoop(t: ReturnType<typeof convexTest>, livePriceUsd: number | null) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "multiply",
+        marketSlug: "eth-usdt",
+        status: "open",
+        collateralAmount: 30,
+        collateralValueUsd: 83_333,
+        debtValueUsd: 41_667,
+        multiplier: 2,
+        ltv: 0.5,
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+      if (livePriceUsd != null) {
+        await ctx.db.insert("tokenPrices", {
+          symbol: "eth",
+          llamaId: "test:eth",
+          priceUsd: livePriceUsd,
+          source: "baseline",
+          confidence: 0.99,
+          status: "fresh",
+          updatedAt: Date.now(),
+        })
+      }
+    })
+  }
+
+  async function multiplyAvailableUsd(t: ReturnType<typeof convexTest>) {
+    const rows = await t.run((ctx) => ctx.db.query("walletMultiplyBalances").collect())
+    return rows.filter((row) => row.state === "available").reduce((sum, row) => sum + row.valueUsd, 0)
+  }
+
+  function closeIntent(intentId: string, amountUsd: number) {
+    const usd6 = String(Math.round(amountUsd * 1_000_000))
+    return borrowIntent(intentId, {
+      product: "multiply",
+      kind: "close",
+      marketSlug: "eth-usdt",
+      requestedAmountUsd6: usd6,
+      executedAmountUsd6: usd6,
+      amountUsd,
+      expectedRevision: 0,
+      position: {
+        status: "closed",
+        marketSlug: "eth-usdt",
+        assetId: "eth",
+        collateralAmount: 0,
+        collateralValueUsd: 0,
+        debtValueUsd: 0,
+        multiplier: 1,
+        ltv: 0,
+      },
+    })
+  }
+
+  test("a close credits the live equity, not the equity from the last write", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000) // 30 ETH now worth $90,000 → live equity $48,333
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c1", 48_333))
+    // The stale diff credited $41,666 (83,333 − 41,667) and dropped the $6,667 price gain.
+    expect(await multiplyAvailableUsd(t)).toBeCloseTo(48_333, 0)
+  })
+
+  test("a deleverage after a price gain does not demand a top-up", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000)
+    // Sell 5 ETH ($15,000) to repay debt: equity stays $48,333 at the live price. The stale diff
+    // read the $6,667 gain as new equity and, with no liquid ETH, threw INSUFFICIENT_BALANCE.
+    const res = await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("d1", {
+        product: "multiply",
+        kind: "deleverage",
+        marketSlug: "eth-usdt",
+        requestedAmountUsd6: "15000000000",
+        executedAmountUsd6: "15000000000",
+        amountUsd: 15_000,
+        expectedRevision: 0,
+        position: {
+          status: "open",
+          marketSlug: "eth-usdt",
+          assetId: "eth",
+          collateralAmount: 25,
+          collateralValueUsd: 75_000,
+          debtValueUsd: 26_667,
+          multiplier: 75_000 / 48_333,
+          ltv: 26_667 / 75_000,
+        },
+      }),
+    )
+    expect(res.receipt.status).toBe("success")
+  })
+
+  test("keeps the stored equity when the collateral has no current oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, null)
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c2", 41_666))
+    expect(await multiplyAvailableUsd(t)).toBeCloseTo(41_666, 0)
+  })
+})

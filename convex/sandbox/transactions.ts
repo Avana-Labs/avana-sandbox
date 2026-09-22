@@ -681,15 +681,38 @@ async function assertBorrowCollateralConserved(
   }
 }
 
+/**
+ * Equity of the stored Multiply position at the live collateral price. The client reprices the
+ * position at the live oracle price before computing the next one (1344e827), so diffing that
+ * against the collateralValueUsd stored at the last write booked every price move as user
+ * funding: a close credited the equity from the last write instead of what the position was
+ * worth, and a deleverage after a gain demanded a top-up. Falls back to the stored equity when
+ * the payload does not name the collateral or it has no current oracle price.
+ */
+async function priorMultiplyEquityUsd(
+  ctx: MutationCtx,
+  prior: Doc<"positions"> | undefined,
+  collateralAssetId: string | undefined,
+  now: number,
+) {
+  const storedEquityUsd = Math.max(0, (prior?.collateralValueUsd ?? 0) - (prior?.debtValueUsd ?? 0))
+  const collateralAmount = prior?.collateralAmount ?? 0
+  if (!prior || !(collateralAmount > 0) || !collateralAssetId) return storedEquityUsd
+  const livePriceUsd = await validatedTokenPriceUsd(ctx, liquidAssetIdFromArgs(collateralAssetId), now)
+  if (!livePriceUsd) return storedEquityUsd
+  return Math.max(0, collateralAmount * livePriceUsd - (prior.debtValueUsd ?? 0))
+}
+
 /** Resolve and validate the wallet-owned equity source for a Multiply increase. */
 async function multiplyLiquidDebit(
   ctx: MutationCtx,
   wallet: string,
   args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
-  existing?: Doc<"positions">,
+  existing: Doc<"positions"> | undefined,
+  now: number,
 ): Promise<{ assetId: string; symbol: string; tokenAmount: number } | null> {
   if (args.product !== "multiply" || !args.position || args.position.status === "closed") return null
-  const previousEquityUsd = Math.max(0, (existing?.collateralValueUsd ?? 0) - (existing?.debtValueUsd ?? 0))
+  const previousEquityUsd = await priorMultiplyEquityUsd(ctx, existing, args.position.assetId, now)
   const nextEquityUsd = Math.max(0, (args.position.collateralValueUsd ?? 0) - (args.position.debtValueUsd ?? 0))
   const increaseUsd = nextEquityUsd - previousEquityUsd
   if (increaseUsd <= 0.02) return null
@@ -1216,7 +1239,7 @@ export const recordTransaction = mutation({
       validateTransactionTransition(args, existing, lendSuppliedBeforeUsd)
       await assertBorrowCollateralConserved(ctx, wallet, args)
       await assertBorrowSolvent(ctx, args)
-      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing)
+      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing, now)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
@@ -1643,7 +1666,7 @@ async function applyProductBucketDelta(
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
     const collateralAmount =
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
-    const previousEquityUsd = Math.max(0, (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0))
+    const previousEquityUsd = await priorMultiplyEquityUsd(ctx, priorPosition, args.position.assetId, now)
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
     // `deltaUsd` is USD but walletMultiplyBalances.amount is a TOKEN QUANTITY, so a real
     // price is required — a $1/token default once persisted 41,666 WSTETH for a $41.6K
