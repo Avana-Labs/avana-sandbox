@@ -1308,6 +1308,7 @@ export default defineSchema({
     .index("by_wallet_intent", ["wallet", "intentId"])
     .index("by_wallet_hash", ["wallet", "syntheticTxHash"])
     .index("by_market_at", ["marketSlug", "at"])
+    .index("by_asset_at", ["assetId", "at"])
     .index("by_wallet_product_at", ["wallet", "product", "at"]),
 
   /**
