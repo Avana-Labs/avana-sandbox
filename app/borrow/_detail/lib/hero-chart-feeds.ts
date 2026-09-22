@@ -1,4 +1,10 @@
-import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
+import {
+  formatChartPointLabel,
+  formatChartValue,
+  type ChartFeed,
+  type ChartRangeData,
+  type ChartValueFormat,
+} from "@/app/components/charts"
 import type { Series, TimeRangeId } from "@/app/lib/borrow-detail"
 
 const RANGE_MAP = {
@@ -16,7 +22,7 @@ export function buildFeedFromSeries(series: Series, valueFormat: ChartValueForma
   const points = series.points.map((point) => ({
     time: Date.parse(point.t),
     value: point.v,
-    label: formatPointLabel(point.t),
+    label: formatChartPointLabel(point.t),
   }))
   const latest = series.aggregate ?? points[points.length - 1]?.value ?? 0
   const first = points[0]?.value ?? latest
@@ -42,7 +48,7 @@ export function buildFeedFromRangeSeries(
       series?.points.map((point) => ({
         time: Date.parse(point.t),
         value: point.v,
-        label: formatPointLabel(point.t, borrowRange as BorrowRangeId),
+        label: formatChartPointLabel(point.t, borrowRange),
       })) ?? fallback.rangeData[chartRange]
     return accumulator
   }, {} as ChartRangeData)
@@ -109,16 +115,4 @@ function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {
     "1Y": points.slice(-365),
     All: points,
   }
-}
-
-function formatPointLabel(value: string, range?: BorrowRangeId | "ALL") {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  if (range === "1D" || value.includes("T")) {
-    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
-  }
-  if (range === "1Y" || range === "ALL") {
-    return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" }).format(date)
-  }
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
 }

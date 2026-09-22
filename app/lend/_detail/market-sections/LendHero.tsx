@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
+import {
+  formatChartPointLabel,
+  formatChartValue,
+  type ChartFeed,
+  type ChartRangeData,
+  type ChartValueFormat,
+} from "@/app/components/charts"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -195,7 +201,7 @@ function buildLendMetricFeed(
   const points = series.points.map((point) => ({
     time: Date.parse(point.t),
     value: point.v,
-    label: formatPointLabel(point.t),
+    label: formatChartPointLabel(point.t),
   }))
   const latest = series.aggregate ?? points[points.length - 1]?.value ?? 0
   const first = points[0]?.value ?? latest
@@ -223,15 +229,6 @@ function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {
 
 function latestValue(points: LendMarketDetail["supplyBorrow"]["supplied"]["points"]) {
   return points[points.length - 1]?.v
-}
-
-function formatPointLabel(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  if (value.includes("T")) {
-    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
-  }
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
 }
 
 function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] }) {

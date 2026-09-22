@@ -14,7 +14,7 @@ export {
   resolveSeriesTone,
 } from "./chart-data"
 export { ChartRangeSelector } from "./chart-range-selector"
-export { formatChartAxis, formatChartValue } from "./format"
+export { formatChartAxis, formatChartPointLabel, formatChartValue } from "./format"
 export { HeroBalanceDisplay, resolveDeltaTone } from "./hero-balance-display"
 export { CHART_RANGE_OPTIONS } from "./types"
 export type { ChartFeed, ChartPoint, ChartRangeData, ChartRangeOption, ChartValueFormat } from "./types"
