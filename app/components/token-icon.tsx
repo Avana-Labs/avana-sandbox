@@ -4,6 +4,7 @@ import Image from "next/image"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { getTokenIconMeta, type TokenIconMeta } from "@/app/lib/token-icons"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 import { TOKEN_ICON_TABLE_PX, type TokenIconTableSize } from "@/app/lib/token-icon-sizes"
 
@@ -59,7 +60,7 @@ export function TokenIcon({
     >
       {showIcon ? (
         <Image
-          src={meta.iconUrl as string}
+          src={sizedLocalIconSrc(meta.iconUrl as string, px)}
           alt={meta.symbol}
           width={px}
           height={px}

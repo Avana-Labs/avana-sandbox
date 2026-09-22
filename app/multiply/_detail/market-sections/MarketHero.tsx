@@ -18,6 +18,7 @@ import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-se
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
@@ -207,7 +208,7 @@ function TokenAvatar({ visual }: { visual: MultiplyMarketDetail["hero"]["visuals
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={visual.iconUrl}
+          src={sizedLocalIconSrc(visual.iconUrl, 64)}
           alt=""
           className="size-16 object-contain"
           width={64}

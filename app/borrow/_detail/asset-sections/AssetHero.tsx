@@ -18,6 +18,7 @@ import {
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { currentDebtValueUsd6 } from "@/app/lib/credit-engine"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type Props = {
   detail: AssetDetail
@@ -71,7 +72,7 @@ export function AssetHeroIdentity({
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={detail.hero.visual.iconUrl}
+                  src={sizedLocalIconSrc(detail.hero.visual.iconUrl, 64)}
                   alt=""
                   className="size-16 object-contain"
                   width={64}

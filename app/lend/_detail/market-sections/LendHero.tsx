@@ -22,6 +22,7 @@ import {
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type LendHeroProps = {
   detail: LendMarketDetail
@@ -239,7 +240,7 @@ function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] })
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={visual.iconUrl}
+          src={sizedLocalIconSrc(visual.iconUrl, 64)}
           alt=""
           className="size-16 object-contain"
           width={64}

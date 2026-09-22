@@ -39,6 +39,7 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -104,7 +105,7 @@ function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
       <span className="relative flex size-12 shrink-0 items-center justify-center bg-transparent">
         <Image
           alt={row.logoAlt ?? `${row.symbol} logo`}
-          src={row.logoSrc}
+          src={sizedLocalIconSrc(row.logoSrc, 48)}
           width={48}
           height={48}
           sizes="48px"

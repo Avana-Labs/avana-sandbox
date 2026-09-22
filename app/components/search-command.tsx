@@ -17,6 +17,7 @@ import { rankResults } from "@/app/lib/search-ranking"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useBorrowSessionContextOptional } from "@/app/lib/avana-session/avana-sessions-context"
 import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
 
@@ -78,7 +79,8 @@ async function preloadSearchResultIcons(results: SearchResult[]) {
   for (const result of results) {
     const visuals = Array.isArray(result.visual) ? result.visual : [result.visual]
     for (const visual of visuals) {
-      if (visual.iconUrl) urls.add(visual.iconUrl)
+      // Same sized variant SearchResultImage renders, so the pre-decode warms the right file.
+      if (visual.iconUrl) urls.add(sizedLocalIconSrc(visual.iconUrl, 32))
     }
   }
   await Promise.all(Array.from(urls, preloadSearchIcon))
@@ -89,7 +91,7 @@ function SearchResultImage({ src }: { src: string }) {
     // These small local icons are decoded before result rows are published.
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={sizedLocalIconSrc(src, 32)}
       alt=""
       width={TOKEN_ICON_TABLE_PX}
       height={TOKEN_ICON_TABLE_PX}
