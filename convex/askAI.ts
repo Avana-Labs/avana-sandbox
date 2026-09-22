@@ -336,82 +336,6 @@ export const recordGuestMint = mutation({
   },
 })
 
-export const beginTurn = mutation({
-  args: {
-    threadId: v.string(),
-    prompt: v.string(),
-    clientRequestId: v.optional(v.string()),
-    retryPromptMessageId: v.optional(v.string()),
-  },
-  handler: async (ctx, { threadId, prompt, clientRequestId, retryPromptMessageId }) => {
-    const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
-    if (thread.status !== "active") throw new Error("Thread is archived")
-    const text = prompt.trim()
-    if (!text || text.length > 2_000)
-      throw askAIError("ASK_AI_GENERATION_FAILED", "Message must contain 1 to 2000 characters")
-    const previousTurn = retryPromptMessageId
-      ? await ctx.db
-          .query("askAITurns")
-          .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", retryPromptMessageId))
-          .unique()
-      : null
-    if (
-      retryPromptMessageId &&
-      (!previousTurn ||
-        previousTurn.ownerSubject !== ownerSubject ||
-        previousTurn.threadId !== threadId ||
-        previousTurn.prompt !== text ||
-        previousTurn.status !== "failed")
-    )
-      throw new Error("This turn cannot be retried")
-
-    const requestId = clientRequestId?.trim() ?? ""
-    if (!previousTurn) {
-      if (!requestId || requestId.length > 100)
-        throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID is invalid")
-      const existing = await ctx.db
-        .query("askAITurns")
-        .withIndex("by_owner_request", (q) => q.eq("ownerSubject", ownerSubject).eq("clientRequestId", requestId))
-        .unique()
-      if (existing) {
-        if (existing.threadId !== threadId || existing.prompt !== text)
-          throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID was already used")
-        return { messageId: existing.promptMessageId, ownerSubject, duplicate: true as const }
-      }
-    }
-    const budgetReservationId = await enforceAskAICostGate(ctx, ownerSubject, {
-      enforceBurst: true,
-      enforceConcurrent: true,
-    })
-    const saved = previousTurn
-      ? { messageId: previousTurn.promptMessageId }
-      : await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
-    const now = Date.now()
-    if (previousTurn) await ctx.db.patch(previousTurn._id, { status: "running", budgetReservationId, updatedAt: now })
-    else
-      await ctx.db.insert("askAITurns", {
-        threadId,
-        ownerSubject,
-        clientRequestId: requestId,
-        budgetReservationId,
-        promptMessageId: saved.messageId,
-        prompt: text,
-        status: "running",
-        createdAt: now,
-        updatedAt: now,
-      })
-    if (thread.title === "New Chat") {
-      await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: Date.now() })
-    }
-    if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })
-    return {
-      ...saved,
-      ownerSubject,
-      duplicate: false as const,
-    }
-  },
-})
-
 export const enqueueTurn = mutation({
   args: {
     threadId: v.string(),
@@ -454,7 +378,7 @@ export const enqueueTurn = mutation({
       throw askAIError("ASK_AI_RATE_LIMITED", "This chat is full. Start a new chat to continue.")
     }
     // Atomic cost gate before any message/turn persistence. Concurrency is enforced at claim
-    // time so queued turns can stack safely; burst is enforced on beginTurn only, and enqueue
+    // time so queued turns can stack safely; burst is enforced on retry only, and enqueue
     // relies on queue depth plus the daily/global/token caps.
     const budgetReservationId = await enforceAskAICostGate(ctx, ownerSubject, {
       enforceBurst: false,

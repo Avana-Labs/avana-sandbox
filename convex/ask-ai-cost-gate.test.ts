@@ -126,7 +126,7 @@ describe("Ask AI atomic cost gate", () => {
     expect(row?.status).toBe("failed")
   })
 
-  test("enqueueTurn and beginTurn share daily subject + global caps", async () => {
+  test("enqueueTurn enforces the daily subject cap", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:shared-gate" })
     const thread = await owner.mutation(api.askAI.create, {})
@@ -144,7 +144,7 @@ describe("Ask AI atomic cost gate", () => {
       })
     }
     await expect(
-      owner.mutation(api.askAI.beginTurn, {
+      owner.mutation(api.askAI.enqueueTurn, {
         threadId: thread.threadId,
         prompt: "One more should fail",
         clientRequestId: "shared-gate-begin",

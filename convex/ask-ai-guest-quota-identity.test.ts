@@ -33,7 +33,7 @@ async function seedUsage(t: ReturnType<typeof askAITest>, ownerSubject: string, 
 // REGRESSION MARKER — guest quota identity / rotation risk.
 //
 // Ask AI quota (request count AND daily token budget) is keyed entirely on
-// `ownerSubject` (convex/askAI.ts::quota, beginTurn, enqueueTurn). For an
+// `ownerSubject` (convex/askAI.ts::quota, enqueueTurn). For an
 // authenticated wallet the subject is stable, but a *guest* subject is minted
 // per session ("ask-guest:*"). Nothing ties one guest subject to the next, so a
 // guest who rotates to a fresh subject is handed a fresh daily budget — the
