@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { useQuery } from "convex/react"
+import { useAuthedQueryArgs } from "@/app/lib/convex/use-authed-query-args"
 import { api } from "@/convex/_generated/api"
 import { getSwapAsset } from "@/app/lib/swap-system/catalog"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
@@ -125,7 +126,10 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
   const hasMounted = useHasMounted()
   const balances = useConvexProductWalletBalances(walletId)
   const priceFor = useCanonicalPriceFor()
-  const portfolio = useQuery(api.sandbox.transactions.getPortfolio, walletId ? { wallet: walletId } : "skip")
+  const portfolio = useQuery(
+    api.sandbox.transactions.getPortfolio,
+    useAuthedQueryArgs(walletId ? { wallet: walletId } : null),
+  )
   const borrowSession = useBorrowSessionContext()
   const lendSession = useLendSessionContext()
   const multiplySession = useMultiplySessionContext()

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "convex/react"
+import { useAuthedQueryArgs } from "@/app/lib/convex/use-authed-query-args"
 import { ChevronRight } from "@/app/components/icons"
 import { TokenIcon } from "@/app/components/token-icon"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
@@ -196,7 +197,10 @@ export function RecentActivity({
   const [limit, setLimit] = React.useState(ACTIVITY_PAGE_SIZE)
   const cachedConvexRef = React.useRef<PortfolioActivityRow[]>([])
 
-  const convexRaw = useQuery(api.sandbox.transactions.getActivity, walletId ? { wallet: walletId, limit } : "skip")
+  const convexRaw = useQuery(
+    api.sandbox.transactions.getActivity,
+    useAuthedQueryArgs(walletId ? { wallet: walletId, limit } : null),
+  )
 
   const convexRows = React.useMemo(() => {
     if (!convexRaw) return cachedConvexRef.current
