@@ -1858,6 +1858,8 @@ const dict: TranslationDictionary = {
   "Support request": "Solicitud de soporte",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Si algo parece incorrecto, envía los detalles y nuestro equipo puede ayudarte a clasificar el problema.",
+  "No Wallet Connected": "Ninguna billetera conectada",
+  "Complete onboarding": "Completar la incorporación",
 }
 
 export default dict

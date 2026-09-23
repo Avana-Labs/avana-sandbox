@@ -7,6 +7,7 @@ import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { requiresOnboarding } from "@/app/lib/route-access"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
@@ -92,7 +93,8 @@ export function SandboxGate({
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
   // Guests browse every open route with live, unauthenticated market data; the action CTA
   // (not this gate) sends them to onboarding when they try to transact.
-  if (!isSignedIn && !requiresOnboarding(pathname)) return <>{children}</>
+  if (!isSignedIn && !requiresOnboarding(pathname))
+    return <TransactAccessContext.Provider value="guest">{children}</TransactAccessContext.Provider>
   // The SIWE store's server/hydration snapshot is seeded from the verified `avana_siwe` cookie
   // (root layout), so `isSignedIn` is truthful during SSR and the first client render: guests get the onboarding hero server-rendered (fast LCP, nothing to flash), and
   // signed-in users never pass through a signed-out frame.

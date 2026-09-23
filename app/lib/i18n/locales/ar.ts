@@ -1712,6 +1712,8 @@ const dict: TranslationDictionary = {
   "Avana Platform Fee": "رسوم منصة Avana",
   "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
     "تُطبَّق رسوم واجهة Avana بنسبة 15 نقطة أساس (0.15%) مقدمًا على المعاملات التي تبدأ عبر منصة Avana. قد تختلف أسعار الفائدة والعوائد وتكاليف المعاملات الأخرى حسب السوق والمركز ومسار التنفيذ.",
+  "No Wallet Connected": "لا توجد محفظة متصلة",
+  "Complete onboarding": "أكمل الإعداد",
 }
 
 export default dict

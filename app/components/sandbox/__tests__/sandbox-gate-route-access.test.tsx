@@ -28,6 +28,11 @@ vi.mock("../onboarding-flow", () => ({
 
 import { SandboxGate } from "../sandbox-gate"
 import { SignedInSandboxGate } from "../signed-in-sandbox-gate"
+import { useTransactAccess } from "@/app/lib/transact-access"
+
+function AccessProbe() {
+  return <div data-testid="access">{useTransactAccess()}</div>
+}
 
 afterEach(() => {
   cleanup()
@@ -64,7 +69,11 @@ describe("SignedInSandboxGate for a wallet still onboarding", () => {
   it("keeps an open route's page mounted and hides the onboarding flow", () => {
     notDone()
     state.pathname = "/borrow"
-    render(<SignedInSandboxGate wallet="0xabc" optimistic={false}>{page}</SignedInSandboxGate>)
+    render(
+      <SignedInSandboxGate wallet="0xabc" optimistic={false}>
+        {page}
+      </SignedInSandboxGate>,
+    )
     expect(screen.getByTestId("page")).toBeTruthy()
     expect(screen.queryByTestId("wallet-onboarding")).toBeNull()
   })
@@ -72,7 +81,11 @@ describe("SignedInSandboxGate for a wallet still onboarding", () => {
   it("shows the onboarding flow instead of the dashboard", () => {
     notDone()
     state.pathname = "/dashboard"
-    render(<SignedInSandboxGate wallet="0xabc" optimistic={false}>{page}</SignedInSandboxGate>)
+    render(
+      <SignedInSandboxGate wallet="0xabc" optimistic={false}>
+        {page}
+      </SignedInSandboxGate>,
+    )
     expect(screen.getByTestId("wallet-onboarding")).toBeTruthy()
     expect(screen.queryByTestId("page")).toBeNull()
   })
@@ -80,7 +93,45 @@ describe("SignedInSandboxGate for a wallet still onboarding", () => {
   it("renders the dashboard once onboarding is done", () => {
     state.gate = { onboardingStep: "done", economy: {} }
     state.pathname = "/dashboard"
-    render(<SignedInSandboxGate wallet="0xabc" optimistic={false}>{page}</SignedInSandboxGate>)
+    render(
+      <SignedInSandboxGate wallet="0xabc" optimistic={false}>
+        {page}
+      </SignedInSandboxGate>,
+    )
     expect(screen.getByTestId("page")).toBeTruthy()
+  })
+})
+
+describe("transact access", () => {
+  it("marks a guest on an open route", () => {
+    state.pathname = "/borrow"
+    render(
+      <SandboxGate>
+        <AccessProbe />
+      </SandboxGate>,
+    )
+    expect(screen.getByTestId("access")).toHaveTextContent("guest")
+  })
+
+  it("marks a signed-in wallet that has not onboarded", () => {
+    state.gate = { onboardingStep: "eligible", economy: {} }
+    state.pathname = "/borrow"
+    render(
+      <SignedInSandboxGate wallet="0xabc" optimistic={false}>
+        <AccessProbe />
+      </SignedInSandboxGate>,
+    )
+    expect(screen.getByTestId("access")).toHaveTextContent("needs-onboarding")
+  })
+
+  it("marks an onboarded wallet ready", () => {
+    state.gate = { onboardingStep: "done", economy: {} }
+    state.pathname = "/borrow"
+    render(
+      <SignedInSandboxGate wallet="0xabc" optimistic={false}>
+        <AccessProbe />
+      </SignedInSandboxGate>,
+    )
+    expect(screen.getByTestId("access")).toHaveTextContent("ready")
   })
 })

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { RouteContentSkeleton } from "@/app/components/loading-states"
 import { SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
 import { requiresOnboarding } from "@/app/lib/route-access"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AuthedGateChecker, type GateVerdict } from "./authed-sandbox-gate"
 import styles from "./onboarding-flow.module.css"
@@ -73,7 +74,9 @@ export function SignedInSandboxGate({
   return (
     <GateErrorBoundary>
       <SiweConvexProvider>
-        {showChildren ? children : verdict === "unknown" ? <RouteContentSkeleton /> : null}
+        <TransactAccessContext.Provider value={verdict === "blocked" ? "needs-onboarding" : "ready"}>
+          {showChildren ? children : verdict === "unknown" ? <RouteContentSkeleton /> : null}
+        </TransactAccessContext.Provider>
         <Suspense fallback={null}>
           <AuthedGateChecker wallet={wallet} optimistic={optimistic} onVerdict={setVerdict} />
         </Suspense>

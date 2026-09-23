@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from "vitest"
 import { HomeSwapAction } from "../home-swap-action"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MockSwapProvider } from "@/app/lib/swap-system"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 
 const { loadPicker } = vi.hoisted(() => ({ loadPicker: vi.fn() }))
 vi.mock("next/dynamic", () => ({
@@ -88,4 +89,17 @@ it("keeps the indicative Buy amount visible when the server quote fails", async 
 
   await screen.findByRole("button", { name: "Refresh quote" })
   expect(screen.getByRole("textbox", { name: "Buy" })).not.toHaveValue("0")
+})
+
+it("sends a guest to the dashboard onboarding instead of reviewing a swap", () => {
+  render(
+    <TransactAccessContext.Provider value="guest">
+      <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
+        <HomeSwapAction />
+      </AvanaSessionsProvider>
+    </TransactAccessContext.Provider>,
+  )
+  const cta = screen.getByTestId("action-footer-primary")
+  expect(cta).toHaveTextContent("No Wallet Connected")
+  expect(cta).toHaveAttribute("href", "/dashboard")
 })

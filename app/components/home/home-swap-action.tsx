@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
@@ -11,6 +12,7 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
@@ -273,6 +275,9 @@ export function HomeSwapAction() {
     setStage("configure")
   }, [])
 
+  // Guests keep the quote form but are sent to the dashboard onboarding instead of review.
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+
   const primaryLabel = !inputBalance
     ? inputAssetId
       ? "Insufficient balance"
@@ -375,28 +380,40 @@ export function HomeSwapAction() {
             </div>
           ) : null}
 
-          <button
-            type="button"
-            disabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error") || isPending}
-            onClick={() => {
-              if (quoteState === "error") {
-                setQuoteRetry((current) => current + 1)
-                return
+          {accessLabel ? (
+            <Link
+              href={TRANSACT_ACCESS_HREF}
+              className={primaryCtaClass({ className: "mt-1" })}
+              data-testid="action-footer-primary"
+            >
+              {t(accessLabel)}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled={
+                !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error") || isPending
               }
-              if (previewUi) {
-                setReviewPreviewUi(previewUi)
-                setStage("review")
-              }
-            }}
-            className={primaryCtaClass({
-              disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
-              pending: isPending,
-              className: "mt-1",
-            })}
-            data-testid="action-footer-primary"
-          >
-            {isPending ? t("Processing…") : t(primaryLabel)}
-          </button>
+              onClick={() => {
+                if (quoteState === "error") {
+                  setQuoteRetry((current) => current + 1)
+                  return
+                }
+                if (previewUi) {
+                  setReviewPreviewUi(previewUi)
+                  setStage("review")
+                }
+              }}
+              className={primaryCtaClass({
+                disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
+                pending: isPending,
+                className: "mt-1",
+              })}
+              data-testid="action-footer-primary"
+            >
+              {isPending ? t("Processing…") : t(primaryLabel)}
+            </button>
+          )}
         </>
       ) : null}
 

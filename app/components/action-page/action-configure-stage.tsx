@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
+import Link from "next/link"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -12,6 +13,7 @@ import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 import { isHealthFactorMetric, parseHealthFactorValue } from "@/app/lib/action-system/health-factor-ui"
 import {
   isConfigureVisibleStage,
@@ -298,6 +300,9 @@ export function ActionConfigureStage({
   const handlePrimary = () => {
     onPrimary?.()
   }
+  // A guest (or a wallet still onboarding) keeps the form to explore quotes, but the CTA sends
+  // them to the dashboard onboarding instead of submitting.
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null
   const showStackedAmount = amountPlacement === "stacked"
@@ -470,7 +475,24 @@ export function ActionConfigureStage({
       ) : null}
 
       {isConfigureVisibleStage(stage) ? (
-        homeLayout || singlePrimaryCta ? (
+        accessLabel && (homeLayout || singlePrimaryCta) ? (
+          <Link
+            href={TRANSACT_ACCESS_HREF}
+            className={primaryCtaClass({ className: "mt-1" })}
+            data-testid="action-footer-primary"
+          >
+            {t(accessLabel)}
+          </Link>
+        ) : accessLabel ? (
+          <ActionFooter
+            primaryLabel={accessLabel}
+            primaryHref={TRANSACT_ACCESS_HREF}
+            secondaryLabel={secondaryLabel}
+            onSecondary={onSecondary}
+            secondaryHref={secondaryHref}
+            sticky
+          />
+        ) : homeLayout || singlePrimaryCta ? (
           <button
             type="button"
             onClick={handlePrimary}
