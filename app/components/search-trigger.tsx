@@ -49,10 +49,17 @@ export function SearchTrigger({
     )
   }
 
+  // Desktop press bounce, matching the home action cards (`SwapStyleField`): shrink while the
+  // search area is held, then spring back past 1 on release. Pressing the nested Ask AI chip
+  // does not bounce the whole pill.
   return (
-    <div className="flex h-9 w-full items-center rounded-full border border-[#e6e6e6] bg-[#fafafa] pe-1 ps-3.5 shadow-none lg:h-10 lg:pe-1 lg:ps-4 dark:border-border/60 dark:bg-surface-2">
+    <div
+      className="flex h-9 w-full origin-center items-center rounded-full border border-[#e6e6e6] bg-[#fafafa] pe-1 ps-3.5 shadow-none lg:h-10 lg:pe-1 lg:ps-4 lg:transition-transform lg:duration-200 lg:motion-safe:[&:has([data-search-area]:active)]:scale-[0.96] dark:border-border/60 dark:bg-surface-2"
+      style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+    >
       <button
         type="button"
+        data-search-area=""
         aria-label={t("Search Avana")}
         onClick={onClick}
         onPointerEnter={onIntent}
