@@ -1751,6 +1751,8 @@ const dict: TranslationDictionary = {
   "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
     "К транзакциям, инициированным через платформу Avana, применяется предварительная комиссия за интерфейс Avana в размере 15 б.п. (0,15%). Процентные ставки, доходность и прочие расходы по транзакциям могут различаться в зависимости от рынка, позиции и маршрута исполнения.",
   "Complete onboarding": "Завершить онбординг",
+  "Testnet": "Тестнет",
+  "Sandbox · testnet": "Песочница · тестнет",
 }
 
 export default dict

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAssistantTrigger } from "./ask-assistant-trigger"
-import { BrandIcon, BrandLogo } from "./brand-logo"
+import { HeaderBrand, MobileHeaderBrand } from "./header-brand"
 import HeaderDesktopNavigation from "./header-desktop-navigation"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
@@ -15,14 +15,6 @@ import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-trigger"
 import { cn } from "@/lib/utils"
 
-function HeaderBrand() {
-  return (
-    <>
-      <BrandIcon className="xl:hidden" />
-      <BrandLogo className="hidden xl:inline-flex" />
-    </>
-  )
-}
 
 export function Header() {
   const pathname = usePathname()
@@ -36,7 +28,7 @@ export function Header() {
   const [showDivider, setShowDivider] = useState(false)
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
-  const renderMobileBrand = () => <BrandIcon />
+  const renderMobileBrand = () => <MobileHeaderBrand />
   const renderMobileActions = () => (
     <>
       <span className="flex items-center">

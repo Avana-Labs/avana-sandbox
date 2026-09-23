@@ -1777,6 +1777,8 @@ const dict: TranslationDictionary = {
   "If something looks off, send the details and our team can help you triage the issue.":
     "おかしなものがあれば詳細を送ってください。チームが問題の切り分けをお手伝いします。",
   "Complete onboarding": "オンボーディングを完了",
+  "Testnet": "テストネット",
+  "Sandbox · testnet": "サンドボックス · テストネット",
 }
 
 export default dict

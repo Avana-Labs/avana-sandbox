@@ -1762,6 +1762,8 @@ const dict: TranslationDictionary = {
   "If something looks off, send the details and our team can help you triage the issue.":
     "若发现异常，请发送详情，我们的团队可协助排查问题。",
   "Complete onboarding": "完成新手引导",
+  "Testnet": "测试网",
+  "Sandbox · testnet": "沙盒 · 测试网",
 }
 
 export default dict
