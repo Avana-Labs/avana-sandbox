@@ -26,7 +26,7 @@ export function HeaderBrand() {
     <>
       <MarkWithLabel className="xl:hidden" />
       <span className="hidden flex-col items-start gap-0.5 xl:inline-flex">
-        <BrandLogo />
+        <BrandLogo visibleFrom="xl" />
         <span aria-hidden="true" className={TESTNET_LABEL_CLASS}>
           {t("Sandbox · testnet")}
         </span>

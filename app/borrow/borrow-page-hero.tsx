@@ -132,8 +132,8 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
           )}
         >
           <div className="flex min-w-max gap-3">
-            {heroCards.map((card) => (
-              <HeroMarketCard key={card.id} rows={card.rows} className="snap-start" />
+            {heroCards.map((card, index) => (
+              <HeroMarketCard key={card.id} rows={card.rows} className="snap-start" eagerFirstRow={index === 0} />
             ))}
           </div>
         </div>

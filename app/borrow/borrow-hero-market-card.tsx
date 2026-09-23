@@ -10,6 +10,9 @@ type HeroMarketCardProps = {
   subtitle?: string
   hideTitleOnMobile?: boolean
   className?: string
+  /** Load the first row's icons eagerly at high priority: the first card's first row is the
+   *  mobile LCP element on /borrow. */
+  eagerFirstRow?: boolean
   rows: Array<{
     id: string
     href: string
@@ -21,7 +24,14 @@ type HeroMarketCardProps = {
   }>
 }
 
-export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, className, rows }: HeroMarketCardProps) {
+export function HeroMarketCard({
+  title,
+  subtitle,
+  hideTitleOnMobile = false,
+  className,
+  eagerFirstRow = false,
+  rows,
+}: HeroMarketCardProps) {
   return (
     <section
       data-carousel-card
@@ -45,15 +55,20 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
       ) : null}
 
       <div className="space-y-3.5">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <Link
             key={row.id}
             href={row.href}
             className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-hover"
           >
             <div className="flex shrink-0 items-center">
-              <TokenBubble visual={row.pool.visuals[0]} size="table" />
-              <TokenBubble visual={row.pool.visuals[1]} size="table" className="-ml-2.5" />
+              <TokenBubble visual={row.pool.visuals[0]} size="table" eager={eagerFirstRow && index === 0} />
+              <TokenBubble
+                visual={row.pool.visuals[1]}
+                size="table"
+                className="-ml-2.5"
+                eager={eagerFirstRow && index === 0}
+              />
             </div>
 
             {/* Metrics sit BELOW the pair name (not in a right-hand column) so long
