@@ -5,7 +5,7 @@ export function TestnetMetricsBadge() {
   return (
     <span className={styles.badge}>
       <span aria-hidden="true" className={styles.indicator} />
-      <span>Testnet Metrics</span>
+      <span>Testnet</span>
       <span aria-hidden="true" className={`${styles.sparkle} ${styles.sparkleOne}`}>
         ✦
       </span>
