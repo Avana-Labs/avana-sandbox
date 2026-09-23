@@ -1615,6 +1615,23 @@ export function groupByDex(rows: BorrowPoolRow[]): DexGroup[] {
   }).filter((group) => group.spokes.length > 0)
 }
 
+/**
+ * Sort pools into the exact order `groupByDex` renders them (DEX, then spoke; stable within a
+ * spoke). Progressive reveal slices BEFORE grouping, so an unordered slice would drop newly
+ * revealed rows into groups above the viewport and make the page jump.
+ */
+export function orderPoolsForDexGroups(rows: readonly BorrowPoolRow[]): BorrowPoolRow[] {
+  const rank = new Map<string, number>()
+  for (const dex of BORROW_DEXES) {
+    for (const spoke of BORROW_SPOKES) if (spoke.dex === dex.id) rank.set(spoke.id, rank.size)
+  }
+  const last = rank.size
+  return rows
+    .map((row, index) => ({ row, index, rank: rank.get(row.spoke) ?? last }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.row)
+}
+
 export function aprToneClass(apr: number): string {
   if (apr < 4) return "text-success"
   if (apr < 5.5) return "text-amber-700 dark:text-amber-300"

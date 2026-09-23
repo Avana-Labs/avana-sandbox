@@ -162,16 +162,20 @@ export function MarketHeroChart({
         numericDeltaPct={hideValue ? undefined : Math.abs(deltaPct)}
         formatDeltaPct={hideValue ? undefined : formatDeltaPct}
       />
-      <HeroAreaChart
-        data={points}
-        activeRange={activeRange}
-        height={height}
-        gradientId={gradientId}
-        tone={chartTone ?? (scrub ? tone : rangeTone)}
-        formatValue={formatValue}
-        formatYAxis={heroAxisFormatter(feed.valueFormat, hideValue)}
-        onScrubChange={setScrub}
-      />
+      {/* A custom height is reserved here so the 210/240px loading placeholder doesn't make the
+          page jump when the chart chunk arrives (detail heroes render at 310px). */}
+      <div data-hero-chart-slot style={height ? { minHeight: height } : undefined}>
+        <HeroAreaChart
+          data={points}
+          activeRange={activeRange}
+          height={height}
+          gradientId={gradientId}
+          tone={chartTone ?? (scrub ? tone : rangeTone)}
+          formatValue={formatValue}
+          formatYAxis={heroAxisFormatter(feed.valueFormat, hideValue)}
+          onScrubChange={setScrub}
+        />
+      </div>
       {showFooter ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           {showRangeSelector ? (

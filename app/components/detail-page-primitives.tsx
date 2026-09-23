@@ -24,6 +24,13 @@ export function DetailPageWidth({ children, className }: { children: ReactNode; 
   return <div className={cn("mx-auto", DETAIL_PAGE_MAX_W, className)}>{children}</div>
 }
 
+/**
+ * How far below the viewport the deferred analytics stack mounts. Its sections are lazy chunks that
+ * each pop in at full height; mounting ~a screen early keeps that growth off screen, so content the
+ * reader is looking at never jumps. The stack starts 2.5k–3k px down, so this never mounts on load.
+ */
+export const DEFERRED_DETAIL_ROOT_MARGIN = "1000px 0px"
+
 export function DeferredDetailContent({
   children,
   className,
@@ -49,7 +56,7 @@ export function DeferredDetailContent({
         setShouldMount(true)
         observer.disconnect()
       },
-      { rootMargin: "200px 0px", threshold: 0 },
+      { rootMargin: DEFERRED_DETAIL_ROOT_MARGIN, threshold: 0 },
     )
     observer.observe(marker)
     return () => observer.disconnect()

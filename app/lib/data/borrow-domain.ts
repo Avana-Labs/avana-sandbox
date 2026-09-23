@@ -14,6 +14,7 @@ export {
   getBorrowAssetsForSpoke,
   getSpokeById,
   groupByDex,
+  orderPoolsForDexGroups,
   healthFactorToneClass,
   homePoolSpoke,
   homeVisualToBorrowVisual,

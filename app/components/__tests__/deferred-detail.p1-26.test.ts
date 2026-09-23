@@ -10,3 +10,10 @@ describe("DeferredDetailContent", () => {
     expect(source).toMatch(/animate-pulse/)
   })
 })
+
+describe("DeferredDetailContent mount distance", () => {
+  it("mounts the analytics stack a full screen ahead so its lazy sections pop in off screen", async () => {
+    const { DEFERRED_DETAIL_ROOT_MARGIN } = await import("../detail-page-primitives")
+    expect(DEFERRED_DETAIL_ROOT_MARGIN).toBe("1000px 0px")
+  })
+})
