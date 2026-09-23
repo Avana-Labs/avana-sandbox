@@ -352,7 +352,10 @@ function CollateralDesktopTable({
         ))}
         {pending.map((row) => (
           <tr key={row.id}>
-            <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={COLLATERAL_TABLE_LAYOUT.widths.length}>
+            <td
+              className="px-6 py-2.5 text-[12px] text-muted-foreground"
+              colSpan={COLLATERAL_TABLE_LAYOUT.widths.length}
+            >
               {row.label}
               <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
             </td>
@@ -476,10 +479,7 @@ function SpokeDesktopSection({
               embedded
             />
           ) : (
-            <BorrowableAssetsPanel
-              rows={borrowAssets}
-              onBorrow={onBorrowAsset}
-            />
+            <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} />
           )}
         </div>
       </div>
@@ -612,7 +612,7 @@ function SpokeMobileSection({
                         <EventTagList events={pool.events} />
                       </div>
                     ) : null}
-                    <MarketMobileStatList className="mt-3">
+                    <MarketMobileStatList>
                       <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
                       <MarketMobileStatRow
                         label={t("Capacity Filled")}

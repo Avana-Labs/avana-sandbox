@@ -243,7 +243,7 @@ function AssetCardView({
         }
         metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
       />
-      <MarketMobileStatList className="mt-4">
+      <MarketMobileStatList>
         <MarketMobileStatRow
           label={t("Total Deposits")}
           value={

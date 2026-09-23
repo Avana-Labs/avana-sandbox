@@ -565,7 +565,7 @@ function WalletBalanceSection({
         {rows.map((row) => {
           const pnl = tokenPnl(row, basisFor(row.assetId))
           return (
-            <MarketMobileCard key={row.id} className="space-y-2">
+            <MarketMobileCard key={row.id}>
               <MarketMobileCardHeader
                 identity={
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -708,7 +708,7 @@ function PoolsBalanceSection({
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
           <Link key={row.id} href={poolDetailHref(row)} className="block">
-            <MarketMobileCard className="space-y-2">
+            <MarketMobileCard>
               <MarketMobileCardHeader identity={<PoolIdentity row={row} markets={markets} />} />
               <MarketMobileStatList>
                 <MarketMobileStatRow

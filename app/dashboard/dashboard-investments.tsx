@@ -317,12 +317,7 @@ export function DashboardInvestments({
               const marketId = resolveMarketId(token)
               const detailHref = `/lend/markets/${marketId}`
               return (
-                <MarketMobileCard
-                  key={token.id}
-                  clickable
-                  className="space-y-2"
-                  onClick={() => router.push(detailHref)}
-                >
+                <MarketMobileCard key={token.id} clickable onClick={() => router.push(detailHref)}>
                   <MarketMobileCardHeader
                     identity={
                       <div className="flex min-w-0 items-center gap-2.5">

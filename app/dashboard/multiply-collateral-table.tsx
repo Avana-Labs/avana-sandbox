@@ -204,7 +204,7 @@ export function MultiplyCollateralTable({
           const apy = apyFor(row)
           const band = healthFactorBand(row.healthFactor)
           return (
-            <MarketMobileCard key={row.id} clickable className="space-y-2" onClick={() => openPosition(row)}>
+            <MarketMobileCard key={row.id} clickable onClick={() => openPosition(row)}>
               <MarketMobileCardHeader
                 identity={<LoopIdentity row={row} />}
                 metric={

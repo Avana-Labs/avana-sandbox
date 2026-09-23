@@ -659,7 +659,7 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
           }
         />
 
-        <MarketMobileStatList className="mt-4">
+        <MarketMobileStatList>
           <MarketMobileStatRow
             label={t("Max Leverage")}
             value={row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}

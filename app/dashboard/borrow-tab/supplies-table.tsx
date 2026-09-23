@@ -255,7 +255,7 @@ export function SuppliesPanel({
                     identity={<TokenPairCell visuals={visuals} name={row.pool.name} subtitle={spokeLabel} size="md" />}
                     metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
                   />
-                  <MarketMobileStatList className="mt-3">
+                  <MarketMobileStatList>
                     <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
                     <MarketMobileStatRow label={t("Liq.")} value={m(exact(row.liquidationThresholdUsd))} />
                     <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />

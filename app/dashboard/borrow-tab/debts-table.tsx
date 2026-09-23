@@ -279,7 +279,7 @@ export function DebtsPanel({
                       />
                     }
                   />
-                  <MarketMobileStatList className="mt-3">
+                  <MarketMobileStatList>
                     <MarketMobileStatRow
                       label={t("Borrow APR")}
                       value={`${row.borrowApr.toFixed(2)}%`}

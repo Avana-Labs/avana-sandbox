@@ -94,8 +94,9 @@ export function MarketMobileMetric({
   )
 }
 
+/** Stat rows under the card header. Owns the header gap (12px) so every card spaces it the same. */
 export function MarketMobileStatList({ children, className }: { children: ReactNode; className?: string }) {
-  return <dl className={cn("divide-y divide-border leading-5", className)}>{children}</dl>
+  return <dl className={cn("mt-3 divide-y divide-border leading-5", className)}>{children}</dl>
 }
 
 export function MarketMobileStatRow({

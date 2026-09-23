@@ -210,7 +210,7 @@ export function ProductAvailableCard({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <MarketMobileCard key={row.id} className="space-y-2">
+          <MarketMobileCard key={row.id}>
             <MarketMobileCardHeader
               identity={
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -436,7 +436,6 @@ export function MultiplyAvailableMarketsCard({
           <MarketMobileCard
             key={row.market.id}
             clickable
-            className="space-y-2"
             onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
           >
             <MarketMobileCardHeader
