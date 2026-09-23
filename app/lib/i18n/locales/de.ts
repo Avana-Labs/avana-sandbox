@@ -1512,11 +1512,9 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "Verdiente Belohnungen",
   "Scenario price": "Szenario-Preis",
   "Ask AI": "KI fragen",
-  "Search markets…": "Märkte suchen…",
   "Search Avana": "Avana durchsuchen",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Suche nach Sicherheiten-Pools, Kredit-Assets und Verleih-Assets.",
-  "Search pools, borrow assets, lend assets": "Pools, Kredit-Assets, Verleih-Assets suchen",
   "Select a position to preview.": "Wähle eine Position für die Vorschau.",
   "Select an asset for this swap.": "Wähle ein Asset für diesen Swap.",
   Selected: "Ausgewählt",
@@ -1810,6 +1808,13 @@ const dict: TranslationDictionary = {
     "Zu viele neue Ask-AI-Sitzungen aus diesem Netzwerk. Versuche es später erneut.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI ist vorübergehend nicht verfügbar. Versuche es gleich noch einmal.",
+  "Report this bug": "Diesen Fehler melden",
+  "Report a bug": "Fehler melden",
+  "What happened?": "Was ist passiert?",
+  "Tell us what you were doing when this happened.": "Erzähl uns, was du gerade gemacht hast, als das passiert ist.",
+  "(required)": "(erforderlich)",
+  "Send report": "Bericht senden",
+  "Thanks! Your report was sent.": "Danke! Dein Bericht wurde gesendet.",
 }
 
 export default dict

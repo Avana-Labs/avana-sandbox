@@ -1095,11 +1095,9 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Stable LP 代币",
   "Change language": "更改语言",
   "Ask AI": "问 AI",
-  "Search markets…": "搜索市场…",
   "Search Avana": "搜索 Avana",
   "Search pools, borrow, lend, and more": "搜索资金池、借款、存款等",
   "Search collateral pools, assets to borrow, and assets to lend.": "搜索抵押资金池、可借资产和可存资产。",
-  "Search pools, borrow assets, lend assets": "搜索资金池、借款资产、存款资产",
   "Collateral pools": "抵押资金池",
   "Loading results": "正在加载结果",
   "Preparing pools, borrow assets, and lend assets.": "正在准备资金池、借款资产和存款资产。",
@@ -1765,6 +1763,13 @@ const dict: TranslationDictionary = {
   "Get Started": "开始",
   "Too many new Ask AI sessions from this network. Try again later.": "来自此网络的新 Ask AI 会话过多。请稍后再试。",
   "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI 暂时不可用。请稍后重试。",
+  "Report this bug": "报告此问题",
+  "Report a bug": "报告问题",
+  "What happened?": "发生了什么？",
+  "Tell us what you were doing when this happened.": "请告诉我们问题发生时你正在做什么。",
+  "(required)": "（必填）",
+  "Send report": "发送报告",
+  "Thanks! Your report was sent.": "谢谢！你的报告已发送。",
 }
 
 export default dict

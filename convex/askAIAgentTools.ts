@@ -23,7 +23,7 @@ export const readEngineSnapshotTool: Tool = createTool({
 
 export const readBorrowCapacityTool: Tool = createTool({
   description:
-    "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+    "Read the user's authoritative Credit Engine Borrow-product capacity, Borrow debt, health factor, and liquidation buffer. Multiply debt is separate and must not be counted as Borrow debt.",
   inputSchema: z.object({}),
   execute: (ctx): Promise<unknown> => ctx.runQuery(api.askAITools.borrowCapacity, {}),
 })
@@ -92,7 +92,7 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
     }),
     read_borrow_capacity: createTool({
       description:
-        "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+        "Read the user's authoritative Credit Engine Borrow-product capacity, Borrow debt, health factor, and liquidation buffer. Multiply debt is separate and must not be counted as Borrow debt.",
       inputSchema: z.object({}),
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId }),
     }),
@@ -104,7 +104,7 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
     }),
     simulate_borrow: createTool({
       description:
-        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus the interest the resulting debt accrues over projectionDays (default 365).",
+        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus separately labelled interest on the additional borrow and interest on the full post-borrow debt over projectionDays (default 365). Never merge those two figures.",
       inputSchema: z.object({
         positionId: z.string().min(1),
         additionalBorrowAmount: z.number().positive().max(1_000_000_000),

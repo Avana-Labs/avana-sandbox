@@ -5,6 +5,7 @@
  */
 
 import { v } from "convex/values"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 
 const parameterRow = v.object({
@@ -20,22 +21,26 @@ export function defineRiskParametersModule(table: RiskParametersTable) {
   // Both tables share one document shape, so type the reads and writes against one of them.
   // The args validator and the schema still validate every row.
   const tableName = table as "lendRiskParameters"
+  /** Shared reader for `getRiskParameters`, so batched detail queries compose it instead of copying it. */
+  async function readRiskParameters(ctx: QueryCtx, slug: string) {
+    const row = await ctx.db
+      .query(tableName)
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    if (!row) return null
+    return {
+      slug: row.slug,
+      parameters: row.parameters,
+      updatedAt: row.updatedAt,
+      source: row.source,
+    }
+  }
+
   return {
+    readRiskParameters,
     getRiskParameters: query({
       args: { slug: v.string() },
-      handler: async (ctx, { slug }) => {
-        const row = await ctx.db
-          .query(tableName)
-          .withIndex("by_slug", (q) => q.eq("slug", slug))
-          .unique()
-        if (!row) return null
-        return {
-          slug: row.slug,
-          parameters: row.parameters,
-          updatedAt: row.updatedAt,
-          source: row.source,
-        }
-      },
+      handler: async (ctx, { slug }) => readRiskParameters(ctx, slug),
     }),
     upsertRiskParameters: internalMutation({
       args: {

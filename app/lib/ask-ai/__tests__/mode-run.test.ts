@@ -5,7 +5,15 @@ import {
   repayToReachHealthFactor,
   type PositionSnapshotInput,
 } from "../position-context"
-import { buildReturnsRun, buildRiskRun, buildStressRun, classifyAskAiMode, routeAskAiMode } from "../mode-run"
+import {
+  buildReturnsRun,
+  buildRiskRun,
+  buildStressRun,
+  classifyAskAiMode,
+  routeAskAiMode,
+  shouldBuildModeRunForTurn,
+  modeRunPositionId,
+} from "../mode-run"
 
 const base: PositionSnapshotInput = {
   positionId: "pos_1",
@@ -133,5 +141,50 @@ describe("routeAskAiMode", () => {
   it("leaves non-leverage questions and other modes untouched", () => {
     expect(routeAskAiMode("what's my yield?", "returns")).toEqual({ mode: "returns", rerouted: false })
     expect(routeAskAiMode("leverage?", "risk")).toEqual({ mode: "risk", rerouted: false })
+  })
+})
+
+describe("shouldBuildModeRunForTurn", () => {
+  it("keeps single-position personal questions eligible", () => {
+    expect(shouldBuildModeRunForTurn("am I safe?")).toBe(true)
+    expect(shouldBuildModeRunForTurn("what is my net carry?")).toBe(true)
+    expect(shouldBuildModeRunForTurn("What is the risk of my current Borrow position?")).toBe(true)
+  })
+
+  it("does not attach a first-position card to public or aggregate questions", () => {
+    expect(shouldBuildModeRunForTurn("What is the current GHO supply APY?")).toBe(false)
+    expect(shouldBuildModeRunForTurn("Show me the current GHO supply APY")).toBe(false)
+    expect(shouldBuildModeRunForTurn("Tell me about liquidation risk on Avana")).toBe(false)
+    expect(shouldBuildModeRunForTurn("What is the current GHO supply APY and borrow APR in Avana?")).toBe(false)
+    expect(shouldBuildModeRunForTurn("What is my weakest health factor across all positions?")).toBe(false)
+    expect(shouldBuildModeRunForTurn("If all of my collateral falls by 20%, what happens?")).toBe(false)
+  })
+})
+
+describe("modeRunPositionId", () => {
+  it("uses the simulated position instead of the first position in a risk read", () => {
+    expect(
+      modeRunPositionId([
+        { kind: "position_risk", payload: { positions: [{ positionId: "first" }, { positionId: "weakest" }] } },
+        { kind: "stress_position", payload: { positionId: "weakest" } },
+      ]),
+    ).toBe("weakest")
+  })
+  it("requires one unambiguous tool-resolved position", () => {
+    expect(modeRunPositionId([{ kind: "position_risk", payload: { positions: [{ positionId: "only" }] } }])).toBe(
+      "only",
+    )
+    expect(
+      modeRunPositionId([
+        { kind: "position_risk", payload: { positions: [{ positionId: "a" }, { positionId: "b" }] } },
+      ]),
+    ).toBeNull()
+    expect(modeRunPositionId([{ kind: "market", payload: { positionId: "untrusted" } }])).toBeNull()
+    expect(
+      modeRunPositionId([
+        { kind: "simulate_borrow", payload: { positionId: "a" } },
+        { kind: "stress_position", payload: { positionId: "b" } },
+      ]),
+    ).toBeNull()
   })
 })

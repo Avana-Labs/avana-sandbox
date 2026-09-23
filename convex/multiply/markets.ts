@@ -2,6 +2,6 @@
 
 import { defineMarketsModule } from "../silo/markets"
 
-export const { getMarket, upsertMarkets } = defineMarketsModule("multiplyMarkets", {
+export const { readMarket, getMarket, upsertMarkets } = defineMarketsModule("multiplyMarkets", {
   identity: () => ({ scope: "multiply" as const }),
 })

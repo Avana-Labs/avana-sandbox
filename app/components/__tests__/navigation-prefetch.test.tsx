@@ -3,6 +3,7 @@ import { cleanup, render } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { Header } from "../header"
 import { MobileMenu } from "../mobile-menu"
+import { shouldPrefetchNavigation } from "../navigation-prefetch"
 
 const session = vi.hoisted(() => ({ isSignedIn: false }))
 const route = vi.hoisted(() => ({ pathname: "/" }))
@@ -45,7 +46,17 @@ describe.each([false, true])("navigation prefetch with signed-in=%s", (isSignedI
     for (const href of ["/borrow", "/lend", "/multiply", "/dashboard", "/umbrella"]) {
       const links = container.querySelectorAll(`a[href="${href}"]`)
       expect(links.length).toBeGreaterThan(0)
-      for (const link of links) expect(link).toHaveAttribute("data-prefetch", String(isSignedIn))
+      for (const link of links) {
+        expect(link).toHaveAttribute("data-prefetch", String(shouldPrefetchNavigation(href, isSignedIn)))
+      }
     }
   })
+})
+
+it("does not eagerly prefetch heavy product catalogs", () => {
+  for (const href of ["/borrow", "/lend", "/multiply"]) {
+    expect(shouldPrefetchNavigation(href, true)).toBe(false)
+  }
+  expect(shouldPrefetchNavigation("/dashboard", true)).toBe(true)
+  expect(shouldPrefetchNavigation("/borrow", false)).toBe(false)
 })

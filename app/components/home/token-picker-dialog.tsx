@@ -26,7 +26,7 @@ const TOKEN_ADDRESS_BY_SYMBOL: Record<string, string> = {
 
 // Mirror the search-command popup exactly so the pickers share its look/feel.
 const PICKER_CONTENT_CLASS =
-  "flex max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] flex-col gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:max-w-[500px] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full"
+  "flex max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[600px] flex-col gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:max-w-[600px] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full"
 
 export function TokenPickerDialog({
   open,

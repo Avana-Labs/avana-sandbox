@@ -191,6 +191,13 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       borrowNetUsd: netUsd(borrow),
       multiplyNetUsd: netUsd(multiplyRows),
       liquidNetUsd: netUsd(liquid),
+      // These are the exact component values used by the canonical Net Value
+      // calculation below. The older *NetUsd fields intentionally remain as
+      // raw product totals for callers that need gross product accounting.
+      lendNetValueUsd: netUsd(lendForNetValue),
+      borrowNetValueUsd: netUsd(borrowForNetValue),
+      multiplyNetValueUsd: netUsd(multiplyRows),
+      liquidNetValueUsd: netUsd(liquid),
       // Canonical Net Value, matching the dashboard hero (aggregateNetValueUsd): signed sum of
       // liquid + lend + borrow + multiply with debt negative. Umbrella is EXCLUDED there, so it
       // is excluded here too and reported separately as umbrellaUsd.
@@ -403,7 +410,7 @@ export const engineSnapshot = query({
 export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-  const [snapshot, portfolio] = await Promise.all([
+  const [snapshot, portfolio, borrowBalances] = await Promise.all([
     ctx.db
       .query("riskSnapshots")
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -413,29 +420,43 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
       .query("portfolioCurrent")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .unique(),
+    ctx.db
+      .query("walletBorrowBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
   ])
+  // portfolioCurrent.totalBorrowedUsd is portfolio-wide and includes Multiply debt. Borrow
+  // capacity must only use debt from the Borrow product, otherwise a newly onboarded wallet
+  // with the starter Multiply allocation appears to have already borrowed against LP collateral.
+  const borrowDebtUsd = borrowBalances
+    .filter((row) => row.state === "debt")
+    .reduce((sum, row) => sum + Math.max(0, row.valueUsd), 0)
   const capacity = snapshot
     ? { ...decodeBorrowRiskSnapshot(snapshot), source: "credit_engine_snapshot" as const }
     : portfolio
       ? {
-          borrowCapacityUsd: portfolio.availableToBorrowUsd + portfolio.totalBorrowedUsd,
+          borrowCapacityUsd: portfolio.availableToBorrowUsd + borrowDebtUsd,
           availableBorrowCapacityUsd: portfolio.availableToBorrowUsd,
-          totalBorrowedUsd: portfolio.totalBorrowedUsd,
+          totalBorrowedUsd: borrowDebtUsd,
           source: "portfolio_current" as const,
         }
       : null
-  // Decode the usd6 strings and wad health factor here: mixed with already-decoded numbers in
-  // the same payload, the model divides by 1e6/1e18 itself.
+  // Decode the usd6 strings and wad health factor before they reach the model. Every money
+  // value in this result is already denominated in USD, so the model never does unit conversion.
   const spokes = (snapshot?.spokes ?? []).map((spoke) => ({
     spokeId: spoke.spokeId,
     availableCreditUsd: Number(spoke.availableCreditUsd6) / 1_000_000,
     totalBorrowedUsd: Number(spoke.totalBorrowedUsd6) / 1_000_000,
     liquidationBufferUsd: Number(spoke.liquidationBufferUsd6) / 1_000_000,
     ...askAIHealthFactorValue(
-      spoke.healthFactorWad === null ? null : Number(spoke.healthFactorWad) / 1_000_000_000_000_000_000,
+      spoke.healthFactorWad === null ? "infinity" : Number(spoke.healthFactorWad) / 1_000_000_000_000_000_000,
     ),
   }))
-  const capacityHealthFactor = capacity && "healthFactor" in capacity ? capacity.healthFactor : null
+  const capacityHealthFactor = capacity && "healthFactor" in capacity ? capacity.healthFactor : undefined
+  const healthFactorValue =
+    capacity && capacity.totalBorrowedUsd === 0
+      ? askAIHealthFactorValue("infinity")
+      : askAIHealthFactorValue(capacityHealthFactor)
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
@@ -445,7 +466,7 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
           ...capacity,
           // The tool description promises a liquidation buffer, but only the raw spokes had it.
           liquidationBufferUsd: spokes.reduce((sum, spoke) => sum + spoke.liquidationBufferUsd, 0),
-          ...askAIHealthFactorValue(capacityHealthFactor),
+          ...healthFactorValue,
         }
       : null,
     spokes,
@@ -606,6 +627,18 @@ async function readAskAISimulateBorrow(
     maxLtvPct: market.maxLtvPct,
   })
   const days = Math.min(Math.max(projectionDays ?? 365, 1), 3_650)
+  const totalInterest =
+    typeof pool?.pairAprPct === "number"
+      ? calculateBorrowProjection({
+          debtUsd: simulation.projected.debtValueUsd,
+          borrowAprPct: pool.pairAprPct,
+          days,
+        })
+      : null
+  const incrementalInterest =
+    typeof pool?.pairAprPct === "number"
+      ? calculateBorrowProjection({ debtUsd: additionalBorrowAmount, borrowAprPct: pool.pairAprPct, days })
+      : null
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
@@ -613,18 +646,19 @@ async function readAskAISimulateBorrow(
     borrowAsset: borrowAsset.trim().toUpperCase(),
     additionalBorrowAmount,
     simulation,
-    // Projected on the debt the position would carry AFTER the new borrow.
-    interestProjection:
-      typeof pool?.pairAprPct === "number"
-        ? {
-            ...calculateBorrowProjection({
-              debtUsd: simulation.projected.debtValueUsd,
-              borrowAprPct: pool.pairAprPct,
-              days,
-            }),
-            onDebtUsd: simulation.projected.debtValueUsd,
-          }
-        : { unavailableReason: "No borrow rate is published for this market", days },
+    interestProjection: totalInterest
+      ? {
+          borrowAprPct: totalInterest.borrowAprPct,
+          days: totalInterest.days,
+          // Keep the legacy field for callers that already consume it; the
+          // explicit names below remove the ambiguity for Ask AI answers.
+          projectedInterestUsd: totalInterest.projectedInterestUsd,
+          totalProjectedInterestUsd: totalInterest.projectedInterestUsd,
+          incrementalInterestUsd: incrementalInterest?.projectedInterestUsd ?? null,
+          onDebtUsd: simulation.projected.debtValueUsd,
+          onAdditionalBorrowUsd: additionalBorrowAmount,
+        }
+      : { unavailableReason: "No borrow rate is published for this market", days },
     asOf: position.lastUpdatedAt,
   }
 }

@@ -10,6 +10,7 @@
  */
 
 import { v } from "convex/values"
+import type { QueryCtx } from "./_generated/server"
 import { internalMutation, query } from "./_generated/server"
 
 const baseFields = {
@@ -34,15 +35,17 @@ const stripMeta = <T extends { _id: unknown; _creationTime: unknown; updatedAt: 
 // Pool
 // -----------------------------------------------------------------------------
 
+export async function readPoolAddresses(ctx: QueryCtx, poolSlug: string) {
+  const rows = await ctx.db
+    .query("poolContractAddresses")
+    .withIndex("by_pool", (q) => q.eq("poolSlug", poolSlug))
+    .collect()
+  return rows.map(stripMeta)
+}
+
 export const listPoolAddresses = query({
   args: { poolSlug: v.string() },
-  handler: async (ctx, { poolSlug }) => {
-    const rows = await ctx.db
-      .query("poolContractAddresses")
-      .withIndex("by_pool", (q) => q.eq("poolSlug", poolSlug))
-      .collect()
-    return rows.map(stripMeta)
-  },
+  handler: async (ctx, { poolSlug }) => readPoolAddresses(ctx, poolSlug),
 })
 
 export const upsertPoolAddresses = internalMutation({
@@ -65,15 +68,17 @@ export const upsertPoolAddresses = internalMutation({
 // Asset
 // -----------------------------------------------------------------------------
 
+export async function readAssetAddresses(ctx: QueryCtx, assetSlug: string) {
+  const rows = await ctx.db
+    .query("assetContractAddresses")
+    .withIndex("by_asset", (q) => q.eq("assetSlug", assetSlug))
+    .collect()
+  return rows.map(stripMeta)
+}
+
 export const listAssetAddresses = query({
   args: { assetSlug: v.string() },
-  handler: async (ctx, { assetSlug }) => {
-    const rows = await ctx.db
-      .query("assetContractAddresses")
-      .withIndex("by_asset", (q) => q.eq("assetSlug", assetSlug))
-      .collect()
-    return rows.map(stripMeta)
-  },
+  handler: async (ctx, { assetSlug }) => readAssetAddresses(ctx, assetSlug),
 })
 
 export const upsertAssetAddresses = internalMutation({
@@ -96,15 +101,17 @@ export const upsertAssetAddresses = internalMutation({
 // Multiply market
 // -----------------------------------------------------------------------------
 
+export async function readMultiplyAddresses(ctx: QueryCtx, marketSlug: string) {
+  const rows = await ctx.db
+    .query("multiplyContractAddresses")
+    .withIndex("by_market", (q) => q.eq("marketSlug", marketSlug))
+    .collect()
+  return rows.map(stripMeta)
+}
+
 export const listMultiplyAddresses = query({
   args: { marketSlug: v.string() },
-  handler: async (ctx, { marketSlug }) => {
-    const rows = await ctx.db
-      .query("multiplyContractAddresses")
-      .withIndex("by_market", (q) => q.eq("marketSlug", marketSlug))
-      .collect()
-    return rows.map(stripMeta)
-  },
+  handler: async (ctx, { marketSlug }) => readMultiplyAddresses(ctx, marketSlug),
 })
 
 export const upsertMultiplyAddresses = internalMutation({
@@ -127,15 +134,17 @@ export const upsertMultiplyAddresses = internalMutation({
 // Lend market
 // -----------------------------------------------------------------------------
 
+export async function readLendAddresses(ctx: QueryCtx, marketSlug: string) {
+  const rows = await ctx.db
+    .query("lendContractAddresses")
+    .withIndex("by_market", (q) => q.eq("marketSlug", marketSlug))
+    .collect()
+  return rows.map(stripMeta)
+}
+
 export const listLendAddresses = query({
   args: { marketSlug: v.string() },
-  handler: async (ctx, { marketSlug }) => {
-    const rows = await ctx.db
-      .query("lendContractAddresses")
-      .withIndex("by_market", (q) => q.eq("marketSlug", marketSlug))
-      .collect()
-    return rows.map(stripMeta)
-  },
+  handler: async (ctx, { marketSlug }) => readLendAddresses(ctx, marketSlug),
 })
 
 export const upsertLendAddresses = internalMutation({

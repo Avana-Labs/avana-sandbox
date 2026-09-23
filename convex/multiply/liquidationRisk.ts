@@ -2,4 +2,5 @@
 
 import { defineLiquidationRiskModule } from "../silo/liquidationRisk"
 
-export const { getLiquidationRisk, upsertLiquidationDaily } = defineLiquidationRiskModule("multiplyLiquidationDaily")
+export const { readLiquidationRisk, getLiquidationRisk, upsertLiquidationDaily } =
+  defineLiquidationRiskModule("multiplyLiquidationDaily")

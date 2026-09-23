@@ -79,4 +79,24 @@ describe("Ask AI mode-run wiring", () => {
     // The normal assistant answer still renders — the chat is unchanged.
     expect(screen.getByText(/Here is your risk/)).toBeInTheDocument()
   })
+
+  it.each(["What is the current GHO supply APY?", "Show me the current GHO supply APY"])(
+    "filters a stale persisted mode-run from %s",
+    (prompt) => {
+      process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+      messagesMock.mockReturnValue({
+        status: "Exhausted",
+        loadMore: vi.fn(),
+        results: [
+          { id: "u1", role: "user", text: prompt, _creationTime: 1, status: "success" },
+          { id: "a1", role: "assistant", text: "Supply APY: 0.0292", _creationTime: 2, status: "success" },
+        ],
+      })
+      partsMock.mockReturnValue([{ messageId: "a1", parts: { modeRun: { ...run, queryText: prompt } } }])
+
+      render(<AskAIPageClient />)
+      expect(screen.queryByText("Position risk")).not.toBeInTheDocument()
+      expect(screen.getByText(/Supply APY/)).toBeInTheDocument()
+    },
+  )
 })

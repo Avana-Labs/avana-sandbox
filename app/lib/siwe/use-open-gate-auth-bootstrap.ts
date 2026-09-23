@@ -5,6 +5,13 @@ import { clearSiweToken, getSiweToken, setSiweToken } from "@/app/lib/siwe/auth-
 import { isJwtExpired } from "@/app/lib/siwe/token-expiry"
 import { shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
+type OpenGateTokenResponse = {
+  token: string
+  wallet: string
+}
+
+let openGateTokenPromise: Promise<OpenGateTokenResponse> | null = null
+
 function readJwtIssuer(jwt: string): string | null {
   try {
     const payload = jwt.split(".")[1]
@@ -24,6 +31,28 @@ function isLoopbackIssuer(issuer: string | null) {
   } catch {
     return true
   }
+}
+
+function ensureOpenGateToken(): Promise<OpenGateTokenResponse> {
+  if (openGateTokenPromise) return openGateTokenPromise
+
+  openGateTokenPromise = fetch("/api/siwe/dev-token", { method: "POST" })
+    .then(async (response) => {
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null
+        throw new Error(body?.error ?? `dev-token ${response.status}`)
+      }
+      const body = (await response.json()) as { token?: string; wallet?: string }
+      if (!body.token || !body.wallet) throw new Error("dev-token response missing token")
+      const session = { token: body.token, wallet: body.wallet }
+      setSiweToken(session.token, session.wallet)
+      return session
+    })
+    .finally(() => {
+      openGateTokenPromise = null
+    })
+
+  return openGateTokenPromise
 }
 
 /**
@@ -56,25 +85,17 @@ export function useOpenGateAuthBootstrap(): { ready: boolean; error: string | nu
     if (existing) clearSiweToken()
 
     let cancelled = false
-    void (async () => {
-      try {
-        const response = await fetch("/api/siwe/dev-token", { method: "POST" })
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { error?: string } | null
-          throw new Error(body?.error ?? `dev-token ${response.status}`)
-        }
-        const body = (await response.json()) as { token?: string; wallet?: string }
-        if (!body.token || !body.wallet) throw new Error("dev-token response missing token")
+    void ensureOpenGateToken()
+      .then(() => {
         if (cancelled) return
-        setSiweToken(body.token, body.wallet)
         setError(null)
         setReady(true)
-      } catch (err) {
+      })
+      .catch((err) => {
         if (cancelled) return
         setError(err instanceof Error ? err.message : "Failed to mint open-gate token")
         setReady(false)
-      }
-    })()
+      })
 
     return () => {
       cancelled = true

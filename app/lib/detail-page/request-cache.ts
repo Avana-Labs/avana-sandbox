@@ -2,8 +2,8 @@ import { cache as reactCache } from "react"
 
 /**
  * `React.cache()` when the runtime provides it (the RSC server render, where
- * `generateMetadata` and the page body should share one Convex fan-out per
- * request), else an identity passthrough.
+ * repeated server reads should share one value per request), else an identity
+ * passthrough.
  *
  * Unit tests import the server detail builders directly in a non-RSC environment
  * (React 18.3 `react` has no `cache` export), so there the wrapper is a no-op —

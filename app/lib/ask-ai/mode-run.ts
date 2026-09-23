@@ -1,3 +1,4 @@
+import { routeAskAITurn } from "./domain-gate"
 import {
   addCollateralToReachHealthFactor,
   repayToReachHealthFactor,
@@ -167,6 +168,49 @@ const STRESS_PATTERN =
 const RISK_PATTERN =
   /\b(risk|risky|safe|safety|unsafe|liquidat\w*|health\s*factor|underwater|buffer|margin\s*call|how\s*(safe|risky))\b/i
 const RETURNS_PATTERN = /\b(returns?|carry|yield|apr|apy|profit|earn\w*|income|fees?)\b/i
+
+// Mode runs describe one tool-resolved position. Do not attach that
+// position's cards to public market questions or portfolio-wide questions.
+// Those turns already have a scoped Convex result (market, portfolio, or
+// engine snapshot); a first-position fallback is actively misleading there.
+const PERSONAL_MODE_SCOPE_PATTERN =
+  /\b(?:my|mine|our|ours|i|we)\b|\b(?:this|current)\s+(?:position|loan|debt|collateral)\b/i
+const AGGREGATE_MODE_SCOPE_PATTERN =
+  /\b(?:all|every|across|overall|whole|portfolio|positions|holdings|balances|collateral)\b/i
+
+export function shouldBuildModeRunForTurn(queryText: string): boolean {
+  const route = routeAskAITurn(queryText)
+  if (
+    route.category === "aave" ||
+    route.intent === "market" ||
+    route.intent === "pool" ||
+    route.intent === "comparison" ||
+    route.intent === "education"
+  )
+    return false
+  return PERSONAL_MODE_SCOPE_PATTERN.test(queryText) && !AGGREGATE_MODE_SCOPE_PATTERN.test(queryText)
+}
+
+/** Use the position actually resolved by the financial tools; never guess from row order. */
+export function modeRunPositionId(results: ReadonlyArray<{ kind: string; payload: unknown }>): string | null {
+  const selected = new Set<string>()
+  for (const result of results) {
+    if (!result.payload || typeof result.payload !== "object") continue
+    const payload = result.payload as Record<string, unknown>
+    if (result.kind === "simulate_borrow" || result.kind === "stress_position") {
+      if (typeof payload.positionId === "string") selected.add(payload.positionId)
+    }
+  }
+  if (selected.size > 0) return selected.size === 1 ? [...selected][0] : null
+  for (const result of results) {
+    if (result.kind !== "position_risk" || !result.payload || typeof result.payload !== "object") continue
+    const positions = (result.payload as { positions?: unknown }).positions
+    if (!Array.isArray(positions) || positions.length !== 1) return null
+    const position = positions[0] as { positionId?: unknown }
+    if (position && typeof position.positionId === "string") selected.add(position.positionId)
+  }
+  return selected.size === 1 ? [...selected][0] : null
+}
 
 /**
  * Classify a free-text query into a deterministic mode, or null when no mode clearly

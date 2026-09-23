@@ -417,7 +417,7 @@ export function SearchCommand({
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[600px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <DialogTitle className="sr-only">{t("Search Avana")}</DialogTitle>
           <DialogDescription className="sr-only">
             {t("Search collateral pools, assets to borrow, and assets to lend.")}
@@ -436,7 +436,7 @@ export function SearchCommand({
               aria-activedescendant={
                 flatResults[activeIndex] ? `search-result-${flatResults[activeIndex].id}` : undefined
               }
-              placeholder={t("Search pools, borrow assets, lend assets")}
+              placeholder={t("Search Avana")}
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>

@@ -65,6 +65,21 @@ describe("Ask AI authenticated portfolio tools", () => {
         createdAt: 1,
       }),
     )
+    await t.run(async (ctx) =>
+      ctx.db.insert("pools", {
+        slug: "eth-usdc",
+        name: "ETH / USDC",
+        venue: "Uniswap v3",
+        category: "v3",
+        visuals: [
+          { symbol: "ETH", shortLabel: "ETH", bgClassName: "", textClassName: "" },
+          { symbol: "USDC", shortLabel: "USDC", bgClassName: "", textClassName: "" },
+        ],
+        maxLtvPct: 55,
+        pairAprPct: 5,
+        createdAt: 1,
+      }),
+    )
     const asA = t.withIdentity({ subject: WALLET_A })
 
     await expect(
@@ -80,6 +95,14 @@ describe("Ask AI authenticated portfolio tools", () => {
         current: { debtValueUsd: 3_500, ltv: 0.35 },
         projected: { debtValueUsd: 4_500, ltv: 0.45 },
         remainingBorrowCapacityUsd: 1_000,
+      },
+      interestProjection: {
+        borrowAprPct: 5,
+        days: 365,
+        incrementalInterestUsd: 50,
+        totalProjectedInterestUsd: 225,
+        onAdditionalBorrowUsd: 1_000,
+        onDebtUsd: 4_500,
       },
     })
     await expect(t.run(async (ctx) => ctx.db.get(positionId))).resolves.toMatchObject({ debtValueUsd: 3_500 })
@@ -257,7 +280,7 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
   })
 
-  test("falls back to the current portfolio borrow capacity when no risk snapshot exists", async () => {
+  test("falls back to portfolio capacity using Borrow-product debt only", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()
     await t.run(async (ctx) => {
@@ -271,6 +294,17 @@ describe("Ask AI authenticated portfolio tools", () => {
         totalMultiplyExposureUsd: 0,
         totalEarnedUsd: 0,
       })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet: WALLET_A,
+        marketId: "eth-usdc",
+        assetId: "usdc",
+        poolId: "eth-usdc",
+        symbol: "USDC",
+        amount: 3_000,
+        valueUsd: 3_000,
+        state: "debt",
+        updatedAt: now,
+      })
     })
 
     await expect(t.withIdentity({ subject: WALLET_A }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject(
@@ -283,6 +317,46 @@ describe("Ask AI authenticated portfolio tools", () => {
           source: "portfolio_current",
         },
         asOf: now,
+      },
+    )
+  })
+
+  test("does not treat starter Multiply debt as Borrow debt", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", {
+        wallet: WALLET_A,
+        at: now,
+        totalValueUsd: 750_000,
+        totalSuppliedUsd: 1_250_000,
+        totalBorrowedUsd: 250_000,
+        availableToBorrowUsd: 245_000,
+        totalMultiplyExposureUsd: 500_000,
+        totalEarnedUsd: 0,
+      })
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet: WALLET_A,
+        marketId: "aave-gho",
+        assetId: "gho",
+        symbol: "GHO",
+        amount: 250_000,
+        valueUsd: 250_000,
+        state: "debt",
+        updatedAt: now,
+      })
+    })
+
+    await expect(t.withIdentity({ subject: WALLET_A }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject(
+      {
+        capacity: {
+          borrowCapacityUsd: 245_000,
+          availableBorrowCapacityUsd: 245_000,
+          totalBorrowedUsd: 0,
+          noDebt: true,
+          healthFactor: null,
+          source: "portfolio_current",
+        },
       },
     )
   })

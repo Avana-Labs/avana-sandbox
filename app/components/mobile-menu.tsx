@@ -23,6 +23,8 @@ import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
+import { OVERLAY_SCRIM_CLASS } from "./card-surface-tokens"
+import { shouldPrefetchNavigation } from "./navigation-prefetch"
 
 const siteRoutes = {
   home: "/",
@@ -293,7 +295,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
               >
                 <Link
                   href={link.href}
-                  prefetch={isSignedIn}
+                  prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
                   onClick={onClose}
                   className="flex items-end justify-between gap-5 py-3"
                 >
@@ -425,7 +427,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
           type="button"
           aria-label={t("Close {title} sheet").replace("{title}", title.toLowerCase())}
           onClick={closeSelectorSheet}
-          className={`absolute inset-0 bg-black/25 backdrop-blur-sm transition-opacity duration-200 ${
+          className={`absolute inset-0 ${OVERLAY_SCRIM_CLASS} transition-opacity duration-200 ${
             isSelectorSheetOpen ? "opacity-100" : "opacity-0"
           }`}
         />

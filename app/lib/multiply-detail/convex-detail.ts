@@ -1,15 +1,7 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import {
-  fetchMultiplyContent,
-  fetchMultiplyContractAddresses,
-  fetchMultiplyLiquidationRisk,
-  fetchMultiplyMarket,
-  fetchMultiplyMarketSnapshot,
-  fetchMultiplyRecentTransactions,
-  fetchMultiplyRisk,
-  fetchMultiplyRiskParameters,
-  fetchMultiplySupplyBorrow,
+  fetchMultiplyDetailHydration,
   type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
 import type { PreloadedQuickStatRow } from "@/app/lib/detail-page/apply-preloaded-overlays"
@@ -52,7 +44,8 @@ function mergeConvexQuickStats(
 
 function applyRiskParametersToAbout(
   detail: MultiplyMarketDetail,
-  riskParameters: Awaited<ReturnType<typeof fetchMultiplyRiskParameters>>,
+  riskParameters:
+    { parameters: Array<{ id: string; label: string; value: string; description?: string }> } | null | undefined,
 ): MultiplyMarketDetail {
   if (!riskParameters?.parameters.length) return detail
   return {
@@ -113,7 +106,8 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
   const slug = detail.id
 
   // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  const [
+  const hydration = await fetchMultiplyDetailHydration(slug, `/multiply/markets/${id}`)
+  const {
     transactions,
     risk,
     content,
@@ -122,19 +116,8 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     siloedMarket,
     snapshot,
     supplyBorrow,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchMultiplyRecentTransactions(slug),
-    fetchMultiplyRisk(slug),
-    fetchMultiplyContent(slug),
-    fetchMultiplyRiskParameters(slug),
-    fetchMultiplyLiquidationRisk(slug),
-
-    fetchMultiplyMarket(slug),
-    fetchMultiplyMarketSnapshot(slug),
-    fetchMultiplySupplyBorrow(slug),
-    fetchMultiplyContractAddresses(slug),
-  ])
+    contractAddresses = [],
+  } = hydration ?? {}
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   const mode = resolveDataSourceMode()
@@ -199,8 +182,8 @@ function buildEmptySupplyBorrow(slug: string): MultiplyMarketDetail["supplyBorro
   }
 }
 
-// Request-scoped memoization so generateMetadata + the page body share one Convex
-// fan-out per request instead of running it twice.
+// Request-scoped memoization keeps the detail builder safe if the route is rendered
+// more than once during the same RSC request.
 export const getMultiplyMarketDetailFromConvex = cache(getMultiplyMarketDetailFromConvexUncached)
 
 /** Merge page preloadQuery results onto multiply detail (C03 — avoid double HTTP fetch). */

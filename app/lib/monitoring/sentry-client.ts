@@ -96,16 +96,81 @@ function loadSentry(): Promise<SentryModule> {
   return modulePromise
 }
 
-/** Report an error now if the SDK is up, otherwise after it loads. Never throws. */
-export function captureException(error: unknown) {
-  if (!isSentryEnabled()) return
-  if (loaded) {
-    loaded.captureException(error)
-    return
-  }
-  void loadSentry()
+/**
+ * Report an error now if the SDK is up, otherwise after it loads. Never throws. Resolves to the
+ * Sentry event id (undefined when reporting is off or the SDK failed to load).
+ */
+export function captureException(error: unknown): Promise<string | undefined> {
+  if (!isSentryEnabled()) return Promise.resolve(undefined)
+  if (loaded) return Promise.resolve(loaded.captureException(error))
+  return loadSentry()
     .then((Sentry) => Sentry.captureException(error))
     .catch(() => undefined)
+}
+
+export type BugReportLabels = {
+  formTitle: string
+  messageLabel: string
+  messagePlaceholder: string
+  isRequiredLabel: string
+  submitButtonLabel: string
+  cancelButtonLabel: string
+  successMessageText: string
+}
+
+type FeedbackSdk = typeof import("./sentry-feedback-sdk")
+let feedbackPromise: Promise<ReturnType<FeedbackSdk["feedbackIntegration"]> | null> | null = null
+
+function loadFeedback() {
+  feedbackPromise ??= loadSentry()
+    .then(() => import("./sentry-feedback-sdk"))
+    .then(({ feedbackIntegration, getClient }) => {
+      const client = getClient()
+      if (!client) return null
+      const feedback = feedbackIntegration({
+        // No floating widget: the form only opens from an error page.
+        autoInject: false,
+        showBranding: false,
+        showName: false,
+        showEmail: false,
+        // Screen capture prompts for screen-share permission; not worth it on an error page.
+        enableScreenshot: false,
+      })
+      client.addIntegration(feedback)
+      return feedback
+    })
+    .catch(() => {
+      feedbackPromise = null
+      return null
+    })
+  return feedbackPromise
+}
+
+/**
+ * Open Sentry's bug-report form for an error the user just hit. The report is tagged with the
+ * error's event id so it can be found next to that error in Sentry. Resolves to false when
+ * reporting is off (local builds) or the form could not load, so callers can hide the entry point.
+ */
+export async function openBugReportForm(eventId: string, labels: BugReportLabels): Promise<boolean> {
+  if (typeof window === "undefined" || !isSentryEnabled()) return false
+  const feedback = await loadFeedback()
+  if (!feedback) return false
+  try {
+    let form: Awaited<ReturnType<typeof feedback.createForm>> | null = null
+    form = await feedback.createForm({
+      ...labels,
+      colorScheme: document.documentElement.classList.contains("dark") ? "dark" : "light",
+      tags: { error_event_id: eventId },
+      onFormClose: () => form?.removeFromDom(),
+      // Fires after the success message times out (a submit never calls onFormClose).
+      onFormSubmitted: () => form?.removeFromDom(),
+    })
+    form.appendToDom()
+    form.open()
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** Forwarded from `instrumentation-client.ts` so App Router navigations still become spans. */

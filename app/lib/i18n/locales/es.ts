@@ -1155,10 +1155,8 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Tokens LP estables",
   "Change language": "Cambiar idioma",
   "Ask AI": "Preguntar a la IA",
-  "Search markets…": "Buscar mercados…",
   "Search Avana": "Buscar en Avana",
   "Search pools, borrow, lend, and more": "Buscar pools, préstamos y más",
-  "Search pools, borrow assets, lend assets": "Buscar pools y activos",
   "Collateral pools": "Pools de garantía",
   "Loading results": "Cargando resultados",
   "Pools to use as collateral": "Pools para usar como garantía",
@@ -1864,6 +1862,13 @@ const dict: TranslationDictionary = {
     "Demasiadas sesiones nuevas de Ask AI desde esta red. Inténtalo más tarde.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI no está disponible temporalmente. Inténtalo de nuevo en un momento.",
+  "Report this bug": "Informar de este error",
+  "Report a bug": "Informar de un error",
+  "What happened?": "¿Qué pasó?",
+  "Tell us what you were doing when this happened.": "Cuéntanos qué estabas haciendo cuando ocurrió.",
+  "(required)": "(obligatorio)",
+  "Send report": "Enviar informe",
+  "Thanks! Your report was sent.": "¡Gracias! Tu informe se ha enviado.",
 }
 
 export default dict

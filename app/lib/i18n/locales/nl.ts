@@ -1035,10 +1035,8 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Stable LP-tokens",
   "Change language": "Taal wijzigen",
   "Ask AI": "Vraag AI",
-  "Search markets…": "Markten zoeken…",
   "Search Avana": "Avana doorzoeken",
   "Search pools, borrow, lend, and more": "Zoek pools, lenen, uitlenen en meer",
-  "Search pools, borrow assets, lend assets": "Zoek pools en activa",
   All: "Alles",
   "Collateral pools": "Onderpandpools",
   "Loading results": "Resultaten laden",
@@ -1752,6 +1750,13 @@ const dict: TranslationDictionary = {
     "Te veel nieuwe Ask AI-sessies vanaf dit netwerk. Probeer het later opnieuw.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI is tijdelijk niet beschikbaar. Probeer het zo meteen opnieuw.",
+  "Report this bug": "Deze fout melden",
+  "Report a bug": "Een fout melden",
+  "What happened?": "Wat is er gebeurd?",
+  "Tell us what you were doing when this happened.": "Vertel ons wat je aan het doen was toen dit gebeurde.",
+  "(required)": "(verplicht)",
+  "Send report": "Melding versturen",
+  "Thanks! Your report was sent.": "Bedankt! Je melding is verstuurd.",
 }
 
 export default dict

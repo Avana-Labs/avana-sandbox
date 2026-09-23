@@ -2,7 +2,7 @@
 
 import { defineContentModule } from "../silo/content"
 
-export const { getContent, upsertContent } = defineContentModule("borrowMarketContent", {
+export const { readContent, getContent, upsertContent } = defineContentModule("borrowMarketContent", {
   product: "borrow",
   withKind: true,
 })

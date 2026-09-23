@@ -2,6 +2,6 @@
 
 import { defineRiskAssessmentModule } from "../silo/riskAssessment"
 
-export const { getRisk, upsertRiskAssessments } = defineRiskAssessmentModule("borrowRiskAssessments", {
+export const { readRisk, getRisk, upsertRiskAssessments } = defineRiskAssessmentModule("borrowRiskAssessments", {
   withKind: true,
 })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { captureException } from "@/app/lib/monitoring/sentry-client"
+import { captureException, openBugReportForm } from "@/app/lib/monitoring/sentry-client"
 
 /**
  * Global error boundary — the last line of defence. It replaces the root layout
@@ -20,12 +20,25 @@ const diatypeFace = `
 }
 `
 
+const GLOBAL_BUG_REPORT_LABELS = {
+  formTitle: "Report a bug",
+  messageLabel: "What happened?",
+  messagePlaceholder: "Tell us what you were doing when this happened.",
+  isRequiredLabel: "(required)",
+  submitButtonLabel: "Send report",
+  cancelButtonLabel: "Cancel",
+  successMessageText: "Thanks! Your report was sent.",
+}
+
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     // Always surface the error — production included — so incidents aren't invisible. In a
     // production build Next strips the message from the client error object but preserves
     // `error.digest`, which correlates to the server-side log entry (Vercel / Convex).
-    captureException(error)
+    // The root layout (and its i18n provider) is gone here, so the bug-report form is English.
+    void captureException(error).then((eventId) => {
+      if (eventId) void openBugReportForm(eventId, GLOBAL_BUG_REPORT_LABELS)
+    })
     console.error("[global-error]", error, error.digest ? `digest=${error.digest}` : "")
   }, [error])
 

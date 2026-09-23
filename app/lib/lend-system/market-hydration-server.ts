@@ -3,7 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
-import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
+import { reportServerFetchFailure, reportServerFetchSuccess } from "@/app/lib/detail-page/report-server-fetch-failure"
 import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
 
 /**
@@ -37,6 +37,29 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
     return null
   }
 })
+
+export async function fetchLendDetailHydration(slug: string, route?: string) {
+  const client = convexClient()
+  if (!client) return null
+  const startedAt = Date.now()
+  try {
+    const result = await client.query(api.detailHydration.getLendDetail, { slug })
+    reportServerFetchSuccess(
+      "fetchLendDetailHydration",
+      { product: "lend", route, slug, query: "detailHydration.getLendDetail" },
+      Date.now() - startedAt,
+    )
+    return result
+  } catch (error) {
+    reportServerFetchFailure("fetchLendDetailHydration", error, {
+      product: "lend",
+      route,
+      slug,
+      query: "detailHydration.getLendDetail",
+    })
+    return null
+  }
+}
 
 /** All lend-scope latest-day snapshots (for SSR list hydration). [] when unreachable. */
 export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> {

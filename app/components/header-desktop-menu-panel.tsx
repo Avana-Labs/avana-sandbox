@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { TokenIcon } from "@/app/components/token-icon"
+import { OVERLAY_SCRIM_CLASS } from "@/app/components/card-surface-tokens"
 import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
@@ -337,7 +338,7 @@ export default function HeaderDesktopMenuPanel({
       <div
         aria-hidden="true"
         onMouseEnter={onClose}
-        className={`fixed inset-x-0 bottom-0 top-14 z-20 hidden bg-black/25 backdrop-blur-sm transition-opacity duration-300 ease-out min-[1440px]:block ${
+        className={`fixed inset-x-0 bottom-0 top-14 z-20 hidden ${OVERLAY_SCRIM_CLASS} transition-opacity duration-300 ease-out min-[1440px]:block ${
           isShown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       />

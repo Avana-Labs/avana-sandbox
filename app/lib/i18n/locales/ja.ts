@@ -1029,10 +1029,8 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Stable LPトークン",
   "Change language": "言語を変更",
   "Ask AI": "AIに質問",
-  "Search markets…": "マーケットを検索…",
   "Search Avana": "Avana を検索",
   "Search pools, borrow, lend, and more": "プール、借入、貸出などを検索",
-  "Search pools, borrow assets, lend assets": "プールと資産を検索",
   All: "すべて",
   "Collateral pools": "担保プール",
   "Loading results": "結果を読み込み中",
@@ -1782,6 +1780,13 @@ const dict: TranslationDictionary = {
     "このネットワークからの新しい Ask AI セッションが多すぎます。後でもう一度お試しください。",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI は一時的に利用できません。しばらくしてからもう一度お試しください。",
+  "Report this bug": "このバグを報告",
+  "Report a bug": "バグを報告",
+  "What happened?": "何が起きましたか？",
+  "Tell us what you were doing when this happened.": "このとき何をしていたか教えてください。",
+  "(required)": "（必須）",
+  "Send report": "レポートを送信",
+  "Thanks! Your report was sent.": "ありがとうございます。レポートを送信しました。",
 }
 
 export default dict

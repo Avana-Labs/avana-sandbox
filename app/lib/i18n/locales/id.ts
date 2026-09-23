@@ -1033,10 +1033,8 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Token LP Stable",
   "Change language": "Ubah bahasa",
   "Ask AI": "Tanya AI",
-  "Search markets…": "Cari pasar…",
   "Search Avana": "Cari di Avana",
   "Search pools, borrow, lend, and more": "Cari pool, pinjam, pinjamkan, dan lainnya",
-  "Search pools, borrow assets, lend assets": "Cari pool dan aset",
   All: "Semua",
   "Collateral pools": "Pool jaminan",
   "Loading results": "Memuat hasil",
@@ -1747,6 +1745,13 @@ const dict: TranslationDictionary = {
   "Too many new Ask AI sessions from this network. Try again later.":
     "Terlalu banyak sesi Ask AI baru dari jaringan ini. Coba lagi nanti.",
   "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI sedang tidak tersedia. Coba lagi sebentar lagi.",
+  "Report this bug": "Laporkan bug ini",
+  "Report a bug": "Laporkan bug",
+  "What happened?": "Apa yang terjadi?",
+  "Tell us what you were doing when this happened.": "Ceritakan apa yang sedang kamu lakukan saat ini terjadi.",
+  "(required)": "(wajib)",
+  "Send report": "Kirim laporan",
+  "Thanks! Your report was sent.": "Terima kasih! Laporanmu sudah terkirim.",
 }
 
 export default dict

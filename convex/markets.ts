@@ -67,67 +67,39 @@ export const getHistoricalUtilization = query({
   },
 })
 
+export async function readSupplyBorrow(ctx: QueryCtx, scope: MarketScope, slug: string) {
+  const rows = await dailyRowsForScope(ctx, scope, slug, "1Y")
+  if (rows.length === 0) return null
+  const market = await resolveMarket(ctx, scope, slug)
+  const prefix = market?._id ?? slug
+  const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
+    id,
+    label,
+    points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+  })
+  return {
+    supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
+    borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
+    utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
+  }
+}
+
 /** Asset-page `SupplyBorrowCard` data: `{ supplied, borrowed, utilization }`, each a `Series`. */
 export const getSupplyBorrow = query({
   args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const rows = await dailyRowsForScope(ctx, "asset", slug, "1Y")
-    if (rows.length === 0) return null
-    const market = await resolveMarket(ctx, "asset", slug)
-    const prefix = market?._id ?? slug
-    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
-      id,
-      label,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
-    })
-    return {
-      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
-      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
-      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
-    }
-  },
+  handler: async (ctx, { slug }) => readSupplyBorrow(ctx, "asset", slug),
 })
 
 /** getSupplyBorrow for scope="multiply" — same shape as the asset version. */
 export const getMultiplySupplyBorrow = query({
   args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const rows = await dailyRowsForScope(ctx, "multiply", slug, "1Y")
-    if (rows.length === 0) return null
-    const market = await resolveMarket(ctx, "multiply", slug)
-    const prefix = market?._id ?? slug
-    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
-      id,
-      label,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
-    })
-    return {
-      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
-      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
-      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
-    }
-  },
+  handler: async (ctx, { slug }) => readSupplyBorrow(ctx, "multiply", slug),
 })
 
 /** getSupplyBorrow for scope="lend" — same shape as the asset version. */
 export const getLendSupplyBorrow = query({
   args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const rows = await dailyRowsForScope(ctx, "lend", slug, "1Y")
-    if (rows.length === 0) return null
-    const market = await resolveMarket(ctx, "lend", slug)
-    const prefix = market?._id ?? slug
-    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
-      id,
-      label,
-      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
-    })
-    return {
-      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
-      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
-      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
-    }
-  },
+  handler: async (ctx, { slug }) => readSupplyBorrow(ctx, "lend", slug),
 })
 
 /** Quick-stat values + 24h deltas from the two most recent daily snapshots, shaped as the
@@ -348,11 +320,13 @@ export const getMarketSnapshot = query({
     scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")),
     slug: v.string(),
   },
-  handler: async (ctx, { scope, slug }) => {
-    const rows = await listMarketSnapshotRows(ctx)
-    return rows.find((row) => row.scope === scope && row.slug === slug) ?? null
-  },
+  handler: async (ctx, { scope, slug }) => readMarketSnapshot(ctx, scope, slug),
 })
+
+export async function readMarketSnapshot(ctx: QueryCtx, scope: MarketScope, slug: string) {
+  const rows = await listMarketSnapshotRows(ctx)
+  return rows.find((row) => row.scope === scope && row.slug === slug) ?? null
+}
 
 async function listMarketSnapshotRows(ctx: QueryCtx) {
   const cache = await ctx.db
@@ -689,72 +663,74 @@ export const getRecentTransactions = query({
     limit: v.optional(v.number()),
   },
   returns: v.array(detailTxRowValidator),
-  handler: async (ctx, { scope, slug, limit }) => {
-    const take = limit ?? 12
-    const product = productForDetailScope(scope)
-    const recent = await detailCandidateRows(ctx, scope, slug)
-    const marketsBySlug = new Map<string, Promise<Doc<"markets"> | null>>()
-    const live: DetailSandboxTxRow[] = []
-    for (const r of recent) {
-      if (live.length >= take) break
-      if (r.status !== "success") continue
-      if (r.product !== product) continue
-      if (!borrowScopeAllowsKind(scope, r.kind)) continue
-      if (!sandboxRowMatchesDetailMarket(r, scope, slug)) continue
-      live.push({
-        id: String(r._id),
-        at: new Date(r.at).toISOString(),
-        kind: mapSandboxTxKind(scope, r.kind),
-        amountLabel: formatCompactUsdStatic(r.amountUsd),
-        amountUsd: r.amountUsd,
-        ...(await tokenFieldsFromSandboxRow(ctx, r, scope, marketsBySlug)),
-        walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-        counterpartyLabel: undefined,
-        txHashShort: r.syntheticTxHash.slice(0, 10),
-        source: "sandbox",
-      })
-    }
-    const market = await resolveMarket(ctx, scope, slug)
-    if (!market) return live
-    const rows = await ctx.db
-      .query("walletEvents")
-      .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
-      .order("desc")
-      .take(take)
-    const seeded: Array<{
-      id: string
-      at: string
-      kind: DetailTxKind
-      amountLabel: string
-      amountUsd: number
-      tokenAmountLabel?: string
-      token0AmountLabel?: string
-      token1AmountLabel?: string
-      tokenSymbol?: string
-      tokenSymbolSecondary?: string
-      walletLabel: string
-      counterpartyLabel?: string
-      txHashShort: string
-      source: "seed"
-    }> = []
-    for (const r of rows) {
-      if (!borrowScopeAllowsKind(scope, r.kind)) continue
-      seeded.push({
-        id: String(r._id),
-        at: new Date(r.at).toISOString(),
-        kind: mapSeedWalletEventKind(scope, r.kind),
-        amountLabel: formatCompactUsdStatic(r.amountUsd),
-        amountUsd: r.amountUsd,
-        ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
-        walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-        counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
-        txHashShort: r.txHash.slice(0, 10),
-        source: "seed",
-      })
-    }
-    return [...live, ...seeded].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, take)
-  },
+  handler: async (ctx, { scope, slug, limit }) => readRecentTransactions(ctx, scope, slug, limit),
 })
+
+export async function readRecentTransactions(ctx: QueryCtx, scope: MarketScope, slug: string, limit?: number) {
+  const take = limit ?? 12
+  const product = productForDetailScope(scope)
+  const recent = await detailCandidateRows(ctx, scope, slug)
+  const marketsBySlug = new Map<string, Promise<Doc<"markets"> | null>>()
+  const live: DetailSandboxTxRow[] = []
+  for (const r of recent) {
+    if (live.length >= take) break
+    if (r.status !== "success") continue
+    if (r.product !== product) continue
+    if (!borrowScopeAllowsKind(scope, r.kind)) continue
+    if (!sandboxRowMatchesDetailMarket(r, scope, slug)) continue
+    live.push({
+      id: String(r._id),
+      at: new Date(r.at).toISOString(),
+      kind: mapSandboxTxKind(scope, r.kind),
+      amountLabel: formatCompactUsdStatic(r.amountUsd),
+      amountUsd: r.amountUsd,
+      ...(await tokenFieldsFromSandboxRow(ctx, r, scope, marketsBySlug)),
+      walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+      counterpartyLabel: undefined,
+      txHashShort: r.syntheticTxHash.slice(0, 10),
+      source: "sandbox",
+    })
+  }
+  const market = await resolveMarket(ctx, scope, slug)
+  if (!market) return live
+  const rows = await ctx.db
+    .query("walletEvents")
+    .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
+    .order("desc")
+    .take(take)
+  const seeded: Array<{
+    id: string
+    at: string
+    kind: DetailTxKind
+    amountLabel: string
+    amountUsd: number
+    tokenAmountLabel?: string
+    token0AmountLabel?: string
+    token1AmountLabel?: string
+    tokenSymbol?: string
+    tokenSymbolSecondary?: string
+    walletLabel: string
+    counterpartyLabel?: string
+    txHashShort: string
+    source: "seed"
+  }> = []
+  for (const r of rows) {
+    if (!borrowScopeAllowsKind(scope, r.kind)) continue
+    seeded.push({
+      id: String(r._id),
+      at: new Date(r.at).toISOString(),
+      kind: mapSeedWalletEventKind(scope, r.kind),
+      amountLabel: formatCompactUsdStatic(r.amountUsd),
+      amountUsd: r.amountUsd,
+      ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
+      walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+      counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
+      txHashShort: r.txHash.slice(0, 10),
+      source: "seed",
+    })
+  }
+  return [...live, ...seeded].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, take)
+}
 
 type DetailTxKind =
   | "supply"

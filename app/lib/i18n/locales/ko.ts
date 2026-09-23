@@ -1015,10 +1015,8 @@ const dict: TranslationDictionary = {
   "Stable LP tokens": "Stable LP 토큰",
   "Change language": "언어 변경",
   "Ask AI": "AI에게 묻기",
-  "Search markets…": "마켓 검색…",
   "Search Avana": "Avana 검색",
   "Search pools, borrow, lend, and more": "풀, 대출, 예치 등을 검색",
-  "Search pools, borrow assets, lend assets": "풀과 자산 검색",
   All: "전체",
   "Collateral pools": "담보 풀",
   "Loading results": "결과 불러오는 중",
@@ -1713,6 +1711,13 @@ const dict: TranslationDictionary = {
     "이 네트워크에서 새 Ask AI 세션이 너무 많습니다. 나중에 다시 시도하세요.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.",
+  "Report this bug": "이 버그 신고하기",
+  "Report a bug": "버그 신고",
+  "What happened?": "무슨 일이 있었나요?",
+  "Tell us what you were doing when this happened.": "이 문제가 발생했을 때 무엇을 하고 있었는지 알려 주세요.",
+  "(required)": "(필수)",
+  "Send report": "신고 보내기",
+  "Thanks! Your report was sent.": "감사합니다! 신고가 전송되었습니다.",
 }
 
 export default dict

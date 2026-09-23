@@ -1,22 +1,10 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
-import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
+import { mergeConvexMarketSnapshots, type ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import {
-  fetchAllocation,
-  fetchAssetContractAddresses,
-  fetchBorrowInterestRateModel,
-  fetchBorrowLiquidationRisk,
-  fetchBorrowMarket,
-  fetchBorrowPoolBorrowables,
-  fetchBorrowRiskParameters,
-  fetchBorrowRiskParametersForSlugs,
-  fetchContent,
-  fetchConvexMarketSnapshot,
-  fetchPoolContractAddresses,
-  fetchRecentTransactions,
-  fetchRisk,
-  fetchSupplyBorrow,
+  fetchBorrowAssetDetailHydration,
+  fetchBorrowPoolDetailHydration,
   type ConvexContractAddressRow,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import type { PreloadedQuickStatRow } from "@/app/lib/detail-page/apply-preloaded-overlays"
@@ -24,7 +12,8 @@ import { emptySeriesFamily, shouldStripMockSeriesForLive } from "@/app/lib/detai
 import { canonicalPriceMap } from "@/app/lib/prices/canonical"
 import { priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice, formatPairRate } from "@/app/lib/borrow-detail/formatters"
-import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
+import { allocationVenueLabel, formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import {
@@ -200,20 +189,50 @@ function collateralFactorFromRiskParameters(
   return Number.isFinite(numeric) ? numeric : undefined
 }
 
+function hydrateAllocationRows(
+  rows:
+    | ReadonlyArray<{
+        poolSlug: string
+        poolName: string
+        venueLabel: string
+        sharePct: number
+        valueUsd: number
+        utilizationPct: number
+        borrowAprPct: number
+      }>
+    | null
+    | undefined,
+  assetId: string,
+): AllocationRow[] | null {
+  if (!rows || rows.length === 0) return null
+  const hydrated = rows.flatMap((row) => {
+    const pool = BORROW_POOL_CATALOG.find((candidate) => candidate.id === row.poolSlug)
+    if (!pool) return []
+    return [
+      {
+        id: `${assetId}-${row.poolSlug}`,
+        poolName: row.poolName,
+        venueLabel: allocationVenueLabel(pool),
+        visuals: pool.visuals,
+        sharePct: row.sharePct,
+        valueUsd: row.valueUsd,
+        utilizationPct: row.utilizationPct,
+        borrowAprPct: row.borrowAprPct,
+        feeTier: pool.feeTier,
+        tvlUsd: pool.tvlUsd,
+      },
+    ]
+  })
+  return hydrated.length > 0 ? hydrated : null
+}
+
 async function enrichAllocationWithCollateralFactors(
   allocation: AllocationRow[] | null,
   assetId: string,
+  preloadedRiskRows?: ReadonlyArray<{ slug: string; parameters: ReadonlyArray<{ id: string; value: string }> }> | null,
 ): Promise<AllocationRow[] | null> {
   if (!allocation || allocation.length === 0) return allocation
-  const poolSlugs = [
-    ...new Set(
-      allocation.map((row) => {
-        const prefix = `${assetId}-`
-        return row.id.startsWith(prefix) ? row.id.slice(prefix.length) : row.id
-      }),
-    ),
-  ]
-  const riskRows = await fetchBorrowRiskParametersForSlugs(poolSlugs)
+  const riskRows = preloadedRiskRows ?? []
   const cfByPool = new Map<string, number>()
   for (const row of riskRows ?? []) {
     const cf = collateralFactorFromRiskParameters(row.parameters)
@@ -274,7 +293,8 @@ function injectContractAddressStats<T extends { about: AssetDetail["about"] | Po
 
 function applyRiskParametersToAbout<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
   detail: T,
-  riskParameters: Awaited<ReturnType<typeof fetchBorrowRiskParameters>>,
+  riskParameters:
+    { parameters: Array<{ id: string; label: string; value: string; description?: string }> } | null | undefined,
 ): T {
   if (!riskParameters?.parameters.length) return detail
   return {
@@ -307,27 +327,19 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   // via applyPoolPreloadedOverlays — do not HTTP-fetch those queries here (C03).
   // The snapshot rides in the same batch: every key is the catalog pool id, so waiting for
   // it first only added a Convex round trip to every pool detail SSR.
-  const [
-    snap,
+  const hydration = await fetchBorrowPoolDetailHydration(poolId, `/borrow/markets/${id}`)
+  const {
+    snapshot,
     transactions,
     risk,
     content,
     riskParameters,
-    poolBorrowables,
+    poolBorrowables = [],
     liquidationRisk,
     siloedMarket,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchConvexMarketSnapshot("pool", poolId),
-    fetchRecentTransactions("pool", poolId),
-    fetchRisk("pool", poolId),
-    fetchContent("pool", poolId),
-    fetchBorrowRiskParameters(poolId),
-    fetchBorrowPoolBorrowables(poolId),
-    fetchBorrowLiquidationRisk(poolId),
-    fetchBorrowMarket(poolId),
-    fetchPoolContractAddresses(poolId),
-  ])
+    contractAddresses = [],
+  } = hydration ?? {}
+  const snap = snapshot?.scope === "pool" ? (snapshot as ConvexMarketSnapshot) : null
   if (shouldFailClosedWithoutSnapshots(mode, snap ? 1 : 0)) return null
   const hydratedState = snap ? mergeConvexMarketSnapshots(state, [snap]) : state
   const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, routeId)
@@ -410,29 +422,21 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   // surface; restore the fetch here when something actually renders it.
   // The snapshot rides in the same batch: every key is the catalog slug, so waiting for it
   // first only added a Convex round trip to every asset detail SSR.
-  const [
-    snap,
+  const hydration = await fetchBorrowAssetDetailHydration(slug, `/borrow/assets/${id}`)
+  const {
+    snapshot,
     supplyBorrow,
     transactions,
-    allocation,
+    allocation = [],
+    allocationRiskParameters = null,
     risk,
     content,
     riskParameters,
     interestRateModel,
     siloedMarket,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchConvexMarketSnapshot("asset", slug),
-    fetchSupplyBorrow(slug),
-    fetchRecentTransactions("asset", slug),
-    fetchAllocation(slug),
-    fetchRisk("asset", slug),
-    fetchContent("asset", slug),
-    fetchBorrowRiskParameters(slug),
-    fetchBorrowInterestRateModel(slug),
-    fetchBorrowMarket(slug),
-    fetchAssetContractAddresses(slug),
-  ])
+    contractAddresses = [],
+  } = hydration ?? {}
+  const snap = snapshot?.scope === "asset" ? (snapshot as ConvexMarketSnapshot) : null
   if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snap ? 1 : 0)) return null
   const detail = resolveAssetDetailFromState(
     slug,
@@ -449,7 +453,8 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
 
   const historicalUtilization = deriveHistoricalUtilization(supplyBorrow?.utilization)
 
-  const allocationWithCf = await enrichAllocationWithCollateralFactors(allocation, slug)
+  const allocationRows = hydrateAllocationRows(allocation, slug)
+  const allocationWithCf = await enrichAllocationWithCollateralFactors(allocationRows, slug, allocationRiskParameters)
 
   const hydrated = applyDetailContentOverlay(
     {
@@ -527,9 +532,9 @@ function stripAssetHeroMetricSeriesForLive(detail: AssetDetail): AssetDetail {
   }
 }
 
-// Request-scoped memoization: `generateMetadata` and the page body both call these
-// builders per request. Without cache() each detail render runs the full Convex
-// fan-out twice. React.cache() dedups by argument for the lifetime of the request.
+// Request-scoped memoization keeps these builders safe if the route is rendered more
+// than once during the same RSC request. Metadata uses the static catalog and does
+// not invoke this live fan-out.
 export const getPoolDetailFromConvex = cache(getPoolDetailFromConvexUncached)
 export const getAssetDetailFromConvex = cache(getAssetDetailFromConvexUncached)
 

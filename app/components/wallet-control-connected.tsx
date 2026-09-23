@@ -2,11 +2,15 @@
 
 import { useEffect, useRef } from "react"
 import { ConnectKitButton, useSIWE } from "connectkit"
+import { useAccount } from "wagmi"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { walletButtonClasses, walletGradient, type WalletControlSize } from "@/app/components/wallet-control-shared"
+
+/** Wallets already auto-prompted this page load; the header mounts this control twice. */
+const autoSignInPrompted = new Set<string>()
 
 /**
  * Full wallet control, dynamically loaded ONLY once the wallet SDK is mounted (see
@@ -16,7 +20,12 @@ import { walletButtonClasses, walletGradient, type WalletControlSize } from "@/a
  *   connected only → "Sign in" (runs the SIWE signature once)
  *   signed in      → an account pill that opens the modal (switch / disconnect)
  * Clicking the signed-in pill opens the account view — it never silently signs you out.
+ *
+ * Connecting during the session chains straight into the SIWE signature, so the user does not
+ * have to find and click "Sign in" as a second step. A wallet restored on reload is not prompted
+ * (a signature request on page load is unexpected); it keeps the "Sign in" button.
  */
+
 export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
   const { t } = useTranslation()
   const siwe = useSIWE()
@@ -24,6 +33,30 @@ export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
   const signingIn = Boolean(siwe?.isLoading)
   const { isWrongNetwork, targetChainName, isSwitching, switchToTargetChain } = useWrongNetwork()
   const { consumeAutoOpen } = useWalletGate()
+  const { address: accountAddress, status: accountStatus } = useAccount()
+
+  // A user-initiated connect goes "connecting" → "connected"; a session restored on reload goes
+  // "reconnecting" → "connected" and is left alone. The flag survives a wrong-network detour, so
+  // switching chains after connecting still chains into the signature.
+  const previousStatusRef = useRef(accountStatus)
+  const userConnectedRef = useRef(false)
+  useEffect(() => {
+    if (accountStatus === "connected" && previousStatusRef.current === "connecting") userConnectedRef.current = true
+    if (accountStatus === "disconnected") {
+      userConnectedRef.current = false
+      // A later connect (same or another wallet) is a new intent and may prompt again.
+      autoSignInPrompted.clear()
+    }
+    previousStatusRef.current = accountStatus
+
+    if (!userConnectedRef.current || accountStatus !== "connected" || !accountAddress || !siwe?.signIn) return
+    if (isSignedIn || signingIn || isWrongNetwork) return
+    const key = accountAddress.toLowerCase()
+    if (autoSignInPrompted.has(key)) return
+    autoSignInPrompted.add(key)
+    // A rejected signature leaves the "Sign in" button; it is not re-prompted.
+    void Promise.resolve(siwe.signIn()).catch(() => undefined)
+  }, [accountStatus, accountAddress, isSignedIn, signingIn, isWrongNetwork, siwe])
 
   const { base, brand, pill } = walletButtonClasses(size)
 

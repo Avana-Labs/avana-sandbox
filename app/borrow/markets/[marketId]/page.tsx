@@ -7,7 +7,6 @@ import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
 import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
-import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
@@ -29,11 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       path: `/borrow/markets/${marketId}`,
       keywords: ["LP collateral", "borrow against AMM positions"],
     })
-  const detail = preferLive(
-    await getPoolDetailFromConvex(marketId),
-    getPoolDetail(marketId),
-    `borrow market metadata:${marketId}`,
-  )
+  const detail = getPoolDetail(marketId)
   if (!detail)
     return {
       title: "Market · Avana",
