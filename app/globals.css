@@ -47,16 +47,21 @@
    *
    * Neutralize every form of that compensation. Scroll stays locked (overflow: hidden
    * is untouched); only the width compensation is cancelled, so the header stays put.
+   *
+   * The selectors are prefixed with `html` / `:root` on purpose. `react-remove-scroll-bar`
+   * injects `body[data-scroll-locked] { margin-right: <scrollbar>px !important }` at runtime,
+   * after this sheet; at equal specificity that later rule won and shifted the page left by
+   * the scrollbar width whenever the search dialog opened.
    */
   body {
     --removed-body-scroll-bar-size: 0px !important;
   }
-  body[data-scroll-locked],
-  body[style*="overflow: hidden"],
-  body[style*="overflow:hidden"],
-  html[data-scroll-locked],
-  html[style*="overflow: hidden"],
-  html[style*="overflow:hidden"] {
+  html body[data-scroll-locked],
+  html body[style*="overflow: hidden"],
+  html body[style*="overflow:hidden"],
+  html:root[data-scroll-locked],
+  html:root[style*="overflow: hidden"],
+  html:root[style*="overflow:hidden"] {
     padding-right: 0 !important;
     margin-right: 0 !important;
   }
