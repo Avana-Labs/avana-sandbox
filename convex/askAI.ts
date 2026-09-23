@@ -13,6 +13,7 @@ import { RateLimiter, isRateLimitError } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { ConvexError, v, type GenericId } from "convex/values"
 import { components, internal } from "./_generated/api"
+import type { Id } from "./_generated/dataModel"
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { getAuthedWallet } from "./sandbox/auth"
@@ -59,6 +60,7 @@ const MAX_FAILED_TURNS_IN_QUEUE = 50
 /** Global + per-subject caps on turns currently generating a model response. */
 const MAX_CONCURRENT_GENERATIONS_GLOBAL = 100
 const MAX_CONCURRENT_GENERATIONS_PER_SUBJECT = 2
+const ASK_AI_COST_BUCKET_MS = 60 * 60 * 1_000
 
 function safeEqual(a: string, b: string) {
   if (a.length !== b.length) return false
@@ -96,18 +98,11 @@ async function enforceAskAICostGate(
   ownerSubject: string,
   options: { enforceBurst: boolean; enforceConcurrent: boolean },
 ) {
-  const dayStart = Date.now() - 24 * 60 * 60 * 1_000
-  const usageRows = await ctx.db
-    .query("askAIUsage")
-    .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-    .collect()
-  const reservations = await ctx.db
-    .query("askAIBudgetReservations")
-    .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-    .collect()
-  const reserved = reservations.reduce((sum, row) => sum + row.tokens, 0)
+  const now = Date.now()
+  await ensureAskAIQuotaState(ctx, ownerSubject, now)
+  const totals = await readAskAICostTotals(ctx, ownerSubject, now)
   if (
-    usageRows.reduce((sum, row) => sum + row.totalTokens, 0) + reserved + ASK_AI_CONFIG.limits.reservedTokensPerTurn >
+    totals.usedTokens + totals.reservedTokens + ASK_AI_CONFIG.limits.reservedTokensPerTurn >
     ASK_AI_CONFIG.limits.dailyTokenBudget
   ) {
     throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
@@ -131,12 +126,137 @@ async function enforceAskAICostGate(
       throws: true,
     }),
   )
-  return ctx.db.insert("askAIBudgetReservations", {
+  const reservationCreatedAt = Date.now()
+  const reservationId = await ctx.db.insert("askAIBudgetReservations", {
     ownerSubject,
     tokens: ASK_AI_CONFIG.limits.reservedTokensPerTurn,
     settled: false,
-    createdAt: Date.now(),
+    createdAt: reservationCreatedAt,
   })
+  await adjustAskAICostBucket(ctx, ownerSubject, reservationCreatedAt, 0, ASK_AI_CONFIG.limits.reservedTokensPerTurn)
+  return reservationId
+}
+
+function askAICostBucketStart(timestamp: number) {
+  return Math.floor(timestamp / ASK_AI_COST_BUCKET_MS) * ASK_AI_COST_BUCKET_MS
+}
+
+async function ensureAskAIQuotaState(ctx: MutationCtx, ownerSubject: string, now: number) {
+  const state = await ctx.db
+    .query("askAIQuotaState")
+    .withIndex("by_owner", (q) => q.eq("ownerSubject", ownerSubject))
+    .unique()
+  if (state) return
+
+  const dayStart = now - 24 * 60 * 60 * 1_000
+  const [usageRows, reservations, existingBuckets] = await Promise.all([
+    ctx.db
+      .query("askAIUsage")
+      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+      .collect(),
+    ctx.db
+      .query("askAIBudgetReservations")
+      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+      .collect(),
+    ctx.db
+      .query("askAICostBuckets")
+      .withIndex("by_owner_bucket", (q) =>
+        q.eq("ownerSubject", ownerSubject).gte("bucketStart", askAICostBucketStart(dayStart)),
+      )
+      .collect(),
+  ])
+  const buckets = new Map<number, { usedTokens: number; reservedTokens: number }>()
+  const bucketFor = (timestamp: number) => {
+    const bucketStart = askAICostBucketStart(timestamp)
+    const existing = buckets.get(bucketStart) ?? { usedTokens: 0, reservedTokens: 0 }
+    buckets.set(bucketStart, existing)
+    return existing
+  }
+  for (const row of usageRows) bucketFor(row.createdAt).usedTokens += row.totalTokens
+  for (const row of reservations) bucketFor(row.createdAt).reservedTokens += row.tokens
+  // The ledger is authoritative. Replace any partial pre-initialization buckets
+  // atomically rather than adding their totals again or creating duplicate keys.
+  for (const row of existingBuckets) await ctx.db.delete(row._id)
+  for (const [bucketStart, totals] of buckets) {
+    await ctx.db.insert("askAICostBuckets", {
+      ownerSubject,
+      bucketStart,
+      ...totals,
+      updatedAt: now,
+    })
+  }
+  await ctx.db.insert("askAIQuotaState", { ownerSubject, initializedAt: now })
+}
+
+async function readAskAICostTotals(ctx: AskAICtx, ownerSubject: string, now: number) {
+  const state = await ctx.db
+    .query("askAIQuotaState")
+    .withIndex("by_owner", (q) => q.eq("ownerSubject", ownerSubject))
+    .unique()
+  if (!state) {
+    const dayStart = now - 24 * 60 * 60 * 1_000
+    const [usageRows, reservations] = await Promise.all([
+      ctx.db
+        .query("askAIUsage")
+        .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+        .collect(),
+      ctx.db
+        .query("askAIBudgetReservations")
+        .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+        .collect(),
+    ])
+    return {
+      usedTokens: usageRows.reduce((sum, row) => sum + row.totalTokens, 0),
+      reservedTokens: reservations.reduce((sum, row) => sum + row.tokens, 0),
+    }
+  }
+  const buckets = await ctx.db
+    .query("askAICostBuckets")
+    .withIndex("by_owner_bucket", (q) =>
+      q.eq("ownerSubject", ownerSubject).gte("bucketStart", askAICostBucketStart(now - 24 * 60 * 60 * 1_000)),
+    )
+    .collect()
+  return {
+    usedTokens: buckets.reduce((sum, row) => sum + row.usedTokens, 0),
+    reservedTokens: buckets.reduce((sum, row) => sum + row.reservedTokens, 0),
+  }
+}
+
+async function adjustAskAICostBucket(
+  ctx: MutationCtx,
+  ownerSubject: string,
+  timestamp: number,
+  usedDelta: number,
+  reservedDelta: number,
+) {
+  const bucketStart = askAICostBucketStart(timestamp)
+  const existing = await ctx.db
+    .query("askAICostBuckets")
+    .withIndex("by_owner_bucket", (q) => q.eq("ownerSubject", ownerSubject).eq("bucketStart", bucketStart))
+    .unique()
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      usedTokens: Math.max(0, existing.usedTokens + usedDelta),
+      reservedTokens: Math.max(0, existing.reservedTokens + reservedDelta),
+      updatedAt: Date.now(),
+    })
+    return
+  }
+  await ctx.db.insert("askAICostBuckets", {
+    ownerSubject,
+    bucketStart,
+    usedTokens: Math.max(0, usedDelta),
+    reservedTokens: Math.max(0, reservedDelta),
+    updatedAt: Date.now(),
+  })
+}
+
+async function releaseUnstartedReservation(ctx: MutationCtx, reservationId: Id<"askAIBudgetReservations">) {
+  const reservation = await ctx.db.get(reservationId)
+  if (!reservation || reservation.settled) return
+  await ensureAskAIQuotaState(ctx, reservation.ownerSubject, Date.now())
+  await ctx.db.patch(reservationId, { tokens: 0, settled: true })
+  await adjustAskAICostBucket(ctx, reservation.ownerSubject, reservation.createdAt, 0, -reservation.tokens)
 }
 
 async function assertConcurrentGenerationCapacity(ctx: MutationCtx, ownerSubject: string): Promise<void> {
@@ -298,17 +418,8 @@ export const quota = query({
     const current = await askAIRateLimiter.getValue(ctx, "perSubjectDaily", { key: ownerSubject })
     const limit = ASK_AI_CONFIG.limits.messagesPerDay
     const remaining = Math.max(0, Math.min(limit, Math.floor(current.value)))
-    const dayStart = Date.now() - 24 * 60 * 60 * 1_000
-    const usageRows = await ctx.db
-      .query("askAIUsage")
-      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-      .collect()
-    const reservations = await ctx.db
-      .query("askAIBudgetReservations")
-      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-      .collect()
-    const tokensUsed =
-      usageRows.reduce((sum, row) => sum + row.totalTokens, 0) + reservations.reduce((sum, row) => sum + row.tokens, 0)
+    const { usedTokens, reservedTokens } = await readAskAICostTotals(ctx, ownerSubject, Date.now())
+    const tokensUsed = usedTokens + reservedTokens
     return {
       used: limit - remaining,
       limit,
@@ -426,7 +537,7 @@ export const claimQueuedTurn = internalMutation({
       .withIndex("by_thread", (q) => q.eq("threadId", turn.threadId))
       .unique()
     if (!thread || thread.ownerSubject !== turn.ownerSubject || thread.status !== "active") {
-      if (turn.budgetReservationId) await ctx.db.patch(turn.budgetReservationId, { tokens: 0, settled: true })
+      if (turn.budgetReservationId) await releaseUnstartedReservation(ctx, turn.budgetReservationId)
       await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
       return null
     }
@@ -521,7 +632,7 @@ export const cancelQueuedTurn = mutation({
     const ownerSubject = await requireOwnerSubject(ctx)
     if (turn.ownerSubject !== ownerSubject) throw new Error("Ask AI turn not found")
     if (turn.status !== "queued") throw new Error("Only queued turns can be cancelled")
-    if (turn.budgetReservationId) await ctx.db.patch(turn.budgetReservationId, { tokens: 0, settled: true })
+    if (turn.budgetReservationId) await releaseUnstartedReservation(ctx, turn.budgetReservationId)
     await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
     await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
@@ -672,7 +783,8 @@ export const completeGeneratedTurn = internalMutation({
       .query("askAIUsage")
       .withIndex("by_message", (q) => q.eq("messageId", assistantMessageId))
       .unique()
-    if (!existingUsage && !turn.budgetReservationId)
+    if (!existingUsage && !turn.budgetReservationId) {
+      await ensureAskAIQuotaState(ctx, turn.ownerSubject, Date.now())
       await ctx.db.insert("askAIUsage", {
         ownerSubject: turn.ownerSubject,
         threadId: turn.threadId,
@@ -682,6 +794,8 @@ export const completeGeneratedTurn = internalMutation({
         ...usage,
         createdAt: Date.now(),
       })
+      await adjustAskAICostBucket(ctx, turn.ownerSubject, Date.now(), usage.totalTokens, 0)
+    }
     const now = Date.now()
     await ctx.db.patch(turn._id, { status: "complete", updatedAt: now })
     await ctx.db.patch(thread._id, { updatedAt: now })
@@ -852,6 +966,7 @@ export const settleBudgetReservation = internalMutation({
     if (!reservation || reservation.settled) return
     if (Object.values(usage).some((value) => !Number.isSafeInteger(value) || value < 0))
       throw Error("Invalid token usage")
+    await ensureAskAIQuotaState(ctx, reservation.ownerSubject, Date.now())
     await ctx.db.insert("askAIUsage", {
       ownerSubject: reservation.ownerSubject,
       threadId,
@@ -862,9 +977,17 @@ export const settleBudgetReservation = internalMutation({
       createdAt: reservation.createdAt,
     })
     // A failed stream can omit the final provider usage; keep the allocation charged.
+    const remainingReserved = complete ? 0 : Math.max(0, reservation.tokens - usage.totalTokens)
     await ctx.db.patch(reservationId, {
-      tokens: complete ? 0 : Math.max(0, reservation.tokens - usage.totalTokens),
+      tokens: remainingReserved,
       settled: true,
     })
+    await adjustAskAICostBucket(
+      ctx,
+      reservation.ownerSubject,
+      reservation.createdAt,
+      usage.totalTokens,
+      remainingReserved - reservation.tokens,
+    )
   },
 })

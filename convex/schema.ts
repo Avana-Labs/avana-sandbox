@@ -1845,6 +1845,21 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_owner_created", ["ownerSubject", "createdAt"]),
 
+  /** Bounded hourly token totals used by Ask AI quota reads instead of scanning every row. */
+  askAICostBuckets: defineTable({
+    ownerSubject: v.string(),
+    bucketStart: v.number(),
+    usedTokens: v.number(),
+    reservedTokens: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner_bucket", ["ownerSubject", "bucketStart"]),
+
+  /** Marks that legacy usage/reservations were folded into the bounded cost buckets. */
+  askAIQuotaState: defineTable({
+    ownerSubject: v.string(),
+    initializedAt: v.number(),
+  }).index("by_owner", ["ownerSubject"]),
+
   askAITurns: defineTable({
     capacityAttempts: v.optional(v.number()),
     nextCapacityRetryAt: v.optional(v.number()),
