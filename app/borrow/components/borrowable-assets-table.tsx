@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from "react"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
+import { CapacityFilled } from "@/app/components/capacity-filled"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { formatTokenQuantity } from "@/app/lib/currency/format"
@@ -19,20 +20,13 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
-import {
-  BORROWABLE_CATEGORIES,
-  aprToneClass,
-  utilizationToneClass,
-  type BorrowableAsset,
-} from "@/app/lib/data/borrow-domain"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { BORROWABLE_CATEGORIES, aprToneClass, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
 import { TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
-import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -49,12 +43,6 @@ type BorrowableAssetsTableProps = {
   onViewMarket?: (asset: BorrowableAsset) => void
   groupByCategory?: boolean
   variant?: "default" | "loan"
-}
-
-// Live selector-derived utilization is an unrounded float; format it to 2dp for display,
-// matching the fixed-decimal formatting used by the other cells (Borrow APR, USD figures).
-function formatUtilizationPct(utilization: number): string {
-  return `${utilization.toFixed(2)}%`
 }
 
 export function BorrowableAssetsPanel({
@@ -172,12 +160,8 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
 
         <MarketMobileStatList className="mt-4">
           <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
+          <MarketMobileStatRow label={t("Capacity Filled")} value={<CapacityFilled value={asset.utilization} />} />
           <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
-          <MarketMobileStatRow
-            label={t("Utilization")}
-            value={formatUtilizationPct(asset.utilization)}
-            valueClassName={utilizationToneClass(asset.utilization)}
-          />
         </MarketMobileStatList>
 
         <MarketMobileActionFooter>
@@ -274,6 +258,9 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
         </div>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CapacityFilled value={asset.utilization} />
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">
             {formatTokenQuantity(asset.totalBorrowedUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
@@ -295,26 +282,6 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
       </td>
       <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
         <HoverActionGroup className="gap-2">
-          <Button
-            type="button"
-            size="table"
-            variant="table-primary"
-            className="w-auto"
-            onClick={(event) => {
-              event.stopPropagation()
-              const lendMarketId = resolveLendMarketId(asset.symbol)
-              if (!lendMarketId) return
-              router.push(
-                actionPagePath("lend", "deposit", {
-                  market: lendMarketId,
-                  return: borrowAssetDetailPath(asset.id),
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Deposit" />
-            {t("Deposit")}
-          </Button>
           <Button
             type="button"
             size="table"
@@ -343,7 +310,7 @@ function LoanAssetsSection({
   onBorrow: (asset: BorrowableAsset) => void
   embedded?: boolean
 }) {
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "capacityFilled" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const { t } = useTranslation()
 
@@ -366,6 +333,8 @@ function LoanAssetsSection({
           return (a.borrowApr - b.borrowApr) * direction
         case "borrows":
           return (a.totalBorrowedUsd - b.totalBorrowedUsd) * direction
+        case "capacityFilled":
+          return (a.utilization - b.utilization) * direction
         case "liquidity":
           return (a.availableUsd - b.availableUsd) * direction
         case "asset":
@@ -377,7 +346,7 @@ function LoanAssetsSection({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] text-[12px]">
+      <table className="w-full min-w-[1080px] text-[12px]">
         <thead>
           <tr className={TABLE_HEADER_ROW}>
             <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -421,6 +390,21 @@ function LoanAssetsSection({
                 )}
               >
                 <span>{t("TOTAL BORROWS")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("capacityFilled")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "capacityFilled"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground dark:text-white/42",
+                )}
+              >
+                <span>{t("CAPACITY FILLED")}</span>
                 <SortIcon />
               </button>
             </th>
@@ -516,10 +500,8 @@ const AssetsRow = memo(function AssetsRow({
           {formatApy(asset.borrowApr)}
         </span>
       </td>
-      <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-        <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
-          {formatUtilizationPct(asset.utilization)}
-        </span>
+      <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CapacityFilled value={asset.utilization} />
       </td>
       <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
         {compact(asset.availableUsd)}
@@ -540,26 +522,6 @@ const AssetsRow = memo(function AssetsRow({
       </td>
       <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
         <HoverActionGroup className="gap-2">
-          <Button
-            type="button"
-            size="table"
-            variant="table-primary"
-            className="w-auto"
-            onClick={(event) => {
-              event.stopPropagation()
-              const lendMarketId = resolveLendMarketId(asset.symbol)
-              if (!lendMarketId) return
-              router.push(
-                actionPagePath("lend", "deposit", {
-                  market: lendMarketId,
-                  return: borrowAssetDetailPath(asset.id),
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Deposit" />
-            {t("Deposit")}
-          </Button>
           <Button
             type="button"
             size="table"
@@ -618,8 +580,8 @@ function AssetsSection({
                 <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Borrow APR")}
                 </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Utilization")}
+                <th className="pb-2 pt-2.5 pl-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  {t("CAPACITY FILLED")}
                 </th>
                 <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Available")}
