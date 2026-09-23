@@ -1453,6 +1453,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "LOOP-APY",
   "Loop market": "Loop-Markt",
   "LP APR": "LP-APR",
+  "Live value of this collateral, and the LP trading fees it earns.": "Aktueller Wert dieser Sicherheit und die LP-Handelsgebühren, die sie verdient.",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Marktweite Liquidationsaktivität und liquidationsnahe Exposure der letzten 24 Stunden.",
   "Minimum received": "Mindestens erhalten",
