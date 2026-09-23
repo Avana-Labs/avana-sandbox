@@ -690,6 +690,31 @@ async function assertBorrowCollateralConserved(
  * worth, and a deleverage after a gain demanded a top-up. Falls back to the stored equity when
  * the payload does not name the collateral or it has no current oracle price.
  */
+/**
+ * The multiply market's collateral asset id from the canonical `markets` row (its `symbol` is the
+ * collateral token). The client also sends a collateral `assetId`; it must match, because prior
+ * equity is repriced from it and a substituted higher-priced asset (close a WETH loop naming
+ * WBTC) would inflate the equity credited back to the wallet. Returns undefined when the market
+ * row is missing, which leaves prior equity at its stored value.
+ */
+async function canonicalMultiplyCollateralId(
+  ctx: MutationCtx,
+  marketSlug: string | undefined,
+  clientAssetId: string | undefined,
+): Promise<string | undefined> {
+  if (!marketSlug) return undefined
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", marketSlug))
+    .unique()
+  const canonical = market?.symbol?.toLowerCase()
+  if (!canonical) return undefined
+  if (clientAssetId && liquidAssetIdFromArgs(clientAssetId) !== canonical) {
+    throw new Error(`INVALID_TRANSITION: ${marketSlug} collateral is ${canonical}, not ${clientAssetId}.`)
+  }
+  return canonical
+}
+
 async function priorMultiplyEquityUsd(
   ctx: MutationCtx,
   prior: Doc<"positions"> | undefined,
@@ -713,7 +738,8 @@ async function multiplyLiquidDebit(
   now: number,
 ): Promise<{ assetId: string; symbol: string; tokenAmount: number } | null> {
   if (args.product !== "multiply" || !args.position || args.position.status === "closed") return null
-  const previousEquityUsd = await priorMultiplyEquityUsd(ctx, existing, args.position.assetId, now)
+  const collateralId = await canonicalMultiplyCollateralId(ctx, args.position.marketSlug, args.position.assetId)
+  const previousEquityUsd = await priorMultiplyEquityUsd(ctx, existing, collateralId, now)
   const nextEquityUsd = Math.max(0, (args.position.collateralValueUsd ?? 0) - (args.position.debtValueUsd ?? 0))
   const increaseUsd = nextEquityUsd - previousEquityUsd
   if (increaseUsd <= 0.02) return null
@@ -1679,7 +1705,8 @@ async function applyProductBucketDelta(
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
     const collateralAmount =
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
-    const previousEquityUsd = await priorMultiplyEquityUsd(ctx, priorPosition, args.position.assetId, now)
+    const collateralId = await canonicalMultiplyCollateralId(ctx, marketSlug, args.position.assetId)
+    const previousEquityUsd = await priorMultiplyEquityUsd(ctx, priorPosition, collateralId, now)
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
     // `deltaUsd` is USD but walletMultiplyBalances.amount is a TOKEN QUANTITY, so a real
     // price is required — a $1/token default once persisted 41,666 WSTETH for a $41.6K

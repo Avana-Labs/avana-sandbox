@@ -1363,6 +1363,15 @@ describe("Multiply settles against the live collateral price, not the stored equ
         lastUpdatedAt: 1,
         revision: 0,
       })
+      // The canonical market row: its symbol is the collateral the loop is repriced with.
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "eth-usdt",
+        name: "ETH / USDT",
+        symbol: "ETH",
+        chainId: 1,
+        createdAt: 0,
+      })
       if (livePriceUsd != null) {
         await ctx.db.insert("tokenPrices", {
           symbol: "eth",
@@ -1382,7 +1391,7 @@ describe("Multiply settles against the live collateral price, not the stored equ
     return rows.filter((row) => row.state === "available").reduce((sum, row) => sum + row.valueUsd, 0)
   }
 
-  function closeIntent(intentId: string, amountUsd: number) {
+  function closeIntent(intentId: string, amountUsd: number, assetId = "eth") {
     const usd6 = String(Math.round(amountUsd * 1_000_000))
     return borrowIntent(intentId, {
       product: "multiply",
@@ -1395,7 +1404,7 @@ describe("Multiply settles against the live collateral price, not the stored equ
       position: {
         status: "closed",
         marketSlug: "eth-usdt",
-        assetId: "eth",
+        assetId,
         collateralAmount: 0,
         collateralValueUsd: 0,
         debtValueUsd: 0,
@@ -1404,6 +1413,29 @@ describe("Multiply settles against the live collateral price, not the stored equ
       },
     })
   }
+
+  test("a close naming a different, higher-priced collateral asset is rejected", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000)
+    await t.run((ctx) =>
+      ctx.db.insert("tokenPrices", {
+        symbol: "wbtc",
+        llamaId: "test:wbtc",
+        priceUsd: 100_000,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      }),
+    )
+    // Repricing 30 "WBTC" would have credited ~$3M of equity for a $48k loop.
+    await expect(
+      t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c-sub", 48_333, "wbtc")),
+    ).rejects.toThrow(/INVALID_TRANSITION/)
+    expect(await multiplyAvailableUsd(t)).toBe(0)
+  })
 
   test("a close credits the live equity, not the equity from the last write", async () => {
     const t = convexTest(schema, modules)
