@@ -90,7 +90,7 @@ export function AskPageClient() {
       <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 lg:h-14 lg:px-5 xl:px-6 2xl:px-8">
         <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 items-center">
           <BrandIcon className="xl:hidden" />
-          <BrandLogo className="hidden xl:inline-flex" />
+          <BrandLogo className="hidden xl:inline-flex" visibleFrom="xl" />
         </Link>
 
         <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">

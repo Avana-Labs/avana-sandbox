@@ -69,9 +69,9 @@ export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
   if (loading) return <AskAILoadingBody />
   if (error) {
     return (
-      <div role="alert" className="flex min-h-[50vh] items-center justify-center px-6 text-sm text-muted-foreground">
-        Ask AI couldn&apos;t start a secure guest session. {error}
-      </div>
+      <main className="flex min-h-[50vh] items-center justify-center px-6 text-sm text-muted-foreground">
+        <p role="alert">Ask AI couldn&apos;t start a secure guest session. {error}</p>
+      </main>
     )
   }
   return (
