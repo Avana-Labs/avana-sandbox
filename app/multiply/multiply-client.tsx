@@ -15,13 +15,7 @@ function resolveMarketFromRowHref(href: string): MultiplyMarketRecord | null {
   return getMultiplyMarketById(marketId.toLowerCase())
 }
 
-export function MultiplyClient({
-  pageData,
-  initialIsDesktop = true,
-}: {
-  pageData: MultiplyPageData
-  initialIsDesktop?: boolean
-}) {
+export function MultiplyClient({ pageData }: { pageData: MultiplyPageData }) {
   const router = useRouter()
 
   // Render the server-provided page data as-is. It already carries live Convex
@@ -45,7 +39,6 @@ export function MultiplyClient({
       <div className="mx-auto max-w-[1152px]">
         <MultiplyHero metrics={pageData.heroMetrics} />
         <ExploreLoopsMarketsTable
-          initialIsDesktop={initialIsDesktop}
           rows={pageData.lendRows}
           trendingSnapshots={pageData.trendingSnapshots}
           pageSize={pageData.pageSize}

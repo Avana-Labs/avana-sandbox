@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { fetchMultiplyPage } from "@/app/lib/data/providers/multiply"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -31,13 +30,7 @@ export default async function MultiplyPage() {
     )
   }
 
-  const [pageData, requestHeaders, { MultiplyClient }] = await Promise.all([
-    fetchMultiplyPage(),
-    headers(),
-    import("./multiply-client"),
-  ])
-  const userAgent = requestHeaders.get("user-agent") ?? ""
-  const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
+  const [pageData, { MultiplyClient }] = await Promise.all([fetchMultiplyPage(), import("./multiply-client")])
 
   return (
     <>
@@ -48,7 +41,7 @@ export default async function MultiplyPage() {
           url: `${SITE_URL}/multiply`,
         })}
       />
-      <MultiplyClient pageData={pageData} initialIsDesktop={initialIsDesktop} />
+      <MultiplyClient pageData={pageData} />
     </>
   )
 }

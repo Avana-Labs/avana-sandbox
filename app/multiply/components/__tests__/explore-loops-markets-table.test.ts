@@ -11,16 +11,14 @@ describe("isNegativeMultiplyApy", () => {
   })
 })
 
-describe("mobile loop card spacing", () => {
-  it("keeps a block market link and two mobile actions", () => {
+describe("multiply table on every viewport", () => {
+  it("renders the shared table on phones instead of a separate card view", () => {
     const source = readFileSync(resolve(__dirname, "../explore-loops-markets-table.tsx"), "utf8")
-    const mobileCard = source.slice(source.indexOf("const MobileLoopCard"), source.indexOf("function TrendingLoopCard"))
-
-    expect(mobileCard).toContain('<MarketMobileCard className="block">')
-    expect(mobileCard).toMatch(/<Link[\s\S]*?href=\{row\.href\}/)
-    expect(mobileCard).toContain("<MarketMobilePrimaryAction")
-    expect(mobileCard).toContain("<MarketMobileSecondaryAction")
-    expect(mobileCard).toContain('actionPagePath("multiply", "deleverage"')
+    expect(source).not.toMatch(/MobileLoopCard/)
+    expect(source).not.toMatch(/useMediaQuery/)
+    expect(source).toMatch(/TABLE_INDEX_PHONE_HIDDEN/)
+    // Empty categories still say so inside the table.
+    expect(source).toContain('t("No loops in this category yet.")')
   })
 })
 
@@ -28,13 +26,10 @@ describe("multiply capacity table", () => {
   it("shows Capacity Filled before Available and removes the Deleverage row action", () => {
     const source = readFileSync(resolve(__dirname, "../explore-loops-markets-table.tsx"), "utf8")
     const section = source.slice(source.indexOf("function LoopMarketsSection"), source.indexOf("const LoopTableRow"))
-    const row = source.slice(source.indexOf("const LoopTableRow"), source.indexOf("const MobileLoopCard"))
-    const mobileCard = source.slice(source.indexOf("const MobileLoopCard"), source.indexOf("function TrendingLoopCard"))
+    const row = source.slice(source.indexOf("const LoopTableRow"), source.indexOf("function TrendingLoopCard"))
 
     expect(section.indexOf('t("Capacity Filled")')).toBeLessThan(section.indexOf('t("Available")'))
     expect(row).toContain("<CapacityFilled value={row.capacityFilledPct} />")
     expect(row).not.toMatch(/Deleverage/)
-    expect(mobileCard.indexOf('t("Capacity Filled")')).toBeLessThan(mobileCard.indexOf('t("Available")'))
-    expect(mobileCard).toContain('<CapacityFilled size="sm" value={row.capacityFilledPct} />')
   })
 })

@@ -11,18 +11,6 @@ import {
   ScrollableTable,
   SortHeaderButton,
 } from "@/app/components/market-table-primitives"
-import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import {
   TOKEN_ICON_TABLE_PAIR_WIDTH_PX,
@@ -50,7 +38,6 @@ import {
   translateMultiplyLoopBorrowLabel,
   translateMultiplyLoopSupplyLabel,
 } from "@/app/lib/multiply-system/market-labels"
-import { useMediaQuery } from "@/app/lib/use-media-query"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
@@ -138,6 +125,7 @@ import {
   TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
+  TABLE_INDEX_PHONE_HIDDEN,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_RIGHT,
   tableColumnLayout,
@@ -172,7 +160,6 @@ function resolveMarketIdFromHref(href: string) {
 }
 
 type ExploreLoopsMarketsTableProps = {
-  initialIsDesktop?: boolean
   rows: MultiplyPageData["lendRows"]
   trendingSnapshots: MultiplyPageData["trendingSnapshots"]
   pageSize: MultiplyPageData["pageSize"]
@@ -187,7 +174,6 @@ export function isNegativeMultiplyApy(apy?: string) {
 }
 
 export function ExploreLoopsMarketsTable({
-  initialIsDesktop = true,
   pageSize,
   rows,
   trendingSnapshots,
@@ -328,7 +314,7 @@ export function ExploreLoopsMarketsTable({
         {groupedSections.length > 0 ? (
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">
-              <LoopMarketsSection initialIsDesktop={initialIsDesktop} title={group.title} rows={group.rows} />
+              <LoopMarketsSection title={group.title} rows={group.rows} />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">
                   <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />
@@ -365,18 +351,8 @@ const LOOP_TABLE_LAYOUT = tableColumnLayout([
   "action",
 ])
 
-function LoopMarketsSection({
-  initialIsDesktop,
-  title,
-  rows,
-}: {
-  initialIsDesktop: boolean
-  title: string
-  rows: MultiplyPageData["lendRows"]
-}) {
+function LoopMarketsSection({ title, rows }: { title: string; rows: MultiplyPageData["lendRows"] }) {
   const { t } = useTranslation()
-  const { compact } = useCurrency()
-  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const [sortKey, setSortKey] = React.useState<LoopSortKey>("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
 
@@ -440,73 +416,45 @@ function LoopMarketsSection({
       </div>
 
       <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-        {!isDesktop ? (
-          <div className="space-y-3">
-            {sortedRows.length ? (
-              sortedRows.map((row, index) => (
-                <MobileLoopCard
+        <div>
+          <ScrollableTable layout={LOOP_TABLE_LAYOUT}>
+            <thead>
+              <tr className={TABLE_HEADER_ROW}>
+                <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                  {sortHeader("protocol", t("Loop"))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("APY"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("rewards", t("Leverage"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("CF"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("points", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                  <span className="sr-only">{t("Quick actions")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
+              {sortedRows.map((row, index) => (
+                <LoopTableRow
                   key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
                   row={row}
                   index={index}
-                  availableLabel={
-                    row.availablePrimary ??
-                    (parseCompactUsdLabel(row.points) == null
-                      ? (row.points ?? "—")
-                      : compact(parseCompactUsdLabel(row.points) as number))
-                  }
-                  availableSecondaryLabel={
-                    row.availableSecondary
-                      ? parseCompactUsdLabel(row.availableSecondary) == null
-                        ? row.availableSecondary
-                        : compact(parseCompactUsdLabel(row.availableSecondary) as number)
-                      : undefined
-                  }
                 />
-              ))
-            ) : (
-              <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
-                {t("No loops in this category yet.")}
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {isDesktop ? (
-          <div>
-            <ScrollableTable layout={LOOP_TABLE_LAYOUT}>
-              <thead>
-                <tr className={TABLE_HEADER_ROW}>
-                  <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                    {sortHeader("protocol", t("Loop"))}
-                  </th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("APY"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("rewards", t("Leverage"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("CF"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-                    {sortHeader("capacityFilled", t("Capacity Filled"))}
-                  </th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("points", t("Available"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
-                    <span className="sr-only">{t("Quick actions")}</span>
-                  </th>
+              ))}
+              {sortedRows.length === 0 ? (
+                <tr>
+                  <td
+                    className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60"
+                    colSpan={LOOP_TABLE_LAYOUT.widths.length}
+                  >
+                    {t("No loops in this category yet.")}
+                  </td>
                 </tr>
-              </thead>
-              <tbody
-                key={`${title}-${sortKey}-${sortDirection}`}
-                className="divide-y divide-border dark:divide-white/6"
-              >
-                {sortedRows.map((row, index) => (
-                  <LoopTableRow
-                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    row={row}
-                    index={index}
-                  />
-                ))}
-              </tbody>
-            </ScrollableTable>
-          </div>
-        ) : null}
+              ) : null}
+            </tbody>
+          </ScrollableTable>
+        </div>
       </DesktopTableSurface>
     </section>
   )
@@ -533,7 +481,9 @@ const LoopTableRow = React.memo(function LoopTableRow({
       onClick={() => router.push(row.href)}
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_BG)}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_INDEX_PHONE_HIDDEN, TABLE_ROW_HOVER_BG)}>
+        {index + 1}
+      </td>
       <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         <CellLink href={row.href} className="flex min-w-0 items-center gap-3">
           <PairedLoopIcons collateralSymbol={row.protocol} borrowSymbol={row.asset} eager={index < 2} />
@@ -625,99 +575,6 @@ const LoopTableRow = React.memo(function LoopTableRow({
         </HoverActionGroup>
       </td>
     </tr>
-  )
-})
-
-// Memoized mobile card — same rationale as LoopTableRow; props are stable references
-// plus primitives so React.memo can skip cards whose data hasn't changed.
-const MobileLoopCard = React.memo(function MobileLoopCard({
-  row,
-  index,
-  availableLabel,
-  availableSecondaryLabel,
-}: {
-  row: MultiplyPageData["lendRows"][number]
-  index: number
-  /** Token amount (same as the desktop Available column's primary line). */
-  availableLabel: string
-  /** USD value, shown beside the amount like the Lend cards. */
-  availableSecondaryLabel?: string
-}) {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const marketId = resolveMarketIdFromHref(row.href)
-  const hasNegativeApy = isNegativeMultiplyApy(row.apy)
-  const primaryActionLabel = hasNegativeApy ? "Review risk" : "Multiply"
-  return (
-    <MarketMobileCard className="block">
-      <Link
-        href={row.href}
-        className="block rounded-radius-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <MarketMobileCardHeader
-          identity={
-            <div className="flex min-w-0 items-center gap-3">
-              <PairedLoopIcons collateralSymbol={row.protocol} borrowSymbol={row.asset} eager={index < 2} />
-              <MarketMobileIdentityText
-                title={translateMultiplyLoopSupplyLabel(t, row.protocol)}
-                subtitle={translateMultiplyLoopBorrowLabel(t, row.asset)}
-              />
-            </div>
-          }
-          metric={
-            <MarketMobileMetric
-              value={row.apy || "—"}
-              label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[0]?.value ?? "max leverage")}
-            />
-          }
-        />
-
-        <MarketMobileStatList>
-          <MarketMobileStatRow
-            label={t("Max Leverage")}
-            value={row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
-          />
-          <MarketMobileStatRow
-            label={t("Capacity Filled")}
-            value={<CapacityFilled size="sm" value={row.capacityFilledPct} />}
-          />
-          <MarketMobileStatRow
-            label={t("Available")}
-            value={
-              <span>
-                {availableLabel}
-                {availableSecondaryLabel ? (
-                  <MarketMobileSupportingValue>{availableSecondaryLabel}</MarketMobileSupportingValue>
-                ) : null}
-              </span>
-            }
-          />
-        </MarketMobileStatList>
-      </Link>
-      <MarketMobileActionFooter>
-        <MarketMobilePrimaryAction
-          className="mt-0 flex-1"
-          onClick={(event) => {
-            event.stopPropagation()
-            if (!marketId) return
-            router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
-          }}
-        >
-          <ActionIcon label={primaryActionLabel} />
-          {t(primaryActionLabel)}
-        </MarketMobilePrimaryAction>
-        <MarketMobileSecondaryAction
-          onClick={(event) => {
-            event.stopPropagation()
-            if (!marketId) return
-            router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
-          }}
-        >
-          <ActionIcon label="Deleverage" />
-          {t("Deleverage")}
-        </MarketMobileSecondaryAction>
-      </MarketMobileActionFooter>
-    </MarketMobileCard>
   )
 })
 
