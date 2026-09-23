@@ -38,12 +38,17 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
+/** Asset the homepage Sell field starts on. */
+export const DEFAULT_SELL_ASSET_ID = "eth"
+
 export function HomeSwapAction() {
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState("")
+  // Sell starts on ETH as a neutral base (guests see a 0 amount; connected wallets see their
+  // ETH balance). Buy still starts empty so the user picks the destination.
+  const [inputAssetId, setInputAssetId] = useState(DEFAULT_SELL_ASSET_ID)
   const [outputAssetId, setOutputAssetId] = useState("")
   const [amount, setAmount] = useState("")
   const slippageBps = 50
@@ -287,12 +292,14 @@ export function HomeSwapAction() {
   // Guests keep the quote form but are sent to the dashboard onboarding instead of review.
   const accessLabel = transactAccessCtaLabel(useTransactAccess())
 
-  const primaryLabel = !inputBalance
-    ? inputAssetId
-      ? "Insufficient balance"
-      : "Select Asset"
-    : !outputAssetId
-      ? "Select Asset"
+  // With Sell prefilled, ask for the Buy asset first: a wallet without ETH should see
+  // "Select Asset", not "Insufficient balance", before it has picked anything.
+  const primaryLabel = !outputAssetId
+    ? "Select Asset"
+    : !inputBalance
+      ? inputAssetId
+        ? "Insufficient balance"
+        : "Select Asset"
       : !validation.valid
         ? validation.reason === "invalid_amount"
           ? "Enter an amount"

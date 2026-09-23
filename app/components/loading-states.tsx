@@ -8,6 +8,7 @@ import { detailSectionStackClass } from "@/app/components/detail-page-primitives
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
 
 /**
@@ -104,8 +105,10 @@ export function HomeWorkspaceSkeleton() {
                   <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
+                  {/* Mirrors the live card, whose Sell field starts on ETH. */}
                   <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground max-[360px]:self-end">
-                    {t("Select Asset")}
+                    <ActionTokenIcon symbol="ETH" size="pill" />
+                    ETH
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
