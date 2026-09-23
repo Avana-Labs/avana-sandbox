@@ -18,7 +18,7 @@ import {
   DesktopTableSurface,
   ROW_OPEN_ARROW_CLASS,
   RowOpenArrowIcon,
-  SilentActionHeader,
+  ScrollableTable,
 } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
@@ -32,7 +32,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import {
-  TABLE_BASE,
+  DASHBOARD_TABLE_REFERENCE_PX,
   TABLE_BODY_ROW,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
@@ -43,9 +43,21 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
+
+const MULTIPLY_POSITIONS_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact", // Loop
+    "metric", // Value + exposure
+    "compact", // Net APY + earned
+    "metric", // HF + liquidation price
+    "arrow",
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -118,82 +130,74 @@ export function MultiplyCollateralTable({
         </div>
       ) : null}
 
-      <div className="hidden overflow-x-auto md:block">
-        <DesktopTableSurface className="!rounded-none">
-          <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-            <colgroup>
-              <col className="w-[26%]" />
-              <col className="w-[18%]" />
-              <col className="w-[16%]" />
-              <col className="w-[22%]" />
-              <col className="w-[18%]" />
-            </colgroup>
-            <thead>
-              <tr className={TABLE_HEADER_ROW}>
-                <th className={cn(TABLE_HEADER_CELL, "px-5")}>
-                  <MetricHeader
-                    label={t("Loop")}
-                    help={t("The collateral you supply and the asset you borrow against it to build leverage.")}
-                  />
-                </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-                  <MetricHeader
-                    label={t("Value")}
-                    help={t(
-                      "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.",
-                    )}
-                  />
-                </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-                  <MetricHeader
-                    label={t("APY")}
-                    help={t(
-                      "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.",
-                    )}
-                  />
-                </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-                  <MetricHeader
-                    label={t("Risk")}
-                    help={t(
-                      "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.",
-                    )}
-                  />
-                </th>
-                <SilentActionHeader className="!rounded-none pr-5" />
+      <DesktopTableSurface className="hidden !rounded-none md:block">
+        <ScrollableTable layout={MULTIPLY_POSITIONS_LAYOUT}>
+          <thead>
+            <tr className={TABLE_HEADER_ROW}>
+              <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                <MetricHeader
+                  label={t("Loop")}
+                  help={t("The collateral you supply and the asset you borrow against it to build leverage.")}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <MetricHeader
+                  label={t("Value")}
+                  help={t(
+                    "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.",
+                  )}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <MetricHeader
+                  label={t("APY")}
+                  help={t(
+                    "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.",
+                  )}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <MetricHeader
+                  label={t("Risk")}
+                  help={t(
+                    "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.",
+                  )}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                <span className="sr-only">{t("Manage")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border dark:divide-white/6">
+            {activeRows.map((row) => (
+              <tr
+                key={row.id}
+                className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+                onClick={() => openPosition(row)}
+              >
+                <LoopCell row={row} />
+                <ValueCell row={row} usd={usd} />
+                <NetApyCell apy={apyFor(row)} showDollarAmounts={showDollarAmounts} />
+                <RiskCell row={row} liqPrice={liqPrice} />
+                <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                  {/* Row-open arrow: it opens the same /multiply/markets/{id} detail page as the
+                   * row click (labeled pills are reserved for actions that start a transaction). */}
+                  <button
+                    type="button"
+                    aria-label={t("Manage")}
+                    title={t("Manage")}
+                    className={ROW_OPEN_ARROW_CLASS}
+                    onClick={(event) => openManage(event, row)}
+                  >
+                    <RowOpenArrowIcon />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border dark:divide-white/6">
-              {activeRows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
-                  onClick={() => openPosition(row)}
-                >
-                  <LoopCell row={row} />
-                  <ValueCell row={row} usd={usd} />
-                  <NetApyCell apy={apyFor(row)} showDollarAmounts={showDollarAmounts} />
-                  <RiskCell row={row} liqPrice={liqPrice} />
-                  <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                    {/* Icon-only on desktop: the full "Manage" pill was wide enough to clip
-                     * against the right edge in this fixed-width table. The arrow opens the
-                     * same /multiply/markets/{id} detail page the row click does. */}
-                    <button
-                      type="button"
-                      aria-label={t("Manage")}
-                      title={t("Manage")}
-                      className={ROW_OPEN_ARROW_CLASS}
-                      onClick={(event) => openManage(event, row)}
-                    >
-                      <RowOpenArrowIcon />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </DesktopTableSurface>
-      </div>
+            ))}
+          </tbody>
+        </ScrollableTable>
+      </DesktopTableSurface>
 
       <div className="space-y-3 md:hidden">
         {activeRows.map((row) => {
@@ -325,7 +329,7 @@ function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
 function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
   const { t } = useTranslation()
   return (
-    <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
+    <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
       <div className="flex min-w-0 items-center gap-3">
         <PairedTokenIcons row={row} />
         <span className="min-w-0">
