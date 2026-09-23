@@ -30,9 +30,12 @@ export function scrubRatioFromPointer(clientX: number, shellLeft: number, plotLe
 }
 
 /**
- * Continuous scrub along equally spaced plot points: find the segment under
- * `ratio` and linearly interpolate value + screen Y. X follows the ratio so the
- * crosshair tracks the pointer without discrete jumps.
+ * Continuous scrub along the plotted points: find the segment under `ratio` by screen X and
+ * linearly interpolate value + screen Y, so the crosshair and dot sit exactly under the pointer.
+ *
+ * Points are positioned by time, and daily series can have uneven gaps (a missing stretch of
+ * days). Mapping the ratio to a point *index* assumed equal spacing and drew the dot left or
+ * right of the pointer wherever the dates were uneven; searching by X is exact either way.
  */
 export function interpolateScrubSample(points: ScrubPlotPoint[], ratio: number): HeroScrubSample | null {
   if (points.length === 0) return null
@@ -50,14 +53,26 @@ export function interpolateScrubSample(points: ScrubPlotPoint[], ratio: number):
   }
 
   const clamped = Math.min(1, Math.max(0, ratio))
-  const scaled = clamped * (points.length - 1)
-  const indexFloor = Math.min(points.length - 2, Math.max(0, Math.floor(scaled)))
-  const progress = scaled - indexFloor
+  const first = points[0]!
+  const last = points[points.length - 1]!
+  const targetX = first.x + (last.x - first.x) * clamped
+
+  // Last point whose X is at or left of the target (points are sorted by X).
+  let lo = 0
+  let hi = points.length - 2
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (points[mid]!.x <= targetX) lo = mid
+    else hi = mid - 1
+  }
+  const indexFloor = lo
   const left = points[indexFloor]!
   const right = points[indexFloor + 1]!
+  const span = right.x - left.x
+  const progress = span > 0 ? Math.min(1, Math.max(0, (targetX - left.x) / span)) : 0
 
   return {
-    x: left.x + (right.x - left.x) * progress,
+    x: targetX,
     y: left.y + (right.y - left.y) * progress,
     value: left.value + (right.value - left.value) * progress,
     label: progress < 0.5 ? left.label : right.label,

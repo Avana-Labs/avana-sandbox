@@ -62,4 +62,25 @@ describe("interpolateScrubSample", () => {
     expect(end.x).toBe(200)
     expect(end.indexFloor).toBe(1)
   })
+  it("keeps the dot under the pointer when points are unevenly spaced in time", () => {
+    // Four daily points, then a long gap: the last point sits far to the right on a time axis.
+    const uneven: ScrubPlotPoint[] = [
+      { time: 0, value: 10, label: "d0", x: 0, y: 100 },
+      { time: 1, value: 20, label: "d1", x: 10, y: 90 },
+      { time: 2, value: 30, label: "d2", x: 20, y: 80 },
+      { time: 3, value: 40, label: "d3", x: 30, y: 70 },
+      { time: 10, value: 110, label: "d10", x: 100, y: 0 },
+    ]
+    // Pointer at 50% of the plot = x 50, inside the d3 → d10 gap.
+    const sample = interpolateScrubSample(uneven, 0.5)!
+    expect(sample.x).toBeCloseTo(50)
+    expect(sample.indexFloor).toBe(3)
+    expect(sample.progress).toBeCloseTo(20 / 70)
+    expect(sample.value).toBeCloseTo(40 + 70 * (20 / 70))
+    // Pointer at 15% = x 15, halfway between d1 and d2 (index mapping would have chosen d2 → d3).
+    const early = interpolateScrubSample(uneven, 0.15)!
+    expect(early.x).toBeCloseTo(15)
+    expect(early.indexFloor).toBe(1)
+    expect(early.value).toBeCloseTo(25)
+  })
 })
