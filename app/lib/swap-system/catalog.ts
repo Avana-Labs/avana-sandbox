@@ -122,7 +122,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
   },
   {
     // Multiply collateral (see multiply-system/catalog markets crv-crvusd, crvusd-usdt), surfaced in
-    // the dashboard "Available to use" card. Metadata-only so the row resolves a real name/icon/price
+    // the dashboard Multiply "Available" card. Metadata-only so the row resolves a real name/icon/price
     // instead of "Unsupported asset"; not swap-routed (isSwapEnabled: false → adds no SWAP_PAIRS).
     id: "crvusd",
     chainId: SWAP_CHAIN_ID,

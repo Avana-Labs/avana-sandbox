@@ -117,7 +117,7 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
       <MultiplyAvailableMarketsCard
         walletId={walletId ?? ""}
         markets={multiplySession.state.markets}
-        title={t("Available to use")}
+        title={t("Available")}
       />
     </section>
   )
