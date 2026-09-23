@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowUpRightLong, ChevronLeft, ChevronRight } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TABLE_BASE, TABLE_FIXED, type TableColumnLayout } from "@/app/lib/ui/table-row-hover"
+import { TABLE_BASE, TABLE_COLUMN_PHONE_CLASS, TABLE_FIXED, type TableColumnLayout } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
 export function DesktopTableSurface({ children, className }: { children: ReactNode; className?: string }) {
@@ -79,9 +79,7 @@ export function ScrollableTable({
     if (!scroller) return
     const maxScroll = scroller.scrollWidth - scroller.clientWidth
     const next = { canPrev: scroller.scrollLeft > 1, canNext: scroller.scrollLeft < maxScroll - 1 }
-    setScrollState((current) =>
-      current.canPrev === next.canPrev && current.canNext === next.canNext ? current : next,
-    )
+    setScrollState((current) => (current.canPrev === next.canPrev && current.canNext === next.canNext ? current : next))
   }, [])
 
   useEffect(() => {
@@ -110,11 +108,18 @@ export function ScrollableTable({
 
   return (
     <div className="relative">
-      <div ref={scrollerRef} className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <table className={cn(TABLE_FIXED, TABLE_BASE, className)} style={{ minWidth: layout.minWidth }}>
+      <div
+        ref={scrollerRef}
+        className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {/* Phones drop the desktop min width: the per-kind px columns set the scroll width there. */}
+        <table
+          className={cn(TABLE_FIXED, TABLE_BASE, "max-md:!min-w-0", className)}
+          style={{ minWidth: layout.minWidth }}
+        >
           <colgroup>
             {layout.widths.map((width, index) => (
-              <col key={index} style={{ width }} />
+              <col key={index} style={{ width }} className={TABLE_COLUMN_PHONE_CLASS[layout.kinds[index]]} />
             ))}
           </colgroup>
           {children}
@@ -171,7 +176,8 @@ export function HoverActionGroup({
   return (
     <div
       className={cn(
-        "flex gap-1.5 opacity-60 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100",
+        // Touch screens have no hover, so the pills stay at full strength there.
+        "flex gap-1.5 opacity-60 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100",
         align === "start" ? "justify-start" : "justify-end",
         className,
       )}

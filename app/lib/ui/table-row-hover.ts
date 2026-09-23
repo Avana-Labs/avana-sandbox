@@ -123,6 +123,8 @@ export const MARKET_TABLE_REFERENCE_PX = 1152
 export const DASHBOARD_TABLE_REFERENCE_PX = 712
 
 export type TableColumnLayout = {
+  /** Column kinds, in order (drives the phone widths in `TABLE_COLUMN_PHONE_CLASS`). */
+  kinds: readonly TableColumnKind[]
   /** Table min-width in px — the table fits its container above this and scrolls below it. */
   minWidth: number
   /** Per-column `<col>` widths as percentages. */
@@ -158,8 +160,32 @@ export function tableColumnLayout(
       }),
     ),
   )
-  return { minWidth, widths: shares.map((share) => `${(share * 100).toFixed(3)}%`) }
+  return { kinds, minWidth, widths: shares.map((share) => `${(share * 100).toFixed(3)}%`) }
 }
+
+/**
+ * Phone (< md) column widths. Phones show the same tables as desktop, so the percentages above
+ * (tuned for a 1152px row) would leave a ~240px pinned column on a 351px screen. Below md each
+ * column takes a fixed px width instead (`!` beats the inline percentage), the identity column
+ * narrows so a column and a half of data stays visible beside it, and the `#` column is hidden.
+ * Literal class names so Tailwind can see them.
+ */
+export const TABLE_COLUMN_PHONE_CLASS: Record<TableColumnKind, string> = {
+  index: "max-md:hidden",
+  identity: "max-md:!w-[188px]",
+  identityCompact: "max-md:!w-[188px]",
+  compact: "max-md:!w-[104px]",
+  metric: "max-md:!w-[136px]",
+  metricWide: "max-md:!w-[176px]",
+  gauge: "max-md:!w-[164px]",
+  action: "max-md:!w-[148px]",
+  actionCompact: "max-md:!w-[140px]",
+  actions2: "max-md:!w-[212px]",
+  arrow: "max-md:!w-[64px]",
+}
+
+/** Hides the `#` cells on phones (pair with the `index` column's `max-md:hidden`). */
+export const TABLE_INDEX_PHONE_HIDDEN = "max-md:hidden"
 
 /** Row action pill: one minimum width so Pledge / Deposit / Borrow / Multiply line up. */
 export const TABLE_ACTION_BUTTON = "w-auto min-w-[108px] justify-center"

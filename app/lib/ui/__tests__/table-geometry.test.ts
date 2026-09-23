@@ -5,6 +5,7 @@ import {
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PRIMARY,
   TABLE_COLUMN_MIN_PX,
+  TABLE_COLUMN_PHONE_CLASS,
   TABLE_HEADER_ROW,
   MARKET_TABLE_REFERENCE_PX,
   tableColumnLayout,
@@ -54,5 +55,14 @@ describe("shared column layout", () => {
     expect(tableStickyCell("body")).toContain("bg-background")
     expect(tableStickyCell("body")).toContain("after:w-px")
     expect(tableStickyCell("body")).not.toContain("group-hover:bg-hover")
+  })
+
+  it("gives every column kind a fixed phone width and hides the index column on phones", () => {
+    const layout = tableColumnLayout(["index", "identity", "compact", "action"])
+    expect(layout.kinds).toEqual(["index", "identity", "compact", "action"])
+    expect(TABLE_COLUMN_PHONE_CLASS.index).toBe("max-md:hidden")
+    for (const kind of Object.keys(TABLE_COLUMN_MIN_PX) as Array<keyof typeof TABLE_COLUMN_MIN_PX>) {
+      if (kind !== "index") expect(TABLE_COLUMN_PHONE_CLASS[kind]).toMatch(/^max-md:!w-\[\d+px\]$/)
+    }
   })
 })
