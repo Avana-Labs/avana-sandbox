@@ -15,8 +15,6 @@ import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
-import { isGuestRequest } from "@/app/lib/siwe/guest-request"
-import { GuestPagePlaceholder } from "@/app/components/sandbox/guest-page-placeholder"
 
 type PageProps = {
   params: Promise<{ assetId: string }>
@@ -34,8 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       keywords: ["borrow against LP tokens"],
     })
   const detail = preferLive(
-    // Guests get catalog metadata: the Convex detail batch is only for the signed-in page.
-    (await isGuestRequest()) ? null : await getAssetDetailFromConvex(assetId),
+    await getAssetDetailFromConvex(assetId),
     getAssetDetail(assetId),
     `borrow asset metadata:${assetId}`,
   )
@@ -52,8 +49,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BorrowAssetPage({ params }: PageProps) {
   const { assetId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Asset data" eyebrow={assetId} />
-  // Guests only ever see the gate's onboarding flow; skip the Convex reads for them.
-  if (await isGuestRequest()) return <GuestPagePlaceholder />
 
   // Resolve spoke slug before fan-out so hero/QS/cashflow hit the same Convex keys as the builder.
   // (BASE ids like "dai" must map to spoke-scoped "uni-v2:dai" — D2.)

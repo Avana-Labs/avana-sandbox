@@ -13,8 +13,6 @@ import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
-import { isGuestRequest } from "@/app/lib/siwe/guest-request"
-import { GuestPagePlaceholder } from "@/app/components/sandbox/guest-page-placeholder"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -32,8 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       keywords: ["supply yield", "DeFi lend market"],
     })
   const detail = preferLive(
-    // Guests get catalog metadata: the Convex detail batch is only for the signed-in page.
-    (await isGuestRequest()) ? null : await getLendMarketDetailFromConvex(marketId),
+    await getLendMarketDetailFromConvex(marketId),
     getLendMarketDetail(marketId),
     `lend market metadata:${marketId}`,
   )
@@ -53,8 +50,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function LendMarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Supply APY" eyebrow={marketId} />
-  // Guests only ever see the gate's onboarding flow; skip the Convex reads for them.
-  if (await isGuestRequest()) return <GuestPagePlaceholder />
 
   const [detailRaw, heroBundle, quickStatsPreload, cashflowPreload] = await Promise.all([
     getLendMarketDetailFromConvex(marketId),

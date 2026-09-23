@@ -13,8 +13,6 @@ import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
-import { isGuestRequest } from "@/app/lib/siwe/guest-request"
-import { GuestPagePlaceholder } from "@/app/components/sandbox/guest-page-placeholder"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -32,8 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       keywords: ["LP collateral", "borrow against AMM positions"],
     })
   const detail = preferLive(
-    // Guests get catalog metadata: the Convex detail batch is only for the signed-in page.
-    (await isGuestRequest()) ? null : await getPoolDetailFromConvex(marketId),
+    await getPoolDetailFromConvex(marketId),
     getPoolDetail(marketId),
     `borrow market metadata:${marketId}`,
   )
@@ -53,8 +50,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total supplied" eyebrow={marketId} />
-  // Guests only ever see the gate's onboarding flow; skip the Convex reads for them.
-  if (await isGuestRequest()) return <GuestPagePlaceholder />
 
   const detailPromise = getPoolDetailFromConvex(marketId)
   const [{ feeds }, quickStatsPreload, cashflowPreload, detailRaw] = await Promise.all([
