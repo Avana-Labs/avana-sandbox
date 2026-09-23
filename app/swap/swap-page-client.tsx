@@ -1,13 +1,13 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SwapAssetIcon } from "@/app/swap/swap-asset-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
-import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import {
   NATIVE_GAS_RESERVE_ETH,
@@ -25,6 +25,20 @@ import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import type { SwapQuote } from "@/app/lib/swap-system"
+
+const ActionReviewStage = dynamic(
+  () => import("@/app/components/action-page/action-review-stage").then((mod) => mod.ActionReviewStage),
+  { loading: ActionSessionLoading },
+)
+
+const ActionSuccessStage = dynamic(
+  () => import("@/app/components/action-page/action-success-stage").then((mod) => mod.ActionSuccessStage),
+  { loading: ActionSessionLoading },
+)
+
+const SwapAssetPickerDialog = dynamic(() =>
+  import("./swap-asset-picker-dialog").then((mod) => mod.SwapAssetPickerDialog),
+)
 
 type SwapPageClientProps = {
   initialFrom?: string
@@ -472,21 +486,23 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         </div>
       ) : null}
 
-      <SwapAssetPickerDialog
-        open={pickerSide !== null}
-        onOpenChange={(open) => {
-          if (!open) setPickerSide(null)
-        }}
-        title={pickerSide === "input" ? "Sell" : "Buy"}
-        assets={swappableAssets}
-        balances={swap.walletBalances}
-        selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
-        excludedAssetId={pickerSide === "input" ? outputAssetId : inputAssetId}
-        onSelect={(assetId) => {
-          if (pickerSide === "input") setInputAssetId(assetId)
-          if (pickerSide === "output") setOutputAssetId(assetId)
-        }}
-      />
+      {pickerSide !== null ? (
+        <SwapAssetPickerDialog
+          open={pickerSide !== null}
+          onOpenChange={(open) => {
+            if (!open) setPickerSide(null)
+          }}
+          title={pickerSide === "input" ? "Sell" : "Buy"}
+          assets={swappableAssets}
+          balances={swap.walletBalances}
+          selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
+          excludedAssetId={pickerSide === "input" ? outputAssetId : inputAssetId}
+          onSelect={(assetId) => {
+            if (pickerSide === "input") setInputAssetId(assetId)
+            if (pickerSide === "output") setOutputAssetId(assetId)
+          }}
+        />
+      ) : null}
     </ActionPageShell>
   )
 }

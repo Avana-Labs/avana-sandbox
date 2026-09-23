@@ -1,3 +1,7 @@
+"use client"
+
+import { useSpeculativeLoading } from "@/app/lib/performance/speculative-loading"
+
 const HEAVY_PRODUCT_ROUTES = new Set(["/borrow", "/lend", "/multiply"])
 
 /**
@@ -6,4 +10,9 @@ const HEAVY_PRODUCT_ROUTES = new Set(["/borrow", "/lend", "/multiply"])
  */
 export function shouldPrefetchNavigation(href: string, isSignedIn: boolean) {
   return isSignedIn && !HEAVY_PRODUCT_ROUTES.has(href)
+}
+
+export function useNavigationPrefetch(isSignedIn: boolean) {
+  const allowed = useSpeculativeLoading()
+  return (href: string) => allowed && shouldPrefetchNavigation(href, isSignedIn)
 }

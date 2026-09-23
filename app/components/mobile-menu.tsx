@@ -24,7 +24,7 @@ import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from 
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
 import { OVERLAY_SCRIM_CLASS } from "./card-surface-tokens"
-import { shouldPrefetchNavigation } from "./navigation-prefetch"
+import { useNavigationPrefetch } from "./navigation-prefetch"
 
 const siteRoutes = {
   home: "/",
@@ -40,6 +40,7 @@ type MobileMenuProps = {
 
 export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuProps) {
   const { isSignedIn } = useSiweAuth()
+  const prefetchNavigation = useNavigationPrefetch(isSignedIn)
   const [open, setOpen] = useState(initialOpen)
   const [renderMenu, setRenderMenu] = useState(initialOpen)
   const [isShown, setIsShown] = useState(false)
@@ -295,7 +296,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
               >
                 <Link
                   href={link.href}
-                  prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
+                  prefetch={prefetchNavigation(link.href)}
                   onClick={onClose}
                   className="flex items-end justify-between gap-5 py-3"
                 >

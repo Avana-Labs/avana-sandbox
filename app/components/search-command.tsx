@@ -40,64 +40,17 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "lend", label: "Lend" },
 ]
 
-const searchIconPreloads = new Map<string, Promise<void>>()
-
-function preloadSearchIcon(src: string) {
-  const existing = searchIconPreloads.get(src)
-  if (existing) return existing
-
-  const preload = new Promise<void>((resolve) => {
-    const image = new window.Image()
-    let settled = false
-    const finish = () => {
-      if (settled) return
-      settled = true
-      resolve()
-    }
-    image.onerror = finish
-    image.onload = () => {
-      if (typeof image.decode === "function") {
-        void image
-          .decode()
-          .catch(() => undefined)
-          .finally(finish)
-      } else {
-        finish()
-      }
-    }
-    image.src = src
-    if (image.complete) image.onload?.(new Event("load"))
-  })
-
-  searchIconPreloads.set(src, preload)
-  return preload
-}
-
-async function preloadSearchResultIcons(results: SearchResult[]) {
-  if (typeof window === "undefined") return
-  const urls = new Set<string>()
-  for (const result of results) {
-    const visuals = Array.isArray(result.visual) ? result.visual : [result.visual]
-    for (const visual of visuals) {
-      // Same sized variant SearchResultImage renders, so the pre-decode warms the right file.
-      if (visual.iconUrl) urls.add(sizedLocalIconSrc(visual.iconUrl, 32))
-    }
-  }
-  await Promise.all(Array.from(urls, preloadSearchIcon))
-}
-
 function SearchResultImage({ src }: { src: string }) {
   return (
-    // These small local icons are decoded before result rows are published.
+    // Results stay usable even while icons are loading on a slow connection.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={sizedLocalIconSrc(src, 32)}
       alt=""
       width={TOKEN_ICON_TABLE_PX}
       height={TOKEN_ICON_TABLE_PX}
-      loading="eager"
-      decoding="sync"
-      fetchPriority="high"
+      loading="lazy"
+      decoding="async"
       className="size-full object-contain"
     />
   )
@@ -303,7 +256,6 @@ export function SearchCommand({
         if (hydratedAssets.length === 0) hydratedAssets = BORROWABLE_ASSETS
       }
       const nextResults = await getSearchResults(compact, t, hydratedPools, hydratedAssets)
-      await preloadSearchResultIcons(nextResults)
       setResults(nextResults)
     } finally {
       setLoadingResults(false)

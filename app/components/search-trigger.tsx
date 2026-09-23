@@ -1,5 +1,6 @@
 "use client"
 
+import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAssistantTrigger } from "./ask-assistant-trigger"
 import { Search } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -28,12 +29,14 @@ export function SearchTrigger({
   onIntent?: () => void
 }) {
   const { t } = useTranslation()
+  const hydrated = useHydrated()
 
   if (iconOnly) {
     return (
       <button
         type="button"
         aria-label={t("Search Avana")}
+        disabled={!hydrated}
         onClick={onClick}
         onPointerEnter={onIntent}
         onFocus={onIntent}
@@ -61,6 +64,7 @@ export function SearchTrigger({
         type="button"
         data-search-area=""
         aria-label={t("Search Avana")}
+        disabled={!hydrated}
         onClick={onClick}
         onPointerEnter={onIntent}
         onFocus={onIntent}

@@ -6,9 +6,8 @@ import Link from "next/link"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -17,6 +16,16 @@ import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runti
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+
+const ActionReviewStage = dynamic(
+  () => import("@/app/components/action-page/action-review-stage").then((mod) => mod.ActionReviewStage),
+  { loading: ActionSessionLoading },
+)
+
+const ActionSuccessStage = dynamic(
+  () => import("@/app/components/action-page/action-success-stage").then((mod) => mod.ActionSuccessStage),
+  { loading: ActionSessionLoading },
+)
 
 const SwapAssetPickerDialog = dynamic(() =>
   import("@/app/swap/swap-asset-picker-dialog").then((mod) => mod.SwapAssetPickerDialog),

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ComponentType, type ReactNode } from "react"
+import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
 import { Menu } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -13,11 +14,13 @@ const loadMobileMenu = () => {
 
 function MobileMenuTrigger({ onIntent, onOpen }: { onIntent: () => void; onOpen: () => void }) {
   const { t } = useTranslation()
+  const hydrated = useHydrated()
   return (
     <button
       type="button"
       aria-label={t("Toggle menu")}
       aria-expanded={false}
+      disabled={!hydrated}
       onPointerEnter={onIntent}
       onFocus={onIntent}
       onTouchStart={onIntent}

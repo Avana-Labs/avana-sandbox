@@ -70,11 +70,11 @@ describe("SwapPageClient", () => {
     expect(screen.getByRole("button", { name: "Swap unavailable" })).toBeDisabled()
   })
 
-  it("searches supported assets in the receive picker", () => {
+  it("searches supported assets in the receive picker", async () => {
     renderSwap()
 
     fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
-    fireEvent.change(screen.getByLabelText("Find an asset"), { target: { value: "chain" } })
+    fireEvent.change(await screen.findByLabelText("Find an asset"), { target: { value: "chain" } })
     fireEvent.click(screen.getByText("ChainLink Token").closest("button")!)
 
     expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("LINK")
@@ -87,7 +87,7 @@ describe("SwapPageClient", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled())
 
     fireEvent.click(screen.getByRole("button", { name: "Review swap" }))
-    expect(screen.getByRole("heading", { name: "Review swap" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Review swap" })).toBeInTheDocument()
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("$1.93")
 
     fireEvent.click(screen.getByRole("button", { name: "Swap" }))
