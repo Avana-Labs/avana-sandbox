@@ -107,7 +107,7 @@ export function MultiplyCollateralTable({
       <section>
         {showHeading ? (
           <h3 className="mb-4 text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-            {t("Multiply Positions")}
+            {t("My Loops")}
           </h3>
         ) : null}
         <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -122,7 +122,7 @@ export function MultiplyCollateralTable({
       {showHeading ? (
         <div className="mb-4">
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-            {t("Multiply Positions")}
+            {t("My Loops")}
           </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {formatSectionCount(activeRows.length, "loop", "loops")}

@@ -76,7 +76,7 @@ function DebtsMetricHeader({ label, help, align = "left" }: { label: string; hel
 }
 
 /**
- * Interest owed, ticking in real time — the debt mirror of the Lend Assets APY cell's earned
+ * Interest owed, ticking in real time — the debt mirror of the My Deposits APY cell's earned
  * counter. Big line is the borrow rate; this small line accrues `borrowed × APR` on top of the
  * interest already owed, in red. The anchor resets whenever the accrued base refreshes so the
  * live tick never double-counts what the ledger has already booked.
@@ -185,7 +185,7 @@ export function DebtsPanel({
                   const debtSymbol = row.debtAssetSymbol
                   // `borrowedUsd` is a USD amount (currentDebtValueUsd6). The primary line is the
                   // token quantity owed — USD ÷ live price — and the secondary line is that USD
-                  // value, mirroring the Lend Assets "Deposited" column. Never render the USD
+                  // value, mirroring the My Deposits "Deposited" column. Never render the USD
                   // amount as a token count, and never multiply a *Usd field by price again.
                   const debtPrice = priceFor(debtSymbol)
                   const debtTokenQty = debtPrice != null && debtPrice > 0 ? row.borrowedUsd / debtPrice : null

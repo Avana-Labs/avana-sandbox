@@ -260,7 +260,7 @@ export type MultiplyPositionLiveApy = {
 
 /**
  * Per-market Net APY + live-carry terms, derived from the SAME `state.positions` the Multiply
- * Balance headline reads, so a per-row figure in the Multiply Positions table can never disagree
+ * Balance headline reads, so a per-row figure in the My Loops table can never disagree
  * with the headline. Keyed by marketId; multiple positions in one market aggregate (equity-weighted
  * APY, summed carry). `baseUsd` is the carry accrued to `accrualSinceMs` (now); the row's live
  * counter ticks up from there at `ratePerYearUsd`, exactly as {@link buildMultiplyBalanceMetrics}.

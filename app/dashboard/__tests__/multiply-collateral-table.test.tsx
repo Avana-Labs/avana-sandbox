@@ -97,14 +97,14 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getByRole("columnheader", { name: /RISK/i })).toBeTruthy()
   })
 
-  it("renders one compact Multiply Positions table with one action per position", () => {
+  it("renders one compact My Loops table with one action per position", () => {
     render(
       <DisplayPreferencesProvider>
         <MultiplyCollateralTable rows={rows} />
       </DisplayPreferencesProvider>,
     )
 
-    expect(screen.getByRole("heading", { name: "Multiply Positions" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "My Loops" })).toBeTruthy()
     // Header subtitle is now a count, mirroring the Lend/Borrow tables ("8 assets").
     expect(screen.getByText("1 loop")).toBeTruthy()
     // Columns each carry an (i) help button, so match the header label with a regex.

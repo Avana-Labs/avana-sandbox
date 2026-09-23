@@ -71,7 +71,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         onClaimRewards={handleClaimRewards}
         isClaimingRewards={isClaiming}
         showHeading
-        title={t("Lend Assets")}
+        title={t("My Deposits")}
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
         accrualSinceMs={balanceMetrics.accrualSinceMs}

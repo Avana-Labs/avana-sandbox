@@ -159,7 +159,7 @@ export function LendActionPageClient({
   )
 
   // The Convex ledger materializes earned interest lazily. Use the same supply-time anchor as
-  // the dashboard's Lend Assets counter so a fresh server snapshot does not render accrued
+  // the dashboard's My Deposits counter so a fresh server snapshot does not render accrued
   // earnings as $0 until the next ledger write.
   const accrualSinceMs = useMemo(() => {
     const anchors = [
