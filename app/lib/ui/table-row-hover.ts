@@ -81,6 +81,8 @@ export const TABLE_COLUMN_MIN_PX = {
   action: 160,
   /** One action button in the narrower dashboard column (no "Review risk"-length labels). */
   actionCompact: 144,
+  /** One button on desktop, two on phones (e.g. My Deposits: Withdraw, plus Add on phones). */
+  actionPhone2: 144,
   /** Two action buttons side by side. */
   actions2: 212,
   /** Bare row-open arrow. */
@@ -101,6 +103,7 @@ const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set([
   "identityCompact",
   "action",
   "actionCompact",
+  "actionPhone2",
   "actions2",
   "arrow",
 ])
@@ -112,6 +115,7 @@ const ANCHOR_FLOOR_PX: Partial<Record<TableColumnKind, number>> = {
   identityCompact: 228,
   action: 144,
   actionCompact: 140,
+  actionPhone2: 140,
   actions2: 204,
   arrow: 56,
 }
@@ -180,6 +184,7 @@ export const TABLE_COLUMN_PHONE_CLASS: Record<TableColumnKind, string> = {
   gauge: "max-md:!w-[164px]",
   action: "max-md:!w-[148px]",
   actionCompact: "max-md:!w-[140px]",
+  actionPhone2: "max-md:!w-[212px]",
   actions2: "max-md:!w-[212px]",
   arrow: "max-md:!w-[64px]",
 }

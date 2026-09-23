@@ -28,6 +28,7 @@ import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 import {
   DASHBOARD_TABLE_REFERENCE_PX,
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
@@ -52,7 +53,7 @@ const LEND_POSITIONS_LAYOUT = tableColumnLayout(
     "identityCompact",
     "metric", // Deposited
     "compact", // APY + earned
-    "actions2", // Add + Withdraw
+    "actionPhone2", // Withdraw (+ Add on phones)
   ],
   { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
 )
@@ -267,11 +268,12 @@ export function DashboardInvestments({
                       </td>
                       <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
                         <HoverActionGroup className="gap-2">
+                          {/* Add is phone-only: desktop rows open the market, which has Deposit. */}
                           <Button
                             type="button"
                             size="table"
                             variant="table-primary"
-                            className="w-auto"
+                            className="w-auto md:hidden"
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(
@@ -289,7 +291,7 @@ export function DashboardInvestments({
                             type="button"
                             size="table"
                             variant="table-secondary"
-                            className="w-auto"
+                            className={TABLE_ACTION_BUTTON}
                             onClick={(event) => {
                               event.stopPropagation()
                               router.push(
