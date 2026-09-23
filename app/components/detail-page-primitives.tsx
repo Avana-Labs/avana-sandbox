@@ -1,7 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 
 const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
@@ -67,14 +71,27 @@ export function DeferredDetailContent({
 }
 
 export function MobileDetailActionBar({ children, className }: { children: ReactNode; className?: string }) {
+  const { t } = useTranslation()
+  // A guest (or a wallet still onboarding) gets ONE CTA to the dashboard onboarding in place of
+  // the product actions, matching the desktop sidebar.
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
   return (
     <div
       className={cn(
         "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden",
-        className,
+        !accessLabel && className,
       )}
     >
-      {children}
+      {accessLabel ? (
+        <Link
+          href={TRANSACT_ACCESS_HREF}
+          className={primaryCtaClass({ size: "compact", className: "w-full font-normal" })}
+        >
+          {t(accessLabel)}
+        </Link>
+      ) : (
+        children
+      )}
     </div>
   )
 }

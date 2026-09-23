@@ -39,4 +39,17 @@ test.describe("guest browsing", () => {
       await expect(page.getByTestId("onboarding-canvas")).toBeVisible()
     })
   }
+
+  test.describe("mobile", () => {
+    test.use({ viewport: { width: 390, height: 844 } })
+
+    for (const path of ["/lend/markets/usdc", "/borrow/markets/bal-stable-gho-usdc"]) {
+      test(`${path} shows one No Wallet Connected button`, async ({ page }) => {
+        await page.goto(path)
+        const bar = page.locator("a[href='/dashboard']", { hasText: "No Wallet Connected" })
+        await expect(bar).toHaveCount(1, { timeout: 20_000 })
+        await expect(page.getByRole("link", { name: /Deposit|Withdraw|Supply|Claim/ })).toHaveCount(0)
+      })
+    }
+  })
 })
