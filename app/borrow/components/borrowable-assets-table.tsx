@@ -404,7 +404,7 @@ function LoanAssetsSection({
                     : "text-muted-foreground dark:text-white/42",
                 )}
               >
-                <span>{t("CAPACITY FILLED")}</span>
+                <span>{t("Capacity Filled")}</span>
                 <SortIcon />
               </button>
             </th>
@@ -581,7 +581,7 @@ function AssetsSection({
                   {t("Borrow APR")}
                 </th>
                 <th className="pb-2 pt-2.5 pl-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("CAPACITY FILLED")}
+                  {t("Capacity Filled")}
                 </th>
                 <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Available")}

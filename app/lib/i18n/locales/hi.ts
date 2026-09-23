@@ -1750,6 +1750,7 @@ const dict: TranslationDictionary = {
   "(required)": "(आवश्यक)",
   "Send report": "रिपोर्ट भेजें",
   "Thanks! Your report was sent.": "धन्यवाद! आपकी रिपोर्ट भेज दी गई है।",
+  "Capacity Filled": "उपयोग की गई क्षमता",
 }
 
 export default dict

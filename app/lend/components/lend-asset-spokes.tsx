@@ -485,7 +485,7 @@ function AssetSection({
                             : "text-muted-foreground dark:text-white/42",
                         )}
                       >
-                        <span>{t("CAPACITY FILLED")}</span>
+                        <span>{t("Capacity Filled")}</span>
                         <SortIcon />
                       </button>
                     </th>

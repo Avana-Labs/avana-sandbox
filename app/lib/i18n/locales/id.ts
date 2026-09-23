@@ -1752,6 +1752,7 @@ const dict: TranslationDictionary = {
   "(required)": "(wajib)",
   "Send report": "Kirim laporan",
   "Thanks! Your report was sent.": "Terima kasih! Laporanmu sudah terkirim.",
+  "Capacity Filled": "Kapasitas terpakai",
 }
 
 export default dict

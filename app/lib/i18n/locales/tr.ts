@@ -1757,6 +1757,7 @@ const dict: TranslationDictionary = {
   "(required)": "(zorunlu)",
   "Send report": "Raporu gönder",
   "Thanks! Your report was sent.": "Teşekkürler! Raporun gönderildi.",
+  "Capacity Filled": "Kullanılan kapasite",
 }
 
 export default dict

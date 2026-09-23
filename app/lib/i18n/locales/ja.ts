@@ -1787,6 +1787,7 @@ const dict: TranslationDictionary = {
   "(required)": "（必須）",
   "Send report": "レポートを送信",
   "Thanks! Your report was sent.": "ありがとうございます。レポートを送信しました。",
+  "Capacity Filled": "使用済み容量",
 }
 
 export default dict

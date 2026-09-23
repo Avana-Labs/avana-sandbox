@@ -1761,6 +1761,7 @@ const dict: TranslationDictionary = {
   "(required)": "(обязательно)",
   "Send report": "Отправить отчёт",
   "Thanks! Your report was sent.": "Спасибо! Ваш отчёт отправлен.",
+  "Capacity Filled": "Использованная емкость",
 }
 
 export default dict

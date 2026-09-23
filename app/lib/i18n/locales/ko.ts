@@ -1718,6 +1718,7 @@ const dict: TranslationDictionary = {
   "(required)": "(필수)",
   "Send report": "신고 보내기",
   "Thanks! Your report was sent.": "감사합니다! 신고가 전송되었습니다.",
+  "Capacity Filled": "사용 중인 용량",
 }
 
 export default dict
