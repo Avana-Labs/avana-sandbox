@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ActionIcon } from "@/app/components/action-icon"
+import { CapacityFilled } from "@/app/components/capacity-filled"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
@@ -127,7 +128,7 @@ import {
 
 type MultiplyCategoryTabId = CategoryChip["id"]
 
-type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "points"
+type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "capacityFilled" | "points"
 
 function sortHeaderButtonClass(active: boolean) {
   return cn(
@@ -389,6 +390,8 @@ function LoopMarketsSection({
           )
         case "cf":
           return (a.collateralFactor - b.collateralFactor) * direction
+        case "capacityFilled":
+          return ((a.capacityFilledPct ?? -1) - (b.capacityFilledPct ?? -1)) * direction
         case "points":
           return (parseValue(a.points) - parseValue(b.points)) * direction
         case "protocol":
@@ -437,15 +440,16 @@ function LoopMarketsSection({
         {isDesktop ? (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+              <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
                 <colgroup>
                   <col className="w-[4%]" />
-                  <col className="w-[22%]" />
+                  <col className="w-[24%]" />
                   <col className="w-[10%]" />
                   <col className="w-[13%]" />
                   <col className="w-[11%]" />
+                  <col className="w-[13%]" />
                   <col className="w-[12%]" />
-                  <col className="w-[28%]" />
+                  <col className="w-[13%]" />
                 </colgroup>
                 <thead>
                   <tr className={TABLE_HEADER_ROW}>
@@ -487,6 +491,16 @@ function LoopMarketsSection({
                         className={sortHeaderButtonClass(sortKey === "cf")}
                       >
                         <span>{formatTableHeaderLabel(t("CF"))}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("capacityFilled")}
+                        className={sortHeaderButtonClass(sortKey === "capacityFilled")}
+                      >
+                        <span>{formatTableHeaderLabel(t("Capacity Filled"))}</span>
                         <SortIcon />
                       </button>
                     </th>
@@ -592,6 +606,11 @@ const LoopTableRow = React.memo(function LoopTableRow({
           </span>
         </CellLink>
       </td>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="block">
+          <CapacityFilled value={row.capacityFilledPct} />
+        </CellLink>
+      </td>
       <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_BG}`}>
         {row.waitlistHref ? (
           <div className="inline-flex items-center">
@@ -642,21 +661,6 @@ const LoopTableRow = React.memo(function LoopTableRow({
               <ActionIcon label={hasNegativeApy ? "Review risk" : "Multiply"} />
               {t(hasNegativeApy ? "Review risk" : "Multiply")}
             </Button>
-            <Button
-              type="button"
-              size="table"
-              variant="table-secondary"
-              className="w-auto"
-              onClick={(event) => {
-                event.stopPropagation()
-                const marketId = resolveMarketIdFromHref(row.href)
-                if (!marketId) return
-                router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
-              }}
-            >
-              <ActionIcon label="Deleverage" />
-              {t("Deleverage")}
-            </Button>
           </HoverActionGroup>
         </div>
       </td>
@@ -702,6 +706,7 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
             label={t("Max Leverage")}
             value={row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
           />
+          <MarketMobileStatRow label={t("Capacity Filled")} value={<CapacityFilled value={row.capacityFilledPct} />} />
           <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
       </MarketMobileCard>

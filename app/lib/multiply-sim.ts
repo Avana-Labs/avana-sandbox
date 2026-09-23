@@ -167,6 +167,7 @@ export type MultiplyMarketRow = {
   waitlistHref?: string
   collateralFactor: number
   liquidationThreshold: number
+  capacityFilledPct?: number
 }
 
 function parsePct(value?: string) {

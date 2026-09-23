@@ -19,3 +19,18 @@ describe("mobile loop card spacing", () => {
     expect(mobileCard).toContain('<Link href={row.href} className="block">')
   })
 })
+
+describe("multiply capacity table", () => {
+  it("shows Capacity Filled before Available and removes the Deleverage row action", () => {
+    const source = readFileSync(resolve(__dirname, "../explore-loops-markets-table.tsx"), "utf8")
+    const section = source.slice(source.indexOf("function LoopMarketsSection"), source.indexOf("const LoopTableRow"))
+    const row = source.slice(source.indexOf("const LoopTableRow"), source.indexOf("const MobileLoopCard"))
+    const mobileCard = source.slice(source.indexOf("const MobileLoopCard"), source.indexOf("function TrendingLoopCard"))
+
+    expect(section.indexOf('t("Capacity Filled")')).toBeLessThan(section.indexOf('t("Available")'))
+    expect(row).toContain("<CapacityFilled value={row.capacityFilledPct} />")
+    expect(row).not.toMatch(/Deleverage/)
+    expect(mobileCard.indexOf('t("Capacity Filled")')).toBeLessThan(mobileCard.indexOf('t("Available")'))
+    expect(mobileCard).toContain("<CapacityFilled value={row.capacityFilledPct} />")
+  })
+})
