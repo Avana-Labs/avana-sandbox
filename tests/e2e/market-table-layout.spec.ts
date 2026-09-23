@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test"
 /**
  * Market tables share one column layout (`tableColumnLayout`). At desktop widths they must fit
  * their container — no horizontal scroll — and every table on a page must put the pinned
- * asset column's divider in the same place. Below the layout's min width the data columns
+ * asset column's edge in the same place. Below the layout's min width the data columns
  * scroll under the pinned column instead of the whole row sliding away.
  */
 
@@ -39,7 +39,7 @@ for (const width of [1280, 1440]) {
         expect(table.scrollWidth, `${path} table scrolls at ${width}px`).toBeLessThanOrEqual(table.clientWidth + 1)
         expect(table.pinnedRight, `${path} table has no pinned asset column`).not.toBeNull()
       }
-      // One divider position per page: every table's pinned column ends at the same x.
+      // One pinned-edge position per page: every table's pinned column ends at the same x.
       expect(new Set(tables.map((table) => table.pinnedRight)).size).toBe(1)
     })
   }

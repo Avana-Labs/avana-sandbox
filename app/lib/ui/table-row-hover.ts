@@ -92,7 +92,7 @@ export type TableColumnKind = keyof typeof TABLE_COLUMN_MIN_PX
 /**
  * Kinds whose share of the table is taken from a reference width instead of the table's own
  * mix of columns. Every table on a page shares that reference, so the index, identity, and
- * action columns (and the pinned divider) land in the same place on every table; only the
+ * action columns (and the pinned column's edge) land in the same place on every table; only the
  * data columns in between vary.
  */
 const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set([
@@ -201,14 +201,13 @@ export const TABLE_FIXED = "w-full table-fixed border-separate border-spacing-0"
 const TABLE_STICKY_BODY =
   "sticky z-[1] bg-background transition-shadow group-hover:shadow-[inset_0_0_0_9999px_hsl(var(--hover-overlay))]"
 const TABLE_STICKY_HEADER = "sticky z-[2] bg-table-header"
-const TABLE_STICKY_DIVIDER =
-  "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border dark:after:bg-white/10"
 
 /**
  * Classes for the pinned identity cell. It sticks at the left edge: a leading `#` column
- * scrolls away underneath it, then the data columns slide under the divider.
+ * scrolls away underneath it, then the data columns slide under it. No divider line: the
+ * opaque background alone marks the edge.
  */
 export function tableStickyCell(part: "header" | "body"): string {
   // Tighter side padding on phones: the pinned column is only 204px there.
-  return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 max-md:!pl-3 max-md:!pr-2 ${TABLE_STICKY_DIVIDER}`
+  return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 max-md:!pl-3 max-md:!pr-2`
 }

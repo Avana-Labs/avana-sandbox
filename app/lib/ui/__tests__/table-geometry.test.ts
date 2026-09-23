@@ -32,7 +32,7 @@ describe("desktop table geometry", () => {
 describe("shared column layout", () => {
   const pct = (width: string) => Number.parseFloat(width)
 
-  it("gives index, identity, and action the same share on every table so dividers line up", () => {
+  it("gives index, identity, and action the same share on every table so pinned edges line up", () => {
     const a = tableColumnLayout(["index", "identity", "compact", "metric", "gauge", "metric", "action"])
     const b = tableColumnLayout(["index", "identity", "compact", "metric", "compact", "compact", "gauge", "action"])
     expect(a.widths.slice(0, 2)).toEqual(b.widths.slice(0, 2))
@@ -50,10 +50,10 @@ describe("shared column layout", () => {
     expect(layout.minWidth).toBeLessThanOrEqual(MARKET_TABLE_REFERENCE_PX)
   })
 
-  it("pins the identity column with an opaque background and a divider", () => {
+  it("pins the identity column with an opaque background and no divider line", () => {
     expect(tableStickyCell("body")).toContain("left-0")
     expect(tableStickyCell("body")).toContain("bg-background")
-    expect(tableStickyCell("body")).toContain("after:w-px")
+    expect(tableStickyCell("body")).not.toContain("after:w-px")
     expect(tableStickyCell("body")).not.toContain("group-hover:bg-hover")
   })
 
