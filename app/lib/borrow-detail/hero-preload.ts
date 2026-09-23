@@ -28,12 +28,12 @@ export type AssetHeroPreloads = Record<AssetMetric, Preloaded<typeof api.markets
 type HeroFeeds = { heroFeed?: ChartFeed; heroBorrowedFeed?: ChartFeed; heroUtilizationFeed?: ChartFeed }
 
 /**
- * Server render window for the hero series. Every range is sliced from one series and the
- * hero defaults to a short range, so preloading "3M" instead of "ALL" cuts the RSC payload
- * ~8x (90 vs 720 daily points). The longest tabs (1Y/All) fall back to this window since
- * there's no per-range client fetch; the default-visible 1M/3M views stay exact.
+ * Server render window for the hero series. Every range is sliced from this one series (there is
+ * no per-range client fetch), so it must be "ALL" for the 1Y/All tabs to show more than the
+ * default view; a "3M" window made both of them repeat the last 90 days. Lend and Multiply
+ * preload "ALL" for the same reason.
  */
-const SSR_HERO_RANGE = "3M" as const
+const SSR_HERO_RANGE = "ALL" as const
 
 function hasConvexUrl() {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
