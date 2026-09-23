@@ -8,10 +8,8 @@ export default tseslint.config(
   {
     ignores: [
       ".next/**",
-      ".next-dev/**",
-      ".next-prod/**",
-      ".next-mock/**",
-      ".next-check/**",
+      // Every alternate dist dir (AVANA_NEXT_DIST_DIR: .next-dev, .next-prod, .next-dev-real, …).
+      ".next-*/**",
       "node_modules/**",
       ".reports/**",
       ".artifacts/**",
