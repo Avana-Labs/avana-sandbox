@@ -74,18 +74,26 @@ export function resetGuestMintThrottle() {
   mintHits.clear()
 }
 
-export async function isGuestMintAllowed(ip: string): Promise<boolean> {
+export type GuestMintDecision = "allowed" | "limited" | "unavailable"
+
+/**
+ * Whether a new guest session may be minted for this IP. The Vercel deployment shares one budget
+ * through Convex and fails closed when that limiter can't be reached (missing/mismatched secret,
+ * Convex down), reported as "unavailable" so guests aren't told they were rate limited. Anywhere
+ * else (local dev, a local `next start`) falls back to the per-instance limiter.
+ */
+export async function guestMintDecision(ip: string): Promise<GuestMintDecision> {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   const secret = process.env.CONVEX_RATE_LIMIT_SECRET
   if (url && secret) {
     try {
       const client = new ConvexHttpClient(url)
       const { ok } = await client.mutation(api.askAI.recordGuestMint, { ip, secret })
-      return ok
-    } catch {
-      // Convex unreachable — fall back to the per-instance limiter.
+      return ok ? "allowed" : "limited"
+    } catch (error) {
+      console.error("[ask-ai] guest mint limiter unreachable", error)
     }
   }
-  if (process.env.NODE_ENV === "production" && url) return false
-  return allowGuestMint(ip)
+  if (process.env.NODE_ENV === "production" && process.env.VERCEL && url) return "unavailable"
+  return allowGuestMint(ip) ? "allowed" : "limited"
 }

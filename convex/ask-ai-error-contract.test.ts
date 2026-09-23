@@ -41,71 +41,6 @@ async function exhaustDailyTokenBudget(t: ReturnType<typeof askAITest>, ownerSub
 // friendly message and the UI can key copy off `code`. `error.data` is the
 // ConvexError payload; a raw Error has no `data`.
 describe("Ask AI turn error contract", () => {
-  describe("beginTurn", () => {
-    test("message too long -> ASK_AI_GENERATION_FAILED", async () => {
-      const t = askAITest()
-      const owner = t.withIdentity({ subject: "ask-guest:begin-toolong" })
-      const thread = await owner.mutation(api.askAI.create, {})
-
-      await expect(
-        owner.mutation(api.askAI.beginTurn, {
-          threadId: thread.threadId,
-          prompt: "x".repeat(ASK_AI_CONFIG.maxInputCharacters + 1),
-        }),
-      ).rejects.toMatchObject({
-        data: { code: "ASK_AI_GENERATION_FAILED", message: expect.stringContaining("2000 characters") },
-      })
-    })
-
-    test("daily token budget reached -> ASK_AI_RATE_LIMITED", async () => {
-      const t = askAITest()
-      const ownerSubject = "ask-guest:begin-tokenlimit"
-      await exhaustDailyTokenBudget(t, ownerSubject)
-      const owner = t.withIdentity({ subject: ownerSubject })
-      const thread = await owner.mutation(api.askAI.create, {})
-
-      await expect(
-        owner.mutation(api.askAI.beginTurn, {
-          threadId: thread.threadId,
-          prompt: "Any question",
-          clientRequestId: "begin-token",
-        }),
-      ).rejects.toMatchObject({
-        data: { code: "ASK_AI_RATE_LIMITED", message: expect.stringContaining("daily token limit") },
-      })
-    })
-
-    test("request rate limit tripped -> ASK_AI_RATE_LIMITED", async () => {
-      const t = askAITest()
-      const owner = t.withIdentity({ subject: "ask-guest:begin-ratelimit" })
-      const thread = await owner.mutation(api.askAI.create, {})
-      await owner.mutation(api.askAI.beginTurn, {
-        threadId: thread.threadId,
-        prompt: "First question",
-        clientRequestId: "begin-rate-1",
-      })
-
-      await expect(
-        owner.mutation(api.askAI.beginTurn, {
-          threadId: thread.threadId,
-          prompt: "Second question",
-          clientRequestId: "begin-rate-2",
-        }),
-      ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED", message: expect.any(String) } })
-    })
-
-    test("missing clientRequestId -> ASK_AI_GENERATION_FAILED", async () => {
-      const t = askAITest()
-      const owner = t.withIdentity({ subject: "ask-guest:begin-noid" })
-      const thread = await owner.mutation(api.askAI.create, {})
-      await expect(
-        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Needs an idempotency key" }),
-      ).rejects.toMatchObject({
-        data: { code: "ASK_AI_GENERATION_FAILED", message: expect.stringContaining("request ID") },
-      })
-    })
-  })
-
   describe("enqueueTurn", () => {
     test("message too long -> ASK_AI_GENERATION_FAILED", async () => {
       const t = askAITest()
@@ -205,7 +140,6 @@ describe("Ask AI turn error contract", () => {
     })
 
     test("the public turn entry points remain public (control)", () => {
-      expect(registered.beginTurn.isPublic).toBe(true)
       expect(registered.enqueueTurn.isPublic).toBe(true)
     })
   })

@@ -274,12 +274,14 @@ export function AvanaSessionsProvider({
     persistTransaction: persistSwapTransaction,
     serverGetQuote: serverGetSwapQuote,
     remoteTransactions: remoteSwapTransactions,
+    seedDemoBalances: sessionSource === "demo",
   })
   const umbrella = useUmbrellaSession({
     walletId: avana.walletId,
     persistState: persistUmbrellaState ?? persistLocalState,
     remoteState: remoteUmbrellaState,
     persistAction: persistUmbrellaAction,
+    seedDemoState: sessionSource === "demo",
   })
 
   const visibleBorrow = useMemo(

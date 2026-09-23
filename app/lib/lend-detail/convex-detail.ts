@@ -35,6 +35,7 @@ import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-para
 import { alignRiskSupplyApyMetric, buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 import type { QuickStat } from "@/app/lib/borrow-detail"
+import { formatPercent } from "@/app/lib/format"
 
 /**
  * Server-only Convex-hydrated lend detail builder. The lend detail page calls this
@@ -57,10 +58,6 @@ function mergeConvexQuickStats(
   return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.lend)
 }
 
-function formatPct(value: number, digits = 2) {
-  return `${value.toFixed(digits)}%`
-}
-
 function irmProtocolParameters(irm: {
   optimalUtilizationPct: number
   slopeBelowOptimalPct: number
@@ -68,10 +65,10 @@ function irmProtocolParameters(irm: {
   baseBorrowRatePct: number
 }): ProtocolParameterRow[] {
   return [
-    { id: "optimalUtilization", label: "Optimal utilization", value: formatPct(irm.optimalUtilizationPct) },
-    { id: "slopeBelowOptimal", label: "Slope below optimal", value: formatPct(irm.slopeBelowOptimalPct) },
-    { id: "slopeAboveOptimal", label: "Slope above optimal", value: formatPct(irm.slopeAboveOptimalPct) },
-    { id: "baseBorrowRate", label: "Base borrow rate", value: formatPct(irm.baseBorrowRatePct) },
+    { id: "optimalUtilization", label: "Optimal utilization", value: formatPercent(irm.optimalUtilizationPct) },
+    { id: "slopeBelowOptimal", label: "Slope below optimal", value: formatPercent(irm.slopeBelowOptimalPct) },
+    { id: "slopeAboveOptimal", label: "Slope above optimal", value: formatPercent(irm.slopeAboveOptimalPct) },
+    { id: "baseBorrowRate", label: "Base borrow rate", value: formatPercent(irm.baseBorrowRatePct) },
   ]
 }
 
@@ -132,7 +129,31 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   const slug = market.marketId
 
   const mode = resolveDataSourceMode()
-  const snapshot = await fetchLendMarketSnapshot(slug)
+  // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
+  // supplyBorrow from Convex replaces PRNG series on the live path (C05).
+  // The snapshot rides in the same batch: every key here comes from the catalog slug, so
+  // waiting for it first only added a Convex round trip to every detail SSR.
+  const [
+    snapshot,
+    transactions,
+    risk,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+    supplyBorrow,
+  ] = await Promise.all([
+    fetchLendMarketSnapshot(slug),
+    fetchLendRecentTransactions(slug),
+    fetchLendRisk(slug),
+    fetchLendContent(slug),
+    fetchLendRiskParameters(slug),
+    fetchLendInterestRateModel(slug),
+    fetchLendMarket(slug),
+    fetchLendContractAddresses(slug),
+    fetchLendSupplyBorrow(slug),
+  ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   if (shouldFailClosedInLive(mode, snapshot != null)) return null
@@ -149,28 +170,6 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
         }
       : undefined,
   )
-
-  // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  // supplyBorrow from Convex replaces PRNG series on the live path (C05).
-  const [
-    transactions,
-    risk,
-    content,
-    riskParameters,
-    interestRateModel,
-    siloedMarket,
-    contractAddresses,
-    supplyBorrow,
-  ] = await Promise.all([
-    fetchLendRecentTransactions(slug),
-    fetchLendRisk(slug),
-    fetchLendContent(slug),
-    fetchLendRiskParameters(slug),
-    fetchLendInterestRateModel(slug),
-    fetchLendMarket(slug),
-    fetchLendContractAddresses(slug),
-    fetchLendSupplyBorrow(slug),
-  ])
 
   const headline = resolveLendHeadlineRates({
     snapshotBacked: Boolean(snapshot),

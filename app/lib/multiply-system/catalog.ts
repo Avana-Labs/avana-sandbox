@@ -1,5 +1,9 @@
 import type { MultiplyMarketRecord, MultiplyRiskTier } from "@/app/lib/multiply-engine/types"
-import { calculateSafeMaxMultiplier, calculateTheoreticalMaxMultiplier } from "@/app/lib/multiply-engine/formulas"
+import {
+  calculateNetApy,
+  calculateSafeMaxMultiplier,
+  calculateTheoreticalMaxMultiplier,
+} from "@/app/lib/multiply-engine/formulas"
 import { MULTIPLY_CATALOG_LEVERAGE_SCALE } from "@/app/lib/multiply-system/leverage-limits"
 import { MULTIPLY_COLLATERAL_FACTORS } from "@/app/lib/multiply-sim"
 import { SANDBOX_BASELINE_PRICES_USD as ASSET_PRICES_USD } from "@/app/lib/prices/sandbox-baseline-prices"
@@ -518,4 +522,30 @@ export function buildMultiplyCatalogMarketsRecord() {
     markets[market.id] = market
   }
   return markets
+}
+
+const MULTIPLY_MARKET_BY_ID = new Map(MULTIPLY_MARKET_CATALOG.map((market) => [market.id, market]))
+
+/**
+ * A loop's Net APY in PERCENT, recomputed from the catalog market economics with the same
+ * formula the Multiply UI uses (`revalueMultiplyPosition`). Server readers must use this
+ * instead of the persisted `positions.netApyPct`, which the sandbox writes as 0 at open and,
+ * when it is set, stores as a fraction. Returns null for an unknown market slug.
+ */
+export function catalogMultiplyNetApyPct(
+  marketSlug: string,
+  collateralValueUsd: number,
+  debtValueUsd: number,
+): number | null {
+  const market = MULTIPLY_MARKET_BY_ID.get(marketSlug)
+  if (!market) return null
+  return (
+    calculateNetApy({
+      supplyApy: market.economics.supplyApy,
+      borrowApy: market.economics.borrowApy,
+      finalCollateralValueUsd: collateralValueUsd,
+      debtValueUsd,
+      initialCollateralValueUsd: Math.max(1, collateralValueUsd - debtValueUsd),
+    }) * 100
+  )
 }

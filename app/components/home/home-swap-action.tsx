@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
@@ -11,6 +12,7 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
@@ -273,6 +275,9 @@ export function HomeSwapAction() {
     setStage("configure")
   }, [])
 
+  // Guests keep the quote form but are sent to the dashboard onboarding instead of review.
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+
   const primaryLabel = !inputBalance
     ? inputAssetId
       ? "Insufficient balance"
@@ -375,28 +380,40 @@ export function HomeSwapAction() {
             </div>
           ) : null}
 
-          <button
-            type="button"
-            disabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error") || isPending}
-            onClick={() => {
-              if (quoteState === "error") {
-                setQuoteRetry((current) => current + 1)
-                return
+          {accessLabel ? (
+            <Link
+              href={TRANSACT_ACCESS_HREF}
+              className={primaryCtaClass({ className: "mt-1" })}
+              data-testid="action-footer-primary"
+            >
+              {t(accessLabel)}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled={
+                !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error") || isPending
               }
-              if (previewUi) {
-                setReviewPreviewUi(previewUi)
-                setStage("review")
-              }
-            }}
-            className={primaryCtaClass({
-              disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
-              pending: isPending,
-              className: "mt-1",
-            })}
-            data-testid="action-footer-primary"
-          >
-            {isPending ? t("Processing…") : t(primaryLabel)}
-          </button>
+              onClick={() => {
+                if (quoteState === "error") {
+                  setQuoteRetry((current) => current + 1)
+                  return
+                }
+                if (previewUi) {
+                  setReviewPreviewUi(previewUi)
+                  setStage("review")
+                }
+              }}
+              className={primaryCtaClass({
+                disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
+                pending: isPending,
+                className: "mt-1",
+              })}
+              data-testid="action-footer-primary"
+            >
+              {isPending ? t("Processing…") : t(primaryLabel)}
+            </button>
+          )}
         </>
       ) : null}
 
@@ -464,8 +481,8 @@ function HomeSwapAssetField({
             // h-[1em] makes the <input> size to its line box exactly like the borrow tab's
             // amount <div>, so the Sell/Buy cards are the SAME height as the borrow cards and
             // there's no card-size shift when toggling Express tabs. (#9)
-            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] outline-none placeholder:text-muted-foreground/60 ${
-              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
+            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] outline-none placeholder:text-muted-foreground/80 ${
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/80"
             }`}
             placeholder="0"
             aria-label={label}
@@ -474,9 +491,10 @@ function HomeSwapAssetField({
         <button
           type="button"
           onClick={onOpenAssetPicker}
-          aria-label={`${label} asset`}
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium leading-5 text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
+          {/* Accessible name = "Sell asset: <visible text>" so it contains what is on screen. */}
+          <span className="sr-only">{`${label} asset: `}</span>
           {/* Fixed-geometry pill: a size-7 token icon fits inside the stable box so
               it never resizes between "Select Asset" and a picked asset. Mirrors the
               shared ActionAmountCard pill (ASSET_PILL_CLASS) so the box is identical

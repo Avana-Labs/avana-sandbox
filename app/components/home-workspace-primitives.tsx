@@ -6,6 +6,7 @@ import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 import type { HomeAssetVisual } from "@/app/lib/home-sim"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type TokenBubbleProps = {
   visual: HomeAssetVisual
@@ -33,7 +34,7 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
     >
       {showIcon ? (
         <Image
-          src={meta.iconUrl as string}
+          src={sizedLocalIconSrc(meta.iconUrl as string, TOKEN_ICON_TABLE_PX)}
           alt={visual.symbol}
           width={TOKEN_ICON_TABLE_PX}
           height={TOKEN_ICON_TABLE_PX}

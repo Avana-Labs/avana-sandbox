@@ -2,7 +2,6 @@ import {
   calculateSpokeCreditMetrics,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
-  debtInterestOwedUsd6,
   formatFixed,
   mulDiv,
   parseFixed,
@@ -89,25 +88,6 @@ function totalSpokeDebtUsd(state: BorrowSystemState, walletId: string, spokeId: 
   )
 }
 
-function selectPrimaryDebtPosition(
-  state: BorrowSystemState,
-  walletId: string,
-  marketId: string,
-): UserDebtPosition | null {
-  const spokeId = state.markets[marketId]?.spokeId
-  if (!spokeId) return null
-  return (
-    debtPositionsForSpoke(state, walletId, spokeId)
-      .slice()
-      .sort((left, right) => {
-        const rightDebt = currentDebtValueUsd6(right)
-        const leftDebt = currentDebtValueUsd6(left)
-        if (rightDebt === leftDebt) return 0
-        return rightDebt > leftDebt ? 1 : -1
-      })[0] ?? null
-  )
-}
-
 export function selectHomeBorrowTokensForMarket(
   state: BorrowSystemState,
   walletId: string,
@@ -149,20 +129,6 @@ export function selectHomeDebtMap(state: BorrowSystemState, walletId: string) {
     debtMap[pool.id] = spokeId ? totalSpokeDebtUsd(state, walletId, spokeId) : 0
   }
   return debtMap
-}
-
-export function selectHomeDebtContextForMarket(state: BorrowSystemState, walletId: string, marketId: string) {
-  const position = selectPrimaryDebtPosition(state, walletId, marketId)
-  if (!position) return null
-  const token = tokenFromAssetId(state, position.assetId)
-  if (!token) return null
-  return {
-    position,
-    token,
-    amountUsd: fixedToNumber(currentDebtValueUsd6(position), 6),
-    interestOwedUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
-    borrowApr: fixedToNumber(position.borrowRateWad, 18) * 100,
-  }
 }
 
 export function buildHomeBorrowPreview(

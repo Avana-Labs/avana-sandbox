@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
 import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
+import { TransactAccessContext, type TransactAccess } from "@/app/lib/transact-access"
 
 const preview: ActionPreviewUi = {
   allowed: true,
@@ -239,5 +240,58 @@ describe("ActionConfigureStage", () => {
     )
 
     expect(screen.getByText(/Fund your wallet or switch accounts to continue\./)).toBeInTheDocument()
+  })
+})
+
+describe("ActionConfigureStage without a transacting wallet", () => {
+  afterEach(() => cleanup())
+
+  const renderWith = (access: TransactAccess, props: Partial<Parameters<typeof ActionConfigureStage>[0]> = {}) => {
+    const onPrimary = vi.fn()
+    render(
+      <TransactAccessContext.Provider value={access}>
+        <ActionConfigureStage
+          stage="configure"
+          verb="Borrow"
+          amount="100"
+          onAmountChange={() => undefined}
+          preview={preview}
+          assetSymbol="USDC"
+          onPrimary={onPrimary}
+          secondaryHref="/borrow"
+          {...props}
+        />
+      </TransactAccessContext.Provider>,
+    )
+    return onPrimary
+  }
+
+  it.each([
+    ["footer", {}],
+    ["home", { homeLayout: true }],
+  ])("sends a guest to the dashboard onboarding from the %s CTA", (_layout, props) => {
+    const onPrimary = renderWith("guest", props)
+    const cta = screen.getByTestId("action-footer-primary")
+    expect(cta).toHaveTextContent("Connect Wallet")
+    expect(cta).toHaveAttribute("href", "/dashboard")
+    fireEvent.click(cta)
+    expect(onPrimary).not.toHaveBeenCalled()
+  })
+
+  it("keeps the guest CTA even when the preview is blocked", () => {
+    renderWith("guest", { preview: { ...preview, allowed: false, blockedReason: "Insufficient balance" } })
+    expect(screen.getByTestId("action-footer-primary")).toHaveTextContent("Connect Wallet")
+  })
+
+  it("asks a signed-in wallet that has not onboarded to complete onboarding", () => {
+    renderWith("needs-onboarding")
+    const cta = screen.getByTestId("action-footer-primary")
+    expect(cta).toHaveTextContent("Complete onboarding")
+    expect(cta).toHaveAttribute("href", "/dashboard")
+  })
+
+  it("keeps the normal Review CTA for a ready wallet", () => {
+    renderWith("ready")
+    expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument()
   })
 })

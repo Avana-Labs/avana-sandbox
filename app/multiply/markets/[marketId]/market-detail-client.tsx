@@ -10,57 +10,36 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { FlatStatsGrid, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapMultiplySessionRows, mapMultiplyTxRow } from "@/app/lib/detail-page/transaction-history"
-import { MULTIPLY_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
-import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
+
+const MultiplyAnalyticsStack = dynamic(
+  () => import("./multiply-analytics-stack").then((mod) => mod.MultiplyAnalyticsStack),
+  {
+    ssr: false,
+    loading: () => <DeferredDetailPlaceholder />,
+  },
+)
 
 type Props = {
   detail: MultiplyMarketDetail
-  heroPreloads?: MultiplyHeroPreloads | null
-  quickStatsPreload?: QuickStatsPreload | null
-  cashflowPreload?: CashflowPreload | null
 }
 
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false },
-)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const DetailFaqSection = dynamic(
-  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
-  { ssr: false },
-)
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false },
-)
-
-export function MarketDetailClient({
-  detail,
-  heroPreloads = null,
-  quickStatsPreload = null,
-  cashflowPreload = null,
-}: Props) {
+export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
   const { walletAddress } = useAvanaIdentity()
   const { t } = useTranslation()
@@ -103,7 +82,7 @@ export function MarketDetailClient({
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <MarketHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
+                <MarketHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -118,12 +97,7 @@ export function MarketDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid
-                          detail={detail}
-                          quickStatsPreload={quickStatsPreload}
-                          product="multiply"
-                          columns={4}
-                        />
+                        <QuickStatsGrid detail={detail} product="multiply" columns={4} />
                       </section>
                       <section aria-label={t("Market Rates")} className="space-y-6">
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
@@ -139,26 +113,12 @@ export function MarketDetailClient({
 
                 <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
-                    {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
-                      <LiquidationRiskSection stats={detail.liquidationRisk} />
-                    ) : null}
-                    <DetailMarketTransactionsDeferred
-                      scope="multiply"
-                      slug={marketId}
+                    <MultiplyAnalyticsStack
+                      detail={detail}
                       seedRows={seedRows}
                       sessionRows={sessionRows}
-                      kindConfig={MULTIPLY_KIND_CONFIG}
-                      context={{
-                        collateralSymbol: detail.row.protocol,
-                        borrowableSymbol: detail.row.asset,
-                      }}
+                      marketId={marketId}
                     />
-                    <DetailFaqSection
-                      title={t("Multiply FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>
                 </section>
               </div>

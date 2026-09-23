@@ -149,6 +149,54 @@ describe("sandbox onboarding + economy caps", () => {
     expect(catalog?.updatedAt).toBe(SENTINEL_UPDATED_AT)
   })
 
+  async function claimWithStaleCatalog(quoteUpdatedAt: number) {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(async (ctx) => {
+      await seedStarterTestMarkets(ctx)
+      for (const row of await ctx.db.query("tokenPrices").collect()) {
+        await ctx.db.patch(row._id, { updatedAt: quoteUpdatedAt, status: "fresh" })
+      }
+      // A current, fully-priced catalog cached when lend tokens were half today's price.
+      await ctx.db.insert("sandboxStarterCatalog", {
+        singleton: "starter",
+        rows: STARTER_TEST_MARKETS.map((market) => ({
+          slug: market.slug,
+          scope: market.scope,
+          symbol: market.symbol,
+          priceUsd: starterTestPriceFor(market.symbol) / (market.scope === "lend" ? 2 : 1),
+        })),
+        updatedAt: 1,
+        version: STARTER_CATALOG_VERSION,
+      })
+    })
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).resolves.toMatchObject({
+      status: "done",
+    })
+    const lendRows = await t.run((ctx) =>
+      ctx.db
+        .query("walletLendBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect(),
+    )
+    expect(lendRows.length).toBeGreaterThan(0)
+    return lendRows
+  }
+
+  test("sizes lend legs at the live price, not the cached starter catalog's", async () => {
+    for (const row of await claimWithStaleCatalog(Date.now())) {
+      // Valued at the live price the dashboard uses, the leg is worth exactly what was granted.
+      expect(row.amount * starterTestPriceFor(row.symbol)).toBeCloseTo(row.valueUsd, 4)
+    }
+  })
+
+  test("falls back to the catalog price when the live quote is past its invalidation window", async () => {
+    for (const row of await claimWithStaleCatalog(Date.now() - 2 * 60 * 60 * 1000)) {
+      expect(row.amount * (starterTestPriceFor(row.symbol) / 2)).toBeCloseTo(row.valueUsd, 4)
+    }
+  })
+
   test("X/tweet sub-flow: startTweet → xPending, confirmTweet → xConfirmed", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

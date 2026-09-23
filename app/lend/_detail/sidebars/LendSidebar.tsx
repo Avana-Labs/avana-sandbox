@@ -42,10 +42,13 @@ function LendActionRail({ detail, className }: Props) {
       <DetailActionTabs items={LEND_TAB_ITEMS} value={tab} onChange={setTab} ariaLabel="Lend actions" />
 
       <div className="mt-2">
+        {/* Keyed per tab so each form mounts fresh. Unkeyed, React reused one instance: after a
+            failed deposit the Withdraw tab inherited the amount and the "error" stage, whose
+            in-place retry submitted the withdraw without a review step. */}
         {tab === "deposit" ? (
-          <ResponsiveLendAction kind="deposit" market={marketId} closeHref={closeHref} sidebar />
+          <ResponsiveLendAction key="deposit" kind="deposit" market={marketId} closeHref={closeHref} sidebar />
         ) : (
-          <ResponsiveLendAction kind="withdraw" market={marketId} closeHref={closeHref} sidebar />
+          <ResponsiveLendAction key="withdraw" kind="withdraw" market={marketId} closeHref={closeHref} sidebar />
         )}
       </div>
     </div>

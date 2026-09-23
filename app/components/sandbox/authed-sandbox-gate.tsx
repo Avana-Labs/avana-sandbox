@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
+import { requiresOnboarding } from "@/app/lib/route-access"
 import { ONBOARDED_COOKIE } from "./onboarded-cookie"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
@@ -58,7 +59,7 @@ function CheckerBody({
   onVerdict: (verdict: GateVerdict) => void
 }) {
   const pathname = usePathname()
-  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/")
+  const isOpenRoute = !requiresOnboarding(pathname)
   // Wallet queries throw UNAUTHENTICATED until Convex has verified the SIWE JWT, so hold the
   // subscription (`"skip"`) instead of tripping the gate's error boundary on first render.
   const { isAuthenticated } = useConvexAuth()
@@ -81,7 +82,7 @@ function CheckerBody({
   // Report to the host (which owns the page's mount) only once the verdict is renderable:
   // "blocked" implies the onboarding UI below has everything it needs to paint.
   const blockedReady = walletState !== undefined && !isDone && economy !== undefined
-  const offline = walletState === undefined && timedOut && !optimistic && !isAskRoute
+  const offline = walletState === undefined && timedOut && !optimistic && !isOpenRoute
   useEffect(() => {
     if (walletState === undefined) return
     writeOnboardedCookie(wallet, walletState.onboardingStep === "done")
@@ -92,7 +93,8 @@ function CheckerBody({
   }, [isDone, blockedReady, offline, onVerdict])
 
   if (isDone || walletState === undefined) return offline ? <OfflineGate /> : null
-  if (economy === undefined) return null
+  // Open routes keep the page; the onboarding flow lives on the dashboard and umbrella.
+  if (economy === undefined || isOpenRoute) return null
   return (
     <LockedShell>
       <OnboardingFlow wallet={wallet} state={{ ...walletState, economy }} />

@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
+import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
 import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
 
 /**
@@ -31,7 +32,8 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
     return new ConvexHttpClient(url)
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("convexClient", error)
     return null
   }
 })
@@ -68,7 +70,8 @@ export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> 
         supplyApyPct: row.supplyApyPct,
       }
     })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendMarketSnapshots", error)
     return []
   }
 }
@@ -89,7 +92,8 @@ export async function fetchLendMarketSnapshot(slug: string): Promise<LendMarketS
       supplyApyPct: match.supplyApyPct,
       borrowAprPct: match.borrowAprPct,
     }
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendMarketSnapshot", error)
     return null
   }
 }
@@ -100,7 +104,8 @@ export async function fetchLendSupplyBorrow(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.markets.getLendSupplyBorrow, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendSupplyBorrow", error)
     return null
   }
 }
@@ -112,7 +117,8 @@ export async function fetchLendRecentTransactions(slug: string) {
   try {
     const rows = await client.query(api.markets.getRecentTransactions, { scope: "lend", slug })
     return rows.length > 0 ? rows : null
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendRecentTransactions", error)
     return null
   }
 }
@@ -123,7 +129,8 @@ export async function fetchLendRisk(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.lend.riskAssessment.getRisk, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendRisk", error)
     return null
   }
 }
@@ -134,7 +141,8 @@ export async function fetchLendContent(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.lend.content.getContent, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendContent", error)
     return null
   }
 }
@@ -146,7 +154,8 @@ export async function fetchLendContractAddresses(marketSlug: string) {
   try {
     const rows = await client.query(api.contractAddresses.listLendAddresses, { marketSlug })
     return rows ?? []
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendContractAddresses", error)
     return []
   }
 }
@@ -157,7 +166,8 @@ export async function fetchLendRiskParameters(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.lend.riskParameters.getRiskParameters, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendRiskParameters", error)
     return null
   }
 }
@@ -168,7 +178,8 @@ export async function fetchLendInterestRateModel(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.lend.interestRateModel.getInterestRateModel, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendInterestRateModel", error)
     return null
   }
 }
@@ -179,7 +190,8 @@ export async function fetchLendMarket(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.lend.markets.getMarket, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchLendMarket", error)
     return null
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { MockSwapProvider, getQuoteStatus, isQuoteUsable, markQuoteStale } from "@/app/lib/swap-system"
+import { MockSwapProvider, getQuoteStatus, isQuoteUsable } from "@/app/lib/swap-system"
 
 describe("MockSwapProvider", () => {
   it("calculates output, fee, slippage minimum, and expiry deterministically", async () => {
@@ -70,8 +70,7 @@ describe("MockSwapProvider", () => {
     expect(getQuoteStatus(quote, 21_000)).toBe("expired")
     expect(isQuoteUsable(quote, 21_000)).toBe(false)
 
-    const stale = markQuoteStale(quote)
-    expect(stale.status).toBe("stale")
+    const stale = { ...quote, status: "stale" as const }
     expect(isQuoteUsable(stale, 2_000)).toBe(false)
   })
 

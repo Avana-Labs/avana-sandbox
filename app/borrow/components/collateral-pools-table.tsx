@@ -355,9 +355,7 @@ function CollateralDesktopTable({
                 onClick={() => toggleSort("asset")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "asset"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "asset" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("ASSET")}</span>
@@ -370,7 +368,7 @@ function CollateralDesktopTable({
                 onClick={() => toggleSort("apy")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("FEES")}</span>
@@ -385,7 +383,7 @@ function CollateralDesktopTable({
                   "flex items-center gap-2 transition-colors",
                   sortKey === "deposits"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("TOTAL DEPOSITS")}</span>
@@ -402,7 +400,7 @@ function CollateralDesktopTable({
                   // problem by shouting in the source (`t("ASSET")`); keep the i18n key
                   // human-readable and uppercase in CSS instead.
                   "flex items-center gap-2 uppercase transition-colors",
-                  sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("Max LTV")}</span>
@@ -415,9 +413,7 @@ function CollateralDesktopTable({
                 onClick={() => toggleSort("risk")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "risk"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "risk" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("PREMIUM")}</span>
@@ -432,14 +428,16 @@ function CollateralDesktopTable({
                   "flex w-full items-center gap-2 transition-colors",
                   sortKey === "supplied"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("AVAILABLE")}</span>
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <span className="sr-only">{t("Quick actions")}</span>
+            </th>
           </tr>
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>

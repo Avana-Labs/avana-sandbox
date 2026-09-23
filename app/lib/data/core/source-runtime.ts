@@ -120,20 +120,6 @@ function ensureRequestNotAborted(signal?: AbortSignal) {
   }
 }
 
-export function createUnsupportedSourceError(
-  adapter: DataSourceAdapter,
-  operation: string,
-  message = `Live data source is not implemented for ${adapter.label}.`,
-): DataSourceError {
-  return new DataSourceError({
-    code: "unsupported",
-    sourceId: adapter.id,
-    operation,
-    message,
-    retryable: false,
-  })
-}
-
 export function normalizeDataSourceError(
   error: unknown,
   adapter: DataSourceAdapter,

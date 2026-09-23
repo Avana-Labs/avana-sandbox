@@ -11,6 +11,7 @@ export const metadata: Metadata = buildSeoMetadata({
   title: "Lend",
   description: "Supply assets to the protocol and earn yield.",
   path: "/lend",
+  index: true,
   keywords: ["lend crypto", "supply assets", "earn yield", "DeFi lending"],
 })
 

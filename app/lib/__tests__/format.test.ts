@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatApr, formatApy, formatPercent } from "@/app/lib/format"
+import { formatApy, formatPercent } from "@/app/lib/format"
 
 describe("formatPercent", () => {
   it("defaults to two decimals", () => {
@@ -25,9 +25,8 @@ describe("formatPercent", () => {
   })
 })
 
-describe("formatApy / formatApr", () => {
-  it("both use the 2dp asset convention", () => {
+describe("formatApy", () => {
+  it("uses the 2dp asset convention", () => {
     expect(formatApy(5.3)).toBe("5.30%")
-    expect(formatApr(5.3)).toBe("5.30%")
   })
 })

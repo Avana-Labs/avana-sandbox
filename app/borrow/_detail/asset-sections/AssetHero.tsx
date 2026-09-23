@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
@@ -19,10 +18,10 @@ import {
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { currentDebtValueUsd6 } from "@/app/lib/credit-engine"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type Props = {
   detail: AssetDetail
-  heroPreloads?: AssetHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -73,7 +72,7 @@ export function AssetHeroIdentity({
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={detail.hero.visual.iconUrl}
+                  src={sizedLocalIconSrc(detail.hero.visual.iconUrl, 64)}
                   alt=""
                   className="size-16 object-contain"
                   width={64}

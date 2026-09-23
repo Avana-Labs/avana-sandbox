@@ -1742,6 +1742,11 @@ const dict: TranslationDictionary = {
   "Avana Platform Fee": "Biaya Platform Avana",
   "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
     "Biaya antarmuka Avana sebesar 15 bps (0,15%) berlaku di muka untuk transaksi yang dimulai melalui platform Avana. Suku bunga, imbal hasil, dan biaya transaksi lainnya dapat bervariasi tergantung pada pasar, posisi, dan jalur eksekusi.",
+  "Complete onboarding": "Selesaikan orientasi",
+  "Get Started": "Mulai",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "Terlalu banyak sesi Ask AI baru dari jaringan ini. Coba lagi nanti.",
+  "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI sedang tidak tersedia. Coba lagi sebentar lagi.",
 }
 
 export default dict

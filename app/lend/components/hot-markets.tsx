@@ -13,6 +13,7 @@ import {
   type HighlightCarouselHandle,
 } from "@/app/components/highlight-carousel"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type HoverState = {
   cardKey: string
@@ -77,7 +78,7 @@ export function AssetIcon({ asset }: { asset: FeaturedAsset }) {
       style={{ width: 64, height: 64 }}
     >
       <Image
-        src={asset.iconUrl}
+        src={sizedLocalIconSrc(asset.iconUrl, 64)}
         alt={`${asset.symbol} logo`}
         fill
         sizes="64px"

@@ -13,49 +13,27 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
-import { LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowTxRow, mapLendSessionRows } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false },
-)
-const InterestRateModelCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
-  { ssr: false },
-)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const DetailFaqSection = dynamic(
-  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
-  { ssr: false },
-)
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false },
-)
+const LendAnalyticsStack = dynamic(() => import("./lend-analytics-stack").then((mod) => mod.LendAnalyticsStack), {
+  ssr: false,
+  loading: () => <DeferredDetailPlaceholder />,
+})
 
 type Props = {
   detail: LendMarketDetail
-  heroPreloads?: LendHeroPreloads | null
-  quickStatsPreload?: QuickStatsPreload | null
-  cashflowPreload?: CashflowPreload | null
 }
 
 /** Map a wallet's own sandbox lend actions into detail transaction rows. */
@@ -69,12 +47,7 @@ function mapSessionRows(
   return mapLendSessionRows(history, marketId, assetSymbol, priceUsd, walletAddress)
 }
 
-export function LendMarketDetailClient({
-  detail,
-  heroPreloads = null,
-  quickStatsPreload = null,
-  cashflowPreload = null,
-}: Props) {
+export function LendMarketDetailClient({ detail }: Props) {
   const session = useLendSessionContext()
   const { walletAddress } = useAvanaIdentity()
   const { t } = useTranslation()
@@ -117,7 +90,7 @@ export function LendMarketDetailClient({
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
+                <LendHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -132,7 +105,7 @@ export function LendMarketDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
+                        <QuickStatsGrid detail={detail} product="lend" />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -142,31 +115,12 @@ export function LendMarketDetailClient({
 
                 <section aria-label={t("Lend market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <InterestRateModelCard
-                      utilizationPct={detail.utilizationPct}
-                      borrowAprPct={detail.borrowAprPct}
-                      protocolParameters={detail.protocolParameters}
-                      borrowedUsd={
-                        detail.supplyBorrow.borrowed.aggregate ?? detail.supplyBorrow.borrowed.points.at(-1)?.v
-                      }
-                      suppliedUsd={
-                        detail.supplyBorrow.supplied.aggregate ?? detail.supplyBorrow.supplied.points.at(-1)?.v
-                      }
-                    />
-                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
-                    <DetailMarketTransactionsDeferred
-                      scope="lend"
-                      slug={marketId}
+                    <LendAnalyticsStack
+                      detail={detail}
                       seedRows={seedRows}
                       sessionRows={sessionRows}
-                      kindConfig={LEND_KIND_CONFIG}
-                      context={{ assetSymbol: detail.hero.symbol }}
+                      marketId={marketId}
                     />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="lend" />
                   </DeferredDetailContent>
                 </section>
               </div>

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import {
   applyBorrowableAssetDelta,
   applyBorrowableAssetLiquidity,
-  borrowedAvailabilityDeltaUsd,
   type DeltaMap,
 } from "@/app/lib/market-liquidity/apply"
 
@@ -42,11 +41,5 @@ describe("market-liquidity apply helpers", () => {
     expect(next.availableUsd).toBe(500)
     // unknown id → unchanged
     expect(applyBorrowableAssetDelta({ ...baseAsset, id: "other" }, deltas).availableUsd).toBe(600)
-  })
-
-  it("reports the signed availability delta for an asset id", () => {
-    const deltas: DeltaMap = new Map([[baseAsset.id, { borrowedDeltaUsd: 100, suppliedDeltaUsd: 0 }]])
-    expect(borrowedAvailabilityDeltaUsd(deltas, baseAsset.id)).toBe(-100)
-    expect(borrowedAvailabilityDeltaUsd(deltas, "missing")).toBe(0)
   })
 })

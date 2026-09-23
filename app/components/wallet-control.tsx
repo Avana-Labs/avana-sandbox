@@ -65,7 +65,7 @@ function DevWalletControl({ size }: { size: WalletControlSize }) {
  * the gate's restore effect, so their pill just brings up the account view.
  *
  * Anti-flicker: wallet/token state is client-only, so SSR + the first client render show a
- * fixed-width "Connect" placeholder that exactly matches the real button.
+ * "Get Started" placeholder with the same classes as the real button.
  */
 function IdleWalletControl({ size }: { size: WalletControlSize }) {
   const { t } = useTranslation()
@@ -79,7 +79,7 @@ function IdleWalletControl({ size }: { size: WalletControlSize }) {
   if (!mounted) {
     return (
       <span className={brand} aria-hidden>
-        {t("Connect")}
+        {t("Get Started")}
       </span>
     )
   }
@@ -99,8 +99,8 @@ function IdleWalletControl({ size }: { size: WalletControlSize }) {
   }
 
   return (
-    <button type="button" onClick={connect} className={brand} aria-label={t("Connect")}>
-      {t("Connect")}
+    <button type="button" onClick={connect} className={brand} aria-label={t("Get Started")}>
+      {t("Get Started")}
     </button>
   )
 }

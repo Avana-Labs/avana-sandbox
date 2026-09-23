@@ -7,54 +7,33 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
-import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
-import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
-import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
-import { resolveBorrowablesForPool } from "@/app/lib/borrow-detail/cross-market"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { BORROW_POOL_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false },
-)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false },
-)
-const DetailFaqSection = dynamic(
-  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
-  { ssr: false },
-)
+const PoolAnalyticsStack = dynamic(() => import("./pool-analytics-stack").then((mod) => mod.PoolAnalyticsStack), {
+  ssr: false,
+  loading: () => <DeferredDetailPlaceholder />,
+})
 
 type Props = {
   detail: PoolDetail
-  heroPreloads?: PoolHeroPreloads | null
-  quickStatsPreload?: QuickStatsPreload | null
-  cashflowPreload?: CashflowPreload | null
 }
 
 /**
@@ -64,12 +43,7 @@ type Props = {
  * CompactBorrowCard reused) sticks on the right. Mobile: sections stack and
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
-export function PoolDetailClient({
-  detail,
-  heroPreloads = null,
-  quickStatsPreload = null,
-  cashflowPreload = null,
-}: Props) {
+export function PoolDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const { walletAddress } = useAvanaIdentity()
   const session = useBorrowSessionContext()
@@ -104,7 +78,7 @@ export function PoolDetailClient({
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <PoolHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
+                <PoolHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}
@@ -119,12 +93,7 @@ export function PoolDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid
-                          detail={detail}
-                          quickStatsPreload={quickStatsPreload}
-                          product="borrow"
-                          hideRisk
-                        />
+                        <QuickStatsGrid detail={detail} product="borrow" hideRisk />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -134,33 +103,7 @@ export function PoolDetailClient({
 
                 <section aria-label={t("Pool analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
-                    <AssetsYouCanBorrowSection
-                      collateralLabel={detail.hero.name}
-                      assets={detail.borrowableAssets ?? resolveBorrowablesForPool(detail.row)}
-                    />
-                    {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
-                      <LiquidationRiskSection stats={detail.liquidationRisk} />
-                    ) : null}
-                    <DetailMarketTransactionsDeferred
-                      scope="pool"
-                      slug={detail.row.id}
-                      seedRows={seedRows}
-                      sessionRows={sessionRows}
-                      preset="pool"
-                      kindConfig={BORROW_POOL_KIND_CONFIG}
-                      context={{
-                        token0Symbol: detail.hero.visuals[0]?.symbol ?? "",
-                        token1Symbol: detail.hero.visuals[1]?.symbol ?? "",
-                        token0Weight: String(detail.row.constituents[0]?.weight ?? 0.5),
-                        token1Weight: String(detail.row.constituents[1]?.weight ?? 0.5),
-                      }}
-                    />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="borrow" />
+                    <PoolAnalyticsStack detail={detail} seedRows={seedRows} sessionRows={sessionRows} />
                   </DeferredDetailContent>
                 </section>
               </div>

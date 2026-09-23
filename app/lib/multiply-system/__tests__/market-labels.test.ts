@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import {
-  formatMultiplyLoopMarketLabel,
   formatMultiplyLoopPairLabel,
   formatMultiplyLoopBorrowLabel,
   formatMultiplyLoopSupplyLabel,
@@ -13,7 +12,6 @@ const identityT = (key: string) => key
 describe("multiply market labels", () => {
   it("formats pair and role labels", () => {
     expect(formatMultiplyLoopPairLabel("USDC", "GHO")).toBe("USDC / GHO")
-    expect(formatMultiplyLoopMarketLabel("USDC", "GHO")).toBe("Supply USDC · Borrow GHO")
     expect(formatMultiplyLoopSupplyLabel("USDC")).toBe("Supply USDC")
     expect(formatMultiplyLoopBorrowLabel("GHO")).toBe("Borrow GHO")
   })

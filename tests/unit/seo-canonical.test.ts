@@ -13,6 +13,9 @@ import sitemap from "@/app/sitemap"
 import { buildOrganizationSchema, buildWebPageSchema, buildWebSiteSchema } from "@/app/components/seo/schema"
 import { metadata as askMetadata } from "@/app/ask/page"
 import { metadata as homeMetadata } from "@/app/page"
+import { metadata as borrowMetadata } from "@/app/borrow/page"
+import { metadata as lendMetadata } from "@/app/lend/page"
+import { metadata as multiplyMetadata } from "@/app/multiply/page"
 
 // The marketing host 308-redirects the app's route paths, so no app-served discoverability
 // signal may point at it.
@@ -92,11 +95,18 @@ describe("noindex strategy (marketing owns SEO)", () => {
     expect((askMetadata.robots as { index?: boolean } | undefined)?.index).toBe(true)
   })
 
-  it("sitemap lists only indexable routes (/ and /ask), not the gated ones", async () => {
+  it("keeps the guest-open product pages indexable", () => {
+    for (const metadata of [borrowMetadata, lendMetadata, multiplyMetadata]) {
+      expect((metadata.robots as { index?: boolean } | undefined)?.index).toBe(true)
+    }
+  })
+
+  it("sitemap lists the open routes, not the onboarding-gated ones", async () => {
     const urls = (await sitemap()).map((entry) => entry.url)
     expect(urls).toContain(SITE_URL)
     expect(urls).toContain(`${SITE_URL}/ask`)
-    expect(urls.some((url) => url.includes("/borrow"))).toBe(false)
+    for (const route of ["/borrow", "/lend", "/multiply"]) expect(urls).toContain(`${SITE_URL}${route}`)
     expect(urls.some((url) => url.includes("/dashboard"))).toBe(false)
+    expect(urls.some((url) => url.includes("/umbrella"))).toBe(false)
   })
 })

@@ -1,37 +1,25 @@
 import { expect, test } from "@playwright/test"
 
 /**
- * Default Playwright boots with open-gate + an offline Convex URL (`127.0.0.1:0`).
- * That placeholder may still attempt a local `/api/.../sync` socket — ignore it.
- * Real guest leakage is a cloud Convex sync or a SIWE access-token mint.
+ * Guests browse `/` on the live, unauthenticated Convex feed, so a sync socket is expected.
+ * What must never happen for a guest is a SIWE access-token mint.
  *
  * For a production-equivalent closed-gate proof, set:
  *   AVANA_GUEST_CLOSED_GATE_E2E=1
  *   PLAYWRIGHT_BASE_URL=<prod-like server without NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE>
  * and skip starting the default open-gate webServer (`reuseExistingServer`).
  */
-test("guest home does not open a cloud Convex sync socket or request a SIWE token", async ({ page }) => {
-  const sockets: string[] = []
+test("guest home does not request a SIWE token", async ({ page }) => {
   const tokenRequests: string[] = []
-  page.on("websocket", (ws) => {
-    sockets.push(ws.url())
-  })
   page.on("request", (request) => {
     if (request.url().includes("/api/siwe/token")) tokenRequests.push(request.url())
   })
   await page.goto("/")
   await page.waitForTimeout(2500)
-  expect(
-    sockets.filter(
-      (url) =>
-        url.includes("convex.cloud") ||
-        (/\/api\/.+\/sync/.test(url) && !url.includes("127.0.0.1:0") && !url.includes("localhost:0")),
-    ),
-  ).toEqual([])
   expect(tokenRequests).toEqual([])
 })
 
-test("closed-gate guest home keeps Convex/wallet SDKs out of initial scripts", async ({ page }) => {
+test("closed-gate guest home keeps the wallet SDK out of initial scripts", async ({ page }) => {
   test.skip(
     process.env.AVANA_GUEST_CLOSED_GATE_E2E !== "1",
     "Set AVANA_GUEST_CLOSED_GATE_E2E=1 against a server without NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE.",
@@ -60,7 +48,6 @@ test("closed-gate guest home keeps Convex/wallet SDKs out of initial scripts", a
   expect(joined).not.toMatch(/\bwagmi\b/)
   expect(joined).not.toMatch(/\bviem\b/)
   expect(joined).not.toMatch(/connectkit/i)
-  expect(joined).not.toMatch(/ConvexReactClient/)
 })
 
 test("signed-in load authenticates Convex once and does not Remove queries", async ({ page }) => {

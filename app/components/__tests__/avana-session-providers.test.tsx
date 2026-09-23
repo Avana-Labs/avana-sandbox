@@ -1,12 +1,15 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AvanaSessionProviders } from "../avana-session-providers"
+import { GUEST_WALLET_ID } from "@/app/lib/data/wallet/profiles"
 
 const mocks = vi.hoisted(() => ({
   convexAuthenticated: false,
   openGate: false,
   playwright: false,
   openGateReady: true,
+  localProps: null as Record<string, unknown> | null,
+  liquidityLive: undefined as boolean | undefined,
   siwe: {
     authedWallet: "0x1111111111111111111111111111111111111111",
     isSignedIn: true,
@@ -47,13 +50,17 @@ vi.mock("@/app/lib/convex/siwe-convex-provider", () => ({
 
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({
   hasConvexClient: true,
-  MarketLiquidityProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  MarketLiquidityProvider: ({ children, live }: { children: React.ReactNode; live?: boolean }) => {
+    mocks.liquidityLive = live
+    return <>{children}</>
+  },
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
-  AvanaSessionsProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="local-session">{children}</div>
-  ),
+  AvanaSessionsProvider: ({ children, ...props }: { children: React.ReactNode }) => {
+    mocks.localProps = props
+    return <div data-testid="local-session">{children}</div>
+  },
 }))
 
 vi.mock("@/app/lib/avana-session/convex-session-provider", () => ({
@@ -78,6 +85,27 @@ describe("AvanaSessionProviders", () => {
     mocks.openGate = false
     mocks.playwright = false
     mocks.openGateReady = true
+    mocks.localProps = null
+    mocks.liquidityLive = undefined
+  })
+
+  it("gives a guest an empty, non-persisted wallet on the live market feed (no demo portfolio)", () => {
+    mocks.siwe.isSignedIn = false
+
+    render(
+      <AvanaSessionProviders>
+        <div>App content</div>
+      </AvanaSessionProviders>,
+    )
+
+    expect(screen.getByText("App content")).toBeInTheDocument()
+    expect(mocks.localProps).toMatchObject({
+      walletId: GUEST_WALLET_ID,
+      sessionSource: "convex",
+      persistLocalState: false,
+      persistUmbrellaState: false,
+    })
+    expect(mocks.liquidityLive).toBe(true)
   })
 
   it("does not mount wallet queries before Convex confirms the SIWE token", async () => {

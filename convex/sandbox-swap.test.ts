@@ -181,6 +181,61 @@ describe("recordSwap — durable swap persistence (#15)", () => {
     expect(rows[0].amountUsd).toBeCloseTo(1, 6) // server value, NOT the forged $65M
   })
 
+  test("authoritative: prices each leg by its asset id, ignoring a forged symbol", async () => {
+    const t = convexTest(schema, modules)
+    await seedTradable(t, "usdc", 1, 10)
+    await seedPrice(t, "wbtc", 65000)
+    await seedPrice(t, "eth", 2000)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // The input leg is USDC but claims to be WBTC. Pricing by the symbol would value 1 USDC at
+    // $65,000 and credit ~31 ETH; the server must price the asset it actually moves.
+    const res = await asUser.mutation(
+      api.sandbox.transactions.recordSwap,
+      swapIntent("forged-symbol", {
+        inputAssetId: "usdc",
+        inputSymbol: "WBTC",
+        inputAmount: 1,
+        outputAssetId: "eth",
+        outputSymbol: "ETH",
+        outputAmount: 31,
+        amountUsd: 65_000,
+      }),
+    )
+    expect(res.receipt.status).toBe("success")
+    const rows = await asUser.query(api.sandbox.transactions.getWalletSwapTransactions, { wallet: WALLET })
+    expect(rows[0]).toMatchObject({ inputSymbol: "USDC", outputSymbol: "ETH" })
+    expect(rows[0].amountUsd).toBeCloseTo(1, 6)
+    expect(rows[0].outputAmount).toBeLessThan(0.001)
+    const eth = await t.run((ctx) =>
+      ctx.db
+        .query("walletLiquidBalances")
+        .withIndex("by_wallet_asset", (q) => q.eq("wallet", WALLET.toLowerCase()).eq("assetId", "eth"))
+        .first(),
+    )
+    expect(eth?.amount ?? 0).toBeLessThan(0.001)
+  })
+
+  test("rejects a successful swap on a pair the engine cannot route", async () => {
+    const t = convexTest(schema, modules)
+    await seedTradable(t, "usdc", 1, 10)
+    await seedPrice(t, "wsteth", 2300)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordSwap,
+        swapIntent("unroutable", {
+          inputAssetId: "usdc",
+          inputSymbol: "USDC",
+          inputAmount: 1,
+          outputAssetId: "wsteth",
+          outputSymbol: "WSTETH",
+          outputAmount: 0.0004,
+          amountUsd: 1,
+        }),
+      ),
+    ).rejects.toThrow(/not swap-routable/)
+  })
+
   test("fails closed when either successful swap leg lacks a live oracle price", async () => {
     const t = convexTest(schema, modules)
     await seedTradable(t, "eth", 2000, 1)

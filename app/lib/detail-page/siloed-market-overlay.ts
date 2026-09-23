@@ -1,3 +1,4 @@
+import { formatPercent } from "@/app/lib/format"
 /**
  * Pure helpers for overlaying siloed Convex market identity + key-stat leftovers
  * (reserve factor, rewards APY, available) onto Dual detail objects.
@@ -21,16 +22,12 @@ type OverlayQuickStat = {
   value: string
 }
 
-function formatPct(value: number, digits = 2) {
-  return `${value.toFixed(digits)}%`
-}
-
 /** Format rewards APY for Key Statistics (`"No rewards"` when zero/missing). */
 export function formatRewardsApyLabel(rewardsApyPct: number | undefined | null): string {
   if (rewardsApyPct === undefined || rewardsApyPct === null || !Number.isFinite(rewardsApyPct) || rewardsApyPct <= 0) {
     return "No rewards"
   }
-  return formatPct(rewardsApyPct, 2)
+  return formatPercent(rewardsApyPct, { dp: 2 })
 }
 
 /** Overlay reserveFactor + rewardsApy quick stats from a siloed market row. */
@@ -45,7 +42,7 @@ export function injectSiloedMarketQuickStats<T extends OverlayQuickStat>(
       market.reserveFactorPct !== undefined &&
       Number.isFinite(market.reserveFactorPct)
     ) {
-      return { ...stat, value: formatPct(market.reserveFactorPct, 0) }
+      return { ...stat, value: formatPercent(market.reserveFactorPct, { dp: 0 }) }
     }
     if (stat.id === "rewardsApy" && market.rewardsApyPct !== undefined) {
       return { ...stat, value: formatRewardsApyLabel(market.rewardsApyPct) }
@@ -90,13 +87,4 @@ export function overlayHeroIdentity<T extends HeroNameFields>(
     ...(market.category && "category" in hero ? { category: market.category } : null),
     ...(market.description && "subtitle" in hero ? { subtitle: market.description } : null),
   }
-}
-
-/** Prefer siloed description on About when present. */
-export function overlayAboutDescription<T extends { description: string }>(
-  about: T,
-  market: SiloedMarketIdentity | null | undefined,
-): T {
-  if (!market?.description) return about
-  return { ...about, description: market.description }
 }

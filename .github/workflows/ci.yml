@@ -152,7 +152,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # Real production build + first-load JS budget for `/`. Catches critical-path
+  # Real production build + first-load JS budgets for `/` and the product routes
+  # (scripts/check-route-bundle-budgets.mjs). Catches critical-path
   # regressions (accidental wagmi/Sentry/framer-motion on the guest `/` chunk group)
   # without running a flaky full Lighthouse pass. Local real-build Lighthouse is
   # `npm run lighthouse:build && npm run lighthouse:serve` then `npm run lighthouse:budgets`.
@@ -182,12 +183,31 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
-      - name: First-load JS budget for /
+      - name: First-load JS budgets (/ and product routes)
         run: npm run perf:bundle-budget
 
-# NOTE: CI's required gate is `lint` + the sharded `test (N/2)` jobs — format +
-# security + lint + typecheck, plus the full unit/integration suite (vitest,
-# sharded) — run on every PR into main and on push to main. `e2e-smoke` is a
+  # The main-branch ruleset requires a status check named `build`. No job reported one, so the
+  # requirement could never pass, every merge went through the admin bypass, and lint + tests
+  # gated nothing. This job reports `build` from `lint` and every `test` shard. `if: always()`
+  # matters: a job skipped because a dependency failed counts as PASSING for a required check.
+  build:
+    name: build
+    needs: [lint, test]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require lint and every test shard to pass
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || [ "${{ needs.test.result }}" != "success" ]; then
+            echo "::error::lint=${{ needs.lint.result }}, test=${{ needs.test.result }}"
+            exit 1
+          fi
+
+# NOTE: CI's required gate is the `build` job above, which passes only when `lint` and
+# every sharded `test (N/2)` job pass — format + security + lint + typecheck, plus the
+# full unit/integration suite (vitest, sharded) — on every PR into main and on push to
+# main (the ruleset requires the `build` check). `e2e-smoke` is a
 # scoped Playwright smoke (see the step comment) kept as a separate, non-required
 # job for now; promote it to a required check once it has proven stable.
 # Paid model evaluations run only through the manual ask-ai-live-evals workflow. The

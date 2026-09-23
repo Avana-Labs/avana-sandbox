@@ -1,6 +1,7 @@
 "use client"
 
 import { getTokenIconMeta } from "@/app/lib/token-icons"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 
@@ -22,7 +23,7 @@ function ActionTokenIconBase({
   className?: string
 }) {
   const icon = getTokenIconMeta(symbol)
-  const { box, text } = ICON_SIZES[size]
+  const { box, text, px } = ICON_SIZES[size]
   // No asset picked yet: the default label is the literal word "Asset". Render a neutral
   // placeholder glyph instead of slicing it to the first three letters ("Ass").
   const isPlaceholder = !symbol || /^asset$/i.test(symbol.trim())
@@ -37,7 +38,7 @@ function ActionTokenIconBase({
       : symbol.slice(0, 3)
 
   if (icon.iconUrl && !isPlaceholder) {
-    return <img src={icon.iconUrl} alt="" className={cn(box, "object-contain", className)} />
+    return <img src={sizedLocalIconSrc(icon.iconUrl, px)} alt="" className={cn(box, "object-contain", className)} />
   }
 
   return (

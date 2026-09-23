@@ -7,9 +7,10 @@
 
 import { v } from "convex/values"
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import type { Id } from "./_generated/dataModel"
+import type { Doc, Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
 import { foldDeltas, appendLiquidityDelta } from "./liquidity"
+import { formatCompactUsdStatic } from "../app/lib/format-usd-static"
 
 /** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
 const SNAPSHOTS_SINGLETON = "markets"
@@ -158,19 +159,19 @@ export const getQuickStats = query({
       {
         id: "supplied",
         label: scope === "pool" ? "TVL" : "Total Supplied",
-        value: formatCompactUsd(suppliedUsd),
+        value: formatCompactUsdStatic(suppliedUsd),
         delta: toDelta(pct(suppliedUsd, prev?.suppliedUsd)),
       },
       {
         id: "borrowed",
         label: "Total Borrowed",
-        value: formatCompactUsd(borrowedUsd),
+        value: formatCompactUsdStatic(borrowedUsd),
         delta: toDelta(pct(borrowedUsd, prev?.borrowedUsd)),
       },
       {
         id: "available",
         label: "Available Liquidity",
-        value: formatCompactUsd(availableUsd),
+        value: formatCompactUsdStatic(availableUsd),
         delta: toDelta(pct(availableUsd, prevAvailableUsd)),
       },
       {
@@ -633,12 +634,46 @@ type DetailSandboxTxRow = {
   source: "sandbox"
 }
 
-/**
- * Bounded newest-first scan window for a market's activity feed. An exact index match is not
- * possible: `marketSlug` is stored verbatim while multiply slugs are normalized only on the
- * client, so matching happens in memory (normalized + scoped-asset aware).
- */
+/** Newest-first rows read per index lookup for a market's activity feed. */
 const DETAIL_TX_SCAN = 400
+
+/**
+ * Newest-first candidate rows for one detail page, read from market-scoped indexes; the exact
+ * product / side / scoped-asset match still happens in memory below. A global newest-400 scan made
+ * every open detail page re-run on any transaction anywhere, and let busy markets push a quiet
+ * market's rows out of its own feed. Stored slugs are canonical (`normalizeDetailMarketKey` is a
+ * no-op on them), so the normalized page slug hits `by_market_at` directly; borrow asset pages
+ * match the debt `assetId`, including legacy unscoped ids (`gho` for `bal-stable:gho`).
+ */
+async function detailCandidateRows(ctx: QueryCtx, scope: MarketScope, slug: string) {
+  const byMarket = (key: string) =>
+    ctx.db
+      .query("transactions")
+      .withIndex("by_market_at", (q) => q.eq("marketSlug", key))
+      .order("desc")
+      .take(DETAIL_TX_SCAN)
+  const byAsset = (key: string) =>
+    ctx.db
+      .query("transactions")
+      .withIndex("by_asset_at", (q) => q.eq("assetId", key))
+      .order("desc")
+      .take(DETAIL_TX_SCAN)
+  const target = normalizeDetailMarketKey(slug)
+  const reads = [byMarket(target)]
+  if (slug !== target) reads.push(byMarket(slug))
+  if (scope === "asset") {
+    reads.push(byAsset(target))
+    const token = target.slice(target.lastIndexOf(":") + 1)
+    if (token !== target) reads.push(byAsset(token))
+    // An unscoped asset slug matches every venue's scoped id, which no index can enumerate.
+    else reads.push(ctx.db.query("transactions").order("desc").take(DETAIL_TX_SCAN))
+  }
+  const seen = new Set<string>()
+  return (await Promise.all(reads))
+    .flat()
+    .filter((row) => (seen.has(row._id) ? false : (seen.add(row._id), true)))
+    .sort((a, b) => b.at - a.at || b._creationTime - a._creationTime)
+}
 
 /**
  * Recent transactions for one product-market detail page — a community feed of ALL users'
@@ -657,7 +692,8 @@ export const getRecentTransactions = query({
   handler: async (ctx, { scope, slug, limit }) => {
     const take = limit ?? 12
     const product = productForDetailScope(scope)
-    const recent = await ctx.db.query("transactions").order("desc").take(DETAIL_TX_SCAN)
+    const recent = await detailCandidateRows(ctx, scope, slug)
+    const marketsBySlug = new Map<string, Promise<Doc<"markets"> | null>>()
     const live: DetailSandboxTxRow[] = []
     for (const r of recent) {
       if (live.length >= take) break
@@ -669,9 +705,9 @@ export const getRecentTransactions = query({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
         kind: mapSandboxTxKind(scope, r.kind),
-        amountLabel: formatCompactUsd(r.amountUsd),
+        amountLabel: formatCompactUsdStatic(r.amountUsd),
         amountUsd: r.amountUsd,
-        ...(await tokenFieldsFromSandboxRow(ctx, r, scope)),
+        ...(await tokenFieldsFromSandboxRow(ctx, r, scope, marketsBySlug)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
         counterpartyLabel: undefined,
         txHashShort: r.syntheticTxHash.slice(0, 10),
@@ -707,7 +743,7 @@ export const getRecentTransactions = query({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
         kind: mapSeedWalletEventKind(scope, r.kind),
-        amountLabel: formatCompactUsd(r.amountUsd),
+        amountLabel: formatCompactUsdStatic(r.amountUsd),
         amountUsd: r.amountUsd,
         ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
@@ -815,13 +851,20 @@ async function tokenFieldsFromSandboxRow(
   ctx: QueryCtx,
   row: { assetId?: string; marketSlug?: string; amountUsd: number },
   scope: MarketScope,
+  marketsBySlug: Map<string, Promise<Doc<"markets"> | null>>,
 ) {
-  const market = row.marketSlug
-    ? await ctx.db
+  // Feed rows mostly share one market: look each slug up once per query, not once per row.
+  const slug = row.marketSlug
+  if (slug && !marketsBySlug.has(slug)) {
+    marketsBySlug.set(
+      slug,
+      ctx.db
         .query("markets")
-        .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug!))
-        .first()
-    : null
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first(),
+    )
+  }
+  const market = slug ? await marketsBySlug.get(slug)! : null
   if (market) return tokenFieldsFromMarket(ctx, market, scope, row.amountUsd)
 
   if (scope === "pool") return {}
@@ -1164,11 +1207,4 @@ function toDelta(pct: number) {
   if (pct === 0) return { value: 0, direction: "flat" as const, label: "0.0%" }
   if (pct > 0) return { value: pct, direction: "up" as const, label: `+${pct.toFixed(1)}%` }
   return { value: pct, direction: "down" as const, label: `${pct.toFixed(1)}%` }
-}
-
-function formatCompactUsd(v: number): string {
-  if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(2)}B`
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(2)}K`
-  return `$${v.toFixed(2)}`
 }

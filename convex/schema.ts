@@ -1308,6 +1308,7 @@ export default defineSchema({
     .index("by_wallet_intent", ["wallet", "intentId"])
     .index("by_wallet_hash", ["wallet", "syntheticTxHash"])
     .index("by_market_at", ["marketSlug", "at"])
+    .index("by_asset_at", ["assetId", "at"])
     .index("by_wallet_product_at", ["wallet", "product", "at"]),
 
   /**
@@ -1425,6 +1426,18 @@ export default defineSchema({
     currentDeficitUsd: v.number(),
     deficitOffsetUsd: v.number(),
     totalSlashedUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_market", ["marketId"]),
+
+  /**
+   * Running Σ suppliedUsd6 / cooldownAmountUsd6 over every wallet's umbrella position per market,
+   * kept in step by each position write. getSessionState reads this one row instead of scanning
+   * every wallet's positions on each subscriber re-run.
+   */
+  umbrellaMarketTotals: defineTable({
+    marketId: v.string(),
+    stakedUsd6: v.string(),
+    cooldownUsd6: v.string(),
     updatedAt: v.number(),
   }).index("by_market", ["marketId"]),
 

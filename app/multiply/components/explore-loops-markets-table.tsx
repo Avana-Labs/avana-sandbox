@@ -85,6 +85,19 @@ function loopGroupKey(collateralSymbol: string): LoopGroupKey {
   return category === "forex" || category === "eth" || category === "btc" ? category : "other"
 }
 
+/**
+ * Sort rows into the collateral-family order the table groups them by (stable within a family).
+ * Progressive reveal slices BEFORE grouping; an unordered slice would add newly revealed rows to
+ * groups above the viewport and push what the reader is looking at down the page.
+ */
+export function orderLoopRowsByGroup<Row extends { protocol: string }>(rows: readonly Row[]): Row[] {
+  const rank = new Map(LOOP_GROUP_ORDER.map((group, index) => [group.key, index]))
+  return rows
+    .map((row, index) => ({ row, index, rank: rank.get(loopGroupKey(row.protocol)) ?? LOOP_GROUP_ORDER.length }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.row)
+}
+
 // Pure, row-only — hoisted out of the component so it isn't reallocated every render and
 // can be memoised per `rows` instead of recomputed for every row on every keystroke.
 function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string {
@@ -119,7 +132,7 @@ type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "points"
 function sortHeaderButtonClass(active: boolean) {
   return cn(
     "flex items-center gap-2 whitespace-nowrap !uppercase transition-colors",
-    active ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+    active ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
   )
 }
 
@@ -153,12 +166,6 @@ type ExploreLoopsMarketsTableProps = {
   pageSize: MultiplyPageData["pageSize"]
   tokenLogos: MultiplyPageData["tokenLogos"]
   onOpenMultiply?: (href: string) => void
-}
-
-export function paginateMultiplyRows<T>(rows: readonly T[], page: number, pageSize: number) {
-  const safeSize = Math.max(1, pageSize)
-  const start = Math.max(0, page) * safeSize
-  return rows.slice(start, start + safeSize)
 }
 
 export function isNegativeMultiplyApy(apy?: string) {
@@ -241,7 +248,8 @@ export function ExploreLoopsMarketsTable({
     chunkSize: effectivePageSize,
     resetKey: `${currentTab}|${searchQuery}`,
   })
-  const revealedRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount])
+  const orderedRows = React.useMemo(() => orderLoopRowsByGroup(filteredRows), [filteredRows])
+  const revealedRows = React.useMemo(() => orderedRows.slice(0, visibleCount), [orderedRows, visibleCount])
 
   // Bucket the revealed rows into the ordered collateral-family groups, dropping
   // any empty group — the same grouped-table treatment the Lend page uses.

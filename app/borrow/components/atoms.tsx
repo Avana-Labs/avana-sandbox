@@ -6,6 +6,7 @@ import { EnhancedGraph } from "@/app/components/enhanced-graph"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type TokenBubbleSize = "xs" | "sm" | "md" | "table" | "lg" | "xl"
 
@@ -59,7 +60,7 @@ export function TokenBubble({
     >
       {showIcon ? (
         <Image
-          src={visual.iconUrl as string}
+          src={sizedLocalIconSrc(visual.iconUrl as string, px)}
           alt={visual.symbol}
           width={px}
           height={px}

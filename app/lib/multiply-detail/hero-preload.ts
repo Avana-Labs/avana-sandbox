@@ -7,9 +7,9 @@ import type { ChartFeed } from "@/app/components/charts"
 
 /**
  * Server-side hero-series handoff for multiply detail pages. Multiply has a single hero
- * metric (supply). Preloads it once, builds the initial `heroFeed` from the preloaded value
- * (no second fetch), and returns the `Preloaded` token so the live hero uses
- * `usePreloadedQuery` (hydrate + subscribe, never re-fetch). `preloads: null` when no URL.
+ * metric (supply). Preloads it once and builds the `heroFeed` from the preloaded value (no
+ * second fetch); the page merges `feeds` into `detail` on the server. The `Preloaded` token
+ * is not passed to client components. `preloads: null` when no URL.
  */
 export type MultiplyHeroPreloads = { supply: Preloaded<typeof api.markets.getMultiplyHeroSeries> }
 

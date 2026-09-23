@@ -4,6 +4,7 @@
  */
 
 import type { QueryCtx } from "./_generated/server"
+import { formatCompactUsdStatic } from "../app/lib/format-usd-static"
 
 export const CASHFLOW_MONTHS = 12
 
@@ -23,13 +24,6 @@ export type MonthlyRevenueBucket = {
   reserveTakeUsd: number
   rewardsDistributedUsd: number
   swapFeesUsd: number
-}
-
-export function formatCompactUsd(v: number): string {
-  if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(2)}B`
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(2)}K`
-  return `$${v.toFixed(2)}`
 }
 
 /** Daily-revenue → monthly rollup. Missing months are zero-filled (12 points). */
@@ -103,27 +97,27 @@ export function buildCashflowBreakdown(
   const rows =
     scope === "pool"
       ? [
-          { label: "Swap fees", reported: formatCompactUsd(ttm.swapFeesUsd), highlighted: true },
-          { label: "LP incentives", reported: formatCompactUsd(ttm.rewardsDistributedUsd) },
-          { label: "Protocol revenue", reported: formatCompactUsd(ttm.reserveTakeUsd) },
+          { label: "Swap fees", reported: formatCompactUsdStatic(ttm.swapFeesUsd), highlighted: true },
+          { label: "LP incentives", reported: formatCompactUsdStatic(ttm.rewardsDistributedUsd) },
+          { label: "Protocol revenue", reported: formatCompactUsdStatic(ttm.reserveTakeUsd) },
           {
             label: "Net to suppliers",
-            reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.swapFeesUsd * 0.9),
+            reported: formatCompactUsdStatic(ttm.interestToSuppliersUsd + ttm.swapFeesUsd * 0.9),
             highlighted: true,
           },
         ]
       : [
           {
             label: "Interest paid by borrowers",
-            reported: formatCompactUsd(ttm.interestFromBorrowersUsd),
+            reported: formatCompactUsdStatic(ttm.interestFromBorrowersUsd),
             highlighted: true,
           },
-          { label: "To suppliers", reported: formatCompactUsd(ttm.interestToSuppliersUsd) },
-          { label: "Reserve", reported: formatCompactUsd(ttm.reserveTakeUsd) },
-          { label: "Rewards distributed", reported: formatCompactUsd(ttm.rewardsDistributedUsd) },
+          { label: "To suppliers", reported: formatCompactUsdStatic(ttm.interestToSuppliersUsd) },
+          { label: "Reserve", reported: formatCompactUsdStatic(ttm.reserveTakeUsd) },
+          { label: "Rewards distributed", reported: formatCompactUsdStatic(ttm.rewardsDistributedUsd) },
           {
             label: "Net to suppliers",
-            reported: formatCompactUsd(ttm.interestToSuppliersUsd + ttm.rewardsDistributedUsd),
+            reported: formatCompactUsdStatic(ttm.interestToSuppliersUsd + ttm.rewardsDistributedUsd),
             highlighted: true,
           },
         ]
@@ -139,7 +133,7 @@ export function buildRevenueTrend(monthly: MonthlyRevenueBucket[], seriesIdPrefi
   const points = monthly.map((m) => ({ t: m.month, v: m.interestFromBorrowersUsd }))
   const total = points.reduce((a, p) => a + p.v, 0)
   return {
-    totalLabel: formatCompactUsd(total),
+    totalLabel: formatCompactUsdStatic(total),
     periodLabel: "Yearly",
     series: {
       id: `${seriesIdPrefix}:cf:revenue`,

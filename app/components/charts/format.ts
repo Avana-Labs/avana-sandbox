@@ -28,6 +28,23 @@ function formatCompactAxis(value: number): string {
   return `${sign}${symbol}${Math.round(abs)}`
 }
 
+/**
+ * Label for a chart point. Date-only keys ("2026-09-21") are UTC days, so they are formatted in
+ * UTC: formatting them in the viewer's zone put every point a day early west of UTC (and a
+ * 1st-of-month point in the previous month). Timestamps keep the viewer's local clock.
+ */
+export function formatChartPointLabel(value: string, range?: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  if (range === "1D" || value.includes("T")) {
+    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
+  }
+  if (range === "1Y" || range === "ALL") {
+    return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit", timeZone: "UTC" }).format(date)
+  }
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date)
+}
+
 /** Tooltip + headline value formatting. */
 export function formatChartValue(format: ChartValueFormat, value: number): string {
   switch (format) {

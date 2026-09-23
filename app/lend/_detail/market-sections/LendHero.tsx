@@ -4,9 +4,14 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
+import {
+  formatChartPointLabel,
+  formatChartValue,
+  type ChartFeed,
+  type ChartRangeData,
+  type ChartValueFormat,
+} from "@/app/components/charts"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -17,10 +22,10 @@ import {
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type LendHeroProps = {
   detail: LendMarketDetail
-  heroPreloads?: LendHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -195,7 +200,7 @@ function buildLendMetricFeed(
   const points = series.points.map((point) => ({
     time: Date.parse(point.t),
     value: point.v,
-    label: formatPointLabel(point.t),
+    label: formatChartPointLabel(point.t),
   }))
   const latest = series.aggregate ?? points[points.length - 1]?.value ?? 0
   const first = points[0]?.value ?? latest
@@ -225,15 +230,6 @@ function latestValue(points: LendMarketDetail["supplyBorrow"]["supplied"]["point
   return points[points.length - 1]?.v
 }
 
-function formatPointLabel(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  if (value.includes("T")) {
-    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
-  }
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
-}
-
 function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] }) {
   return (
     <span
@@ -244,7 +240,7 @@ function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] })
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={visual.iconUrl}
+          src={sizedLocalIconSrc(visual.iconUrl, 64)}
           alt=""
           className="size-16 object-contain"
           width={64}

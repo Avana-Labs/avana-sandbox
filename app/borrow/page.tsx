@@ -11,6 +11,7 @@ export const metadata: Metadata = buildSeoMetadata({
   title: "Borrow",
   description: "Unlock liquidity from LP positions and borrow against your collateral.",
   path: "/borrow",
+  index: true,
   keywords: ["borrow LP tokens", "liquidity provider collateral", "Aave v4", "DeFi borrowing"],
 })
 

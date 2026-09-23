@@ -1343,3 +1343,256 @@ describe("split session subscriptions", () => {
     }
   })
 })
+
+describe("Multiply settles against the live collateral price, not the stored equity", () => {
+  // Mirrors the onboarding-seeded loops in production: stored at the claim-time $83,333 /
+  // $41,667 with no assetId on the row, while the collateral price has moved since.
+  async function seedLoop(t: ReturnType<typeof convexTest>, livePriceUsd: number | null) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "multiply",
+        marketSlug: "eth-usdt",
+        status: "open",
+        collateralAmount: 30,
+        collateralValueUsd: 83_333,
+        debtValueUsd: 41_667,
+        multiplier: 2,
+        ltv: 0.5,
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+      // The canonical market row: its symbol is the collateral the loop is repriced with.
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "eth-usdt",
+        name: "ETH / USDT",
+        symbol: "ETH",
+        chainId: 1,
+        createdAt: 0,
+      })
+      if (livePriceUsd != null) {
+        await ctx.db.insert("tokenPrices", {
+          symbol: "eth",
+          llamaId: "test:eth",
+          priceUsd: livePriceUsd,
+          source: "baseline",
+          confidence: 0.99,
+          status: "fresh",
+          updatedAt: Date.now(),
+        })
+      }
+    })
+  }
+
+  async function multiplyAvailableUsd(t: ReturnType<typeof convexTest>) {
+    const rows = await t.run((ctx) => ctx.db.query("walletMultiplyBalances").collect())
+    return rows.filter((row) => row.state === "available").reduce((sum, row) => sum + row.valueUsd, 0)
+  }
+
+  function closeIntent(intentId: string, amountUsd: number, assetId = "eth") {
+    const usd6 = String(Math.round(amountUsd * 1_000_000))
+    return borrowIntent(intentId, {
+      product: "multiply",
+      kind: "close",
+      marketSlug: "eth-usdt",
+      requestedAmountUsd6: usd6,
+      executedAmountUsd6: usd6,
+      amountUsd,
+      expectedRevision: 0,
+      position: {
+        status: "closed",
+        marketSlug: "eth-usdt",
+        assetId,
+        collateralAmount: 0,
+        collateralValueUsd: 0,
+        debtValueUsd: 0,
+        multiplier: 1,
+        ltv: 0,
+      },
+    })
+  }
+
+  test("a close naming a different, higher-priced collateral asset is rejected", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000)
+    await t.run((ctx) =>
+      ctx.db.insert("tokenPrices", {
+        symbol: "wbtc",
+        llamaId: "test:wbtc",
+        priceUsd: 100_000,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      }),
+    )
+    // Repricing 30 "WBTC" would have credited ~$3M of equity for a $48k loop.
+    await expect(
+      t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c-sub", 48_333, "wbtc")),
+    ).rejects.toThrow(/INVALID_TRANSITION/)
+    expect(await multiplyAvailableUsd(t)).toBe(0)
+  })
+
+  test("a close credits the live equity, not the equity from the last write", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000) // 30 ETH now worth $90,000 → live equity $48,333
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c1", 48_333))
+    // The stale diff credited $41,666 (83,333 − 41,667) and dropped the $6,667 price gain.
+    expect(await multiplyAvailableUsd(t)).toBeCloseTo(48_333, 0)
+  })
+
+  test("a deleverage after a price gain does not demand a top-up", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, 3000)
+    // Sell 5 ETH ($15,000) to repay debt: equity stays $48,333 at the live price. The stale diff
+    // read the $6,667 gain as new equity and, with no liquid ETH, threw INSUFFICIENT_BALANCE.
+    const res = await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("d1", {
+        product: "multiply",
+        kind: "deleverage",
+        marketSlug: "eth-usdt",
+        requestedAmountUsd6: "15000000000",
+        executedAmountUsd6: "15000000000",
+        amountUsd: 15_000,
+        expectedRevision: 0,
+        position: {
+          status: "open",
+          marketSlug: "eth-usdt",
+          assetId: "eth",
+          collateralAmount: 25,
+          collateralValueUsd: 75_000,
+          debtValueUsd: 26_667,
+          multiplier: 75_000 / 48_333,
+          ltv: 26_667 / 75_000,
+        },
+      }),
+    )
+    expect(res.receipt.status).toBe("success")
+  })
+
+  test("keeps the stored equity when the collateral has no current oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedLoop(t, null)
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, closeIntent("c2", 41_666))
+    expect(await multiplyAvailableUsd(t)).toBeCloseTo(41_666, 0)
+  })
+})
+
+describe("liquid credits convert USD to tokens at a real price, not $1/token", () => {
+  // Mirrors production lend legs: token-denominated ledger rows ($37,500 each) in assets the wallet
+  // holds no liquid row for, so the old $1 fallback credited the USD figure as a token count.
+  async function seedLendLeg(t: ReturnType<typeof convexTest>, asset: string, amount: number) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLendBalances", {
+        wallet: WALLET.toLowerCase(),
+        marketId: asset,
+        assetId: asset,
+        symbol: asset.toUpperCase(),
+        amount,
+        valueUsd: 37_500,
+        state: "deposited",
+        updatedAt: 1,
+      })
+    })
+  }
+
+  async function seedOraclePrice(t: ReturnType<typeof convexTest>, symbol: string, priceUsd: number) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol,
+        llamaId: `test:${symbol}`,
+        priceUsd,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+    })
+  }
+
+  async function liquidRow(t: ReturnType<typeof convexTest>, assetId: string) {
+    const rows = await t.run((ctx) => ctx.db.query("walletLiquidBalances").collect())
+    return rows.find((row) => row.wallet === WALLET.toLowerCase() && row.assetId === assetId)
+  }
+
+  function fullLendWithdraw(marketSlug: string) {
+    return borrowIntent(`withdraw-${marketSlug}`, {
+      product: "lend",
+      kind: "withdraw",
+      marketSlug,
+      assetId: undefined,
+      requestedAmountUsd6: "37500000000",
+      executedAmountUsd6: "37500000000",
+      amountUsd: 37_500,
+      position: { status: "closed", marketSlug, suppliedUsd6: "0", earnedUsd6: "0", supplyApyPct: 3 },
+    })
+  }
+
+  test("a lend withdraw into an asset with no liquid row credits tokens at the oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedLendLeg(t, "reth", 11.711816288454887)
+    await seedOraclePrice(t, "reth", 3208.75)
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, fullLendWithdraw("reth"))
+    const row = await liquidRow(t, "reth")
+    // $37,500 / $3,208.75 ≈ 11.687 rETH. The $1 fallback credited 37,500 rETH (~$120M live).
+    expect(row?.amount).toBeCloseTo(37_500 / 3208.75, 6)
+    expect(row?.valueUsd).toBeCloseTo(37_500, 2)
+  })
+
+  test("falls back to the lend ledger's price for an asset the oracle does not cover", async () => {
+    const t = convexTest(schema, modules)
+    await seedLendLeg(t, "tsla", 102.70877269863877) // stocks are priced outside tokenPrices
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, fullLendWithdraw("tsla"))
+    expect((await liquidRow(t, "tsla"))?.amount).toBeCloseTo(102.70877269863877, 6)
+  })
+
+  test("a borrow into an asset the wallet never held credits tokens at the oracle price", async () => {
+    const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
+    await seedOraclePrice(t, "weth", 2749.05)
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("borrow-weth", {
+        assetId: "uni-v2:weth",
+        position: {
+          status: "open",
+          marketSlug: "uni-v3-bluechip-weth-usdc",
+          debtValueUsd6: "1000000000",
+          collateral: [
+            {
+              marketSlug: "uni-v3-bluechip-weth-usdc",
+              collateralShares: "2000000000",
+              principalTokenAmount: "2000000000",
+              collateralEnabled: true,
+            },
+          ],
+          debt: [
+            {
+              assetId: "uni-v2:weth",
+              baseAssetId: "weth",
+              debtSharesUsd6: "1000000000",
+              debtIndexRay: "1000000000000000000000000000",
+              borrowRateWad: "50000000000000000",
+              principalBorrowedUsd6: "1000000000",
+            },
+          ],
+        },
+      }),
+    )
+    // $1,000 of WETH ≈ 0.3638 WETH, not 1,000 WETH.
+    expect((await liquidRow(t, "weth"))?.amount).toBeCloseTo(1000 / 2749.05, 6)
+  })
+})

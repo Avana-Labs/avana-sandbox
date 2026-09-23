@@ -20,13 +20,14 @@ import { mutation, query } from "../_generated/server"
 import { appendLiquidityDelta } from "../liquidity"
 import { liquidBalanceView, readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
-import { computeSwapQuoteMath } from "./swapQuoteEngine"
+import { computeSwapQuoteMath, getSwapEngineAsset, isSwapPairRoutable } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
 import { resolveWriteBackPriceUsd } from "./writeBackPrice"
 import { canonicalTokenSymbolOrUpper } from "../../app/lib/tokens/canonical-symbol"
+import { catalogMultiplyNetApyPct } from "../../app/lib/multiply-system/catalog"
 import { requireSandboxWalletForWrite } from "../writeRateLimit"
 import {
   assertClose,
@@ -681,15 +682,64 @@ async function assertBorrowCollateralConserved(
   }
 }
 
+/**
+ * Equity of the stored Multiply position at the live collateral price. The client reprices the
+ * position at the live oracle price before computing the next one (1344e827), so diffing that
+ * against the collateralValueUsd stored at the last write booked every price move as user
+ * funding: a close credited the equity from the last write instead of what the position was
+ * worth, and a deleverage after a gain demanded a top-up. Falls back to the stored equity when
+ * the payload does not name the collateral or it has no current oracle price.
+ */
+/**
+ * The multiply market's collateral asset id from the canonical `markets` row (its `symbol` is the
+ * collateral token). The client also sends a collateral `assetId`; it must match, because prior
+ * equity is repriced from it and a substituted higher-priced asset (close a WETH loop naming
+ * WBTC) would inflate the equity credited back to the wallet. Returns undefined when the market
+ * row is missing, which leaves prior equity at its stored value.
+ */
+async function canonicalMultiplyCollateralId(
+  ctx: MutationCtx,
+  marketSlug: string | undefined,
+  clientAssetId: string | undefined,
+): Promise<string | undefined> {
+  if (!marketSlug) return undefined
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", marketSlug))
+    .unique()
+  const canonical = market?.symbol?.toLowerCase()
+  if (!canonical) return undefined
+  if (clientAssetId && liquidAssetIdFromArgs(clientAssetId) !== canonical) {
+    throw new Error(`INVALID_TRANSITION: ${marketSlug} collateral is ${canonical}, not ${clientAssetId}.`)
+  }
+  return canonical
+}
+
+async function priorMultiplyEquityUsd(
+  ctx: MutationCtx,
+  prior: Doc<"positions"> | undefined,
+  collateralAssetId: string | undefined,
+  now: number,
+) {
+  const storedEquityUsd = Math.max(0, (prior?.collateralValueUsd ?? 0) - (prior?.debtValueUsd ?? 0))
+  const collateralAmount = prior?.collateralAmount ?? 0
+  if (!prior || !(collateralAmount > 0) || !collateralAssetId) return storedEquityUsd
+  const livePriceUsd = await validatedTokenPriceUsd(ctx, liquidAssetIdFromArgs(collateralAssetId), now)
+  if (!livePriceUsd) return storedEquityUsd
+  return Math.max(0, collateralAmount * livePriceUsd - (prior.debtValueUsd ?? 0))
+}
+
 /** Resolve and validate the wallet-owned equity source for a Multiply increase. */
 async function multiplyLiquidDebit(
   ctx: MutationCtx,
   wallet: string,
   args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
-  existing?: Doc<"positions">,
+  existing: Doc<"positions"> | undefined,
+  now: number,
 ): Promise<{ assetId: string; symbol: string; tokenAmount: number } | null> {
   if (args.product !== "multiply" || !args.position || args.position.status === "closed") return null
-  const previousEquityUsd = Math.max(0, (existing?.collateralValueUsd ?? 0) - (existing?.debtValueUsd ?? 0))
+  const collateralId = await canonicalMultiplyCollateralId(ctx, args.position.marketSlug, args.position.assetId)
+  const previousEquityUsd = await priorMultiplyEquityUsd(ctx, existing, collateralId, now)
   const nextEquityUsd = Math.max(0, (args.position.collateralValueUsd ?? 0) - (args.position.debtValueUsd ?? 0))
   const increaseUsd = nextEquityUsd - previousEquityUsd
   if (increaseUsd <= 0.02) return null
@@ -1172,14 +1222,19 @@ export const recordTransaction = mutation({
     // Pre-transaction lend supplied from the product-balance ledger, which the transition check
     // must use instead of the positions row — that row can lag out of sync.
     let lendSuppliedBeforeUsd: number | undefined
+    // Token price implied by the supplied ledger (token-denominated since #296): the conversion
+    // fallback for a lend withdraw of an asset the oracle does not cover, such as stocks.
+    let lendLedgerPriceUsd: number | undefined
     if (args.product === "lend" && marketSlug && args.kind !== "claim") {
-      const lendRows = await ctx.db
-        .query("walletLendBalances")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .collect()
-      lendSuppliedBeforeUsd = lendRows
-        .filter((row) => row.marketId === marketSlug && row.state === "deposited")
-        .reduce((sum, row) => sum + row.valueUsd, 0)
+      const deposited = (
+        await ctx.db
+          .query("walletLendBalances")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .collect()
+      ).filter((row) => row.marketId === marketSlug && row.state === "deposited")
+      lendSuppliedBeforeUsd = deposited.reduce((sum, row) => sum + row.valueUsd, 0)
+      const depositedAmount = deposited.reduce((sum, row) => sum + row.amount, 0)
+      if (depositedAmount > 0 && lendSuppliedBeforeUsd > 0) lendLedgerPriceUsd = lendSuppliedBeforeUsd / depositedAmount
     }
 
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
@@ -1216,7 +1271,7 @@ export const recordTransaction = mutation({
       validateTransactionTransition(args, existing, lendSuppliedBeforeUsd)
       await assertBorrowCollateralConserved(ctx, wallet, args)
       await assertBorrowSolvent(ctx, args)
-      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing)
+      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing, now)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
@@ -1315,14 +1370,21 @@ export const recordTransaction = mutation({
         await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
       }
       // Keep liquid wallet balances durable for cash-moving actions (lend deposit/withdraw,
-      // borrow/repay). Token delta is derived from USD via the existing sandbox price.
+      // borrow/repay). The token delta is derived from USD at a real unit price: a missing or
+      // zero liquid row used to fall back to $1/token, so withdrawing a $37,500 rETH lend leg
+      // credited 37,500 rETH (~$120M). Same resolution as the product-balance writers (#296):
+      // the row's own price when plausible, else the oracle, else the lend ledger's price for
+      // assets the oracle does not cover; $1 only when no source exists at all.
       if (
         (args.product === "lend" && (args.kind === "deposit" || args.kind === "withdraw")) ||
         (args.product === "borrow" && (args.kind === "borrow" || args.kind === "repay"))
       ) {
         const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
         const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
-        const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
+        const impliedPriceUsd =
+          liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : null
+        const oraclePriceUsd = await validatedTokenPriceUsd(ctx, assetId, now)
+        const priceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd) ?? lendLedgerPriceUsd ?? 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
@@ -1331,7 +1393,7 @@ export const recordTransaction = mutation({
         if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
-        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now)
+        await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now, priceUsd)
       }
       if (multiplyDebit) {
         await applyLiquidAssetDelta(
@@ -1643,7 +1705,8 @@ async function applyProductBucketDelta(
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
     const collateralAmount =
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
-    const previousEquityUsd = Math.max(0, (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0))
+    const collateralId = await canonicalMultiplyCollateralId(ctx, marketSlug, args.position.assetId)
+    const previousEquityUsd = await priorMultiplyEquityUsd(ctx, priorPosition, collateralId, now)
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
     // `deltaUsd` is USD but walletMultiplyBalances.amount is a TOKEN QUANTITY, so a real
     // price is required — a $1/token default once persisted 41,666 WSTETH for a $41.6K
@@ -1812,10 +1875,17 @@ export const recordSwap = mutation({
     // never determine the result. There is no client-valued or missing-balance success path.
     let executedOutputAmount = args.outputAmount
     let executedAmountUsd = args.amountUsd
+    // Symbols come from the asset ids, never from the client: pricing one asset while moving
+    // another (inputSymbol "WBTC" on an inputAssetId "usdc" leg) would mint the difference.
+    const inputSymbol = getSwapEngineAsset(args.inputAssetId)?.symbol ?? args.inputSymbol
+    const outputSymbol = getSwapEngineAsset(args.outputAssetId)?.symbol ?? args.outputSymbol
     if (status === "success") {
+      if (!isSwapPairRoutable(args.inputAssetId, args.outputAssetId)) {
+        throw new Error("INVALID_SWAP: this pair is not swap-routable.")
+      }
       const [inputPrice, outputPrice] = await Promise.all([
-        validatedTokenPriceUsd(ctx, args.inputSymbol, now),
-        validatedTokenPriceUsd(ctx, args.outputSymbol, now),
+        validatedTokenPriceUsd(ctx, inputSymbol, now),
+        validatedTokenPriceUsd(ctx, outputSymbol, now),
       ])
       if (!inputPrice || !outputPrice) {
         throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
@@ -1847,8 +1917,8 @@ export const recordSwap = mutation({
       requestedAmountUsd6: requestedUsd6,
       executedAmountUsd6: executedUsd6,
       amountUsd: status === "success" ? executedAmountUsd : 0,
-      swapInputSymbol: args.inputSymbol,
-      swapOutputSymbol: args.outputSymbol,
+      swapInputSymbol: inputSymbol,
+      swapOutputSymbol: outputSymbol,
       swapInputAmount: args.inputAmount,
       swapOutputAmount: status === "success" ? executedOutputAmount : args.outputAmount,
       swapProvider: args.provider,
@@ -1867,7 +1937,7 @@ export const recordSwap = mutation({
       await applySwapBalanceDelta(
         ctx,
         wallet,
-        { ...args, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
+        { ...args, inputSymbol, outputSymbol, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
         now,
       )
     }
@@ -2312,10 +2382,14 @@ export async function computePortfolioNetApyPct(
     } else if (position.product === "multiply") {
       const base = (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)
       if (base > 0) {
-        // Persistence stores multiply netApy as a fraction on `netApyPct`; lend stores percent.
-        const raw = position.netApyPct ?? 0
-        const rate = Math.abs(raw) <= 1 ? raw * 100 : raw
-        legs.push({ weight: base, rate })
+        // Recompute from market economics: the persisted `netApyPct` is 0 on most loops and a
+        // fraction on the rest. Skip an unknown market rather than blending a fake 0%.
+        const rate = catalogMultiplyNetApyPct(
+          position.marketSlug,
+          position.collateralValueUsd ?? 0,
+          position.debtValueUsd ?? 0,
+        )
+        if (rate != null) legs.push({ weight: base, rate })
       }
     } else if (position.product === "borrow") {
       const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)

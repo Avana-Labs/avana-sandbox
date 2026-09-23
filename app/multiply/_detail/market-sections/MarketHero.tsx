@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -19,10 +18,10 @@ import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-se
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
-  heroPreloads?: MultiplyHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -209,7 +208,7 @@ function TokenAvatar({ visual }: { visual: MultiplyMarketDetail["hero"]["visuals
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={visual.iconUrl}
+          src={sizedLocalIconSrc(visual.iconUrl, 64)}
           alt=""
           className="size-16 object-contain"
           width={64}

@@ -47,12 +47,6 @@ export function applyBorrowableAssetDelta<T extends BorrowableLiquidity & { id: 
   return applyBorrowableAssetLiquidity(asset, deltas.get(asset.id))
 }
 
-/** Signed change to an asset's available-to-borrow liquidity (0 when none / unknown). */
-export function borrowedAvailabilityDeltaUsd(deltas: DeltaMap, assetId: string): number {
-  const borrowed = deltas.get(assetId)?.borrowedDeltaUsd ?? 0
-  return borrowed === 0 ? 0 : -borrowed
-}
-
 function usdNumberToUsd6(deltaUsd: number): bigint {
   if (!Number.isFinite(deltaUsd) || deltaUsd === 0) return 0n
   return parseFixed(Math.abs(deltaUsd).toFixed(6), 6)

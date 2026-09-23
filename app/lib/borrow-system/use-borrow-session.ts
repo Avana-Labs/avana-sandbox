@@ -116,6 +116,34 @@ function usd6FromNumber(value: number): bigint {
   return parseFixed(value.toFixed(6), 6)
 }
 
+/**
+ * Per-market open time for the Interest Owed display (principal × rate × (now − openedAt)): the
+ * borrow times weighted by amount. Using the EARLIEST borrow backdated a top-up, charging the new
+ * principal interest from the first loan, so the ticker jumped on every top-up. With the weighted
+ * time, principal × (t − openedAt) equals Σ amountᵢ × (t − atᵢ), so a top-up only adds interest
+ * from its own time onward. Failed borrows are ignored.
+ */
+export function principalWeightedBorrowOpenedAt(
+  transactions: ReadonlyArray<ConvexBorrowWalletData["transactions"][number]>,
+): Map<string, number> {
+  const totals = new Map<string, { amountUsd: number; weightedAt: number; earliestAt: number }>()
+  for (const transaction of transactions) {
+    if (transaction.product !== "borrow" || transaction.kind !== "borrow" || !transaction.marketSlug) continue
+    if (transaction.status === "failed" || typeof transaction.at !== "number") continue
+    const amountUsd = Math.max(0, Number(transaction.executedAmountUsd6 ?? "0") / 1_000_000)
+    const entry = totals.get(transaction.marketSlug) ?? { amountUsd: 0, weightedAt: 0, earliestAt: transaction.at }
+    entry.amountUsd += amountUsd
+    entry.weightedAt += amountUsd * transaction.at
+    entry.earliestAt = Math.min(entry.earliestAt, transaction.at)
+    totals.set(transaction.marketSlug, entry)
+  }
+  const openedAt = new Map<string, number>()
+  for (const [marketSlug, entry] of totals) {
+    openedAt.set(marketSlug, entry.amountUsd > 0 ? entry.weightedAt / entry.amountUsd : entry.earliestAt)
+  }
+  return openedAt
+}
+
 export function inferPersistedDebtAssetId(
   transaction: ConvexBorrowWalletData["transactions"][number],
   positions: ConvexBorrowWalletData["positions"],
@@ -319,23 +347,19 @@ export function useBorrowSession({
         // Convex rows are authoritative here; keeping the catalog seed's historical `state.now`
         // would accrue months of phantom interest on the next action.
         const hydrationNow = Date.now()
-        // Each debt's own open time from the durable ledger (earliest borrow on its market, else
-        // the wallet's earliest transaction) so Interest Owed accrues from when the loan was taken
-        // rather than the account-wide engine clock, which every action resets.
-        const earliestBorrowAtByMarket = new Map<string, number>()
+        // Each debt's own open time from the durable ledger (principal-weighted over its market's
+        // borrows, else the wallet's earliest transaction) so Interest Owed accrues from when the
+        // loan was taken rather than the account-wide engine clock, which every action resets.
+        const borrowOpenedAtByMarket = principalWeightedBorrowOpenedAt(data.transactions ?? [])
         let walletEarliestTxAt: number | undefined
         for (const transaction of data.transactions ?? []) {
           if (typeof transaction.at === "number") {
             if (walletEarliestTxAt === undefined || transaction.at < walletEarliestTxAt)
               walletEarliestTxAt = transaction.at
           }
-          if (transaction.product !== "borrow" || transaction.kind !== "borrow" || !transaction.marketSlug) continue
-          const prev = earliestBorrowAtByMarket.get(transaction.marketSlug)
-          if (prev === undefined || transaction.at < prev)
-            earliestBorrowAtByMarket.set(transaction.marketSlug, transaction.at)
         }
         const debtOpenedAt = (marketSlug: string | undefined): number =>
-          (marketSlug ? earliestBorrowAtByMarket.get(marketSlug) : undefined) ?? walletEarliestTxAt ?? hydrationNow
+          (marketSlug ? borrowOpenedAtByMarket.get(marketSlug) : undefined) ?? walletEarliestTxAt ?? hydrationNow
         const collateralPositions = []
         const debtPositions = []
         for (const position of borrowPositions) {

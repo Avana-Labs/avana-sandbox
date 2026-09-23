@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 import { formatActionHealthFactor } from "@/app/lib/action-system/formatters"
-import { healthFactorBand, healthFactorTone } from "@/app/lib/health/health-factor-bands"
+import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import { formatHealthFactor } from "@/app/lib/home-sim"
 
 describe("health factor presentation unification", () => {
@@ -32,8 +32,8 @@ describe("health factor presentation unification", () => {
     expect(healthFactorBand(1.05).id).toBe("danger")
     expect(healthFactorBand(1.15).id).toBe("danger")
     expect(healthFactorBand(1.2).id).toBe("watch")
-    expect(healthFactorTone(1.05)).toBe("danger")
-    expect(healthFactorTone(1.15)).toBe("danger")
-    expect(healthFactorTone(1.25)).toBe("warning")
+    expect(healthFactorBand(1.05).tone).toBe("danger")
+    expect(healthFactorBand(1.15).tone).toBe("danger")
+    expect(healthFactorBand(1.25).tone).toBe("warning")
   })
 })

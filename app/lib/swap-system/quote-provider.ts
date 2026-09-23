@@ -67,11 +67,6 @@ export function isQuoteUsable(quote: SwapQuote, now = Date.now()) {
   return getQuoteStatus(quote, now) === "valid"
 }
 
-export function markQuoteStale(quote: SwapQuote): SwapQuote {
-  if (quote.status !== "valid") return quote
-  return { ...quote, status: "stale" }
-}
-
 export class MockSwapProvider implements SwapProvider {
   private readonly now: () => number
   private readonly quoteTtlMs: number

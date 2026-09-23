@@ -1,7 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 
 const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
@@ -18,6 +22,24 @@ export const detailAnalyticsSectionClass = "mt-10 border-t border-border pt-10 m
 
 export function DetailPageWidth({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto", DETAIL_PAGE_MAX_W, className)}>{children}</div>
+}
+
+/**
+ * How far below the viewport the deferred analytics stack mounts. Its sections are lazy chunks that
+ * each pop in at full height; mounting ~a screen early keeps that growth off screen, so content the
+ * reader is looking at never jumps. The stack starts 2.5k–3k px down, so this never mounts on load.
+ */
+export const DEFERRED_DETAIL_ROOT_MARGIN = "1000px 0px"
+
+/** Skeleton for the deferred analytics stack, before it mounts and while its lazy module loads. */
+export function DeferredDetailPlaceholder({ className = "min-h-[120px]" }: { className?: string }) {
+  return (
+    <div aria-hidden className={cn("space-y-3 rounded-radius-md p-2", className)}>
+      <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
+      <div className="h-20 w-full animate-pulse rounded bg-muted/70" />
+      <div className="h-20 w-full animate-pulse rounded bg-muted/50" />
+    </div>
+  )
 }
 
 export function DeferredDetailContent({
@@ -45,7 +67,7 @@ export function DeferredDetailContent({
         setShouldMount(true)
         observer.disconnect()
       },
-      { rootMargin: "200px 0px", threshold: 0 },
+      { rootMargin: DEFERRED_DETAIL_ROOT_MARGIN, threshold: 0 },
     )
     observer.observe(marker)
     return () => observer.disconnect()
@@ -53,28 +75,33 @@ export function DeferredDetailContent({
 
   return (
     <div ref={markerRef} className={className}>
-      {shouldMount ? (
-        children
-      ) : (
-        <div aria-hidden className={cn("space-y-3 rounded-radius-md p-2", placeholderClassName)}>
-          <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-          <div className="h-20 w-full animate-pulse rounded bg-muted/70" />
-          <div className="h-20 w-full animate-pulse rounded bg-muted/50" />
-        </div>
-      )}
+      {shouldMount ? children : <DeferredDetailPlaceholder className={placeholderClassName} />}
     </div>
   )
 }
 
 export function MobileDetailActionBar({ children, className }: { children: ReactNode; className?: string }) {
+  const { t } = useTranslation()
+  // A guest (or a wallet still onboarding) gets ONE CTA to the dashboard onboarding in place of
+  // the product actions, matching the desktop sidebar.
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
   return (
     <div
       className={cn(
         "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden",
-        className,
+        !accessLabel && className,
       )}
     >
-      {children}
+      {accessLabel ? (
+        <Link
+          href={TRANSACT_ACCESS_HREF}
+          className={primaryCtaClass({ size: "compact", className: "w-full font-normal" })}
+        >
+          {t(accessLabel)}
+        </Link>
+      ) : (
+        children
+      )}
     </div>
   )
 }

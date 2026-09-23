@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${detail.hero.name} · Avana Borrow`,
     description: detail.about.description,
     path: `/borrow/markets/${marketId}`,
+    index: true,
     keywords: [detail.hero.name, "LP collateral", "borrow against AMM positions"],
   })
 }
@@ -52,7 +53,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total supplied" eyebrow={marketId} />
 
   const detailPromise = getPoolDetailFromConvex(marketId)
-  const [{ preloads: heroPreloads, feeds }, quickStatsPreload, cashflowPreload, detailRaw] = await Promise.all([
+  const [{ feeds }, quickStatsPreload, cashflowPreload, detailRaw] = await Promise.all([
     preloadPoolHero(marketId),
     preloadDetailQuickStats("pool", marketId),
     preloadDetailCashflow("pool", marketId),
@@ -82,12 +83,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <BorrowMarketDetailClientShell
-        detail={detailWithFeeds}
-        heroPreloads={heroPreloads}
-        quickStatsPreload={quickStatsPreload}
-        cashflowPreload={cashflowPreload}
-      />
+      <BorrowMarketDetailClientShell detail={detailWithFeeds} />
     </>
   )
 }

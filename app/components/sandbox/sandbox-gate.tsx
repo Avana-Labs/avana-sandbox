@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
+import { requiresOnboarding } from "@/app/lib/route-access"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
@@ -68,7 +70,10 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
   )
 }
 
-/** Every wallet stays inside the gate until Convex confirms completed onboarding. */
+/**
+ * Open routes (see `requiresOnboarding`) render for everyone. The dashboard and umbrella stay
+ * inside the gate until Convex confirms the wallet finished onboarding.
+ */
 export function SandboxGate({
   children,
   onboardedWallet,
@@ -86,6 +91,10 @@ export function SandboxGate({
   if (isAskRoute && !isSignedIn) return <>{children}</>
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
+  // Guests browse every open route with live, unauthenticated market data; the action CTA
+  // (not this gate) sends them to onboarding when they try to transact.
+  if (!isSignedIn && !requiresOnboarding(pathname))
+    return <TransactAccessContext.Provider value="guest">{children}</TransactAccessContext.Provider>
   // The SIWE store's server/hydration snapshot is seeded from the verified `avana_siwe` cookie
   // (root layout), so `isSignedIn` is truthful during SSR and the first client render: guests get the onboarding hero server-rendered (fast LCP, nothing to flash), and
   // signed-in users never pass through a signed-out frame.

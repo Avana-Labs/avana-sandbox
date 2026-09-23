@@ -39,6 +39,7 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
@@ -66,6 +67,15 @@ type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
 }
 type AssetGroup = LendPageData["assetGroups"][number]
 const LEND_PAGE_SIZE = 12
+
+/**
+ * Sort each group's rows by the table's default order (asset name) BEFORE the progressive reveal
+ * slices them. Slicing unsorted rows and letting the table sort them put newly revealed rows above
+ * rows already on screen, so the list jumped as it grew.
+ */
+export function orderLendGroupsForReveal(groups: AssetGroup[]): AssetGroup[] {
+  return groups.map((group) => ({ ...group, rows: [...group.rows].sort((a, b) => a.name.localeCompare(b.name)) }))
+}
 
 export function paginateLendAssetGroups(groups: AssetGroup[], page: number, pageSize = LEND_PAGE_SIZE) {
   const start = Math.max(0, page) * pageSize
@@ -104,7 +114,7 @@ function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
       <span className="relative flex size-12 shrink-0 items-center justify-center bg-transparent">
         <Image
           alt={row.logoAlt ?? `${row.symbol} logo`}
-          src={row.logoSrc}
+          src={sizedLocalIconSrc(row.logoSrc, 48)}
           width={48}
           height={48}
           sizes="48px"
@@ -479,7 +489,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "asset"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("ASSET")}</span>
@@ -494,7 +504,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "supplyApy"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("APY")}</span>
@@ -509,7 +519,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "totalDeposits"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("TOTAL DEPOSITS")}</span>
@@ -524,7 +534,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "utilization"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("UTILIZATION")}</span>
@@ -539,14 +549,17 @@ function AssetSection({
                           "flex w-full items-center gap-2 transition-colors",
                           sortKey === "availableLiquidity"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("AVAILABLE")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      {/* Names the action column for screen readers (an empty <th> isn't a header). */}
+                      <span className="sr-only">{t("Quick actions")}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody
@@ -613,7 +626,7 @@ export function LendAssetSpokes({
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    return groups
+    const filtered = groups
       .map((group) => {
         const rows = group.rows.filter((row) => {
           const matchesSearch =
@@ -624,6 +637,7 @@ export function LendAssetSpokes({
         return { ...group, rows }
       })
       .filter((group) => group.rows.length > 0)
+    return orderLendGroupsForReveal(filtered)
   }, [groups, search, currentTab])
   const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0)
 

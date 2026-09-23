@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import {
-  canonicalPriceUsd,
-  poolPairPriceUsd,
-  resetCanonicalPrices,
-  setCanonicalPrices,
-} from "@/app/lib/prices/canonical"
+import { canonicalPriceUsd, resetCanonicalPrices, setCanonicalPrices } from "@/app/lib/prices/canonical"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { BORROW_POOL_CATALOG, poolLpTokenPriceUsd } from "@/app/lib/borrow-sim"
 import { lpTokenPriceUsd, normalizeWeights } from "@/app/lib/prices/lp-token-price"
@@ -19,11 +14,6 @@ describe("stablecoin depeg flows through the stack (C5)", () => {
     expect(canonicalPriceUsd("USDT")).toBe(0.999)
     expect(canonicalPriceUsd("DAI")).toBe(1.001)
     expect(canonicalPriceUsd("GHO")).toBe(0.998)
-  })
-
-  it("depeg flows into pair prices (DAI/USDC ≠ exactly 1)", () => {
-    setCanonicalPrices({ dai: 1.001, usdc: 1 })
-    expect(poolPairPriceUsd("DAI", "USDC")).toBeCloseTo(1.001, 9)
   })
 
   it("depeg flows into the weighted LP price: USDC/USDT 50/50 at USDT=0.999 → $0.9995", () => {

@@ -13,12 +13,9 @@ import { resolveMultiplyCollateralPriceUsd } from "./collateral-limits"
 import { formatMultiplyActivityMarketLabel, formatMultiplyLoopPairLabel } from "./market-labels"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
+import { formatPercent } from "@/app/lib/format"
 
 const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000
-
-function formatPct(value: number) {
-  return `${(value * 100).toFixed(2)}%`
-}
 
 function formatFactor(value: number) {
   return `${value.toFixed(2)}x`
@@ -61,7 +58,7 @@ export function buildMultiplyTrendingSnapshots(markets: MultiplyMarketRecord[]):
           href: `/multiply/markets/${market.id}`,
           maxLeverageLabel: formatFactor(maxMultiplier),
           apyPct: maxLeverageApy * 100,
-          apyLabel: formatPct(maxLeverageApy),
+          apyLabel: formatPercent(maxLeverageApy * 100),
           availableUsd: market.economics.availableLiquidityUsd,
           availableLabel: formatCompactUsd(market.economics.availableLiquidityUsd),
           collateralSymbol,
@@ -90,7 +87,7 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     asset: borrowSymbol,
     assetName: market.borrowAsset.name,
     kind: "Loop",
-    apy: formatPct(market.economics.estimatedMaxApy),
+    apy: formatPercent(market.economics.estimatedMaxApy * 100),
     apyLabel: "Estimated max APY at public max multiplier",
     points: formatCompactUsd(market.economics.availableLiquidityUsd),
     availablePrimary: formatTokenQuantity(

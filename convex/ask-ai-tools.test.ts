@@ -134,6 +134,74 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
   })
 
+  test("reports multiply Net APY in percent, recomputed from the market, not the stored 0", async () => {
+    const t = convexTest(schema, modules)
+    // Prod shape: the sandbox persists netApyPct 0 at open (20 of 21 open loops on 2026-09-22).
+    const positionId = await t.run(async (ctx) =>
+      ctx.db.insert("positions", {
+        wallet: WALLET_A,
+        product: "multiply",
+        marketSlug: "aave-gho",
+        status: "open",
+        collateralValueUsd: 20_000,
+        debtValueUsd: 10_000,
+        netApyPct: 0,
+        openedAt: 1,
+        lastUpdatedAt: 2,
+      }),
+    )
+    const asA = t.withIdentity({ subject: WALLET_A })
+    // aave-gho: supply 7.6%, borrow 3.9% → (0.076×20k − 0.039×10k) / 10k equity = 11.3%.
+    const snapshot = (await asA.query(api.askAITools.engineSnapshot, {})) as {
+      multiply: Array<{ netApyPct: number | null }>
+    }
+    expect(snapshot.multiply[0].netApyPct).toBeCloseTo(11.3, 6)
+    const risk = await asA.query(api.askAITools.positionRisk, { positionId })
+    expect(risk.positions?.[0]?.netApyPct).toBeCloseTo(11.3, 6)
+    const portfolio = (await asA.query(api.askAITools.portfolio, {})) as { totals: { netApyPct: number } }
+    expect(portfolio.totals.netApyPct).toBeCloseTo(11.3, 6)
+  })
+
+  test("Net Value does not count a lend withdrawal twice (liquid row + lend available mirror)", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      // Prod shape (2026-09-22): a withdrawal credited both the liquid AAVE row and lend `available`.
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET_A,
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 1,
+        valueUsd: 120,
+        state: "available",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: WALLET_A,
+        marketId: "aave",
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 1,
+        valueUsd: 120,
+        state: "available",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: WALLET_A,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 1_000,
+        valueUsd: 1_000,
+        state: "deposited",
+        updatedAt: 1,
+      })
+    })
+    const portfolio = (await t.withIdentity({ subject: WALLET_A }).query(api.askAITools.portfolio, {})) as {
+      totals: { netValueUsd: number }
+    }
+    expect(portfolio.totals.netValueUsd).toBe(1_120)
+  })
+
   test("returns authoritative per-tranche Umbrella cooldown timing", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()

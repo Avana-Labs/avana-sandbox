@@ -3,6 +3,8 @@
  * day-over-day deltas. Shared by Convex product queries and unit tests.
  */
 
+import { formatCompactUsdStatic } from "@/app/lib/format-usd-static"
+
 type LiquidationDailyTotals = {
   liquidationsCount: number
   collateralSeizedUsd: number
@@ -28,14 +30,6 @@ export type LiquidationRiskStat = {
   format: "usd" | "number"
 }
 
-function formatCompactUsd(value: number): string {
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(2)}K`
-  return `$${value.toFixed(2)}`
-}
-
 function formatCount(value: number): string {
   const abs = Math.abs(value)
   if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`
@@ -45,7 +39,7 @@ function formatCount(value: number): string {
 
 function formatDelta(value: number, format: "usd" | "number"): string {
   const abs = Math.abs(value)
-  if (format === "usd") return formatCompactUsd(abs).replace(/^\$/, "")
+  if (format === "usd") return formatCompactUsdStatic(abs).replace(/^\$/, "")
   return formatCount(abs)
 }
 
@@ -60,7 +54,7 @@ function stat(
   return {
     id,
     label,
-    value: format === "usd" ? formatCompactUsd(latest) : formatCount(latest),
+    value: format === "usd" ? formatCompactUsdStatic(latest) : formatCount(latest),
     deltaValue,
     deltaLabel: format === "usd" ? `$${formatDelta(deltaValue, format)}` : formatDelta(deltaValue, format),
     goodDirection: "down",

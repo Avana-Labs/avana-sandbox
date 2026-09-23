@@ -104,7 +104,19 @@ export function useWalletHydrationScope(walletId: string) {
   }
 }
 
-function ConvexWalletHydrators({
+/**
+ * Returns the previous reference while `value` is structurally equal, so an effect keyed on it
+ * re-runs only when the content changes. Convex hands back a fresh object on every result, even
+ * when only a sibling field moved.
+ */
+function useContentStable<T>(value: T): T {
+  const ref = useRef<{ value: T; key: string } | null>(null)
+  const key = value === undefined ? "" : JSON.stringify(value)
+  if (!ref.current || ref.current.key !== key) ref.current = { value, key }
+  return ref.current.value
+}
+
+export function ConvexWalletHydrators({
   walletId,
   scope,
   onWalletHydrated,
@@ -147,22 +159,26 @@ function ConvexWalletHydrators({
     ensureUmbrellaFixtures: scope.ensureUmbrellaFixtures ? ensureUmbrellaFixtures : noopEnsure,
   })
 
-  useEffect(() => {
-    if (!session || productBalances === undefined) return
-    const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
-    const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
-    if (!shouldApplyHydration(session, pending)) return
+  // Each product session rehydrates only when its own inputs change. The 10-minute LP reprice
+  // rewrites `productBalances.borrow` for every wallet holding borrow collateral; one shared
+  // effect made that rebuild the lend and multiply sessions too (and re-render their trees).
+  const liquidRows = useContentStable(productBalances?.liquid)
+  const borrowRows = useContentStable(productBalances?.borrow)
+  const lendRows = useContentStable(productBalances?.lend)
+  const multiplyRows = useContentStable(productBalances?.multiply)
+  const productSession = useMemo(() => {
+    if (!session || !liquidRows) return undefined
     type HydratablePosition = (typeof session.positions)[number] & { product: "borrow" | "lend" | "multiply" }
     type HydratableTransaction = (typeof session.transactions)[number] & {
       product: "borrow" | "lend" | "multiply" | "rewards" | "swap"
     }
-    const productSession = {
+    return {
       ...session,
       // Product balances are the canonical wallet source for all action surfaces.
       // The legacy sandbox session balance query can contain only a partial starter
       // basket, which caused Dashboard to show eight assets while Lend Deposit showed
       // only the stale GHO row.
-      balances: productBalances.liquid.map((row) => ({
+      balances: liquidRows.map((row) => ({
         assetId: row.assetId,
         symbol: row.symbol,
         amount: row.amount,
@@ -173,9 +189,19 @@ function ConvexWalletHydrators({
         (transaction) => transaction.product !== "umbrella",
       ) as HydratableTransaction[],
     }
+  }, [session, liquidRows])
+  const canApplyHydration = useCallback(() => {
+    if (!session) return false
+    const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
+    const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
+    return shouldApplyHydration(session, pending)
+  }, [session])
+
+  useEffect(() => {
+    if (!productSession || !borrowRows || !canApplyHydration()) return
     borrow.hydrateWalletData({
       ...productSession,
-      borrowBalances: productBalances?.borrow.map((row) => ({
+      borrowBalances: borrowRows.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
         poolId: row.poolId,
@@ -185,9 +211,13 @@ function ConvexWalletHydrators({
         state: row.state,
       })),
     })
+  }, [borrow.hydrateWalletData, canApplyHydration, productSession, borrowRows])
+
+  useEffect(() => {
+    if (!productSession || !lendRows || !canApplyHydration()) return
     lend.hydrateWalletData({
       ...productSession,
-      lendBalances: productBalances?.lend.map((row) => ({
+      lendBalances: lendRows.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
         symbol: row.symbol,
@@ -197,9 +227,13 @@ function ConvexWalletHydrators({
         updatedAt: row.updatedAt,
       })),
     })
+  }, [lend.hydrateWalletData, canApplyHydration, productSession, lendRows])
+
+  useEffect(() => {
+    if (!productSession || !multiplyRows || !canApplyHydration()) return
     multiply.hydrateWalletData({
       ...productSession,
-      multiplyBalances: productBalances?.multiply.map((row) => ({
+      multiplyBalances: multiplyRows.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
         symbol: row.symbol,
@@ -208,15 +242,13 @@ function ConvexWalletHydrators({
         state: row.state,
       })),
     })
+  }, [multiply.hydrateWalletData, canApplyHydration, productSession, multiplyRows])
+
+  // Declared after the three hydrators so it runs after them in the same commit.
+  useEffect(() => {
+    if (!session || !productSession || !borrowRows || !lendRows || !multiplyRows || !canApplyHydration()) return
     onWalletHydrated(session.positions)
-  }, [
-    borrow.hydrateWalletData,
-    lend.hydrateWalletData,
-    multiply.hydrateWalletData,
-    onWalletHydrated,
-    session,
-    productBalances,
-  ])
+  }, [onWalletHydrated, canApplyHydration, session, productSession, borrowRows, lendRows, multiplyRows])
 
   useEffect(() => {
     if (productBalances?.liquid && productBalances.liquid.length > 0) {

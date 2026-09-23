@@ -1804,6 +1804,12 @@ const dict: TranslationDictionary = {
   "Support request": "Support-Anfrage",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Wenn etwas nicht stimmt, sende die Details — unser Team hilft dir, das Problem einzuordnen.",
+  "Complete onboarding": "Onboarding abschließen",
+  "Get Started": "Loslegen",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "Zu viele neue Ask-AI-Sitzungen aus diesem Netzwerk. Versuche es später erneut.",
+  "Ask AI is temporarily unavailable. Try again in a moment.":
+    "Ask AI ist vorübergehend nicht verfügbar. Versuche es gleich noch einmal.",
 }
 
 export default dict

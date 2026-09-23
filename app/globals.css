@@ -78,7 +78,7 @@
     --secondary-foreground: 0 0% 17.3%;
 
     --muted: 0 0% 92.2%;
-    --muted-foreground: 0 0% 46.7%; /* #777777 descriptions */
+    --muted-foreground: 0 0% 44%; /* #707070 descriptions: #777 was 4.48:1 on white, under WCAG AA */
     --section-foreground: 0 0% 13.3%; /* #222222 section headers */
     --table-header: 0 0% 96.5%; /* header strip on bright page */
 
@@ -89,7 +89,7 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Semantic status colors (light) — matched to Tailwind emerald/amber/rose-600 */
-    --success: 160 84% 30%;
+    --success: 160 84% 26%; /* 30% was 3.98:1 on cards for 12px APY/fee text */
     --success-foreground: 0 0% 100%;
     --warning: 32 95% 44%;
     --warning-foreground: 0 0% 100%;
@@ -230,10 +230,14 @@
    Micron are solid-black marks, and SpaceX is a black disc whose edge blends into the card.
    Invert them in dark mode wherever the icon renders — borrow/lend/multiply cards, tables, the
    carousel, and search — not just the action pages. The selector matches both the raw path and
-   the Next-optimized URL (both contain the file name). */
+   the Next-optimized URL (both contain the file name), plus the sized WebP variants
+   (`/stock-Icons/w64/apple.webp`) the token icons are served as. */
 .dark img[src*="apple.png"],
+.dark img[src*="apple.webp"],
 .dark img[src*="micron.png"],
-.dark img[src*="spacex.png"] {
+.dark img[src*="micron.webp"],
+.dark img[src*="spacex.png"],
+.dark img[src*="spacex.webp"] {
   filter: invert(1);
 }
 

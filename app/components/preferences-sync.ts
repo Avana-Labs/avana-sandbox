@@ -63,10 +63,6 @@ export function serializePreferences(preferences: StoredPreferences): string {
   })
 }
 
-export function preferencesEqual(a: StoredPreferences, b: StoredPreferences): boolean {
-  return serializePreferences(a) === serializePreferences(b)
-}
-
 export function snapshotLocalPreferences(local: LocalPreferenceState): StoredPreferences {
   return {
     theme: local.theme,

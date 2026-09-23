@@ -13,6 +13,7 @@ import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-he
 import { resolveInterestRateModelParams, type ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
+import { formatPercent } from "@/app/lib/format"
 
 type Props = {
   utilizationPct: number
@@ -23,10 +24,6 @@ type Props = {
   /** Total supplied liquidity (USD). Defaults are derived from utilization when omitted. */
   suppliedUsd?: number
   className?: string
-}
-
-function formatPct(value: number, digits = 2) {
-  return `${value.toFixed(digits)}%`
 }
 
 function readQuickStatPercent(
@@ -72,22 +69,22 @@ export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Prop
         {
           id: "optimalUtilization",
           label: "Optimal utilization",
-          value: formatPct(detail.interestRateModel.optimalUtilizationPct),
+          value: formatPercent(detail.interestRateModel.optimalUtilizationPct),
         },
         {
           id: "slopeBelowOptimal",
           label: "Slope below optimal",
-          value: formatPct(detail.interestRateModel.slopeBelowOptimalPct),
+          value: formatPercent(detail.interestRateModel.slopeBelowOptimalPct),
         },
         {
           id: "slopeAboveOptimal",
           label: "Slope above optimal",
-          value: formatPct(detail.interestRateModel.slopeAboveOptimalPct),
+          value: formatPercent(detail.interestRateModel.slopeAboveOptimalPct),
         },
         {
           id: "baseBorrowRate",
           label: "Base borrow rate",
-          value: formatPct(detail.interestRateModel.baseBorrowRatePct),
+          value: formatPercent(detail.interestRateModel.baseBorrowRatePct),
         },
       ],
     }
@@ -153,17 +150,17 @@ export function InterestRateModelCard({
     {
       id: "optimalUtilization",
       label: "Optimal utilization",
-      value: formatPct(irm.optimalUtilizationPct),
+      value: formatPercent(irm.optimalUtilizationPct),
     },
     {
       id: "slopeBelowOptimal",
       label: "Slope below optimal",
-      value: formatPct(irm.slopeBelowOptimalPct),
+      value: formatPercent(irm.slopeBelowOptimalPct),
     },
     {
       id: "slopeAboveOptimal",
       label: "Slope above optimal",
-      value: formatPct(irm.slopeAboveOptimalPct),
+      value: formatPercent(irm.slopeAboveOptimalPct),
     },
     {
       // Base rate is read off the anchored curve (its 0%-utilization value) so the
@@ -171,7 +168,7 @@ export function InterestRateModelCard({
       // rather than the slug-hashed param that has no relation to the paid APR.
       id: "baseBorrowRate",
       label: "Base borrow rate",
-      value: formatPct(curve.baseApr),
+      value: formatPercent(curve.baseApr),
     },
   ] as const
 
@@ -203,7 +200,7 @@ export function InterestRateModelCard({
               {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
             </div>
             <div className="mt-2 font-data text-[28px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[32px]">
-              {formatPct(currentUtilization)}
+              {formatPercent(currentUtilization)}
             </div>
           </div>
 

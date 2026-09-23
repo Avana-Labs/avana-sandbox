@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
+  DataSourceError,
   createDataSourceAdapter,
-  createUnsupportedSourceError,
   dedupeByStableId,
   executeSourceLoad,
   normalizeDataSourceError,
@@ -25,7 +25,13 @@ describe("source runtime", () => {
       primary: {
         adapter: liveAdapter,
         async load(): Promise<DataSourceResponse<{ value: number }>> {
-          throw createUnsupportedSourceError(liveAdapter, "load")
+          throw new DataSourceError({
+            code: "unsupported",
+            sourceId: liveAdapter.id,
+            operation: "load",
+            message: `Live data source is not implemented for ${liveAdapter.label}.`,
+            retryable: false,
+          })
         },
       },
       fallback: {

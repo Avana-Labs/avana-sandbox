@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { filterPools, groupByDex, type BorrowPoolRow, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
+import {
+  filterPools,
+  groupByDex,
+  orderPoolsForDexGroups,
+  type BorrowPoolRow,
+  type BorrowableAsset,
+} from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -32,12 +38,6 @@ export const SMART_SPOKES = new Set<string>([
 ])
 
 const BORROW_MARKETS_PAGE_SIZE = 12
-
-export function paginateBorrowMarkets<T>(rows: readonly T[], page: number, pageSize = BORROW_MARKETS_PAGE_SIZE) {
-  const safeSize = Math.max(1, pageSize)
-  const start = Math.max(0, page) * safeSize
-  return rows.slice(start, start + safeSize)
-}
 
 // Borrow pools carry multiple token visuals; categorise via the shared taxonomy so
 // filtering stays consistent with Lend / Multiply. A pool matches btc/eth/utility
@@ -119,7 +119,8 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
-    return filteredPools.filter((pool) => poolMatchesTab(pool, currentTab))
+    // Group order up front, so revealing the next chunk only appends below (see orderPoolsForDexGroups).
+    return orderPoolsForDexGroups(filteredPools.filter((pool) => poolMatchesTab(pool, currentTab)))
   }, [currentTab, filteredPools])
 
   // Reveal markets on scroll instead of paginating: the first chunk renders up

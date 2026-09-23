@@ -2,48 +2,11 @@ import { describe, expect, it } from "vitest"
 import {
   isConfigureVisibleStage,
   isProcessingStage,
-  isReviewStage,
   isSubmittingStage,
-  nextActionStage,
   primaryCtaLabel,
   reviewStageTitle,
   secondaryCtaLabel,
 } from "@/app/lib/action-system/stage-machine"
-
-describe("nextActionStage", () => {
-  it("walks the happy path from select through success with review", () => {
-    expect(nextActionStage("select", "continue")).toBe("configure")
-    expect(nextActionStage("configure", "review")).toBe("review")
-    expect(nextActionStage("review", "submit")).toBe("wallet_sign")
-    expect(nextActionStage("wallet_sign", "signed")).toBe("processing")
-    expect(nextActionStage("processing", "submit")).toBe("submitted")
-    expect(nextActionStage("submitted", "confirmed")).toBe("confirmed")
-    expect(nextActionStage("confirmed", "continue")).toBe("refreshing_position")
-    expect(nextActionStage("refreshing_position", "continue")).toBe("reconciled")
-    expect(nextActionStage("reconciled", "success")).toBe("success")
-  })
-
-  it("routes allowance before wallet sign", () => {
-    expect(nextActionStage("review", "submit")).toBe("wallet_sign")
-    expect(nextActionStage("approve_allowance", "allowance_complete")).toBe("wallet_sign")
-  })
-
-  it("routes errors", () => {
-    expect(nextActionStage("wallet_sign", "error")).toBe("error")
-    expect(nextActionStage("processing", "error")).toBe("error")
-  })
-
-  it("supports back navigation between stages", () => {
-    expect(nextActionStage("review", "back")).toBe("configure")
-    expect(nextActionStage("configure", "back")).toBe("select")
-    expect(nextActionStage("wallet_sign", "back")).toBe("review")
-  })
-
-  it("resets from terminal stages back to configure", () => {
-    expect(nextActionStage("success", "reset")).toBe("configure")
-    expect(nextActionStage("error", "reset")).toBe("configure")
-  })
-})
 
 describe("configure visibility", () => {
   it("shows the configure UI only for the configure and error stages", () => {
@@ -55,11 +18,6 @@ describe("configure visibility", () => {
     expect(isConfigureVisibleStage("review")).toBe(false)
     expect(isConfigureVisibleStage("processing")).toBe(false)
     expect(isConfigureVisibleStage("success")).toBe(false)
-  })
-
-  it("identifies review stage", () => {
-    expect(isReviewStage("review")).toBe(true)
-    expect(isReviewStage("configure")).toBe(false)
   })
 
   it("identifies every pending transaction lifecycle stage", () => {

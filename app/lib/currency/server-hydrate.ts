@@ -4,6 +4,7 @@ import { applyLiveRates } from "@/app/lib/currency/rates"
 import { pickSupportedFxRates } from "@/app/lib/currency/exchange-rates"
 import type { CurrencyCode } from "@/app/components/display-preferences"
 import { waitForServerSeed } from "@/app/lib/performance/server-seed"
+import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
 
 const ENDPOINT = "https://open.er-api.com/v6/latest/USD"
 const REVALIDATE_SECONDS = 6 * 60 * 60
@@ -37,8 +38,9 @@ export async function loadServerFxRates(): Promise<Partial<Record<CurrencyCode, 
       applyLiveRates(rates)
       return rates
     }
-  } catch {
+  } catch (error) {
     // Baseline stays in place; the client may still refresh.
+    reportServerFetchFailure("loadServerFxRates", error)
   }
   return {}
 }

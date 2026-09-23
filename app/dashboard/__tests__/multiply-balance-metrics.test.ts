@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildMockMultiplySystemState } from "@/app/lib/multiply-system/mock"
 import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
-import { buildMultiplyBalanceMetrics, buildMultiplyDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { buildMultiplyBalanceMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import type { MultiplyPosition } from "@/app/lib/multiply-engine"
 
 const WALLET = "mult-balance-wallet"
@@ -91,20 +91,5 @@ describe("buildMultiplyBalanceMetrics — wallet aggregate formulas", () => {
       interestPerYearUsd: 0,
       accrualSinceMs: expect.any(Number),
     })
-  })
-
-  it("stays aligned with buildMultiplyDashboardMetrics overview/performance", () => {
-    const state = buildMockMultiplySystemState(WALLET)
-    const marketId = Object.keys(state.markets)[0]!
-    state.positions = {
-      a: position("a", marketId, 2_000, 800, 0.08, 2.5),
-    }
-    const tab = buildPortfolioMultiplyData(WALLET, state, [])
-    const balance = buildMultiplyBalanceMetrics(state, WALLET, tab)
-    const tabMetrics = buildMultiplyDashboardMetrics(state, WALLET, tab)
-    expect(tabMetrics.overview.netValueUsd).toBeCloseTo(balance.netValueUsd, 6)
-    expect(tabMetrics.performance.poolCollateralUsd).toBeCloseTo(balance.positionValueUsd, 6)
-    expect(tabMetrics.performance.netApyPct).toBeCloseTo(balance.netApyPct, 6)
-    expect(tabMetrics.overview.riskPremiumPct).toBeCloseTo(balance.riskPremiumPct, 6)
   })
 })

@@ -302,15 +302,13 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   if (!catalogDetail) return null
 
   const mode = resolveDataSourceMode()
-  const snap = await fetchConvexMarketSnapshot("pool", catalogDetail.row.id)
-  if (shouldFailClosedWithoutSnapshots(mode, snap ? 1 : 0)) return null
-  const hydratedState = snap ? mergeConvexMarketSnapshots(state, [snap]) : state
-  const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, routeId)
-  if (!detail) return null
-
+  const poolId = catalogDetail.row.id
   // Hero / quick-stats / cashflow are preloaded on the page (preloadQuery) and merged
   // via applyPoolPreloadedOverlays — do not HTTP-fetch those queries here (C03).
+  // The snapshot rides in the same batch: every key is the catalog pool id, so waiting for
+  // it first only added a Convex round trip to every pool detail SSR.
   const [
+    snap,
     transactions,
     risk,
     content,
@@ -320,15 +318,20 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     siloedMarket,
     contractAddresses,
   ] = await Promise.all([
-    fetchRecentTransactions("pool", detail.row.id),
-    fetchRisk("pool", detail.row.id),
-    fetchContent("pool", detail.row.id),
-    fetchBorrowRiskParameters(detail.row.id),
-    fetchBorrowPoolBorrowables(detail.row.id),
-    fetchBorrowLiquidationRisk(detail.row.id),
-    fetchBorrowMarket(detail.row.id),
-    fetchPoolContractAddresses(detail.row.id),
+    fetchConvexMarketSnapshot("pool", poolId),
+    fetchRecentTransactions("pool", poolId),
+    fetchRisk("pool", poolId),
+    fetchContent("pool", poolId),
+    fetchBorrowRiskParameters(poolId),
+    fetchBorrowPoolBorrowables(poolId),
+    fetchBorrowLiquidationRisk(poolId),
+    fetchBorrowMarket(poolId),
+    fetchPoolContractAddresses(poolId),
   ])
+  if (shouldFailClosedWithoutSnapshots(mode, snap ? 1 : 0)) return null
+  const hydratedState = snap ? mergeConvexMarketSnapshots(state, [snap]) : state
+  const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, routeId)
+  if (!detail) return null
   // Capacity labels are now sourced solely from borrowRiskParameters (Convex-seeded
   // via borrowPoolCapacityLabels at seed time). Read-time overlay removed — it re-applied
   // the same 1.75×/2.25× heuristic on top of the already-seeded value, silently masking
@@ -398,7 +401,38 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   if (!record) return null
   const slug = record.id
 
-  const snap = await fetchConvexMarketSnapshot("asset", slug)
+  // Hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
+  //
+  // cashflowTrend is NOT fetched: `borrow.cashflow.getRevenueForAsset` re-read the same
+  // `borrowRevenueDaily` window as the preloaded breakdown (Convex billed both at 20.19 MB)
+  // and no component renders the result — the field is written here and read nowhere. The
+  // shape stays on AssetDetail because schema.ts still documents it as an asset-page
+  // surface; restore the fetch here when something actually renders it.
+  // The snapshot rides in the same batch: every key is the catalog slug, so waiting for it
+  // first only added a Convex round trip to every asset detail SSR.
+  const [
+    snap,
+    supplyBorrow,
+    transactions,
+    allocation,
+    risk,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+  ] = await Promise.all([
+    fetchConvexMarketSnapshot("asset", slug),
+    fetchSupplyBorrow(slug),
+    fetchRecentTransactions("asset", slug),
+    fetchAllocation(slug),
+    fetchRisk("asset", slug),
+    fetchContent("asset", slug),
+    fetchBorrowRiskParameters(slug),
+    fetchBorrowInterestRateModel(slug),
+    fetchBorrowMarket(slug),
+    fetchAssetContractAddresses(slug),
+  ])
   if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snap ? 1 : 0)) return null
   const detail = resolveAssetDetailFromState(
     slug,
@@ -412,35 +446,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
       : undefined,
   )
   if (!detail) return null
-
-  // Hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  //
-  // cashflowTrend is NOT fetched: `borrow.cashflow.getRevenueForAsset` re-read the same
-  // `borrowRevenueDaily` window as the preloaded breakdown (Convex billed both at 20.19 MB)
-  // and no component renders the result — the field is written here and read nowhere. The
-  // shape stays on AssetDetail because schema.ts still documents it as an asset-page
-  // surface; restore the fetch here when something actually renders it.
-  const [
-    supplyBorrow,
-    transactions,
-    allocation,
-    risk,
-    content,
-    riskParameters,
-    interestRateModel,
-    siloedMarket,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchSupplyBorrow(slug),
-    fetchRecentTransactions("asset", slug),
-    fetchAllocation(slug),
-    fetchRisk("asset", slug),
-    fetchContent("asset", slug),
-    fetchBorrowRiskParameters(slug),
-    fetchBorrowInterestRateModel(slug),
-    fetchBorrowMarket(slug),
-    fetchAssetContractAddresses(slug),
-  ])
 
   const historicalUtilization = deriveHistoricalUtilization(supplyBorrow?.utilization)
 

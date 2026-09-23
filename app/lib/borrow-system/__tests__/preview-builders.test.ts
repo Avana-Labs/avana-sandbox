@@ -4,14 +4,12 @@ import {
   parseFixed,
   simulateBorrow,
   simulateDeposit,
-  simulateLiquidation,
   simulateRepay,
   simulateWithdraw,
 } from "@/app/lib/credit-engine"
 import {
   buildBorrowPreviewModel,
   buildDepositPreviewModel,
-  buildLiquidationPreviewModel,
   buildRepayPreviewModel,
   buildWithdrawPreviewModel,
 } from "@/app/lib/borrow-system/preview-builders"
@@ -93,25 +91,5 @@ describe("borrow preview builders", () => {
         ? null
         : Number.parseFloat(formatFixed(simulation.after.metrics.healthFactorWad, 18)),
     )
-  })
-
-  it("matches engine liquidation simulations without mutating source state", () => {
-    const state = makeExampleBorrowSystemState()
-    state.accounts["wallet-1"]!.debtPositions[0]!.principalBorrowedUsd6 = parseFixed("18000", 6)
-    state.accounts["wallet-1"]!.debtPositions[0]!.debtSharesUsd6 = parseFixed("18000", 6)
-    const beforeDebt = state.accounts["wallet-1"]!.debtPositions[0]!.debtSharesUsd6
-
-    const model = buildLiquidationPreviewModel(state, "wallet-1", "wallet-1:weth-usdc", EXAMPLE_WALLET_1_DEBT_ID, 2000)
-    const simulation = simulateLiquidation(state, {
-      type: "liquidate",
-      walletId: "wallet-1",
-      positionId: "wallet-1:weth-usdc",
-      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
-      repayAmountUsd6: parseFixed("2000", 6),
-    })
-
-    expect(model.allowed).toBe(simulation.allowed)
-    expect(model.riskLabel).toBe(simulation.riskLabel)
-    expect(state.accounts["wallet-1"]!.debtPositions[0]!.debtSharesUsd6).toBe(beforeDebt)
   })
 })

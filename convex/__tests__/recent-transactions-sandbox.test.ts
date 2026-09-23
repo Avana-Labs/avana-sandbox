@@ -419,3 +419,47 @@ describe("detail tables pick up the same recordTransaction rows as the dashboard
     expect(pool.every((row) => row.kind !== "borrow")).toBe(true)
   })
 })
+
+describe("getRecentTransactions reads market-scoped indexes", () => {
+  test("a quiet market keeps its rows when newer activity elsewhere exceeds the scan window", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx: any) => {
+      await insertMarket(ctx, "lend", LEND_SLUG)
+      await insertSandboxTx(ctx, LEND_SLUG, "deposit", "lend", { at: 1_000 })
+      // 450 newer rows on another market: a global newest-400 scan never reached the GHO row.
+      for (let i = 0; i < 450; i++) {
+        await insertSandboxTx(ctx, "busy-market", "deposit", "lend", {
+          at: 2_000 + i,
+          syntheticTxHash: `0xbusy${i}`.padEnd(42, "0"),
+        })
+      }
+    })
+    const rows = await t.query(api.markets.getRecentTransactions, { scope: "lend", slug: LEND_SLUG })
+    expect(rows.filter((row: any) => row.source === "sandbox")).toHaveLength(1)
+  })
+
+  test("a borrow asset page finds debt rows by assetId, including legacy unscoped ids", async () => {
+    const t = convexTest(schema, modules)
+    const SCOPED = "bal-boosted:gho"
+    await t.run(async (ctx: any) => {
+      await insertSandboxTx(ctx, "bal-boosted-sdai-usdc", "borrow", "borrow", {
+        assetId: SCOPED,
+        at: 2_000,
+        syntheticTxHash: "0xscoped".padEnd(42, "0"),
+      })
+      await insertSandboxTx(ctx, "bal-boosted-sdai-usdc", "repay", "borrow", {
+        assetId: "gho",
+        at: 1_000,
+        syntheticTxHash: "0xlegacy".padEnd(42, "0"),
+      })
+      // Another venue's GHO is a different asset and stays off this page.
+      await insertSandboxTx(ctx, "uni-v2-wbtc-weth", "borrow", "borrow", {
+        assetId: "uni-v2:gho",
+        at: 3_000,
+        syntheticTxHash: "0xother".padEnd(42, "0"),
+      })
+    })
+    const rows = await t.query(api.markets.getRecentTransactions, { scope: "asset", slug: SCOPED })
+    expect(rows.map((row: any) => row.kind)).toEqual(["borrow", "repay"])
+  })
+})

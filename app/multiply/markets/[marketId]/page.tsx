@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${detail.hero.name} · Avana Multiply`,
     description: detail.about.description,
     path: `/multiply/markets/${marketId}`,
+    index: true,
     keywords: [detail.hero.name, "leveraged LP strategy", "multiply market"],
   })
 }
@@ -66,7 +67,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
     cashflow: readPreloadedCashflow(cashflowPreload),
     baselinePriceSymbol: detailRaw.row.protocol,
   })
-  const { preloads: heroPreloads, feeds } = heroBundle
+  const { feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `${SITE_URL}/multiply/markets/${marketId}`
   return (
@@ -86,12 +87,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <MultiplyMarketDetailClientShell
-        detail={detailWithFeeds}
-        heroPreloads={heroPreloads}
-        quickStatsPreload={quickStatsPreload}
-        cashflowPreload={cashflowPreload}
-      />
+      <MultiplyMarketDetailClientShell detail={detailWithFeeds} />
     </>
   )
 }

@@ -42,7 +42,8 @@ export type DurableSwapTransaction = {
   at: number
 }
 
-function createInitialSwapSystemState(walletId: string): SwapSystemState {
+function createInitialSwapSystemState(walletId: string, seedDemoBalances: boolean): SwapSystemState {
+  if (!seedDemoBalances) return { balances: [], allowances: {}, transactions: [] }
   const seededBalances = DEMO_SWAP_BALANCES.filter((balance) => balance.walletId === "demo-wallet").map((balance) => ({
     ...balance,
     id: balance.id.replace("demo-wallet", walletId),
@@ -62,9 +63,13 @@ export function useSwapSession({
   persistTransaction,
   serverGetQuote,
   remoteTransactions,
+  seedDemoBalances = true,
 }: {
   walletId: string
   persistState?: boolean
+  /** Seed the local-test demo balances. False for Convex sessions: balances come only from Convex
+   *  (none for a guest). */
+  seedDemoBalances?: boolean
   /**
    * Durable server persistence for an executed swap (Convex mode), called after the local adapter
    * applies it. Failures are swallowed: the local session already reflects the swap.
@@ -81,7 +86,10 @@ export function useSwapSession({
    */
   remoteTransactions?: DurableSwapTransaction[]
 }) {
-  const seededState = useMemo(() => createInitialSwapSystemState(walletId), [walletId])
+  const seededState = useMemo(
+    () => createInitialSwapSystemState(walletId, seedDemoBalances),
+    [seedDemoBalances, walletId],
+  )
   const [state, setState] = useState<SwapSystemState>(seededState)
   const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const stateRef = useRef(state)

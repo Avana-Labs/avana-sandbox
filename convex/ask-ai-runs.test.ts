@@ -3,6 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import { api } from "./_generated/api"
 import schema from "./schema"
+import * as askAiRunsModule from "./askAiRuns"
 
 const modules = import.meta.glob("./**/*.*s")
 
@@ -14,12 +15,11 @@ const riskWidget = {
   riskLevel: "low",
 }
 
-describe("askAiRuns", () => {
-  test("records a typed mode-run and reads it back for the owner", async () => {
-    const t = convexTest(schema, modules)
-    const owner = t.withIdentity({ subject: "owner-1" })
-    const runId = await owner.mutation(api.askAiRuns.record, {
-      threadId: "thread-1",
+function seedRun(t: ReturnType<typeof convexTest>, ownerSubject: string, threadId?: string) {
+  return t.run((ctx) =>
+    ctx.db.insert("askAiRuns", {
+      ownerSubject,
+      threadId,
       mode: "risk",
       queryText: "am I safe?",
       snapshotId: "snap_abc",
@@ -27,56 +27,35 @@ describe("askAiRuns", () => {
       narrative: "",
       widgets: [riskWidget],
       actions: [],
-    })
-    const run = await owner.query(api.askAiRuns.get, { runId })
+      createdAt: 1_700_000_000_000,
+    }),
+  )
+}
+
+describe("askAiRuns", () => {
+  test("exposes no public writer", () => {
+    expect((askAiRunsModule as unknown as Record<string, unknown>).record).toBeUndefined()
+  })
+
+  test("reads a run back for its owner", async () => {
+    const t = convexTest(schema, modules)
+    const runId = await seedRun(t, "owner-1", "thread-1")
+    const run = await t.withIdentity({ subject: "owner-1" }).query(api.askAiRuns.get, { runId })
     expect(run).toMatchObject({ mode: "risk", snapshotId: "snap_abc", ownerSubject: "owner-1" })
     expect(run?.widgets).toHaveLength(1)
   })
 
-  test("rejects an unknown widget discriminant at the write boundary", async () => {
-    const t = convexTest(schema, modules)
-    const owner = t.withIdentity({ subject: "owner-1" })
-    await expect(
-      owner.mutation(api.askAiRuns.record, {
-        mode: "risk",
-        queryText: "x",
-        snapshotId: "s",
-        asOf: 1,
-        narrative: "",
-        widgets: [{ type: "bogus" }],
-        actions: [],
-      }),
-    ).rejects.toThrow(/Unknown Ask AI widget type/)
-  })
-
   test("does not leak another owner's run", async () => {
     const t = convexTest(schema, modules)
-    const owner = t.withIdentity({ subject: "owner-1" })
+    const runId = await seedRun(t, "owner-1", "thread-1")
     const other = t.withIdentity({ subject: "owner-2" })
-    const runId = await owner.mutation(api.askAiRuns.record, {
-      mode: "stress",
-      queryText: "x",
-      snapshotId: "s",
-      asOf: 1,
-      narrative: "",
-      widgets: [],
-      actions: [],
-    })
     expect(await other.query(api.askAiRuns.get, { runId })).toBeNull()
+    expect(await other.query(api.askAiRuns.listByThread, { threadId: "thread-1" })).toEqual([])
   })
 
   test("requires a session", async () => {
     const t = convexTest(schema, modules)
-    await expect(
-      t.mutation(api.askAiRuns.record, {
-        mode: "returns",
-        queryText: "x",
-        snapshotId: "s",
-        asOf: 1,
-        narrative: "",
-        widgets: [],
-        actions: [],
-      }),
-    ).rejects.toThrow(/session required/)
+    const runId = await seedRun(t, "owner-1")
+    await expect(t.query(api.askAiRuns.get, { runId })).rejects.toThrow(/session required/)
   })
 })

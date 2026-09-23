@@ -20,19 +20,8 @@ const PRODUCT_SUCCESS_LABEL: Partial<Record<ActionProduct, string>> = {
   umbrella: "Back to Umbrella",
 }
 
-const VALID_TABS = new Set<DashboardTabKey>(["wallet", "lend", "borrow", "multiply", "referrals", "rewards"])
-
-export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
-  return PRODUCT_TAB[product]
-}
-
 export function dashboardHrefForProduct(product: ActionProduct): string {
   return PRODUCT_SUCCESS_HREF[product] ?? `/dashboard?tab=${PRODUCT_TAB[product]}`
-}
-
-export function parseDashboardTab(value: string | null | undefined): DashboardTabKey | null {
-  if (!value) return null
-  return VALID_TABS.has(value as DashboardTabKey) ? (value as DashboardTabKey) : null
 }
 
 export function successDashboardCtaLabel(product: ActionProduct): string {

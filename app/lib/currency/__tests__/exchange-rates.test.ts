@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { applyLiveRates, exchangeRateFor, hasLiveRates } from "@/app/lib/currency/rates"
+import { applyLiveRates, exchangeRateFor } from "@/app/lib/currency/rates"
 import { currencyContext } from "@/app/lib/currency/format"
 
 describe("live FX overlay (rates.ts)", () => {
   it("overrides the baseline once a live rate is applied, and reflects in the ctx", () => {
     // Baseline for EUR is 0.92; apply a live rate and the resolver + ctx follow it.
     applyLiveRates({ EUR: 0.87 })
-    expect(hasLiveRates()).toBe(true)
     expect(exchangeRateFor("EUR")).toBe(0.87)
     expect(currencyContext("EUR").rate).toBe(0.87)
   })

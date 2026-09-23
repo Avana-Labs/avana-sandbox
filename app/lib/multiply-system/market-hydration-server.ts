@@ -4,6 +4,7 @@ import { api } from "@/convex/_generated/api"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import type { MultiplyTokenParameterRow } from "@/app/lib/multiply-system/read-model"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
+import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
 
 /**
  * Server-side Convex fetchers for the multiply detail page + list. Every fetcher degrades to
@@ -30,7 +31,8 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
     return new ConvexHttpClient(url)
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("convexClient", error)
     return null
   }
 })
@@ -50,7 +52,8 @@ export async function fetchMultiplyMarketSnapshot(slug: string): Promise<Multipl
       supplyApyPct: match.supplyApyPct,
       borrowAprPct: match.borrowAprPct,
     }
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyMarketSnapshot", error)
     return null
   }
 }
@@ -75,7 +78,8 @@ export async function fetchMultiplyMarketSnapshots(): Promise<MultiplyConvexSnap
       supplyApyPct: row.supplyApyPct,
       borrowAprPct: row.borrowAprPct,
     }))
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyMarketSnapshots", error)
     return []
   }
 }
@@ -91,7 +95,8 @@ export async function fetchMultiplyTokenParameters(): Promise<MultiplyTokenParam
   try {
     const rows = await client.query(api.multiply.tokenParameters.listTokens, {})
     return (rows ?? []) as MultiplyTokenParameterRow[]
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyTokenParameters", error)
     return []
   }
 }
@@ -103,7 +108,8 @@ export async function fetchMultiplyRecentTransactions(slug: string) {
   try {
     const rows = await client.query(api.markets.getRecentTransactions, { scope: "multiply", slug })
     return rows.length > 0 ? rows : null
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyRecentTransactions", error)
     return null
   }
 }
@@ -114,7 +120,8 @@ export async function fetchMultiplyRisk(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.multiply.riskAssessment.getRisk, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyRisk", error)
     return null
   }
 }
@@ -125,7 +132,8 @@ export async function fetchMultiplyContent(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.multiply.content.getContent, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyContent", error)
     return null
   }
 }
@@ -136,7 +144,8 @@ export async function fetchMultiplyRiskParameters(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.multiply.riskParameters.getRiskParameters, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyRiskParameters", error)
     return null
   }
 }
@@ -147,7 +156,8 @@ export async function fetchMultiplyLiquidationRisk(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.multiply.liquidationRisk.getLiquidationRisk, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyLiquidationRisk", error)
     return null
   }
 }
@@ -158,7 +168,8 @@ export async function fetchMultiplyMarket(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.multiply.markets.getMarket, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyMarket", error)
     return null
   }
 }
@@ -169,7 +180,8 @@ export async function fetchMultiplySupplyBorrow(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.markets.getMultiplySupplyBorrow, { slug })
-  } catch {
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplySupplyBorrow", error)
     return null
   }
 }

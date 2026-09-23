@@ -87,6 +87,27 @@ describe("SIWE memory-only auth store", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/siwe/token", expect.objectContaining({ method: "POST" }))
   })
 
+  // Convex awaits this token with its socket paused and has no catch: a rejection used to leave
+  // every signed-in query hanging until reload.
+  it("a network failure during refresh resolves to the still-valid token instead of rejecting", async () => {
+    setSiweSession(WALLET)
+    const token = liveJwt("cached")
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(tokenResponse(token))
+    await fetchSiweAccessToken()
+
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+    await expect(fetchSiweAccessToken(true)).resolves.toBe(token)
+    expect(getSiweSession()).toEqual({ wallet: WALLET })
+  })
+
+  it("a server error with no cached token resolves to null and keeps the session", async () => {
+    setSiweSession(WALLET)
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 503, json: async () => ({}) } as Response)
+
+    await expect(fetchSiweAccessToken(true)).resolves.toBeNull()
+    expect(getSiweSession()).toEqual({ wallet: WALLET })
+  })
+
   it("open-gate force-refresh uses /api/siwe/dev-token and keeps the session on cookie 401s", async () => {
     vi.resetModules()
     vi.doMock("@/app/lib/test-mode", () => ({

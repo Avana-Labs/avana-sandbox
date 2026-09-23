@@ -25,6 +25,12 @@ class TokenPricesErrorBoundary extends React.Component<
   }
 }
 
+function samePriceMap(a: Record<string, number>, b: Record<string, number>) {
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  return keys.every((key) => a[key] === b[key])
+}
+
 function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.ReactNode; seed?: Record<string, number> }) {
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
   const providerStatus = useQuery(api.prices.getPriceStatus, {})
@@ -48,6 +54,9 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
   // Start from the server seed (live prices fetched during SSR) and overlay the realtime rows
   // on top when the subscription delivers them — so consumers stay live even while the query is
   // loading or when it never resolves (no realtime client on this route).
+  // The 60s validation tick only matters when a quote crosses its invalid age, so keep the
+  // previous map while the contents are equal; a new identity re-renders every price consumer.
+  const previousMap = React.useRef<Record<string, number> | null>(null)
   const map = React.useMemo(() => {
     const next: Record<string, number> = { ...seed }
     const validated = validatedConvexPriceMap(rows ?? [], validationNow, status?.invalidAfterMs)
@@ -55,11 +64,15 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
       if (!(row.symbol.trim().toLowerCase() in validated)) delete next[priceKey(row.symbol)]
     }
     for (const [symbol, priceUsd] of Object.entries(validated)) next[priceKey(symbol)] = priceUsd
-    return next
+    return previousMap.current && samePriceMap(previousMap.current, next) ? previousMap.current : next
   }, [rows, seed, status?.invalidAfterMs, validationNow])
+  React.useEffect(() => {
+    previousMap.current = map
+  }, [map])
   // Overlay the same seed+live prices onto the module canonical store so the engine + any
   // non-reactive `canonicalPriceUsd` reader also sees the refreshed price (not just the
   // fixture). Effect, not render, to avoid a side-effect during render.
+  const lastCanonical = React.useRef<Record<string, number> | null>(null)
   React.useEffect(() => {
     const merged: Record<string, number> = { ...seed }
     const validated = validatedConvexPriceMap(rows ?? [], validationNow, status?.invalidAfterMs)
@@ -70,7 +83,10 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
       }
     }
     for (const [symbol, priceUsd] of Object.entries(validated)) merged[symbol] = priceUsd
-    if (Object.keys(merged).length > 0) setCanonicalPrices(merged)
+    if (Object.keys(merged).length === 0) return
+    if (lastCanonical.current && samePriceMap(lastCanonical.current, merged)) return
+    lastCanonical.current = merged
+    setCanonicalPrices(merged)
   }, [rows, seed, status?.invalidAfterMs, validationNow])
 
   // Fiat FX rates from the validated Convex layer (convex/fx.ts). Apply them onto the currency

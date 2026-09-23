@@ -61,7 +61,7 @@ import {
   reviewStageTitle,
 } from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
-import { resolveClaimPositions, selectionsFromPositions } from "./borrow-action-selection"
+import { repayUsdForTokenAmount, resolveClaimPositions, selectionsFromPositions } from "./borrow-action-selection"
 
 export function BorrowActionPageClient({
   kind,
@@ -639,14 +639,12 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "repay") {
-      const repayPriceUsd = debtPosition
-        ? usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
-        : 0
-      if (safeAmount <= 0 || !debtPosition || repayPriceUsd <= 0) {
+      const repay = debtPosition ? repayUsdForTokenAmount(session.state, debtPosition.assetId, safeAmount) : null
+      if (safeAmount <= 0 || !debtPosition || !repay) {
         setPreviewUi(null)
         return undefined
       }
-      const repayAmountUsd = safeAmount * repayPriceUsd
+      const { priceUsd: repayPriceUsd, amountUsd: repayAmountUsd } = repay
       const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
       void session
         .previewTransaction(
@@ -927,12 +925,15 @@ export function BorrowActionPageClient({
         })
       } else if (kind === "repay") {
         if (!debtPosition) throw new Error("No debt selected")
+        // Typed amount is a debt-token quantity; the engine repays a USD value.
+        const repay = repayUsdForTokenAmount(session.state, debtPosition.assetId, safeAmount)
+        if (!repay) throw new Error("Missing repay-asset price")
         intent = session.createIntent({
           type: "repay",
           walletId,
           debtPositionId: debtPosition.id,
           assetId: debtPosition.assetId,
-          amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
+          amountUsd6: parseFixed(repay.amountUsd.toFixed(6), 6),
         })
       } else if (kind === "claim") {
         const positions = resolveClaimPositions(session, walletId, marketId)
@@ -1000,9 +1001,9 @@ export function BorrowActionPageClient({
           walletBalanceUsd,
         })
       } else if (kind === "repay" && debtPosition) {
-        const repayPriceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
-        if (repayPriceUsd <= 0) throw new Error("Missing repay-asset price")
-        const repayAmountUsd = safeAmount * repayPriceUsd
+        const repay = repayUsdForTokenAmount(session.state, debtPosition.assetId, safeAmount)
+        if (!repay) throw new Error("Missing repay-asset price")
+        const { priceUsd: repayPriceUsd, amountUsd: repayAmountUsd } = repay
         const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
         executionPreviewUi = mapBorrowRepayPreviewToActionUi(preview, {
           symbol: session.state.assets[debtPosition.assetId]?.symbol ?? "Asset",

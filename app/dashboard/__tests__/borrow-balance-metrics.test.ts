@@ -3,7 +3,6 @@ import { makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/
 import { accrueBorrowSystemState, calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
 import {
   buildBorrowBalanceMetrics,
-  buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
 } from "@/app/dashboard/dashboard-tab-metrics"
 import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
@@ -177,14 +176,5 @@ describe("buildBorrowDashboardMetricsFromSnapshot — Net APY formula", () => {
     // net APY      = (880 − 210) / 6000 * 100 = 11.166...%
     expect(metrics.performance.netApyPct).toBeCloseTo(11.166666, 4)
     expect(metrics.performance.interestOwedUsd).toBeCloseTo(15, 6)
-  })
-
-  it("buildBorrowDashboardMetrics stays aligned with buildBorrowBalanceMetrics", () => {
-    const state = makeExampleBorrowSystemState()
-    const tab = buildBorrowDashboardMetrics(state, "wallet-1", state.now)
-    const balance = buildBorrowBalanceMetrics(state, "wallet-1", state.now)
-    expect(tab.overview.netValueUsd).toBeCloseTo(balance.netValueUsd, 6)
-    expect(tab.performance.netApyPct).toBeCloseTo(balance.netApyPct, 6)
-    expect(tab.performance.interestOwedUsd).toBeCloseTo(balance.interestOwedUsd, 6)
   })
 })

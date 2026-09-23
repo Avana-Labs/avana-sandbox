@@ -715,7 +715,7 @@ export function AskAIPageClient({
   const queueAdapter = useMemo<ExternalThreadQueueAdapter>(
     () => ({
       items: (turnQueue ?? [])
-        // Exclude the turn currently being generated: while beginTurn flips it
+        // Exclude the turn currently being generated: while claimQueuedTurn flips it
         // queued -> running, it is optimistically running (pendingTurn) yet still
         // reads "queued" from the server for a beat, which showed it twice.
         .filter((turn) => turn.status === "queued" && String(turn.id) !== pendingTurn?.id)

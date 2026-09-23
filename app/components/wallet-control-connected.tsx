@@ -55,8 +55,8 @@ export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
         showRef.current = show ?? null
         if (!isConnected) {
           return (
-            <button type="button" onClick={show} className={brand} aria-label={t("Connect")}>
-              {isConnecting ? t("Connecting…") : t("Connect")}
+            <button type="button" onClick={show} className={brand} aria-label={t("Get Started")}>
+              {isConnecting ? t("Connecting…") : t("Get Started")}
             </button>
           )
         }

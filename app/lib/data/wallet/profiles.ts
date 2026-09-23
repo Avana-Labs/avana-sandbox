@@ -1,5 +1,8 @@
 import type { PortfolioWalletProfileRecord } from "@/app/lib/data/providers/portfolio/source"
 
+/** Session id for a visitor with no wallet: empty balances and positions, never persisted. */
+export const GUEST_WALLET_ID = "guest-wallet"
+
 export const WALLET_PROFILES: PortfolioWalletProfileRecord[] = [
   {
     id: "demo-wallet",
@@ -13,6 +16,10 @@ export const WALLET_PROFILES: PortfolioWalletProfileRecord[] = [
   {
     id: "home-demo-wallet",
     walletAddress: "0x000000000000000000000000000000000000ad0e",
+  },
+  {
+    id: GUEST_WALLET_ID,
+    walletAddress: "0x0000000000000000000000000000000000000000",
   },
 ]
 

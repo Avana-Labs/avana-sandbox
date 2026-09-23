@@ -4,7 +4,6 @@
  * client components don't pull in `server-only`.
  */
 
-import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { buildLendMarketDetail, resolveLendMarket } from "./mock"
 import type { LendMarketDetail } from "./types"
 
@@ -20,9 +19,4 @@ export function getLendMarketDetail(id: string): LendMarketDetail | null {
   const market = resolveLendMarket(id)
   if (!market) return null
   return buildLendMarketDetail(market)
-}
-
-/** Every lend market detail — used for warm-up / tests. */
-export function listAllLendMarketDetails(): LendMarketDetail[] {
-  return LEND_MARKET_CATALOG.map((market) => buildLendMarketDetail(market))
 }

@@ -8,6 +8,7 @@ import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/marke
 import { getSiweConvexClient, SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
+import { GUEST_WALLET_ID } from "@/app/lib/data/wallet/profiles"
 import { isPlaywrightTestMode, shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 const loadConvexSessionProvider = () => import("@/app/lib/avana-session/convex-session-provider")
@@ -90,22 +91,31 @@ export function AvanaSessionProviders({ walletId, children }: { walletId?: strin
       </OpenGateConvexProvider>
     )
   }
-  // A signed-in SIWE wallet drives the entire session (positions, seeds, Convex reads);
-  // otherwise keep the explicit / default (demo) wallet so the public demo is unchanged.
-  const effectiveWalletId = isSignedIn && authedWallet ? authedWallet : walletId
+  // A signed-in SIWE wallet drives the entire session (positions, seeds, Convex reads). A guest
+  // gets an empty, non-persisted wallet: live market data from the public Convex reads, no demo
+  // portfolio. An explicit `walletId` keeps its local session for callers that pass one.
   const liveSession = Boolean(hasConvexClient && isSignedIn && authedWallet)
-  // SiweConvexProvider here (this module is only loaded for signed-in / product routes) so
-  // the shared client's Connect + Authenticate fire while this SSR'd tree hydrates — not
-  // after a later lazy gate import. Nested wrappers reuse the same client (no second socket).
+  // SiweConvexProvider here (this module is only loaded for product routes) so the shared
+  // client's Connect + Authenticate fire while this SSR'd tree hydrates — not after a later
+  // lazy gate import. Nested wrappers reuse the same client (no second socket).
   return (
     <SiweConvexProvider>
-      <MarketLiquidityProvider live={liveSession}>
+      <MarketLiquidityProvider live={hasConvexClient}>
         {liveSession && authedWallet ? (
           <Suspense fallback={<LocalSessionFallback walletId={authedWallet}>{children}</LocalSessionFallback>}>
             <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
           </Suspense>
+        ) : walletId ? (
+          <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
         ) : (
-          <AvanaSessionsProvider walletId={effectiveWalletId}>{children}</AvanaSessionsProvider>
+          <AvanaSessionsProvider
+            walletId={GUEST_WALLET_ID}
+            sessionSource="convex"
+            persistLocalState={false}
+            persistUmbrellaState={false}
+          >
+            {children}
+          </AvanaSessionsProvider>
         )}
       </MarketLiquidityProvider>
     </SiweConvexProvider>

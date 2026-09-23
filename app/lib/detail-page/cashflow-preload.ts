@@ -4,8 +4,9 @@ import type { Preloaded } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
 /**
- * Server-side cashflow preload handed to `CashflowCard` via `usePreloadedQuery` (hydrate +
- * subscribe, no client re-fetch). All four product queries share the `{ slug }` args and
+ * Server-side cashflow preload. The page reads it with `readPreloadedCashflow` and merges it
+ * into `detail` on the server; the token is not passed to client components (it would
+ * re-serialize the result into the RSC payload). All four product queries share the `{ slug }` args and
  * return shape, so the pool query's `Preloaded` type stands in for all of them. `null` when
  * no deployment URL is configured.
  */

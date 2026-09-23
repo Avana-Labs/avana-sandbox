@@ -335,11 +335,14 @@ export const getTokenPriceHistory = query({
   handler: async (ctx, { symbol }) => {
     const rows = await ctx.db
       .query("tokenPricesHistory")
-      .withIndex("by_symbol_day", (q) => q.eq("symbol", symbol.toLowerCase()))
+      // Trailing year only: the table gains a row per token per day.
+      .withIndex("by_symbol_day", (q) =>
+        q
+          .eq("symbol", symbol.toLowerCase())
+          .gte("day", new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)),
+      )
       .collect()
-    return rows
-      .map((r) => ({ day: r.day, priceUsd: r.priceUsd }))
-      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+    return rows.map((r) => ({ day: r.day, priceUsd: r.priceUsd }))
   },
 })
 

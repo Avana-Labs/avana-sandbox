@@ -1,9 +1,15 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
-import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import {
+  AvanaSessionsProvider,
+  useAvanaIdentity,
+  useBorrowSessionContext,
+} from "@/app/lib/avana-session/avana-sessions-provider"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+import { repayUsdForTokenAmount } from "@/app/components/action-page/borrow-action-selection"
+import { currentDebtValueUsd6, parseFixed, usd6ToNumber } from "@/app/lib/credit-engine"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 
 const push = vi.fn()
@@ -102,6 +108,84 @@ describe("BorrowActionPageClient", () => {
     expect(screen.getAllByText(/Uniswap.*·\s*0\.30%/).length).toBeGreaterThan(0)
     expect(screen.queryByText("Choose the asset to borrow.")).not.toBeInTheDocument()
     expect(screen.queryByPlaceholderText("Find an asset")).not.toBeInTheDocument()
+  })
+
+  it("submits a repay as token amount × debt price, not the raw token count", async () => {
+    const marketId = "uni-v3-bluechip-weth-usdc"
+    const live: { session?: ReturnType<typeof useBorrowSessionContext>; walletId?: string } = {}
+    function CaptureSession() {
+      live.session = useBorrowSessionContext()
+      live.walletId = useAvanaIdentity().walletId
+      return null
+    }
+    const { rerender } = renderWithProviders(
+      <AvanaSessionsProvider>
+        <CaptureSession />
+      </AvanaSessionsProvider>,
+    )
+    await waitFor(() => expect(live.session).toBeDefined())
+
+    // Open a 0.5 WETH debt against the seeded collateral so the repay asset is priced far above $1.
+    const weth = live.session!.getBorrowableAssetsForMarket(marketId).find((asset) => asset.symbol === "WETH")
+    expect(weth).toBeDefined()
+    const wethPriceUsd = usd6ToNumber(live.session!.state.assets[weth!.id]!.snapshot.priceUsd6)
+    expect(wethPriceUsd).toBeGreaterThan(100)
+    await act(async () => {
+      await live.session!.executeTransaction(
+        live.session!.createIntent({
+          type: "borrow",
+          walletId: live.walletId!,
+          marketId,
+          assetId: weth!.id,
+          amountUsd6: parseFixed((0.5 * wethPriceUsd).toFixed(6), 6),
+        }),
+      )
+    })
+    const debt = live.session!.state.accounts[live.walletId!]!.debtPositions.find(
+      (position) => position.assetId === weth!.id,
+    )
+    expect(debt).toBeDefined()
+
+    rerender(
+      <DisplayPreferencesProvider>
+        <AvanaSessionsProvider>
+          <CaptureSession />
+          <BorrowActionPageClient
+            kind="repay"
+            initialMarketId={marketId}
+            initialDebtId={debt!.id}
+            initialAmount="0.25"
+          />
+        </AvanaSessionsProvider>
+      </DisplayPreferencesProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole("button", { name: "Review" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Repay" })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole("button", { name: "Repay" }))
+    await waitFor(() => expect(screen.getByText("Repay successful")).toBeInTheDocument(), { timeout: 8000 })
+
+    // Repaying 0.25 of a 0.5 WETH debt leaves about half. Submitting the raw token count as USD
+    // repaid $0.25 and left almost the whole debt.
+    const after = live.session!.state.accounts[live.walletId!]!.debtPositions.find(
+      (position) => position.id === debt!.id,
+    )
+    const remainingUsd = after ? usd6ToNumber(currentDebtValueUsd6(after)) : 0
+    expect(remainingUsd).toBeGreaterThan(wethPriceUsd * 0.2)
+    expect(remainingUsd).toBeLessThan(wethPriceUsd * 0.3)
+  })
+
+  it("converts a repay token amount with the debt asset's price and refuses an unpriced asset", () => {
+    const state = {
+      assets: {
+        weth: { snapshot: { priceUsd6: parseFixed("3000", 6) } },
+        dead: { snapshot: { priceUsd6: 0n } },
+      },
+    } as unknown as Parameters<typeof repayUsdForTokenAmount>[0]
+    expect(repayUsdForTokenAmount(state, "weth", 0.5)).toEqual({ priceUsd: 3000, amountUsd: 1500 })
+    expect(repayUsdForTokenAmount(state, "dead", 0.5)).toBeNull()
+    expect(repayUsdForTokenAmount(state, "missing", 0.5)).toBeNull()
   })
 
   it("does not auto-select a debt from a market-only Repay URL", async () => {

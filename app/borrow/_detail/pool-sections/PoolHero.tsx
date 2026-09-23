@@ -4,7 +4,6 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getPoolHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -19,10 +18,10 @@ import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-sessi
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { currentCollateralValueUsd6 } from "@/app/lib/credit-engine"
 import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
 type PoolHeroProps = {
   detail: PoolDetail
-  heroPreloads?: PoolHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -238,7 +237,7 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
       {visual.iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={visual.iconUrl}
+          src={sizedLocalIconSrc(visual.iconUrl, 64)}
           alt=""
           className="size-16 object-contain"
           width={64}

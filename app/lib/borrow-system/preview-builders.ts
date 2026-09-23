@@ -7,7 +7,6 @@ import {
   parseFixed,
   simulateBorrow,
   simulateDeposit,
-  simulateLiquidation,
   simulateRepay,
   simulateWithdraw,
   type BorrowSystemState,
@@ -170,31 +169,6 @@ export function buildWithdrawPreviewModel(
     afterCollateralUsd: fixedToNumber(preview.after.metrics.collateralValueUsd6, 6),
     safePercent,
     warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
-  }
-}
-
-export function buildLiquidationPreviewModel(
-  state: BorrowSystemState,
-  walletId: string,
-  positionId: string,
-  debtPositionId: string | null,
-  amountUsd: number,
-) {
-  const preview = simulateLiquidation(state, {
-    type: "liquidate",
-    walletId,
-    positionId,
-    debtPositionId: debtPositionId ?? undefined,
-    repayAmountUsd6: parseFixed(amountUsd.toFixed(6), 6),
-  })
-
-  return {
-    allowed: preview.allowed,
-    riskLabel: preview.riskLabel,
-    validationErrors: preview.validationErrors,
-    warnings: preview.warnings,
-    beforeBorrowedUsd: fixedToNumber(preview.before.metrics.totalBorrowedUsd6, 6),
-    afterBorrowedUsd: fixedToNumber(preview.after.metrics.totalBorrowedUsd6, 6),
   }
 }
 

@@ -11,6 +11,7 @@ export const metadata: Metadata = buildSeoMetadata({
   title: "Multiply",
   description: "Multiply LP-backed positions.",
   path: "/multiply",
+  index: true,
   keywords: ["multiply LP positions", "leveraged DeFi", "looping strategies", "Aave v4"],
 })
 

@@ -61,19 +61,6 @@ export function useConvexWalletOnboardingSummary(
   }, [state])
 }
 
-export function useConvexWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
-  const balances = useQuery(api.wallet.balances.listBalances, walletId ? { wallet: walletId } : "skip")
-  if (!balances) return balances === undefined ? undefined : []
-  return balances.map((row) => ({
-    id: row.id,
-    walletId: row.walletId,
-    assetId: row.assetId,
-    amount: row.amount,
-    sourceType: "wallet" as const,
-    sourcePositionId: row.sourcePositionId ? String(row.sourcePositionId) : undefined,
-  }))
-}
-
 export function useConvexProductWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
   const buckets = useQuery(api.wallet.productBalances.listForWallet, walletId ? { wallet: walletId } : "skip")
   if (!buckets) return buckets === undefined ? undefined : []

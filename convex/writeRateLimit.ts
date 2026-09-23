@@ -3,7 +3,7 @@
  *
  * `requireSandboxWallet` (convex/sandbox/auth.ts) proves ownership but does NOT bound how fast a
  * wallet may write, so the append-only / state mutations that guard on it alone (onboarding steps,
- * rewards save/claim, askAiRuns.record) had no ceiling on write volume. The high-traffic execution
+ * rewards save/claim) had no ceiling on write volume. The high-traffic execution
  * path (recordTransaction / recordSwap) already caps itself at MAX_TX_PER_HOUR, and umbrella /
  * liquidation carry their own hourly caps — this fills the gap for the rest.
  *

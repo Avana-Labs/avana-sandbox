@@ -4,8 +4,9 @@ import type { Preloaded } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
 /**
- * Server-side `getQuickStats` preload handed to `QuickStatsGrid` via `usePreloadedQuery`
- * (hydrate + subscribe, no client re-fetch). `null` with no deployment URL (CI/Lighthouse),
+ * Server-side `getQuickStats` preload. The page reads it with `readPreloadedQuickStats` and
+ * merges it into `detail` on the server; the token is not passed to client components (it
+ * would re-serialize the result into the RSC payload). `null` with no deployment URL (CI/Lighthouse),
  * so the grid falls back to the server-built static stats.
  */
 type QuickStatsScope = "asset" | "pool" | "lend" | "multiply"

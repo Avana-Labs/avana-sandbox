@@ -389,9 +389,7 @@ function LoanAssetsSection({
                 onClick={() => toggleSort("asset")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "asset"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "asset" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("ASSET")}</span>
@@ -404,7 +402,7 @@ function LoanAssetsSection({
                 onClick={() => toggleSort("apy")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("BORROW APY")}</span>
@@ -419,7 +417,7 @@ function LoanAssetsSection({
                   "flex items-center gap-2 transition-colors",
                   sortKey === "borrows"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("TOTAL BORROWS")}</span>
@@ -434,14 +432,16 @@ function LoanAssetsSection({
                   "flex w-full items-center gap-2 transition-colors",
                   sortKey === "liquidity"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("AVAILABLE")}</span>
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <span className="sr-only">{t("Quick actions")}</span>
+            </th>
           </tr>
         </thead>
 
@@ -630,7 +630,9 @@ function AssetsSection({
                 <th className="w-20 pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   7D
                 </th>
-                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <span className="sr-only">{t("Quick actions")}</span>
+                </th>
               </tr>
             </thead>
             <tbody>

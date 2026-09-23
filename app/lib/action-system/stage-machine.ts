@@ -1,76 +1,8 @@
 import type { ActionStage } from "./contracts"
 import { blockedCtaLabel } from "./blocked-ui"
 
-type ActionStageEvent =
-  | "continue"
-  | "review"
-  | "submit"
-  | "allowance_complete"
-  | "signed"
-  | "confirmed"
-  | "success"
-  | "error"
-  | "reset"
-  | "back"
-
-export function nextActionStage(stage: ActionStage, event: ActionStageEvent): ActionStage {
-  switch (stage) {
-    case "select":
-      if (event === "continue") return "configure"
-      return stage
-    case "configure":
-      if (event === "review") return "review"
-      if (event === "back" || event === "reset") return "select"
-      return stage
-    case "review":
-      if (event === "submit") return "wallet_sign"
-      if (event === "back" || event === "reset") return "configure"
-      return stage
-    case "approve_allowance":
-      if (event === "allowance_complete") return "wallet_sign"
-      if (event === "error") return "error"
-      if (event === "back") return "review"
-      return stage
-    case "wallet_sign":
-      if (event === "signed") return "processing"
-      if (event === "error") return "error"
-      if (event === "back") return "review"
-      return stage
-    case "processing":
-      if (event === "submit") return "submitted"
-      if (event === "error") return "error"
-      return stage
-    case "submitted":
-      if (event === "confirmed") return "confirmed"
-      if (event === "error") return "error"
-      return stage
-    case "confirmed":
-      if (event === "continue") return "refreshing_position"
-      if (event === "error") return "error"
-      return stage
-    case "refreshing_position":
-      if (event === "continue") return "reconciled"
-      if (event === "error") return "error"
-      return stage
-    case "reconciled":
-      if (event === "success") return "success"
-      if (event === "error") return "error"
-      return stage
-    case "success":
-    case "error":
-      if (event === "reset") return "configure"
-      return stage
-    default:
-      return stage
-  }
-}
-
 export function isConfigureVisibleStage(stage: ActionStage) {
   return stage === "configure" || stage === "error"
-}
-
-export function isReviewStage(stage: ActionStage) {
-  return stage === "review"
 }
 
 export function isProcessingStage(stage: ActionStage) {

@@ -22,9 +22,6 @@ export function formatApy(value: number): string {
   return formatPercent(value, { dp: 2 })
 }
 
-/** Alias — APR shares the asset-APY 2dp convention. */
-export const formatApr = formatApy
-
 /** Canonical exact USD display (currency-aware). */
 export const formatUsd = formatUsdExact
 

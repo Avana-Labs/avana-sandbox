@@ -1776,6 +1776,12 @@ const dict: TranslationDictionary = {
   "Support request": "サポート依頼",
   "If something looks off, send the details and our team can help you triage the issue.":
     "おかしなものがあれば詳細を送ってください。チームが問題の切り分けをお手伝いします。",
+  "Complete onboarding": "オンボーディングを完了",
+  "Get Started": "はじめる",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "このネットワークからの新しい Ask AI セッションが多すぎます。後でもう一度お試しください。",
+  "Ask AI is temporarily unavailable. Try again in a moment.":
+    "Ask AI は一時的に利用できません。しばらくしてからもう一度お試しください。",
 }
 
 export default dict

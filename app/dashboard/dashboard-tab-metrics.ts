@@ -14,7 +14,7 @@ type DashboardOverviewMetrics = {
   riskPremiumPct: number
 }
 
-export type DashboardPerformanceMetrics = {
+type DashboardPerformanceMetrics = {
   poolCollateralUsd: number
   netApyPct: number
   interestEarnedUsd: number
@@ -126,31 +126,6 @@ export function buildBorrowDashboardMetricsFromSnapshot(
   }
 }
 
-export function buildBorrowDashboardMetrics(
-  state: BorrowSystemState,
-  walletId: string,
-  now: number = Date.now(),
-): DashboardTabMetrics {
-  const balance = buildBorrowBalanceMetrics(state, walletId, now)
-  const accrued = accrueBorrowSystemState(state, now)
-  const metrics = calculateCreditMetrics(accrued, walletId)
-
-  return {
-    overview: {
-      netValueUsd: balance.netValueUsd,
-      totalBorrowedUsd: balance.totalBorrowedUsd,
-      liquidationBufferUsd: balance.liquidationBufferUsd ?? 0,
-      riskPremiumPct: wadToPct(metrics.riskPremiumWad),
-    },
-    performance: {
-      poolCollateralUsd: balance.collateralValueUsd,
-      netApyPct: balance.netApyPct,
-      interestEarnedUsd: usd6ToNumber(metrics.interestEarnedUsd6),
-      interestOwedUsd: balance.interestOwedUsd,
-    },
-  }
-}
-
 /**
  * Single aggregation pass over the credit engine for the wallet's Borrow Balance.
  * Available to Borrow uses collateral-factor credit limit − debt (protocol capacity),
@@ -210,42 +185,6 @@ function weightedAverage(values: Array<{ weight: number; value: number }>) {
   const totalWeight = values.reduce((sum, entry) => sum + entry.weight, 0)
   if (totalWeight <= 0) return 0
   return values.reduce((sum, entry) => sum + entry.weight * entry.value, 0) / totalWeight
-}
-
-export function buildMultiplyDashboardMetrics(
-  state: MultiplySystemState,
-  walletId: string,
-  tabData: PortfolioMultiplyTabData,
-): DashboardTabMetrics {
-  const balance = buildMultiplyBalanceMetrics(state, walletId, tabData)
-
-  const positions = Object.values(state.positions).filter((position) => position.walletId === walletId)
-  let interestEarnedUsd = 0
-  let interestOwedUsd = 0
-
-  for (const position of positions) {
-    const market = state.markets[position.marketId]
-    if (!market) continue
-    const elapsedMs = Math.max(0, state.now - position.openedAt)
-    const elapsedYears = elapsedMs / YEAR_MS
-    interestEarnedUsd += position.collateralValueUsd * market.economics.supplyApy * elapsedYears
-    interestOwedUsd += position.debtValueUsd * market.economics.borrowApy * elapsedYears
-  }
-
-  return {
-    overview: {
-      netValueUsd: balance.netValueUsd,
-      totalBorrowedUsd: balance.totalBorrowedUsd,
-      liquidationBufferUsd: balance.liquidationBufferUsd,
-      riskPremiumPct: balance.riskPremiumPct,
-    },
-    performance: {
-      poolCollateralUsd: balance.positionValueUsd,
-      netApyPct: balance.netApyPct,
-      interestEarnedUsd,
-      interestOwedUsd,
-    },
-  }
 }
 
 /**

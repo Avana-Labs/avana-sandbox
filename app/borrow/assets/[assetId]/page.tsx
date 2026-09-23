@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${detail.hero.symbol} · Avana Borrow`,
     description: detail.about.description,
     path: `/borrow/assets/${assetId}`,
+    index: true,
     keywords: [detail.hero.symbol, detail.hero.name, "borrow against LP tokens"],
   })
 }
@@ -71,7 +72,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
     cashflow: readPreloadedCashflow(cashflowPreload),
     baselinePriceSymbol: spoke?.baseAssetId ?? detailBase.hero.symbol,
   })
-  const { preloads: heroPreloads, feeds } = heroBundle
+  const { feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `${SITE_URL}/borrow/assets/${assetId}`
   return (
@@ -91,12 +92,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <AssetDetailClient
-        detail={detailWithFeeds}
-        heroPreloads={heroPreloads}
-        quickStatsPreload={quickStatsPreload}
-        cashflowPreload={cashflowPreload}
-      />
+      <AssetDetailClient detail={detailWithFeeds} />
     </>
   )
 }

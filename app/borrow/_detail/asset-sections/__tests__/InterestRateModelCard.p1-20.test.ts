@@ -36,7 +36,7 @@ describe("InterestRateModelCard market params", () => {
     const source = readFileSync(resolve(__dirname, "../InterestRateModelChart.tsx"), "utf8")
     expect(source).toMatch(/onPointerMove/)
     expect(source).toMatch(/interest-rate-model-tooltip/)
-    expect(source).toMatch(/formatPct\(currentUtilization, 2\)/)
+    expect(source).toMatch(/formatPercent\(currentUtilization, \{ dp: 2 \}\)/)
     expect(source).toMatch(/Borrow APY/)
   })
 
