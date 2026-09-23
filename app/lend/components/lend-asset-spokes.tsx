@@ -426,7 +426,7 @@ function AssetSection({
       ) : (
         <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
           {!isDesktop ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
                   <AssetCardView

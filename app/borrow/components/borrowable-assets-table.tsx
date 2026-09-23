@@ -72,7 +72,7 @@ export function BorrowableAssetsPanel({ rows, onBorrow, onViewMarket }: Borrowab
         <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
       </div>
 
-      <ul className="space-y-2 md:hidden">
+      <ul className="space-y-3 md:hidden">
         {rows.map((asset, index) => (
           <BorrowableMobileCardRow
             key={asset.id}

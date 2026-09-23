@@ -248,7 +248,7 @@ export function DebtsPanel({
             </ScrollableTable>
           </DesktopTableSurface>
 
-          <ul className="space-y-5 md:hidden">
+          <ul className="space-y-3 md:hidden">
             {rows.map((row, index) => {
               const rowKey = row.id ?? `${row.pool.id}-${index}`
               return (

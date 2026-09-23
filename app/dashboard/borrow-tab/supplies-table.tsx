@@ -232,7 +232,7 @@ export function SuppliesPanel({
             </ScrollableTable>
           </DesktopTableSurface>
 
-          <ul className="space-y-5 md:hidden">
+          <ul className="space-y-3 md:hidden">
             {rows.map((row) => {
               const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
                 ReturnType<typeof homeVisualToBorrowVisual>,
