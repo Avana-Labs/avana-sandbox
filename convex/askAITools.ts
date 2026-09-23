@@ -191,6 +191,13 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       borrowNetUsd: netUsd(borrow),
       multiplyNetUsd: netUsd(multiplyRows),
       liquidNetUsd: netUsd(liquid),
+      // These are the exact component values used by the canonical Net Value
+      // calculation below. The older *NetUsd fields intentionally remain as
+      // raw product totals for callers that need gross product accounting.
+      lendNetValueUsd: netUsd(lendForNetValue),
+      borrowNetValueUsd: netUsd(borrowForNetValue),
+      multiplyNetValueUsd: netUsd(multiplyRows),
+      liquidNetValueUsd: netUsd(liquid),
       // Canonical Net Value, matching the dashboard hero (aggregateNetValueUsd): signed sum of
       // liquid + lend + borrow + multiply with debt negative. Umbrella is EXCLUDED there, so it
       // is excluded here too and reported separately as umbrellaUsd.
@@ -620,6 +627,18 @@ async function readAskAISimulateBorrow(
     maxLtvPct: market.maxLtvPct,
   })
   const days = Math.min(Math.max(projectionDays ?? 365, 1), 3_650)
+  const totalInterest =
+    typeof pool?.pairAprPct === "number"
+      ? calculateBorrowProjection({
+          debtUsd: simulation.projected.debtValueUsd,
+          borrowAprPct: pool.pairAprPct,
+          days,
+        })
+      : null
+  const incrementalInterest =
+    typeof pool?.pairAprPct === "number"
+      ? calculateBorrowProjection({ debtUsd: additionalBorrowAmount, borrowAprPct: pool.pairAprPct, days })
+      : null
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
@@ -627,18 +646,19 @@ async function readAskAISimulateBorrow(
     borrowAsset: borrowAsset.trim().toUpperCase(),
     additionalBorrowAmount,
     simulation,
-    // Projected on the debt the position would carry AFTER the new borrow.
-    interestProjection:
-      typeof pool?.pairAprPct === "number"
-        ? {
-            ...calculateBorrowProjection({
-              debtUsd: simulation.projected.debtValueUsd,
-              borrowAprPct: pool.pairAprPct,
-              days,
-            }),
-            onDebtUsd: simulation.projected.debtValueUsd,
-          }
-        : { unavailableReason: "No borrow rate is published for this market", days },
+    interestProjection: totalInterest
+      ? {
+          borrowAprPct: totalInterest.borrowAprPct,
+          days: totalInterest.days,
+          // Keep the legacy field for callers that already consume it; the
+          // explicit names below remove the ambiguity for Ask AI answers.
+          projectedInterestUsd: totalInterest.projectedInterestUsd,
+          totalProjectedInterestUsd: totalInterest.projectedInterestUsd,
+          incrementalInterestUsd: incrementalInterest?.projectedInterestUsd ?? null,
+          onDebtUsd: simulation.projected.debtValueUsd,
+          onAdditionalBorrowUsd: additionalBorrowAmount,
+        }
+      : { unavailableReason: "No borrow rate is published for this market", days },
     asOf: position.lastUpdatedAt,
   }
 }

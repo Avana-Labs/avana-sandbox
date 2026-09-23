@@ -27,7 +27,7 @@ import { buildAaveCard } from "./components/ask-ai-aave-card"
 import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
 import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
 import { askAiModeRunsEnabled } from "@/app/lib/ask-ai/config"
-import type { AskAiRun } from "@/app/lib/ask-ai/mode-run"
+import { shouldBuildModeRunForTurn, type AskAiRun } from "@/app/lib/ask-ai/mode-run"
 
 type PendingTurn = {
   id: string
@@ -154,6 +154,42 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
     case "portfolio": {
       const t = asObject(p.totals)
       const umbrellaFocused = p.focus === "umbrella"
+      const rowsFor = (key: string) => (Array.isArray(p[key]) ? p[key].map(asObject) : null)
+      const amountOf = (row: Record<string, unknown>) => {
+        if (typeof row.valueUsd === "number" && Number.isFinite(row.valueUsd)) return row.valueUsd
+        if (typeof row.valueUsd6 === "string" && Number.isFinite(Number(row.valueUsd6)))
+          return Number(row.valueUsd6) / 1_000_000
+        return 0
+      }
+      const signedSum = (rows: Record<string, unknown>[]) =>
+        rows.reduce((sum, row) => sum + (row.state === "debt" ? -amountOf(row) : amountOf(row)), 0)
+      const rawLend = rowsFor("lend")
+      const rawBorrow = rowsFor("borrow")
+      const rawMultiply = rowsFor("multiply")
+      const rawLiquid = rowsFor("liquid")
+      const liquidAssetIds = new Set((rawLiquid ?? []).map((row) => String(row.assetId ?? "")))
+      const canonicalFromRows = {
+        lend:
+          rawLend == null
+            ? undefined
+            : signedSum(
+                rawLend.filter((row) => !(row.state === "available" && liquidAssetIds.has(String(row.assetId ?? "")))),
+              ),
+        borrow:
+          rawBorrow == null
+            ? undefined
+            : signedSum(
+                rawBorrow.filter(
+                  (row) =>
+                    !(
+                      row.state === "poolAvailable" &&
+                      liquidAssetIds.has(String(row.poolId ?? row.assetId ?? row.marketId ?? ""))
+                    ),
+                ),
+              ),
+        multiply: rawMultiply == null ? undefined : signedSum(rawMultiply.filter((row) => row.state !== "collateral")),
+        liquid: rawLiquid == null ? undefined : signedSum(rawLiquid),
+      }
       const productRows = (
         umbrellaFocused
           ? []
@@ -161,10 +197,13 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
               // Equity, not gross exposure, so these rows add up to the Net
               // value headline. `*Usd` counts debt as an asset (see the
               // netUsd note in convex/askAITools.ts).
-              ["Lend", usd(t.lendNetUsd ?? t.lendUsd)],
-              ["Borrow", usd(t.borrowNetUsd ?? t.borrowUsd)],
-              ["Multiply", usd(t.multiplyNetUsd ?? t.multiplyUsd)],
-              ["Liquid", usd(t.liquidNetUsd ?? t.liquidUsd)],
+              ["Lend", usd(t.lendNetValueUsd ?? canonicalFromRows.lend ?? t.lendNetUsd ?? t.lendUsd)],
+              ["Borrow", usd(t.borrowNetValueUsd ?? canonicalFromRows.borrow ?? t.borrowNetUsd ?? t.borrowUsd)],
+              [
+                "Multiply",
+                usd(t.multiplyNetValueUsd ?? canonicalFromRows.multiply ?? t.multiplyNetUsd ?? t.multiplyUsd),
+              ],
+              ["Liquid", usd(t.liquidNetValueUsd ?? canonicalFromRows.liquid ?? t.liquidNetUsd ?? t.liquidUsd)],
             ]
       ).flatMap(([product, value], index) =>
         value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value, "", ""] }] : [],
@@ -260,6 +299,8 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
       const s = asObject(p.simulation)
       const cur = asObject(s.current)
       const proj = asObject(s.projected)
+      const interest = asObject(p.interestProjection)
+      const interestDays = typeof interest.days === "number" ? ` (${interest.days}d)` : ""
       // Lead with the outcome, not the amount the user already named.
       return compact("position_risk", "Borrow simulation", [
         metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
@@ -267,6 +308,8 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
         metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
         metricOf("Remaining capacity", usd(s.remainingBorrowCapacityUsd)),
         metricOf("Additional borrow", usd(p.additionalBorrowAmount)),
+        metricOf(`Interest on additional borrow${interestDays}`, usd(interest.incrementalInterestUsd)),
+        metricOf(`Interest on total post-borrow debt${interestDays}`, usd(interest.totalProjectedInterestUsd)),
       ])
     }
     case "stress_position": {
@@ -445,7 +488,8 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
   }
   // Deterministic mode-run cards render only when the flag is on, so a stray persisted
   // run can never surface in the default experience.
-  if (rich?.modeRun && askAiModeRunsEnabled()) parts.push({ type: "data", name: "mode-run", data: rich.modeRun })
+  if (rich?.modeRun && askAiModeRunsEnabled() && shouldBuildModeRunForTurn(rich.modeRun.queryText))
+    parts.push({ type: "data", name: "mode-run", data: rich.modeRun })
   return parts
 }
 

@@ -65,6 +65,21 @@ describe("Ask AI authenticated portfolio tools", () => {
         createdAt: 1,
       }),
     )
+    await t.run(async (ctx) =>
+      ctx.db.insert("pools", {
+        slug: "eth-usdc",
+        name: "ETH / USDC",
+        venue: "Uniswap v3",
+        category: "v3",
+        visuals: [
+          { symbol: "ETH", shortLabel: "ETH", bgClassName: "", textClassName: "" },
+          { symbol: "USDC", shortLabel: "USDC", bgClassName: "", textClassName: "" },
+        ],
+        maxLtvPct: 55,
+        pairAprPct: 5,
+        createdAt: 1,
+      }),
+    )
     const asA = t.withIdentity({ subject: WALLET_A })
 
     await expect(
@@ -80,6 +95,14 @@ describe("Ask AI authenticated portfolio tools", () => {
         current: { debtValueUsd: 3_500, ltv: 0.35 },
         projected: { debtValueUsd: 4_500, ltv: 0.45 },
         remainingBorrowCapacityUsd: 1_000,
+      },
+      interestProjection: {
+        borrowAprPct: 5,
+        days: 365,
+        incrementalInterestUsd: 50,
+        totalProjectedInterestUsd: 225,
+        onAdditionalBorrowUsd: 1_000,
+        onDebtUsd: 4_500,
       },
     })
     await expect(t.run(async (ctx) => ctx.db.get(positionId))).resolves.toMatchObject({ debtValueUsd: 3_500 })

@@ -56,13 +56,19 @@ describe("AskAiRunCards", () => {
     expect(screen.getAllByText(/Liquidated/).length).toBeGreaterThan(0)
   })
 
-  it("shows an em dash for unavailable fee/carry numbers instead of a fake value", () => {
+  it("omits fee and carry cards when their inputs are unavailable", () => {
     const noFee = buildPositionContext(
-      { ...base, lpFeeApr7dPct: undefined, constituents: [{ symbol: "ETH", weight: 1 }] },
+      { ...base, lpFeeApr7dPct: undefined, borrowApyPct: undefined, constituents: [{ symbol: "ETH", weight: 1 }] },
       1,
     )
     render(<AskAiRunCards run={buildReturnsRun(noFee, opts)} />)
-    // Net carry per-day is null → rendered as "—"
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0)
+    expect(screen.queryByText("Net carry")).not.toBeInTheDocument()
+    expect(screen.queryByText("Fees vs interest per day")).not.toBeInTheDocument()
+  })
+
+  it("omits an empty collateral table", () => {
+    const noLegs = buildPositionContext({ ...base, constituents: [] }, 1)
+    render(<AskAiRunCards run={buildRiskRun(noLegs, opts)} />)
+    expect(screen.queryByText("Collateral breakdown")).not.toBeInTheDocument()
   })
 })

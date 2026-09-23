@@ -115,12 +115,12 @@ describe("buildModeRunForTurn (flag-gated per-turn trigger)", () => {
     delete process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS
   })
 
-  test("classifies a mode prompt and builds a run for the wallet's primary position when enabled", async () => {
+  test("classifies a mode prompt and builds a run for the wallet's single position when enabled", async () => {
     process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
     const t = convexTest(schema, modules)
-    await seed(t, WALLET_A)
+    const positionId = await seed(t, WALLET_A)
     const turnId = await seedTurn(t, WALLET_A, "am I safe?")
-    const run = await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?" })
+    const run = await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?", positionId })
     expect(run?.mode).toBe("risk")
     expect(run?.widgets.map((w) => w.type)).toContain("risk_summary")
   })
@@ -147,5 +147,66 @@ describe("buildModeRunForTurn (flag-gated per-turn trigger)", () => {
     const t = convexTest(schema, modules)
     const turnId = await seedTurn(t, WALLET_A, "am I safe?")
     expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?" })).toBeNull()
+  })
+})
+
+describe("per-turn mode-run scope", () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS
+  })
+  test("does not read a personal position for a public market question addressed to me", async () => {
+    process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+    const t = convexTest(schema, modules)
+    await seed(t, WALLET_A)
+    const prompt = "Show me the current GHO supply APY"
+    const turnId = await seedTurn(t, WALLET_A, prompt)
+    expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt })).toBeNull()
+  })
+  test("omits the implicit card when two positions could be selected", async () => {
+    process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+    const t = convexTest(schema, modules)
+    const positionId = await seed(t, WALLET_A)
+    await t.run((ctx) =>
+      ctx.db.insert("positions", {
+        wallet: WALLET_A,
+        product: "borrow",
+        marketSlug: "another-market",
+        status: "open",
+        collateralValueUsd: 1_000,
+        debtValueUsd: 900,
+        openedAt: 1,
+        lastUpdatedAt: 2,
+      }),
+    )
+    const prompt = "am I safe?"
+    const turnId = await seedTurn(t, WALLET_A, prompt)
+    expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt })).toBeNull()
+    expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt, positionId })).toMatchObject({
+      mode: "risk",
+    })
+    const foreignPositionId = await t.run((ctx) =>
+      ctx.db.insert("positions", {
+        wallet: WALLET_B,
+        product: "multiply",
+        marketSlug: "eth-usdc",
+        assetId: "ETH",
+        status: "open",
+        collateralValueUsd: 10_000,
+        debtValueUsd: 3_500,
+        openedAt: 1,
+        lastUpdatedAt: 2,
+      }),
+    )
+    expect(
+      await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt, positionId: foreignPositionId }),
+    ).toBeNull()
+    // Explicit position selection remains available and wallet-scoped.
+    expect(
+      await t.withIdentity({ subject: WALLET_A }).query(api.askAiModeRun.buildModeRun, {
+        positionId,
+        mode: "risk",
+        queryText: prompt,
+      }),
+    ).toMatchObject({ walletRequired: false, run: { mode: "risk" } })
   })
 })

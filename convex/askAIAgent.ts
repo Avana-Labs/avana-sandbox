@@ -10,7 +10,8 @@ import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG, askAiModeRunsEnabled } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
-import type { AskAiRun } from "../app/lib/ask-ai/mode-run"
+import { modeRunPositionId, type AskAiRun } from "../app/lib/ask-ai/mode-run"
+import { projectionDaysFromPrompt } from "../app/lib/ask-ai/projection-window"
 import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
 import { searchAvanaKnowledge, searchAvanaKnowledgeTool } from "./askAIRag"
@@ -457,7 +458,7 @@ export const generateTurn = internalAction({
         }
       } else if (route.tools.includes("read_engine_snapshot")) {
         // Resolve the projection window from the prompt rather than spending a model step.
-        const lendProjectionDays = /\bweek\b/i.test(turn.prompt) ? 7 : /\bmonth\b/i.test(turn.prompt) ? 30 : 365
+        const lendProjectionDays = projectionDaysFromPrompt(turn.prompt)
         const payload = await ctx.runQuery(internal.askAITools.engineSnapshotForTurn, {
           turnId: turn.turnId,
           lendProjectionDays,
@@ -739,11 +740,13 @@ export const generateTurn = internalAction({
       // Flag-gated deterministic mode-run. buildModeRunForTurn returns null on any miss, and
       // the try/catch guarantees a mode-run can never break the chat answer.
       let modeRun: AskAiRun | null = null
-      if (askAiModeRunsEnabled()) {
+      const modePositionId = modeRunPositionId(financialResults)
+      if (askAiModeRunsEnabled() && modePositionId) {
         try {
           modeRun = await ctx.runQuery(internal.askAiModeRun.buildModeRunForTurn, {
             turnId: turn.turnId,
             prompt: turn.prompt,
+            positionId: modePositionId,
           })
         } catch {
           modeRun = null

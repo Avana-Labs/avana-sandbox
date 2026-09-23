@@ -104,7 +104,7 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
     }),
     simulate_borrow: createTool({
       description:
-        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus the interest the resulting debt accrues over projectionDays (default 365).",
+        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus separately labelled interest on the additional borrow and interest on the full post-borrow debt over projectionDays (default 365). Never merge those two figures.",
       inputSchema: z.object({
         positionId: z.string().min(1),
         additionalBorrowAmount: z.number().positive().max(1_000_000_000),

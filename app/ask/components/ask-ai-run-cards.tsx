@@ -159,6 +159,7 @@ function Widget({ widget, ...fmt }: { widget: AskAiWidget } & Fmt) {
       )
     }
     case "collateral_breakdown":
+      if (widget.legs.length === 0) return null
       return (
         <SectionCard title={t(COPY.collateralBreakdown)}>
           <div className="overflow-x-auto">
@@ -223,6 +224,7 @@ function Widget({ widget, ...fmt }: { widget: AskAiWidget } & Fmt) {
     }
     case "carry_summary": {
       const c = widget.carry
+      if (c.netCarryPerDayUsd == null && c.projected7dUsd == null && c.projected30dUsd == null) return null
       const rows: ActionMetricRow[] = [
         {
           id: "net-per-day",
@@ -240,6 +242,7 @@ function Widget({ widget, ...fmt }: { widget: AskAiWidget } & Fmt) {
       )
     }
     case "fee_vs_interest":
+      if (widget.feePerDayUsd == null && widget.interestPerDayUsd == null) return null
       return (
         <SectionCard title={t(COPY.feesVsInterest)}>
           <FeeVsInterestBars

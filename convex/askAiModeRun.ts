@@ -11,6 +11,7 @@ import {
   buildStressRun,
   classifyAskAiMode,
   routeAskAiMode,
+  shouldBuildModeRunForTurn,
   type AskAiMode,
   type AskAiRun,
 } from "../app/lib/ask-ai/mode-run"
@@ -91,22 +92,19 @@ export const buildModeRun = query({
   handler: readModeRun,
 })
 
-/** The position a mode-run defaults to for a chat turn: the wallet's first open borrow/multiply position. */
-function pickPrimaryPosition(positions: Doc<"positions">[]): Doc<"positions"> | null {
-  return positions.find((p) => p.status === "open" && (p.product === "borrow" || p.product === "multiply")) ?? null
-}
-
 /**
  * Per-turn mode-run for the agent. Returns null (never throws) whenever the feature is
  * off, the prompt isn't a mode question, the turn has no wallet, or no position/params
  * are available — so a turn without a clear mode simply falls through to the chat answer.
  */
 export const buildModeRunForTurn = internalQuery({
-  args: { turnId: v.id("askAITurns"), prompt: v.string() },
-  handler: async (ctx, { turnId, prompt }): Promise<AskAiRun | null> => {
+  args: { turnId: v.id("askAITurns"), prompt: v.string(), positionId: v.optional(v.string()) },
+  handler: async (ctx, { turnId, prompt, positionId }): Promise<AskAiRun | null> => {
     if (!askAiModeRunsEnabled()) return null
     const mode = classifyAskAiMode(prompt)
     if (!mode) return null
+    if (!shouldBuildModeRunForTurn(prompt)) return null
+    if (!positionId) return null
     const turn = await ctx.db.get(turnId)
     const wallet = turn?.wallet
     if (!wallet) return null
@@ -114,7 +112,10 @@ export const buildModeRunForTurn = internalQuery({
       .query("positions")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect()
-    const position = pickPrimaryPosition(positions)
+    const position = positions.find(
+      (row) =>
+        row._id === positionId && row.status === "open" && (row.product === "borrow" || row.product === "multiply"),
+    )
     if (!position) return null
     // Guard the arithmetic/read path so a malformed row never fails the turn.
     try {
