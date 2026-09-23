@@ -3,7 +3,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
-import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
@@ -13,7 +12,6 @@ import {
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -28,7 +26,6 @@ import {
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
@@ -39,6 +36,7 @@ import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { CapacityFilled } from "@/app/components/capacity-filled"
 
 import {
   TABLE_BODY_ROW,
@@ -198,7 +196,6 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral?: (pool: BorrowPoolRow) => void
 }) {
-  const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
@@ -243,6 +240,9 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CapacityFilled value={pool.capacityFilledPct} />
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.availableUsd)}</span>
         </div>
@@ -264,24 +264,6 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
               {t("Pledge")}
             </Button>
           ) : null}
-          <Button
-            type="button"
-            size="table"
-            variant="table-secondary"
-            className="w-auto"
-            onClick={(event) => {
-              event.stopPropagation()
-              router.push(
-                actionPagePath("borrow", "borrow", {
-                  market: pool.id,
-                  return: `/borrow/markets/${pool.id}`,
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Borrow" />
-            {t("Borrow")}
-          </Button>
         </HoverActionGroup>
       </td>
     </tr>
@@ -302,7 +284,9 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const { t } = useTranslation()
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "supplied">("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "capacityFilled" | "supplied">(
+    "asset",
+  )
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -328,6 +312,8 @@ function CollateralDesktopTable({
           return (a.tvlUsd - b.tvlUsd) * direction
         case "risk":
           return (a.riskPremiumBps - b.riskPremiumBps) * direction
+        case "capacityFilled":
+          return ((a.capacityFilledPct ?? -1) - (b.capacityFilledPct ?? -1)) * direction
         case "supplied":
           return (a.availableUsd - b.availableUsd) * direction
         case "asset":
@@ -343,7 +329,7 @@ function CollateralDesktopTable({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1120px] text-[12px]">
+      <table className="w-full min-w-[1220px] text-[12px]">
         <thead>
           <tr className={TABLE_HEADER_ROW}>
             <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -423,6 +409,21 @@ function CollateralDesktopTable({
             <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
+                onClick={() => toggleSort("capacityFilled")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "capacityFilled"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground dark:text-white/42",
+                )}
+              >
+                <span>{t("CAPACITY FILLED")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
                 onClick={() => toggleSort("supplied")}
                 className={cn(
                   "flex w-full items-center gap-2 transition-colors",
@@ -452,7 +453,7 @@ function CollateralDesktopTable({
           ))}
           {pending.map((row) => (
             <tr key={row.id}>
-              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={8}>
+              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={9}>
                 {row.label}
                 <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
               </td>
@@ -638,7 +639,6 @@ function SpokeMobileSection({
   onBorrowAsset: (asset: BorrowableAsset) => void
   deferContent: boolean
 }) {
-  const router = useRouter()
   // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
@@ -717,6 +717,10 @@ function SpokeMobileSection({
                     ) : null}
                     <MarketMobileStatList className="mt-3">
                       <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
+                      <MarketMobileStatRow
+                        label={t("Capacity Filled")}
+                        value={<CapacityFilled value={pool.capacityFilledPct} />}
+                      />
                       <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
                       <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
                       <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
@@ -732,20 +736,6 @@ function SpokeMobileSection({
                         <ActionIcon label="Pledge" />
                         {t("Pledge")}
                       </MarketMobilePrimaryAction>
-                      <MarketMobileSecondaryAction
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          router.push(
-                            actionPagePath("borrow", "borrow", {
-                              market: pool.id,
-                              return: `/borrow/markets/${pool.id}`,
-                            }),
-                          )
-                        }}
-                      >
-                        <ActionIcon label="Borrow" />
-                        {t("Borrow")}
-                      </MarketMobileSecondaryAction>
                     </MarketMobileActionFooter>
                   </MarketMobileCard>
                 </li>

@@ -69,6 +69,10 @@ describe("borrow list ↔ detail field parity after Convex hydration", () => {
     expect(Number(hydratedPool.snapshot.availableUsd6) / 1e6).toBe(poolSnap.availableUsd)
   })
 
+  it("pool capacity filled matches the detail utilization from borrowed over supplied", () => {
+    expect(poolRow?.capacityFilledPct).toBeCloseTo(poolSnap.utilizationPct, 2)
+  })
+
   it("pool reserveFactorPct is stored on hydrated market for the detail overlay", () => {
     expect(hydratedPool.reserveFactorPct).toBe(poolSnap.reserveFactorPct)
   })

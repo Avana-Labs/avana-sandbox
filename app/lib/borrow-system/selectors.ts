@@ -116,6 +116,12 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
       aprMin: Math.max(0, feeApyPct - 0.6),
       aprMax: feeApyPct + 0.6,
       availableUsd: fixedToNumber(market.snapshot.availableUsd6, 6),
+      capacityFilledPct:
+        market.snapshot.totalLiquidityUsd6 > 0n
+          ? (fixedToNumber(market.snapshot.totalBorrowedUsd6, 6) /
+              fixedToNumber(market.snapshot.totalLiquidityUsd6, 6)) *
+            100
+          : 0,
       riskPremiumBps,
       visuals: toPairVisuals(market.display.visuals.map(visualToUi)),
       // Equal-weight fallback from the display pair until Convex markets carry authoritative
