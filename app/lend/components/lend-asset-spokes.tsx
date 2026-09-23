@@ -547,7 +547,10 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      {/* Names the action column for screen readers (an empty <th> isn't a header). */}
+                      <span className="sr-only">{t("Quick actions")}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody

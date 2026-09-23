@@ -37,17 +37,17 @@ it("loads the asset picker on demand and preserves sell/buy selection across ope
     </AvanaSessionsProvider>,
   )
   expect(loadPicker).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole("button", { name: "Sell asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Sell asset/ }))
   const sellDialog = await screen.findByRole("dialog")
   fireEvent.click(within(sellDialog).getByRole("option", { name: "Ether (ETH)" }))
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Sell asset" })).toHaveTextContent("ETH")
+  expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("ETH")
 
-  fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
   const buyDialog = await screen.findByRole("dialog")
   fireEvent.click(within(buyDialog).getByRole("option", { name: "USD Coin (USDC)" }))
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("USDC")
+  expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("USDC")
   expect(loadPicker).toHaveBeenCalledTimes(1)
 })
 
@@ -59,9 +59,9 @@ it("updates the Buy amount while the authoritative server quote is still pending
     </AvanaSessionsProvider>,
   )
 
-  fireEvent.click(screen.getByRole("button", { name: "Sell asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Sell asset/ }))
   fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "Ether (ETH)" }))
-  fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
   fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "USD Coin (USDC)" }))
   fireEvent.change(screen.getByRole("textbox", { name: "Sell" }), { target: { value: "0.001" } })
 
@@ -81,9 +81,9 @@ it("keeps the indicative Buy amount visible when the server quote fails", async 
     </AvanaSessionsProvider>,
   )
 
-  fireEvent.click(screen.getByRole("button", { name: "Sell asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Sell asset/ }))
   fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "Ether (ETH)" }))
-  fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+  fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
   fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "USD Coin (USDC)" }))
   fireEvent.change(screen.getByRole("textbox", { name: "Sell" }), { target: { value: "0.001" } })
 
@@ -102,4 +102,13 @@ it("sends a guest to the dashboard onboarding instead of reviewing a swap", () =
   const cta = screen.getByTestId("action-footer-primary")
   expect(cta).toHaveTextContent("Connect Wallet")
   expect(cta).toHaveAttribute("href", "/dashboard")
+})
+
+it("names each asset picker with its visible text, so voice control can target it", () => {
+  render(
+    <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
+      <HomeSwapAction />
+    </AvanaSessionsProvider>,
+  )
+  expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveAccessibleName(/^Sell asset:\s*Select Asset$/)
 })

@@ -78,7 +78,7 @@
     --secondary-foreground: 0 0% 17.3%;
 
     --muted: 0 0% 92.2%;
-    --muted-foreground: 0 0% 46.7%; /* #777777 descriptions */
+    --muted-foreground: 0 0% 44%; /* #707070 descriptions: #777 was 4.48:1 on white, under WCAG AA */
     --section-foreground: 0 0% 13.3%; /* #222222 section headers */
     --table-header: 0 0% 96.5%; /* header strip on bright page */
 
@@ -110,6 +110,8 @@
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 8%;
     --brand-soft: 191 100% 95%;
+    /* Brand-tinted small text: the brand cyan is under 3:1 on white, this shade is ~5:1. */
+    --brand-text: 191 100% 29%;
     --brand-soft-foreground: 191 99% 41%;
 
     --radius: 0.75rem;
@@ -196,6 +198,7 @@
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 8%;
     --brand-soft: 191 55% 18%;
+    --brand-text: 191 99% 41%;
     --brand-soft-foreground: 191 99% 41%;
 
     /* Dark elevation: a faint inset top-light hairline gives every raised card a

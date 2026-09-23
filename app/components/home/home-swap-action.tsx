@@ -481,8 +481,8 @@ function HomeSwapAssetField({
             // h-[1em] makes the <input> size to its line box exactly like the borrow tab's
             // amount <div>, so the Sell/Buy cards are the SAME height as the borrow cards and
             // there's no card-size shift when toggling Express tabs. (#9)
-            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] outline-none placeholder:text-muted-foreground/60 ${
-              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
+            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] outline-none placeholder:text-muted-foreground/80 ${
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/80"
             }`}
             placeholder="0"
             aria-label={label}
@@ -491,9 +491,10 @@ function HomeSwapAssetField({
         <button
           type="button"
           onClick={onOpenAssetPicker}
-          aria-label={`${label} asset`}
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium leading-5 text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
+          {/* Accessible name = "Sell asset: <visible text>" so it contains what is on screen. */}
+          <span className="sr-only">{`${label} asset: `}</span>
           {/* Fixed-geometry pill: a size-7 token icon fits inside the stable box so
               it never resizes between "Select Asset" and a picked asset. Mirrors the
               shared ActionAmountCard pill (ASSET_PILL_CLASS) so the box is identical

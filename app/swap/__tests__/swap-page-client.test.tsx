@@ -33,8 +33,8 @@ describe("SwapPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    expect(screen.getByRole("button", { name: "Sell asset" })).toHaveTextContent("Select asset")
-    expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("Select asset")
     expect(screen.getByRole("button", { name: "Select assets" })).toBeDisabled()
   })
 
@@ -73,11 +73,11 @@ describe("SwapPageClient", () => {
   it("searches supported assets in the receive picker", () => {
     renderSwap()
 
-    fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+    fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
     fireEvent.change(screen.getByLabelText("Find an asset"), { target: { value: "chain" } })
     fireEvent.click(screen.getByText("ChainLink Token").closest("button")!)
 
-    expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("LINK")
+    expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("LINK")
   })
 
   it("opens review and confirms native swaps", async () => {
