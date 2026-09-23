@@ -355,9 +355,7 @@ function CollateralDesktopTable({
                 onClick={() => toggleSort("asset")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "asset"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground dark:text-white/42",
+                  sortKey === "asset" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("ASSET")}</span>
@@ -415,9 +413,7 @@ function CollateralDesktopTable({
                 onClick={() => toggleSort("risk")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "risk"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground dark:text-white/42",
+                  sortKey === "risk" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("PREMIUM")}</span>
