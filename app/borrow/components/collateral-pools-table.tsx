@@ -203,8 +203,8 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { t } = useTranslation()
   return (
     <tr className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`} onClick={() => onViewMarket(pool)}>
-      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, tableStickyCell("body"))}>{index + 1}</td>
-      <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body", { afterIndex: true, edge: true }))}>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_BG)}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
             navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
         <Link
@@ -326,8 +326,8 @@ function CollateralDesktopTable({
     <ScrollableTable layout={COLLATERAL_TABLE_LAYOUT}>
       <thead>
         <tr className={TABLE_HEADER_ROW}>
-          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", tableStickyCell("header"))}>#</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header", { afterIndex: true, edge: true }))}>
+          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
             {sortHeader("asset", t("Asset"))}
           </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Fees"))}</th>

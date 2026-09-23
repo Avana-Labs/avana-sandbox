@@ -58,15 +58,15 @@ export const TABLE_ROW_HOVER_LEFT = TABLE_ROW_HOVER_BG
 export const TABLE_ROW_HOVER_RIGHT = TABLE_ROW_HOVER_BG
 
 /**
- * Column kinds shared by every desktop table, with the minimum width (px, padding included)
- * each one needs to show its content without truncating. One kind = one width everywhere, so
- * an APY column on Lend is as wide as the APY column on Multiply.
+ * Column kinds shared by every desktop table, with the width (px, padding included) each one
+ * needs to show its content without truncating. One kind = one width everywhere, so an APY
+ * column on Lend is as wide as the APY column on Multiply.
  */
 export const TABLE_COLUMN_MIN_PX = {
   /** `#` row index. */
   index: 56,
   /** Asset / pool / loop identity (icon + two text lines). Pinned while the rest scrolls. */
-  identity: 240,
+  identity: 264,
   /** Short single value: APY, fees, LTV, leverage, premium. */
   compact: 104,
   /** Token amount over a USD sub-line. */
@@ -74,7 +74,7 @@ export const TABLE_COLUMN_MIN_PX = {
   /** Capacity-filled ring + percentage (header label is the long one). */
   gauge: 164,
   /** One action button. */
-  action: 148,
+  action: 160,
   /** Two action buttons side by side. */
   actions2: 236,
   /** Bare row-open arrow. */
@@ -83,25 +83,61 @@ export const TABLE_COLUMN_MIN_PX = {
 
 export type TableColumnKind = keyof typeof TABLE_COLUMN_MIN_PX
 
+/**
+ * Kinds whose share of the table is taken from a reference width instead of the table's own
+ * mix of columns. Every table on a page shares that reference, so the index, identity, and
+ * action columns (and the pinned divider) land in the same place on every table; only the
+ * data columns in between vary.
+ */
+const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set(["index", "identity", "action", "actions2", "arrow"])
+
+/** Smallest width an anchor column may shrink to before the table scrolls instead. */
+const ANCHOR_FLOOR_PX: Partial<Record<TableColumnKind, number>> = {
+  index: 44,
+  identity: 232,
+  action: 144,
+  actions2: 228,
+  arrow: 56,
+}
+
+/** Market pages' content column (`max-w-[1152px]`). */
+export const MARKET_TABLE_REFERENCE_PX = 1152
+
 export type TableColumnLayout = {
   /** Table min-width in px — the table fits its container above this and scrolls below it. */
   minWidth: number
-  /** Per-column widths as percentages, proportional to each kind's minimum. */
+  /** Per-column `<col>` widths as percentages. */
   widths: string[]
 }
 
 /**
- * Turns an ordered list of column kinds into a `table-fixed` layout. Each column's share is
- * its minimum over the sum of minimums, so at `minWidth` every column is exactly its minimum
- * and wider containers grow all columns evenly (spacing stays consistent across tables).
+ * Turns an ordered list of column kinds into a `table-fixed` layout (percentages only — browsers
+ * ignore `calc()` in column widths). Anchor kinds take `px / referenceWidth` of the table; data
+ * columns split the rest in proportion to their minimums. `minWidth` is the narrowest width at
+ * which every data column still gets its minimum and every anchor its floor.
  */
-export function tableColumnLayout(kinds: readonly TableColumnKind[]): TableColumnLayout {
-  const mins = kinds.map((kind) => TABLE_COLUMN_MIN_PX[kind])
-  const minWidth = mins.reduce((sum, value) => sum + value, 0)
-  return {
-    minWidth,
-    widths: mins.map((value) => `${((value / minWidth) * 100).toFixed(3)}%`),
-  }
+export function tableColumnLayout(
+  kinds: readonly TableColumnKind[],
+  { referenceWidth = MARKET_TABLE_REFERENCE_PX }: { referenceWidth?: number } = {},
+): TableColumnLayout {
+  const anchorShare = (kind: TableColumnKind) => TABLE_COLUMN_MIN_PX[kind] / referenceWidth
+  const anchorTotal = kinds.reduce((sum, kind) => (ANCHOR_KINDS.has(kind) ? sum + anchorShare(kind) : sum), 0)
+  const flexPx = kinds.reduce((sum, kind) => (ANCHOR_KINDS.has(kind) ? sum : sum + TABLE_COLUMN_MIN_PX[kind]), 0)
+  const flexTotal = Math.max(0, 1 - anchorTotal)
+  const shares = kinds.map((kind) =>
+    ANCHOR_KINDS.has(kind) || flexPx === 0
+      ? anchorShare(kind) / (flexPx === 0 ? anchorTotal : 1)
+      : (flexTotal * TABLE_COLUMN_MIN_PX[kind]) / flexPx,
+  )
+  const minWidth = Math.ceil(
+    Math.max(
+      ...kinds.map((kind, index) => {
+        const floor = ANCHOR_KINDS.has(kind) ? (ANCHOR_FLOOR_PX[kind] ?? TABLE_COLUMN_MIN_PX[kind]) : TABLE_COLUMN_MIN_PX[kind]
+        return shares[index] > 0 ? floor / shares[index] : 0
+      }),
+    ),
+  )
+  return { minWidth, widths: shares.map((share) => `${(share * 100).toFixed(3)}%`) }
 }
 
 /** Row action pill: one minimum width so Pledge / Deposit / Borrow / Multiply line up. */
@@ -122,20 +158,9 @@ const TABLE_STICKY_DIVIDER =
   "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border dark:after:bg-white/10"
 
 /**
- * Classes for a pinned cell. `afterIndex` offsets the identity column past a pinned `#`
- * column (scrolling only happens at `minWidth`, where the index column is exactly its
- * minimum); `edge` draws the divider the scrolled columns slide under.
+ * Classes for the pinned identity cell. It sticks at the left edge: a leading `#` column
+ * scrolls away underneath it, then the data columns slide under the divider.
  */
-export function tableStickyCell(
-  part: "header" | "body",
-  { afterIndex = false, edge = false }: { afterIndex?: boolean; edge?: boolean } = {},
-): string {
-  return [
-    part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY,
-    // Literal class (Tailwind can't see interpolated names) — keep in sync with `index` above.
-    afterIndex ? "left-[56px]" : "left-0",
-    edge ? TABLE_STICKY_DIVIDER : "",
-  ]
-    .filter(Boolean)
-    .join(" ")
+export function tableStickyCell(part: "header" | "body"): string {
+  return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 ${TABLE_STICKY_DIVIDER}`
 }

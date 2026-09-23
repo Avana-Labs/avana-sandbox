@@ -6,6 +6,7 @@ import {
   TABLE_CELL_PRIMARY,
   TABLE_COLUMN_MIN_PX,
   TABLE_HEADER_ROW,
+  MARKET_TABLE_REFERENCE_PX,
   tableColumnLayout,
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
@@ -28,25 +29,30 @@ describe("desktop table geometry", () => {
 })
 
 describe("shared column layout", () => {
-  it("sizes each column by its kind so shared columns match across tables", () => {
-    const layout = tableColumnLayout(["index", "identity", "compact", "gauge", "action"])
-    expect(layout.minWidth).toBe(
-      TABLE_COLUMN_MIN_PX.index +
-        TABLE_COLUMN_MIN_PX.identity +
-        TABLE_COLUMN_MIN_PX.compact +
-        TABLE_COLUMN_MIN_PX.gauge +
-        TABLE_COLUMN_MIN_PX.action,
-    )
-    const total = layout.widths.reduce((sum, width) => sum + Number.parseFloat(width), 0)
-    expect(total).toBeCloseTo(100, 1)
-    // At min width every column is exactly its kind's minimum.
-    expect((Number.parseFloat(layout.widths[1]) / 100) * layout.minWidth).toBeCloseTo(TABLE_COLUMN_MIN_PX.identity, 0)
+  const pct = (width: string) => Number.parseFloat(width)
+
+  it("gives index, identity, and action the same share on every table so dividers line up", () => {
+    const a = tableColumnLayout(["index", "identity", "compact", "metric", "gauge", "metric", "action"])
+    const b = tableColumnLayout(["index", "identity", "compact", "metric", "compact", "compact", "gauge", "action"])
+    expect(a.widths.slice(0, 2)).toEqual(b.widths.slice(0, 2))
+    expect(a.widths.at(-1)).toBe(b.widths.at(-1))
+    // At the reference width the anchors are exactly their px widths.
+    expect((pct(a.widths[1]) / 100) * MARKET_TABLE_REFERENCE_PX).toBeCloseTo(TABLE_COLUMN_MIN_PX.identity, 0)
   })
 
-  it("keeps the pinned identity offset in sync with the index column", () => {
-    expect(TABLE_COLUMN_MIN_PX.index).toBe(56)
-    expect(tableStickyCell("body", { afterIndex: true, edge: true })).toContain("left-[56px]")
+  it("fills 100% and sets min width where the tightest column hits its minimum", () => {
+    const layout = tableColumnLayout(["index", "identity", "compact", "metric", "compact", "compact", "gauge", "action"])
+    expect(layout.widths.reduce((sum, width) => sum + pct(width), 0)).toBeCloseTo(100, 1)
+    // Every data column is at least its minimum at minWidth, and it fits the reference width.
+    const gauge = (pct(layout.widths[6]) / 100) * layout.minWidth
+    expect(gauge).toBeGreaterThanOrEqual(TABLE_COLUMN_MIN_PX.gauge - 0.5)
+    expect(layout.minWidth).toBeLessThanOrEqual(MARKET_TABLE_REFERENCE_PX)
+  })
+
+  it("pins the identity column with an opaque background and a divider", () => {
+    expect(tableStickyCell("body")).toContain("left-0")
     expect(tableStickyCell("body")).toContain("bg-background")
+    expect(tableStickyCell("body")).toContain("after:w-px")
     expect(tableStickyCell("body")).not.toContain("group-hover:bg-hover")
   })
 })

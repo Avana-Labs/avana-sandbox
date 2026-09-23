@@ -101,9 +101,8 @@ export function ScrollableTable({
     const scroller = scrollerRef.current
     if (!scroller) return
     // Page by the scrolled region (the viewport minus the pinned identity column).
-    const pinned = [...scroller.querySelectorAll<HTMLElement>("thead th.sticky")].at(-1)
-    const pinnedRight = pinned ? pinned.offsetLeft + pinned.offsetWidth : 0
-    const step = Math.max(120, scroller.clientWidth - pinnedRight - 48)
+    const pinned = scroller.querySelector<HTMLElement>("thead th.sticky")
+    const step = Math.max(120, scroller.clientWidth - (pinned?.offsetWidth ?? 0) - 48)
     scroller.scrollBy({ left: direction * step, behavior: "smooth" })
   }
 
