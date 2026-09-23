@@ -6,10 +6,10 @@ import { getFunctionName, type FunctionReference } from "convex/server"
 const { useQuery } = vi.hoisted(() => ({ useQuery: vi.fn() }))
 vi.mock("convex/react", () => ({ useQuery }))
 
-import ConvexTokenPrices from "@/app/lib/prices/convex-token-prices"
-import { TokenPricesContext } from "@/app/lib/prices/token-prices-context"
+import ConvexTokenPricesSubscriber from "@/app/lib/prices/convex-token-prices"
+import type { LivePrices } from "@/app/lib/prices/token-prices-context"
 
-describe("ConvexTokenPrices", () => {
+describe("ConvexTokenPricesSubscriber", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     const now = Date.now()
@@ -35,19 +35,12 @@ describe("ConvexTokenPrices", () => {
   })
 
   it("keeps the prices map identity across the 60s validation tick when nothing changed", () => {
-    const seen: Array<Record<string, number>> = []
-    function Consumer() {
-      seen.push(React.useContext(TokenPricesContext))
-      return null
-    }
-    const MemoConsumer = React.memo(Consumer)
-    render(
-      <ConvexTokenPrices>
-        <MemoConsumer />
-      </ConvexTokenPrices>,
-    )
-    const rendersBefore = seen.length
-    expect(seen.at(-1)?.eth).toBe(3000)
+    const published: LivePrices[] = []
+    const onChange = (live: LivePrices) => published.push(live)
+    render(<ConvexTokenPricesSubscriber onChange={onChange} />)
+    const publishedBefore = published.length
+    expect(published.at(-1)?.map.eth).toBe(3000)
+    expect(published.at(-1)?.status?.count).toBe(1)
 
     act(() => {
       vi.advanceTimersByTime(60_000)
@@ -56,6 +49,7 @@ describe("ConvexTokenPrices", () => {
       vi.advanceTimersByTime(60_000)
     })
 
-    expect(seen.length).toBe(rendersBefore)
+    // Same contents → same map/status identity → nothing re-published to consumers.
+    expect(published.length).toBe(publishedBefore)
   })
 })

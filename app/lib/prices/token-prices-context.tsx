@@ -40,7 +40,11 @@ export type PriceStatus = {
 }
 
 export const PriceStatusContext = React.createContext<PriceStatus | undefined>(undefined)
-const ConvexTokenPrices = React.lazy(() => import("./convex-token-prices"))
+
+/** What the realtime subscriber publishes: the seed+live price map and oracle freshness. */
+export type LivePrices = { map: Record<string, number>; status: PriceStatus | undefined }
+
+const ConvexTokenPricesSubscriber = React.lazy(() => import("./convex-token-prices"))
 
 /** A stable lookup: symbol → USD price (undefined when unpriced). */
 export function usePriceFor(): (symbol: string) => number | undefined {
@@ -166,12 +170,28 @@ export function TokenPricesProvider({
     // skip the stock-price overlay entirely — no unused fetch or polling timer on the guest path.
     return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
   }
+  return <RealtimeTokenPrices seed={seed}>{children}</RealtimeTokenPrices>
+}
+
+/**
+ * The page renders here once, at a stable position. The lazy Convex subscriber is a SIBLING
+ * behind `<Suspense fallback={null}>` that publishes prices up through state. It used to wrap
+ * the page with `<Suspense fallback={children}>`, which made SSR stream the whole page twice
+ * (fallback copy + hidden resolved copy — two <main> elements, ~2x HTML) and remounted the page
+ * subtree when the chunk loaded.
+ */
+function RealtimeTokenPrices({ seed, children }: { seed: Record<string, number>; children: React.ReactNode }) {
+  const [live, setLive] = React.useState<LivePrices | null>(null)
+  const publish = React.useCallback((next: LivePrices) => {
+    setLive((current) => (current && current.map === next.map && current.status === next.status ? current : next))
+  }, [])
   return (
-    <TokenPricesContext.Provider value={seed}>
-      <React.Suspense fallback={children}>
-        <ConvexTokenPrices seed={seed}>
-          <StockPriceOverlay>{children}</StockPriceOverlay>
-        </ConvexTokenPrices>
+    <TokenPricesContext.Provider value={live?.map ?? seed}>
+      <PriceStatusContext.Provider value={live?.status}>
+        <StockPriceOverlay>{children}</StockPriceOverlay>
+      </PriceStatusContext.Provider>
+      <React.Suspense fallback={null}>
+        <ConvexTokenPricesSubscriber seed={seed} onChange={publish} />
       </React.Suspense>
     </TokenPricesContext.Provider>
   )

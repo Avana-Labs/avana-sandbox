@@ -5,23 +5,21 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { setCanonicalPrices } from "./canonical"
 import { priceKey } from "./format"
-import { PriceStatusContext, TokenPricesContext } from "./token-prices-context"
+import type { LivePrices } from "./token-prices-context"
 import { applyLiveRates } from "@/app/lib/currency/rates"
 import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
 import type { CurrencyCode } from "@/app/components/display-preferences"
 import { validatedConvexPriceMap } from "./validated-convex-price"
 import { registerPriceSubscription } from "./price-subscription-telemetry"
 
-class TokenPricesErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallbackChildren: React.ReactNode },
-  { errored: boolean }
-> {
+/** A failing prices query must never take the page down: the subscriber just stops publishing. */
+class TokenPricesErrorBoundary extends React.Component<{ children: React.ReactNode }, { errored: boolean }> {
   state = { errored: false }
   static getDerivedStateFromError() {
     return { errored: true }
   }
   render() {
-    if (this.state.errored) return this.props.fallbackChildren
+    if (this.state.errored) return null
     return this.props.children
   }
 }
@@ -32,7 +30,13 @@ function samePriceMap(a: Record<string, number>, b: Record<string, number>) {
   return keys.every((key) => a[key] === b[key])
 }
 
-function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.ReactNode; seed?: Record<string, number> }) {
+function ConvexTokenPricesQuery({
+  seed = EMPTY_SEED,
+  onChange,
+}: {
+  seed?: Record<string, number>
+  onChange: (live: LivePrices) => void
+}) {
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
   const providerStatus = useQuery(api.prices.getPriceStatus, {})
   React.useEffect(() => {
@@ -42,7 +46,9 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
   const rows = snapshot?.prices
   // Quote map stays on getPriceSnapshot (no health read). Provider checkedAt is a separate
   // subscription so identical refreshes do not invalidate every price consumer.
-  const status = providerStatus
+  // Memoized on its fields: the object is published to the provider, and a fresh identity
+  // every render would re-publish (and re-render every price consumer) in a loop.
+  const statusSource = providerStatus
     ? {
         updatedAt: providerStatus.updatedAt,
         staleAfterMs: providerStatus.staleAfterMs,
@@ -50,6 +56,23 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
         count: providerStatus.count,
       }
     : snapshot?.status
+  const statusUpdatedAt = statusSource?.updatedAt
+  const statusStaleAfterMs = statusSource?.staleAfterMs
+  const statusInvalidAfterMs = statusSource?.invalidAfterMs
+  const statusCount = statusSource?.count
+  const hasStatus = statusSource !== undefined
+  const status = React.useMemo(
+    () =>
+      hasStatus
+        ? {
+            updatedAt: statusUpdatedAt ?? null,
+            staleAfterMs: statusStaleAfterMs as number,
+            invalidAfterMs: statusInvalidAfterMs,
+            count: statusCount as number,
+          }
+        : undefined,
+    [hasStatus, statusUpdatedAt, statusStaleAfterMs, statusInvalidAfterMs, statusCount],
+  )
   const [validationNow, setValidationNow] = React.useState(() => Date.now())
   React.useEffect(() => {
     if (!rows?.length) return
@@ -109,23 +132,33 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
     }
   }, [fxRows])
 
-  return (
-    <TokenPricesContext.Provider value={map}>
-      <PriceStatusContext.Provider value={status}>{children}</PriceStatusContext.Provider>
-    </TokenPricesContext.Provider>
-  )
+  // Publish up to TokenPricesProvider, which owns the context. This component renders
+  // nothing, so the page is never nested inside (or remounted by) this lazy module.
+  React.useEffect(() => {
+    onChange({ map, status })
+  }, [map, status, onChange])
+
+  return null
 }
 
-export default function ConvexTokenPrices({
-  children,
+const EMPTY_SEED: Record<string, number> = {}
+
+/**
+ * Realtime Convex prices, as a render-nothing sibling of the page: it subscribes and pushes
+ * `{ map, status }` to `onChange`. Lazy-loaded by TokenPricesProvider behind
+ * `<Suspense fallback={null}>`, so SSR renders the page once and the subscription attaching
+ * later never remounts it.
+ */
+export default function ConvexTokenPricesSubscriber({
   seed,
+  onChange,
 }: {
-  children: React.ReactNode
   seed?: Record<string, number>
+  onChange: (live: LivePrices) => void
 }) {
   return (
-    <TokenPricesErrorBoundary fallbackChildren={children}>
-      <ConvexTokenPricesQuery seed={seed}>{children}</ConvexTokenPricesQuery>
+    <TokenPricesErrorBoundary>
+      <ConvexTokenPricesQuery seed={seed} onChange={onChange} />
     </TokenPricesErrorBoundary>
   )
 }
