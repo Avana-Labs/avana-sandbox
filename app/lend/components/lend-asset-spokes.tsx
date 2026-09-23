@@ -5,7 +5,6 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { CapacityFilled } from "@/app/components/capacity-filled"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
 import {
   DesktopTableSurface,
@@ -13,18 +12,6 @@ import {
   ScrollableTable,
   SortHeaderButton,
 } from "@/app/components/market-table-primitives"
-import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
@@ -41,6 +28,7 @@ import {
   TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
+  TABLE_INDEX_PHONE_HIDDEN,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_RIGHT,
   tableColumnLayout,
@@ -51,7 +39,6 @@ import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, matchesCategory, type CategoryChip } from "@/app/lib/markets/category"
-import { useMediaQuery } from "@/app/lib/use-media-query"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
@@ -154,7 +141,9 @@ function AssetRowView({
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => router.push(detailHref)}
     >
-      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_BG)}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_INDEX_PHONE_HIDDEN, TABLE_ROW_HOVER_BG)}>
+        {index + 1}
+      </td>
       <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} eager={index < 2} />
@@ -215,102 +204,6 @@ function AssetRowView({
   )
 }
 
-function AssetCardView({
-  row,
-  index,
-  onDeposit,
-  canWithdraw,
-}: {
-  row: AssetRow
-  index: number
-  onDeposit?: (marketId: string) => void
-  canWithdraw: boolean
-}) {
-  const { t } = useTranslation()
-  const { ctx } = useCurrency()
-  const router = useRouter()
-  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
-  const detailHref = row.href ?? `/lend/markets/${marketId}`
-  const detailReturn = detailHref
-  return (
-    <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
-      <MarketMobileCardHeader
-        identity={
-          <div className="flex min-w-0 items-center gap-3">
-            <AssetIcon row={row} eager={index < 2} />
-            <MarketMobileIdentityText title={row.name} subtitle={<AssetSubLabel symbol={row.symbol} />} />
-          </div>
-        }
-        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
-      />
-      <MarketMobileStatList>
-        <MarketMobileStatRow
-          label={t("Total Deposits")}
-          value={
-            <span>
-              {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-              <MarketMobileSupportingValue>
-                {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
-              </MarketMobileSupportingValue>
-            </span>
-          }
-        />
-        <MarketMobileStatRow
-          label={t("Capacity Filled")}
-          value={
-            <CapacityFilled
-              size="sm"
-              value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100}
-            />
-          }
-        />
-        <MarketMobileStatRow
-          label={t("Available")}
-          value={
-            <span>
-              {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-              <MarketMobileSupportingValue>
-                {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
-              </MarketMobileSupportingValue>
-            </span>
-          }
-        />
-      </MarketMobileStatList>
-      {onDeposit ? (
-        <MarketMobileActionFooter>
-          <MarketMobilePrimaryAction
-            className="mt-0 flex-1"
-            onClick={(event) => {
-              event.stopPropagation()
-              onDeposit(marketId)
-            }}
-          >
-            <ActionIcon label="Deposit" />
-            {t("Deposit")}
-          </MarketMobilePrimaryAction>
-          <MarketMobileSecondaryAction
-            disabled={!canWithdraw}
-            title={canWithdraw ? undefined : t("No supplied position to withdraw")}
-            onClick={(event) => {
-              event.stopPropagation()
-              if (!canWithdraw) return
-              router.push(
-                actionPagePath("lend", "withdraw", {
-                  market: marketId,
-                  return: detailReturn,
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Withdraw" />
-            {t("Withdraw")}
-          </MarketMobileSecondaryAction>
-        </MarketMobileActionFooter>
-      ) : null}
-    </MarketMobileCard>
-  )
-}
-
 const LEND_TABLE_LAYOUT = tableColumnLayout([
   "index",
   "identity",
@@ -326,20 +219,15 @@ function AssetSection({
   subtitle,
   rows,
   onDeposit,
-  withdrawableMarketIds,
-  initialIsDesktop,
   deferContent,
 }: {
   title: string
   subtitle?: string
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds: ReadonlySet<string>
-  initialIsDesktop: boolean
   deferContent: boolean
 }) {
   const { t } = useTranslation()
-  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const sectionRef = useRef<HTMLElement | null>(null)
   const [contentMounted, setContentMounted] = useState(!deferContent || process.env.NODE_ENV === "test")
   const [sortKey, setSortKey] = useState<
@@ -430,66 +318,40 @@ function AssetSection({
         <div aria-hidden className="min-h-[640px] rounded-radius-md bg-table-row" />
       ) : (
         <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-          {!isDesktop ? (
-            <div className="space-y-3">
+          <ScrollableTable layout={LEND_TABLE_LAYOUT}>
+            <thead>
+              <tr className={TABLE_HEADER_ROW}>
+                <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                  {sortHeader("asset", t("Asset"))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("supplyApy", t("APY"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("totalDeposits", t("Total Deposits"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("utilization", t("Capacity Filled"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("availableLiquidity", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                  {/* Names the action column for screen readers (an empty <th> isn't a header). */}
+                  <span className="sr-only">{t("Quick actions")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetCardView
-                    key={row.symbol}
-                    row={row}
-                    index={index}
-                    onDeposit={onDeposit}
-                    canWithdraw={withdrawableMarketIds.has(
-                      "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase(),
-                    )}
-                  />
+                  <AssetRowView key={row.symbol} row={row} index={index} delay={index * 40} onDeposit={onDeposit} />
                 ))
               ) : (
-                <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
-                  {t("No assets match these filters.")}
-                </div>
-              )}
-            </div>
-          ) : null}
-          {isDesktop ? (
-            <ScrollableTable layout={LEND_TABLE_LAYOUT}>
-              <thead>
-                <tr className={TABLE_HEADER_ROW}>
-                  <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                    {sortHeader("asset", t("Asset"))}
-                  </th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("supplyApy", t("APY"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("totalDeposits", t("Total Deposits"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("utilization", t("Capacity Filled"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("availableLiquidity", t("Available"))}</th>
-                  <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
-                    {/* Names the action column for screen readers (an empty <th> isn't a header). */}
-                    <span className="sr-only">{t("Quick actions")}</span>
-                  </th>
+                <tr>
+                  <td
+                    className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60"
+                    colSpan={LEND_TABLE_LAYOUT.widths.length}
+                  >
+                    {t("No assets match these filters.")}
+                  </td>
                 </tr>
-              </thead>
-              <tbody
-                key={`${title}-${sortKey}-${sortDirection}`}
-                className="divide-y divide-border dark:divide-white/6"
-              >
-                {sortedRows.length > 0 ? (
-                  sortedRows.map((row, index) => (
-                    <AssetRowView key={row.symbol} row={row} index={index} delay={index * 40} onDeposit={onDeposit} />
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60"
-                      colSpan={LEND_TABLE_LAYOUT.widths.length}
-                    >
-                      {t("No assets match these filters.")}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </ScrollableTable>
-          ) : null}
+              )}
+            </tbody>
+          </ScrollableTable>
         </DesktopTableSurface>
       )}
     </section>
@@ -499,13 +361,9 @@ function AssetSection({
 export function LendAssetSpokes({
   groups = DEFAULT_ASSET_GROUPS,
   onDeposit,
-  withdrawableMarketIds = new Set<string>(),
-  initialIsDesktop = true,
 }: {
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds?: ReadonlySet<string>
-  initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
   const searchParams = useSearchParams()
@@ -582,8 +440,6 @@ export function LendAssetSpokes({
                 subtitle={group.subtitle}
                 rows={group.rows}
                 onDeposit={onDeposit}
-                withdrawableMarketIds={withdrawableMarketIds}
-                initialIsDesktop={initialIsDesktop}
                 deferContent={index > 0}
               />
               {group.title === "Ethereum-Based" ? (

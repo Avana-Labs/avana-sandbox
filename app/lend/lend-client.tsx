@@ -1,37 +1,14 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useMemo } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { LendHero } from "./components/lend-hero"
 import { HotMarkets } from "./components/hot-markets"
 import { LendAssetSpokes } from "./components/lend-asset-spokes"
 
-export function LendClient({
-  pageData,
-  initialIsDesktop = true,
-}: {
-  pageData: LendPageData
-  initialIsDesktop?: boolean
-}) {
+export function LendClient({ pageData }: { pageData: LendPageData }) {
   const router = useRouter()
-  const lendSession = useLendSessionContext()
-  const withdrawableMarketIds = useMemo(
-    () =>
-      new Set(
-        Object.values(lendSession.state.positions)
-          .filter(
-            (position) =>
-              position.walletId === lendSession.walletId &&
-              position.status === "active" &&
-              position.currentSuppliedAmount > 0,
-          )
-          .map((position) => position.marketId),
-      ),
-    [lendSession.state.positions, lendSession.walletId],
-  )
   // Render the server-provided (live Convex) page data directly — no client-side
   const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = pageData
 
@@ -52,8 +29,6 @@ export function LendClient({
 
             <LendAssetSpokes
               groups={assetGroups}
-              initialIsDesktop={initialIsDesktop}
-              withdrawableMarketIds={withdrawableMarketIds}
               onDeposit={(marketId) => router.push(actionPagePath("lend", "deposit", { market: marketId }))}
             />
           </div>

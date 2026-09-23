@@ -26,25 +26,15 @@ describe("LendAssetSpokes capacity display and actions", () => {
     )
   })
 
-  it.each([true, false])("shows the capacity gauge and two mobile actions (desktop: %s)", (isDesktop) => {
+  it("shows the capacity gauge and the Deposit row action in the table", () => {
     const group = LEND_ASSET_GROUPS[0]!
     const rows = group.rows.slice(0, 1).map((row) => ({ ...row, utilizationValue: 0.1968 }))
 
-    render(
-      <LendAssetSpokes
-        groups={[{ ...group, rows }]}
-        onDeposit={vi.fn()}
-        withdrawableMarketIds={new Set([rows[0]!.symbol.toLowerCase()])}
-        initialIsDesktop={isDesktop}
-      />,
-    )
+    render(<LendAssetSpokes groups={[{ ...group, rows }]} onDeposit={vi.fn()} />)
 
     expect(screen.getByRole("img", { name: "Capacity filled 20%" })).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: "Deposit" }).length).toBeGreaterThan(0)
-    if (isDesktop) {
-      expect(screen.queryByRole("button", { name: "Withdraw" })).not.toBeInTheDocument()
-    } else {
-      expect(screen.getByRole("button", { name: "Withdraw" })).toBeEnabled()
-    }
+    expect(screen.getByRole("button", { name: "Deposit" })).toBeInTheDocument()
+    // Withdraw lives on the market detail page (desktop and phone share this table).
+    expect(screen.queryByRole("button", { name: "Withdraw" })).not.toBeInTheDocument()
   })
 })
