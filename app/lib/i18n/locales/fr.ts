@@ -1804,6 +1804,13 @@ const dict: TranslationDictionary = {
     "Trop de nouvelles sessions Ask AI depuis ce réseau. Réessayez plus tard.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI est temporairement indisponible. Réessayez dans un instant.",
+  "Report this bug": "Signaler ce bug",
+  "Report a bug": "Signaler un bug",
+  "What happened?": "Que s’est-il passé ?",
+  "Tell us what you were doing when this happened.": "Dites-nous ce que vous faisiez quand c’est arrivé.",
+  "(required)": "(obligatoire)",
+  "Send report": "Envoyer le rapport",
+  "Thanks! Your report was sent.": "Merci ! Votre rapport a été envoyé.",
 }
 
 export default dict

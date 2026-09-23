@@ -1765,6 +1765,13 @@ const dict: TranslationDictionary = {
   "Get Started": "开始",
   "Too many new Ask AI sessions from this network. Try again later.": "来自此网络的新 Ask AI 会话过多。请稍后再试。",
   "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI 暂时不可用。请稍后重试。",
+  "Report this bug": "报告此问题",
+  "Report a bug": "报告问题",
+  "What happened?": "发生了什么？",
+  "Tell us what you were doing when this happened.": "请告诉我们问题发生时你正在做什么。",
+  "(required)": "（必填）",
+  "Send report": "发送报告",
+  "Thanks! Your report was sent.": "谢谢！你的报告已发送。",
 }
 
 export default dict

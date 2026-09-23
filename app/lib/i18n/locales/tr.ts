@@ -1752,6 +1752,13 @@ const dict: TranslationDictionary = {
     "Bu ağdan çok fazla yeni Ask AI oturumu açıldı. Daha sonra tekrar deneyin.",
   "Ask AI is temporarily unavailable. Try again in a moment.":
     "Ask AI geçici olarak kullanılamıyor. Birazdan tekrar deneyin.",
+  "Report this bug": "Bu hatayı bildir",
+  "Report a bug": "Hata bildir",
+  "What happened?": "Ne oldu?",
+  "Tell us what you were doing when this happened.": "Bu olduğunda ne yaptığını bize anlat.",
+  "(required)": "(zorunlu)",
+  "Send report": "Raporu gönder",
+  "Thanks! Your report was sent.": "Teşekkürler! Raporun gönderildi.",
 }
 
 export default dict

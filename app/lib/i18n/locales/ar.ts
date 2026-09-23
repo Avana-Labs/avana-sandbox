@@ -1717,6 +1717,13 @@ const dict: TranslationDictionary = {
   "Too many new Ask AI sessions from this network. Try again later.":
     "عدد كبير جدًا من جلسات Ask AI الجديدة من هذه الشبكة. حاول مرة أخرى لاحقًا.",
   "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI غير متاح مؤقتًا. حاول مرة أخرى بعد قليل.",
+  "Report this bug": "الإبلاغ عن هذا الخطأ",
+  "Report a bug": "الإبلاغ عن خطأ",
+  "What happened?": "ماذا حدث؟",
+  "Tell us what you were doing when this happened.": "أخبرنا بما كنت تفعله عندما حدث ذلك.",
+  "(required)": "(مطلوب)",
+  "Send report": "إرسال البلاغ",
+  "Thanks! Your report was sent.": "شكرًا! تم إرسال بلاغك.",
 }
 
 export default dict
