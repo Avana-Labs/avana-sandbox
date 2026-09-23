@@ -8,6 +8,7 @@ import { selectAllAvailableCollateralPools, selectBorrowCollateralPools } from "
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
+const runtimeProps: Array<{ walletId?: string }> = []
 
 vi.mock("next/dynamic", () => ({
   default: (loader: () => Promise<{ default: (props: Record<string, unknown>) => ReactNode }>) =>
@@ -28,7 +29,8 @@ vi.mock("next/dynamic", () => ({
 }))
 
 vi.mock("@/app/components/home-page-workspace-runtime", () => ({
-  HomePageWorkspaceRuntime: function MockHomeWorkspaceRuntime() {
+  HomePageWorkspaceRuntime: function MockHomeWorkspaceRuntime(props: { walletId?: string }) {
+    runtimeProps.push(props)
     const [mode, setMode] = useState("borrow")
     return (
       <div data-testid="home-workspace-card">
@@ -108,6 +110,13 @@ describe("HomePageClient", () => {
     expect(borrowAction).toHaveAttribute("data-embedded", "true")
     expect(borrowAction).toHaveAttribute("data-layout", "home")
   }, 10_000)
+
+  it("runs the guest workspace on the app-wide session, not an isolated demo wallet", async () => {
+    runtimeProps.length = 0
+    render(<HomePageClient />)
+    await screen.findByTestId("home-workspace-card")
+    expect(runtimeProps.every((props) => props.walletId === undefined)).toBe(true)
+  })
 
   it("switches tabs to embedded repay, claim, and remove actions", async () => {
     render(<HomePageClient />)
