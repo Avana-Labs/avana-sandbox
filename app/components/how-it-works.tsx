@@ -134,7 +134,7 @@ export function HowItWorks({ topic, className }: { topic: HowItWorksTopic; class
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+        <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[600px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <div className="border-b border-border px-5 py-4 pr-12">
             <DialogTitle className="text-[18px] font-semibold tracking-[-0.02em] text-foreground">
               {content.title}

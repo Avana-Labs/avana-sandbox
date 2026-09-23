@@ -51,7 +51,7 @@ export function SwapAssetPickerDialog({
         if (!nextOpen) setQuery("")
       }}
     >
-      <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+      <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[600px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
         <DialogTitle className="sr-only">{t(title)}</DialogTitle>
         <DialogDescription className="sr-only">{t("Select an asset for this swap.")}</DialogDescription>
 
