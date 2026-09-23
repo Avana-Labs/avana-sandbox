@@ -388,6 +388,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Abrir portfólio",
   Portfolio: "Portfólio",
   "Quick actions": "Ações rápidas",
+  "Scroll table left": "Rolar tabela para a esquerda",
+  "Scroll table right": "Rolar tabela para a direita",
   "Total Fees earned": "Total de taxas ganhas",
   "Claimable Fees": "Taxas resgatáveis",
   "Claim Fees": "Resgatar taxas",

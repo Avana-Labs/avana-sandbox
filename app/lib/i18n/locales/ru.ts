@@ -389,6 +389,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Открыть портфель",
   Portfolio: "Портфель",
   "Quick actions": "Быстрые действия",
+  "Scroll table left": "Прокрутить таблицу влево",
+  "Scroll table right": "Прокрутить таблицу вправо",
   "Total Fees earned": "Всего заработанных комиссий",
   "Claimable Fees": "Комиссии к получению",
   "Claim Fees": "Получить комиссии",

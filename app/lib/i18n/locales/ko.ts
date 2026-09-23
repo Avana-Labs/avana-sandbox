@@ -382,6 +382,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "포트폴리오 열기",
   Portfolio: "포트폴리오",
   "Quick actions": "빠른 작업",
+  "Scroll table left": "표를 왼쪽으로 스크롤",
+  "Scroll table right": "표를 오른쪽으로 스크롤",
   "Total Fees earned": "총 획득 수수료",
   "Claimable Fees": "청구 가능한 수수료",
   "Claim Fees": "수수료 청구",

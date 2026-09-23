@@ -395,6 +395,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "पोर्टफोलियो खोलें",
   Portfolio: "पोर्टफोलियो",
   "Quick actions": "त्वरित क्रियाएँ",
+  "Scroll table left": "तालिका को बाईं ओर स्क्रॉल करें",
+  "Scroll table right": "तालिका को दाईं ओर स्क्रॉल करें",
   "Total Fees earned": "कुल अर्जित शुल्क",
   "Claimable Fees": "दावा योग्य शुल्क",
   "Claim Fees": "शुल्क का दावा करें",

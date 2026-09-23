@@ -56,3 +56,83 @@ export const TABLE_CELL_PADDING_TRAILING = "py-3 px-4 pr-5"
 export const TABLE_ROW_HOVER_BG = "transition-colors group-hover:bg-hover"
 export const TABLE_ROW_HOVER_LEFT = TABLE_ROW_HOVER_BG
 export const TABLE_ROW_HOVER_RIGHT = TABLE_ROW_HOVER_BG
+
+/**
+ * Column kinds shared by every desktop table, with the minimum width (px, padding included)
+ * each one needs to show its content without truncating. One kind = one width everywhere, so
+ * an APY column on Lend is as wide as the APY column on Multiply.
+ */
+export const TABLE_COLUMN_MIN_PX = {
+  /** `#` row index. */
+  index: 56,
+  /** Asset / pool / loop identity (icon + two text lines). Pinned while the rest scrolls. */
+  identity: 240,
+  /** Short single value: APY, fees, LTV, leverage, premium. */
+  compact: 104,
+  /** Token amount over a USD sub-line. */
+  metric: 136,
+  /** Capacity-filled ring + percentage (header label is the long one). */
+  gauge: 164,
+  /** One action button. */
+  action: 148,
+  /** Two action buttons side by side. */
+  actions2: 236,
+  /** Bare row-open arrow. */
+  arrow: 72,
+} as const
+
+export type TableColumnKind = keyof typeof TABLE_COLUMN_MIN_PX
+
+export type TableColumnLayout = {
+  /** Table min-width in px — the table fits its container above this and scrolls below it. */
+  minWidth: number
+  /** Per-column widths as percentages, proportional to each kind's minimum. */
+  widths: string[]
+}
+
+/**
+ * Turns an ordered list of column kinds into a `table-fixed` layout. Each column's share is
+ * its minimum over the sum of minimums, so at `minWidth` every column is exactly its minimum
+ * and wider containers grow all columns evenly (spacing stays consistent across tables).
+ */
+export function tableColumnLayout(kinds: readonly TableColumnKind[]): TableColumnLayout {
+  const mins = kinds.map((kind) => TABLE_COLUMN_MIN_PX[kind])
+  const minWidth = mins.reduce((sum, value) => sum + value, 0)
+  return {
+    minWidth,
+    widths: mins.map((value) => `${((value / minWidth) * 100).toFixed(3)}%`),
+  }
+}
+
+/** Table element classes for the shared layout (pair with `style={{ minWidth }}`). */
+export const TABLE_FIXED = "w-full table-fixed border-separate border-spacing-0"
+
+/**
+ * Pinned identity column. The cell keeps an opaque page background so scrolled columns pass
+ * underneath it; row hover is painted with an inset shadow instead of the translucent
+ * `bg-hover` (which would let the scrolled content show through).
+ */
+const TABLE_STICKY_BODY =
+  "sticky z-[1] bg-background transition-shadow group-hover:shadow-[inset_0_0_0_9999px_hsl(var(--hover-overlay))]"
+const TABLE_STICKY_HEADER = "sticky z-[2] bg-table-header"
+const TABLE_STICKY_DIVIDER =
+  "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border dark:after:bg-white/10"
+
+/**
+ * Classes for a pinned cell. `afterIndex` offsets the identity column past a pinned `#`
+ * column (scrolling only happens at `minWidth`, where the index column is exactly its
+ * minimum); `edge` draws the divider the scrolled columns slide under.
+ */
+export function tableStickyCell(
+  part: "header" | "body",
+  { afterIndex = false, edge = false }: { afterIndex?: boolean; edge?: boolean } = {},
+): string {
+  return [
+    part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY,
+    // Literal class (Tailwind can't see interpolated names) — keep in sync with `index` above.
+    afterIndex ? "left-[56px]" : "left-0",
+    edge ? TABLE_STICKY_DIVIDER : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+}

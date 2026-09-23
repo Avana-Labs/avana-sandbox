@@ -383,6 +383,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "ポートフォリオを開く",
   Portfolio: "ポートフォリオ",
   "Quick actions": "クイックアクション",
+  "Scroll table left": "表を左にスクロール",
+  "Scroll table right": "表を右にスクロール",
   "Total Fees earned": "獲得手数料合計",
   "Claimable Fees": "請求可能な手数料",
   "Claim Fees": "手数料を請求",

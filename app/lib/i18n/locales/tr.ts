@@ -397,6 +397,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Portföyü aç",
   Portfolio: "Portföy",
   "Quick actions": "Hızlı işlemler",
+  "Scroll table left": "Tabloyu sola kaydır",
+  "Scroll table right": "Tabloyu sağa kaydır",
   "Total Fees earned": "Kazanılan toplam ücret",
   "Claimable Fees": "Talep edilebilir ücretler",
   "Claim Fees": "Ücretleri talep et",

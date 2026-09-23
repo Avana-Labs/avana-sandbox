@@ -1,11 +1,113 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { ArrowUpRightLong } from "@/app/components/icons"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowUpRightLong, ChevronLeft, ChevronRight } from "@/app/components/icons"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TABLE_BASE, TABLE_FIXED, type TableColumnLayout } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
 export function DesktopTableSurface({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("overflow-hidden rounded-radius-xl bg-transparent", className)}>{children}</div>
+}
+
+const TABLE_SCROLL_ARROW_CLASS =
+  "inline-flex size-6 items-center justify-center rounded-full text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-30 dark:text-white"
+
+/**
+ * Shared desktop table shell: a `table-fixed` table sized by `tableColumnLayout`. It fills its
+ * container above `layout.minWidth`; below that the columns scroll horizontally under the
+ * pinned identity column (`tableStickyCell`), and prev/next arrows appear in the header strip.
+ */
+export function ScrollableTable({
+  layout,
+  children,
+  className,
+}: {
+  layout: TableColumnLayout
+  children: ReactNode
+  className?: string
+}) {
+  const { t } = useTranslation()
+  const scrollerRef = useRef<HTMLDivElement | null>(null)
+  const [scrollState, setScrollState] = useState({ canPrev: false, canNext: false })
+
+  const measure = useCallback(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const maxScroll = scroller.scrollWidth - scroller.clientWidth
+    const next = { canPrev: scroller.scrollLeft > 1, canNext: scroller.scrollLeft < maxScroll - 1 }
+    setScrollState((current) =>
+      current.canPrev === next.canPrev && current.canNext === next.canNext ? current : next,
+    )
+  }, [])
+
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    measure()
+    scroller.addEventListener("scroll", measure, { passive: true })
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure)
+    observer?.observe(scroller)
+    return () => {
+      scroller.removeEventListener("scroll", measure)
+      observer?.disconnect()
+    }
+  }, [measure])
+
+  const scrollByPage = (direction: 1 | -1) => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    // Page by the scrolled region (the viewport minus the pinned identity column).
+    const pinned = [...scroller.querySelectorAll<HTMLElement>("thead th.sticky")].at(-1)
+    const pinnedRight = pinned ? pinned.offsetLeft + pinned.offsetWidth : 0
+    const step = Math.max(120, scroller.clientWidth - pinnedRight - 48)
+    scroller.scrollBy({ left: direction * step, behavior: "smooth" })
+  }
+
+  const overflowing = scrollState.canPrev || scrollState.canNext
+
+  return (
+    <div className="relative">
+      <div ref={scrollerRef} className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <table className={cn(TABLE_FIXED, TABLE_BASE, className)} style={{ minWidth: layout.minWidth }}>
+          <colgroup>
+            {layout.widths.map((width, index) => (
+              <col key={index} style={{ width }} />
+            ))}
+          </colgroup>
+          {children}
+        </table>
+      </div>
+      {scrollState.canNext ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 right-0 top-[33px] z-[2] w-12 bg-gradient-to-l from-background to-transparent"
+        />
+      ) : null}
+      {overflowing ? (
+        <div className="absolute right-0 top-0 z-[3] flex h-[33px] items-center gap-1 bg-gradient-to-r from-transparent via-table-header to-table-header pl-6 pr-3">
+          <button
+            type="button"
+            aria-label={t("Scroll table left")}
+            disabled={!scrollState.canPrev}
+            onClick={() => scrollByPage(-1)}
+            className={TABLE_SCROLL_ARROW_CLASS}
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={t("Scroll table right")}
+            disabled={!scrollState.canNext}
+            onClick={() => scrollByPage(1)}
+            className={TABLE_SCROLL_ARROW_CLASS}
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 export function SilentActionHeader({ className }: { className?: string }) {

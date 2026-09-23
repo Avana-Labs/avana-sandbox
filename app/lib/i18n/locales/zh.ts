@@ -158,6 +158,8 @@ const dict: TranslationDictionary = {
   "Open portfolio": "打开投资组合",
   Portfolio: "投资组合",
   "Quick actions": "快捷操作",
+  "Scroll table left": "向左滚动表格",
+  "Scroll table right": "向右滚动表格",
   "Total Fees earned": "已赚取费用总额",
   "Claimable Fees": "可领取费用",
   "Claim Fees": "领取费用",
