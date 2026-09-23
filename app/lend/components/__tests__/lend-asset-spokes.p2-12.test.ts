@@ -16,11 +16,11 @@ describe("Lend mobile asset card actions", () => {
 
   it("keeps the desktop action column compact instead of leaving excess space on the right", () => {
     const source = readFileSync(resolve(__dirname, "../lend-asset-spokes.tsx"), "utf8")
-    const colgroup = source.match(/<colgroup>([\s\S]*?)<\/colgroup>/)?.[1] ?? ""
-    const widths = [...colgroup.matchAll(/w-\[(\d+)%\]/g)].map(([, width]) => Number(width))
+    const layout = source.match(/const LEND_TABLE_LAYOUT = tableColumnLayout\(\[([\s\S]*?)\]\)/)?.[1] ?? ""
+    const kinds = [...layout.matchAll(/"([a-z0-9]+)"/g)].map(([, kind]) => kind)
 
-    expect(widths).toHaveLength(7)
-    expect(widths.at(-1)).toBe(12)
-    expect(widths.reduce((total, width) => total + width, 0)).toBe(100)
+    // Shared layout: the action column is the fixed single-button kind, not a stretchy share.
+    expect(kinds).toHaveLength(7)
+    expect(kinds.at(-1)).toBe("action")
   })
 })
