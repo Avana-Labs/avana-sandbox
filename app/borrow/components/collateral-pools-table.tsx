@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import {
+  DesktopTableSurface,
+  HoverActionGroup,
+  ScrollableTable,
+  SortHeaderButton,
+} from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileActionFooter,
@@ -42,11 +47,20 @@ import { Button } from "@/components/ui/button"
 import { CapacityFilled } from "@/app/components/capacity-filled"
 
 import {
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
+  TABLE_CELL_CAPTION,
+  TABLE_CELL_INDEX,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_LEADING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 
 function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
@@ -126,20 +140,6 @@ function SectionTabs({
   )
 }
 
-function SortIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 12 16"
-      fill="none"
-      className="size-[14px] text-muted-foreground/70 dark:text-white/60"
-    >
-      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const { compact } = useCurrency()
   const { t } = useTranslation()
@@ -203,12 +203,8 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { t } = useTranslation()
   return (
     <tr className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`} onClick={() => onViewMarket(pool)}>
-      <td
-        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-      >
-        {index + 1}
-      </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, tableStickyCell("body"))}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body", { afterIndex: true, edge: true }))}>
         {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
             navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
         <Link
@@ -219,40 +215,30 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
           <CollateralAssetCell pool={pool} />
         </Link>
       </td>
-      <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-      >
-        <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
+        {formatApy((pool.aprMin + pool.aprMax) / 2)}
       </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-          <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
-        </div>
-      </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white">
-          {formatLtvPct(pool.ltv)}
-        </div>
-        <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
+      <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>{compact(pool.tvlUsd)}</td>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <div className={cn(TABLE_CELL_NUMERIC, "font-data")}>{formatLtvPct(pool.ltv)}</div>
+        <div className={cn(TABLE_CELL_CAPTION, "font-data tabular-nums")}>
           {t("LT")}: {formatLtvPct(poolLiquidationThresholdPct(pool))}
         </div>
       </td>
-      <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-      >
-        <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
+        {formatRiskPremium(pool.riskPremiumBps)}
       </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
         <CapacityFilled value={pool.capacityFilledPct} />
       </td>
-      <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+      <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
         <HoverActionGroup className="gap-2">
           {onUseAsCollateral ? (
             <Button
               type="button"
               size="table"
               variant="table-primary"
-              className="w-auto"
+              className={TABLE_ACTION_BUTTON}
               onClick={(event) => {
                 event.stopPropagation()
                 onUseAsCollateral(pool)
@@ -267,6 +253,17 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
     </tr>
   )
 })
+
+const COLLATERAL_TABLE_LAYOUT = tableColumnLayout([
+  "index",
+  "identity",
+  "compact", // Fees
+  "metric", // Total deposits
+  "compact", // Max LTV
+  "compact", // Premium
+  "gauge", // Capacity filled
+  "action",
+])
 
 function CollateralDesktopTable({
   rows,
@@ -321,126 +318,48 @@ function CollateralDesktopTable({
     })
   }, [rows, sortDirection, sortKey])
 
+  const sortHeader = (key: typeof sortKey, label: string) => (
+    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  )
+
   const table = (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1220px] text-[12px]">
-        <thead>
-          <tr className={TABLE_HEADER_ROW}>
-            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              #
-            </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("asset")}
-                className={cn(
-                  "flex items-center gap-2 transition-colors",
-                  sortKey === "asset" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("ASSET")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("apy")}
-                className={cn(
-                  "flex items-center gap-2 transition-colors",
-                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("FEES")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("deposits")}
-                className={cn(
-                  "flex items-center gap-2 transition-colors",
-                  sortKey === "deposits"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("TOTAL DEPOSITS")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("cf")}
-                className={cn(
-                  // Tailwind preflight sets `button { text-transform: none }`, so the header
-                  // cell's `uppercase` does not reach this label. Sibling headers hide the
-                  // problem by shouting in the source (`t("ASSET")`); keep the i18n key
-                  // human-readable and uppercase in CSS instead.
-                  "flex items-center gap-2 uppercase transition-colors",
-                  sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("Max LTV")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("risk")}
-                className={cn(
-                  "flex items-center gap-2 transition-colors",
-                  sortKey === "risk" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("PREMIUM")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("capacityFilled")}
-                className={cn(
-                  "flex items-center gap-2 transition-colors",
-                  sortKey === "capacityFilled"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span className="whitespace-nowrap uppercase">{t("Capacity Filled")}</span>
-                <SortIcon />
-              </button>
-            </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <span className="sr-only">{t("Quick actions")}</span>
-            </th>
+    <ScrollableTable layout={COLLATERAL_TABLE_LAYOUT}>
+      <thead>
+        <tr className={TABLE_HEADER_ROW}>
+          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", tableStickyCell("header"))}>#</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header", { afterIndex: true, edge: true }))}>
+            {sortHeader("asset", t("Asset"))}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Fees"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("deposits", t("Total Deposits"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("Max LTV"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("risk", t("Premium"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+            <span className="sr-only">{t("Quick actions")}</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
+        {sortedRows.map((pool, index) => (
+          <CollateralPoolRow
+            key={pool.id}
+            pool={pool}
+            index={index}
+            onViewMarket={onViewMarket}
+            onUseAsCollateral={onUseAsCollateral}
+          />
+        ))}
+        {pending.map((row) => (
+          <tr key={row.id}>
+            <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={COLLATERAL_TABLE_LAYOUT.widths.length}>
+              {row.label}
+              <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
+            </td>
           </tr>
-        </thead>
-        <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
-          {sortedRows.map((pool, index) => (
-            <CollateralPoolRow
-              key={pool.id}
-              pool={pool}
-              index={index}
-              onViewMarket={onViewMarket}
-              onUseAsCollateral={onUseAsCollateral}
-            />
-          ))}
-          {pending.map((row) => (
-            <tr key={row.id}>
-              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={8}>
-                {row.label}
-                <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </ScrollableTable>
   )
 
   if (embedded) {

@@ -22,7 +22,11 @@ describe("collateral table USD display", () => {
     )
 
     expect(desktop).not.toContain('t("AVAILABLE")')
-    expect(desktop).toContain("colSpan={8}")
+    expect(desktop).not.toContain('"liquidity"')
+    // Pending rows span the whole shared layout (8 columns: no Available column).
+    expect(desktop).toContain("colSpan={COLLATERAL_TABLE_LAYOUT.widths.length}")
+    const layout = source.slice(source.indexOf("const COLLATERAL_TABLE_LAYOUT"), source.indexOf("function CollateralDesktopTable"))
+    expect(layout.match(/^\s+"[a-z0-9]+",/gm)).toHaveLength(8)
     expect(row).not.toContain("pool.availableUsd")
     expect(source).toContain('<MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />')
   })

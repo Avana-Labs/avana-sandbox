@@ -104,6 +104,9 @@ export function tableColumnLayout(kinds: readonly TableColumnKind[]): TableColum
   }
 }
 
+/** Row action pill: one minimum width so Pledge / Deposit / Borrow / Multiply line up. */
+export const TABLE_ACTION_BUTTON = "w-auto min-w-[108px] justify-center"
+
 /** Table element classes for the shared layout (pair with `style={{ minWidth }}`). */
 export const TABLE_FIXED = "w-full table-fixed border-separate border-spacing-0"
 
