@@ -34,8 +34,22 @@ function ConnectedWalletSlot({ size }: { size: WalletControlSize }) {
  */
 export function WalletControl({ size = "desktop" }: { size?: WalletControlSize }) {
   const { active } = useWalletGate()
-  if (IS_DEV_SHORTCUT_MODE) return <DevWalletControl size={size} />
-  return active ? <ConnectedWalletSlot size={size} /> : <IdleWalletControl size={size} />
+  // Reserve the desktop footprint even between registering the portal and mounting
+  // its content. Button widths alone cannot prevent that empty-slot layout shift.
+  return (
+    <span
+      data-wallet-control={size}
+      className={size === "desktop" ? "inline-flex h-10 w-[152px] shrink-0 items-center justify-center" : "contents"}
+    >
+      {IS_DEV_SHORTCUT_MODE ? (
+        <DevWalletControl size={size} />
+      ) : active ? (
+        <ConnectedWalletSlot size={size} />
+      ) : (
+        <IdleWalletControl size={size} />
+      )}
+    </span>
+  )
 }
 
 /**

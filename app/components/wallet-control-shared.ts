@@ -27,7 +27,7 @@ export function walletButtonClasses(size: WalletControlSize) {
   const base =
     size === "mobile"
       ? "inline-flex h-9 w-[124px] items-center justify-center truncate rounded-full px-3 text-[14px] font-normal transition-colors sm:w-[136px] sm:px-4"
-      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-normal transition-colors"
+      : "inline-flex h-10 w-[152px] shrink-0 items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-normal transition-colors"
   // The pre-connect CTA ("Get Started" / "Sign in") keeps Avana's white-on-cyan brand
   // treatment. On desktop it reserves the address pill's exact width: from 1440px the header
   // is an `auto | 1fr | auto` grid, so any width change here (SSR "Get Started" placeholder →
@@ -36,7 +36,7 @@ export function walletButtonClasses(size: WalletControlSize) {
   const brandBase =
     size === "mobile"
       ? "inline-flex h-9 min-w-[96px] items-center justify-center whitespace-nowrap rounded-full px-4 text-[14px] font-normal transition-colors"
-      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-normal transition-colors"
+      : "inline-flex h-10 w-[152px] shrink-0 items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-normal transition-colors"
   return {
     base,
     brand: cn(brandBase, "bg-brand text-white hover:bg-brand/90"),
