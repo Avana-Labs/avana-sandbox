@@ -585,14 +585,20 @@ export function useUmbrellaSession({
   persistState = true,
   remoteState,
   persistAction,
+  seedDemoState = true,
 }: {
   walletId: string
   persistState?: boolean
   remoteState?: ConvexUmbrellaSessionState | null
   persistAction?: PersistUmbrellaAction
+  /** Seed the local-test demo stakes and balances. False for Convex sessions (a guest has none). */
+  seedDemoState?: boolean
 }) {
   const expectsRemoteState = Boolean(persistAction)
-  const seededState = useMemo(() => buildDefaultUmbrellaState(walletId), [walletId])
+  const seededState = useMemo(
+    () => (seedDemoState ? buildDefaultUmbrellaState(walletId) : emptyConvexUmbrellaState(walletId)),
+    [seedDemoState, walletId],
+  )
   const [state, setState] = useState<UmbrellaState>(() =>
     expectsRemoteState ? emptyConvexUmbrellaState(walletId) : seededState,
   )
@@ -625,8 +631,8 @@ export function useUmbrellaSession({
       setState(emptyConvexUmbrellaState(walletId))
       return
     }
-    setState(persistState ? readUmbrellaState(walletId) : buildDefaultUmbrellaState(walletId))
-  }, [expectsRemoteState, persistState, remoteState, walletId])
+    setState(persistState ? readUmbrellaState(walletId) : seededState)
+  }, [expectsRemoteState, persistState, remoteState, seededState, walletId])
 
   useEffect(() => {
     if (!persistState || state.walletId !== walletId) return
