@@ -5,6 +5,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { CapacityFilled } from "@/app/components/capacity-filled"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
@@ -14,6 +15,7 @@ import {
   MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
   MarketMobileSupportingValue,
@@ -229,16 +231,19 @@ function AssetCardView({
   row,
   index,
   onDeposit,
+  canWithdraw,
 }: {
   row: AssetRow
   index: number
   onDeposit?: (marketId: string) => void
+  canWithdraw: boolean
 }) {
   const { t } = useTranslation()
   const { ctx } = useCurrency()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
+  const detailReturn = detailHref
   return (
     <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
       <MarketMobileCardHeader
@@ -290,6 +295,23 @@ function AssetCardView({
             <ActionIcon label="Deposit" />
             {t("Deposit")}
           </MarketMobilePrimaryAction>
+          <MarketMobileSecondaryAction
+            disabled={!canWithdraw}
+            title={canWithdraw ? undefined : t("No supplied position to withdraw")}
+            onClick={(event) => {
+              event.stopPropagation()
+              if (!canWithdraw) return
+              router.push(
+                actionPagePath("lend", "withdraw", {
+                  market: marketId,
+                  return: detailReturn,
+                }),
+              )
+            }}
+          >
+            <ActionIcon label="Withdraw" />
+            {t("Withdraw")}
+          </MarketMobileSecondaryAction>
         </MarketMobileActionFooter>
       ) : null}
     </MarketMobileCard>
@@ -301,6 +323,7 @@ function AssetSection({
   subtitle,
   rows,
   onDeposit,
+  withdrawableMarketIds,
   initialIsDesktop,
   deferContent,
 }: {
@@ -308,6 +331,7 @@ function AssetSection({
   subtitle?: string
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
+  withdrawableMarketIds: ReadonlySet<string>
   initialIsDesktop: boolean
   deferContent: boolean
 }) {
@@ -403,7 +427,15 @@ function AssetSection({
             <div className="space-y-4">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetCardView key={row.symbol} row={row} index={index} onDeposit={onDeposit} />
+                  <AssetCardView
+                    key={row.symbol}
+                    row={row}
+                    index={index}
+                    onDeposit={onDeposit}
+                    canWithdraw={withdrawableMarketIds.has(
+                      "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase(),
+                    )}
+                  />
                 ))
               ) : (
                 <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
@@ -538,10 +570,12 @@ function AssetSection({
 export function LendAssetSpokes({
   groups = DEFAULT_ASSET_GROUPS,
   onDeposit,
+  withdrawableMarketIds = new Set<string>(),
   initialIsDesktop = true,
 }: {
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
+  withdrawableMarketIds?: ReadonlySet<string>
   initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
@@ -619,6 +653,7 @@ export function LendAssetSpokes({
                 subtitle={group.subtitle}
                 rows={group.rows}
                 onDeposit={onDeposit}
+                withdrawableMarketIds={withdrawableMarketIds}
                 initialIsDesktop={initialIsDesktop}
                 deferContent={index > 0}
               />

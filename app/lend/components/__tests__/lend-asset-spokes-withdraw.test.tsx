@@ -26,14 +26,25 @@ describe("LendAssetSpokes capacity display and actions", () => {
     )
   })
 
-  it.each([true, false])("shows the capacity gauge and Deposit without Withdraw (desktop: %s)", (isDesktop) => {
+  it.each([true, false])("shows the capacity gauge and two mobile actions (desktop: %s)", (isDesktop) => {
     const group = LEND_ASSET_GROUPS[0]!
     const rows = group.rows.slice(0, 1).map((row) => ({ ...row, utilizationValue: 0.1968 }))
 
-    render(<LendAssetSpokes groups={[{ ...group, rows }]} onDeposit={vi.fn()} initialIsDesktop={isDesktop} />)
+    render(
+      <LendAssetSpokes
+        groups={[{ ...group, rows }]}
+        onDeposit={vi.fn()}
+        withdrawableMarketIds={new Set([rows[0]!.symbol.toLowerCase()])}
+        initialIsDesktop={isDesktop}
+      />,
+    )
 
     expect(screen.getByRole("img", { name: "Capacity filled 20%" })).toBeInTheDocument()
     expect(screen.getAllByRole("button", { name: "Deposit" }).length).toBeGreaterThan(0)
-    expect(screen.queryByRole("button", { name: "Withdraw" })).not.toBeInTheDocument()
+    if (isDesktop) {
+      expect(screen.queryByRole("button", { name: "Withdraw" })).not.toBeInTheDocument()
+    } else {
+      expect(screen.getByRole("button", { name: "Withdraw" })).toBeEnabled()
+    }
   })
 })

@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -12,6 +13,7 @@ import {
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -26,6 +28,7 @@ import {
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
@@ -639,6 +642,7 @@ function SpokeMobileSection({
   onBorrowAsset: (asset: BorrowableAsset) => void
   deferContent: boolean
 }) {
+  const router = useRouter()
   // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
@@ -736,6 +740,20 @@ function SpokeMobileSection({
                         <ActionIcon label="Pledge" />
                         {t("Pledge")}
                       </MarketMobilePrimaryAction>
+                      <MarketMobileSecondaryAction
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          router.push(
+                            actionPagePath("borrow", "borrow", {
+                              market: pool.id,
+                              return: `/borrow/markets/${pool.id}`,
+                            }),
+                          )
+                        }}
+                      >
+                        <ActionIcon label="Borrow" />
+                        {t("Borrow")}
+                      </MarketMobileSecondaryAction>
                     </MarketMobileActionFooter>
                   </MarketMobileCard>
                 </li>

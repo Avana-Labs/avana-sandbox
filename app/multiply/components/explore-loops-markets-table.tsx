@@ -8,9 +8,12 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -680,9 +683,16 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
   availableLabel: string
 }) {
   const { t } = useTranslation()
+  const router = useRouter()
+  const marketId = resolveMarketIdFromHref(row.href)
+  const hasNegativeApy = isNegativeMultiplyApy(row.apy)
+  const primaryActionLabel = hasNegativeApy ? "Review risk" : "Multiply"
   return (
-    <Link href={row.href} className="block">
-      <MarketMobileCard clickable>
+    <MarketMobileCard className="block">
+      <Link
+        href={row.href}
+        className="block rounded-radius-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <MarketMobileCardHeader
           identity={
             <div className="flex min-w-0 items-center gap-3">
@@ -709,8 +719,31 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
           <MarketMobileStatRow label={t("Capacity Filled")} value={<CapacityFilled value={row.capacityFilledPct} />} />
           <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
-      </MarketMobileCard>
-    </Link>
+      </Link>
+      <MarketMobileActionFooter>
+        <MarketMobilePrimaryAction
+          className="mt-0 flex-1"
+          onClick={(event) => {
+            event.stopPropagation()
+            if (!marketId) return
+            router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
+          }}
+        >
+          <ActionIcon label={primaryActionLabel} />
+          {t(primaryActionLabel)}
+        </MarketMobilePrimaryAction>
+        <MarketMobileSecondaryAction
+          onClick={(event) => {
+            event.stopPropagation()
+            if (!marketId) return
+            router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
+          }}
+        >
+          <ActionIcon label="Deleverage" />
+          {t("Deleverage")}
+        </MarketMobileSecondaryAction>
+      </MarketMobileActionFooter>
+    </MarketMobileCard>
   )
 })
 

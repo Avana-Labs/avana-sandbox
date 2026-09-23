@@ -12,11 +12,15 @@ describe("isNegativeMultiplyApy", () => {
 })
 
 describe("mobile loop card spacing", () => {
-  it("uses a block link so the section's vertical spacing applies", () => {
+  it("keeps a block market link and two mobile actions", () => {
     const source = readFileSync(resolve(__dirname, "../explore-loops-markets-table.tsx"), "utf8")
     const mobileCard = source.slice(source.indexOf("const MobileLoopCard"), source.indexOf("function TrendingLoopCard"))
 
-    expect(mobileCard).toContain('<Link href={row.href} className="block">')
+    expect(mobileCard).toContain('<MarketMobileCard className="block">')
+    expect(mobileCard).toMatch(/<Link[\s\S]*?href=\{row\.href\}/)
+    expect(mobileCard).toContain("<MarketMobilePrimaryAction")
+    expect(mobileCard).toContain("<MarketMobileSecondaryAction")
+    expect(mobileCard).toContain('actionPagePath("multiply", "deleverage"')
   })
 })
 

@@ -46,5 +46,7 @@ describe("BorrowableAssetsPanel loan variant", () => {
 
     expect(getAllByRole("img", { name: "Capacity filled 70%" }).length).toBeGreaterThan(0)
     expect(queryAllByRole("button", { name: "Deposit" })).toHaveLength(0)
+    expect(getAllByRole("button", { name: "Borrow" }).length).toBeGreaterThan(0)
+    expect(getAllByRole("button", { name: "Manage" }).length).toBeGreaterThan(0)
   })
 })
