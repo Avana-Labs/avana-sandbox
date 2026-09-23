@@ -317,12 +317,13 @@ export async function fetchBorrowMarket(slug: string) {
   }
 }
 
-/** Real token prices (base symbol → USD) from the Convex oracle (DefiLlama). */
+/** Real token prices (base symbol → USD) from the canonical Convex price snapshot. */
 export async function fetchTokenPrices(): Promise<Record<string, number> | null> {
   const client = convexClient()
   if (!client) return null
   try {
-    const rows = await client.query(api.prices.getPrices, {})
+    const snapshot = await client.query(api.prices.getPriceSnapshot, {})
+    const rows = snapshot?.prices
     if (!rows || rows.length === 0) return null
     const map = validatedConvexPriceMap(rows)
     if (Object.keys(map).length === 0) return null
