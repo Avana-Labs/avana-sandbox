@@ -5,7 +5,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileActionFooter,
@@ -27,11 +27,10 @@ import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 import {
-  TABLE_BASE,
-  TABLE_CELL_INDEX,
+  DASHBOARD_TABLE_REFERENCE_PX,
+  TABLE_BODY_ROW,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
-  TABLE_CELL_PADDING_LEADING,
   TABLE_CELL_PADDING_TRAILING,
   TABLE_CELL_PRIMARY,
   TABLE_CELL_SECONDARY,
@@ -39,13 +38,24 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
   formatTableHeaderLabel,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
+
+const LEND_POSITIONS_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact",
+    "metric", // Deposited
+    "compact", // APY + earned
+    "actions2", // Add + Withdraw
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
 
 function InvestmentsMetricHeader({
   label,
@@ -136,7 +146,6 @@ export function DashboardInvestments({
   onClaimRewards,
   isClaimingRewards = false,
   showHeading = true,
-  showIndexColumn = false,
   returnHref,
   title = "Assets",
   countLabel,
@@ -147,7 +156,6 @@ export function DashboardInvestments({
   onClaimRewards?: () => void
   isClaimingRewards?: boolean
   showHeading?: boolean
-  showIndexColumn?: boolean
   // Where the action flow's close button should land. Defaults to the market
   // detail page; the dashboard passes its own URL so closing returns you here.
   returnHref?: string
@@ -194,134 +202,115 @@ export function DashboardInvestments({
         </div>
       ) : (
         <>
-          <div className="hidden overflow-x-auto md:block">
-            <DesktopTableSurface className="!rounded-none">
-              <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-                <colgroup>
-                  {showIndexColumn ? <col className="w-[6%]" /> : null}
-                  <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
-                  <col className="w-[22%]" />
-                  <col className="w-[16%]" />
-                  <col className={showIndexColumn ? "w-[32%]" : "w-[36%]"} />
-                </colgroup>
-                <thead>
-                  <tr className={TABLE_HEADER_ROW}>
-                    {showIndexColumn ? <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>#</th> : null}
-                    <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
-                      <InvestmentsMetricHeader
-                        label={t("Asset")}
-                        help={t("The token you've supplied to earn lending yield.")}
-                      />
-                    </th>
-                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                      <InvestmentsMetricHeader
-                        label={t("Deposited")}
-                        help={t("Your supplied balance in this asset, valued at its live price.")}
-                        align="right"
-                      />
-                    </th>
-                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                      <InvestmentsMetricHeader
-                        label={t("APY")}
-                        help={t("Current annual percentage yield on your deposit, before protocol rewards.")}
-                        align="right"
-                      />
-                    </th>
-                    <SilentActionHeader className="!rounded-none pr-5" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border dark:divide-white/6">
-                  {investments.map((token, index) => {
-                    const marketId = resolveMarketId(token)
-                    const detailHref = `/lend/markets/${marketId}`
-                    return (
-                      <tr
-                        key={token.id}
-                        className="group cursor-pointer transition-colors"
-                        onClick={() => router.push(detailHref)}
-                      >
-                        {showIndexColumn ? (
-                          <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_LEFT)}>
-                            {index + 1}
-                          </td>
-                        ) : null}
-                        <td
-                          className={cn(
-                            TABLE_CELL_PADDING,
-                            "pl-5",
-                            showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT,
-                          )}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <TokenIcon symbol={token.symbol} size="table" />
-                            <div className="flex min-w-0 flex-col">
-                              <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
-                              <span className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                                <AssetPriceSubLabel symbol={token.symbol} />
-                              </span>
-                            </div>
+          <DesktopTableSurface className="hidden !rounded-none md:block">
+            <ScrollableTable layout={LEND_POSITIONS_LAYOUT}>
+              <thead>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                    <InvestmentsMetricHeader
+                      label={t("Asset")}
+                      help={t("The token you've supplied to earn lending yield.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <InvestmentsMetricHeader
+                      label={t("Deposited")}
+                      help={t("Your supplied balance in this asset, valued at its live price.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <InvestmentsMetricHeader
+                      label={t("APY")}
+                      help={t("Current annual percentage yield on your deposit, before protocol rewards.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                    <span className="sr-only">{t("Quick actions")}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-white/6">
+                {investments.map((token) => {
+                  const marketId = resolveMarketId(token)
+                  const detailHref = `/lend/markets/${marketId}`
+                  return (
+                    <tr
+                      key={token.id}
+                      className={cn(TABLE_BODY_ROW, "group cursor-pointer transition-colors")}
+                      onClick={() => router.push(detailHref)}
+                    >
+                      <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <TokenIcon symbol={token.symbol} size="table" />
+                          <div className="flex min-w-0 flex-col">
+                            <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
+                            <span className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
+                              <AssetPriceSubLabel symbol={token.symbol} />
+                            </span>
                           </div>
-                        </td>
-                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                          <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
-                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(token.suppliedUsd))}</div>
-                        </td>
-                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                          <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
-                          <EarnedCell
-                            token={token}
-                            anchorMs={accrualSinceMs}
-                            show={showDollarAmounts}
-                            className={cn(TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}
-                          />
-                        </td>
-                        <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
-                          <HoverActionGroup className="justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="table"
-                              variant="table-primary"
-                              className="w-auto"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                router.push(
-                                  actionPagePath("lend", "deposit", {
-                                    market: marketId,
-                                    return: returnHref ?? detailHref,
-                                  }),
-                                )
-                              }}
-                            >
-                              <ActionIcon label="Deposit" />
-                              Add
-                            </Button>
-                            <Button
-                              type="button"
-                              size="table"
-                              variant="table-secondary"
-                              className="w-auto"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                router.push(
-                                  actionPagePath("lend", "withdraw", {
-                                    market: marketId,
-                                    return: returnHref ?? detailHref,
-                                  }),
-                                )
-                              }}
-                            >
-                              <ActionIcon label="Withdraw" />
-                              Withdraw
-                            </Button>
-                          </HoverActionGroup>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </DesktopTableSurface>
-          </div>
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
+                        <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
+                          {m(formatUsdExact(token.suppliedUsd))}
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
+                        <EarnedCell
+                          token={token}
+                          anchorMs={accrualSinceMs}
+                          show={showDollarAmounts}
+                          className={cn(TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}
+                        />
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                        <HoverActionGroup className="gap-2">
+                          <Button
+                            type="button"
+                            size="table"
+                            variant="table-primary"
+                            className="w-auto"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              router.push(
+                                actionPagePath("lend", "deposit", {
+                                  market: marketId,
+                                  return: returnHref ?? detailHref,
+                                }),
+                              )
+                            }}
+                          >
+                            <ActionIcon label="Deposit" />
+                            Add
+                          </Button>
+                          <Button
+                            type="button"
+                            size="table"
+                            variant="table-secondary"
+                            className="w-auto"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              router.push(
+                                actionPagePath("lend", "withdraw", {
+                                  market: marketId,
+                                  return: returnHref ?? detailHref,
+                                }),
+                              )
+                            }}
+                          >
+                            <ActionIcon label="Withdraw" />
+                            Withdraw
+                          </Button>
+                        </HoverActionGroup>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ScrollableTable>
+          </DesktopTableSurface>
 
           <div className="space-y-3 md:hidden">
             {investments.map((token) => {
