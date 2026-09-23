@@ -9,7 +9,7 @@ export const TABLE_HEADER_CELL =
 
 /** Canonical 33px desktop header strip and 72px populated row geometry. */
 export const TABLE_HEADER_ROW =
-  "h-[33px] bg-table-header text-left text-muted-foreground [&>th]:pb-2 [&>th]:pt-2.5 [&>th]:text-[11px] [&>th]:font-normal [&>th]:!uppercase [&>th]:tracking-[0.08em] [&>th]:text-muted-foreground [&>th:first-child]:pl-6 [&>th:last-child]:pr-5 dark:[&>th]:text-white/58"
+  "h-[33px] bg-table-header text-left text-muted-foreground [&>th]:whitespace-nowrap [&>th]:pb-2 [&>th]:pt-2.5 [&>th]:text-[11px] [&>th]:font-normal [&>th]:!uppercase [&>th]:tracking-[0.08em] [&>th]:text-muted-foreground [&>th:first-child]:pl-6 [&>th:last-child]:pr-5 dark:[&>th]:text-white/58"
 
 /** Force uppercase labels — CSS alone is overridden in some sortable header buttons. */
 export function formatTableHeaderLabel(label: string): string {
@@ -68,7 +68,7 @@ export const TABLE_COLUMN_MIN_PX = {
   /** Asset / pool / loop identity (icon + two text lines). Pinned while the rest scrolls. */
   identity: 264,
   /** Identity in the narrower dashboard column. Pinned like `identity`. */
-  identityCompact: 228,
+  identityCompact: 248,
   /** Short single value: APY, fees, LTV, leverage, premium. */
   compact: 104,
   /** Token amount over a USD sub-line. */
@@ -104,7 +104,7 @@ const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set([
 const ANCHOR_FLOOR_PX: Partial<Record<TableColumnKind, number>> = {
   index: 44,
   identity: 232,
-  identityCompact: 212,
+  identityCompact: 228,
   action: 144,
   actions2: 204,
   arrow: 56,
