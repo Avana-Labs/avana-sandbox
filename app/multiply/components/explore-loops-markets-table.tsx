@@ -21,6 +21,7 @@ import {
   MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
 } from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import {
@@ -448,9 +449,17 @@ function LoopMarketsSection({
                   row={row}
                   index={index}
                   availableLabel={
-                    parseCompactUsdLabel(row.points) == null
+                    row.availablePrimary ??
+                    (parseCompactUsdLabel(row.points) == null
                       ? (row.points ?? "—")
-                      : compact(parseCompactUsdLabel(row.points) as number)
+                      : compact(parseCompactUsdLabel(row.points) as number))
+                  }
+                  availableSecondaryLabel={
+                    row.availableSecondary
+                      ? parseCompactUsdLabel(row.availableSecondary) == null
+                        ? row.availableSecondary
+                        : compact(parseCompactUsdLabel(row.availableSecondary) as number)
+                      : undefined
                   }
                 />
               ))
@@ -625,10 +634,14 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
   row,
   index,
   availableLabel,
+  availableSecondaryLabel,
 }: {
   row: MultiplyPageData["lendRows"][number]
   index: number
+  /** Token amount (same as the desktop Available column's primary line). */
   availableLabel: string
+  /** USD value, shown beside the amount like the Lend cards. */
+  availableSecondaryLabel?: string
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -668,7 +681,17 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
             label={t("Capacity Filled")}
             value={<CapacityFilled size="sm" value={row.capacityFilledPct} />}
           />
-          <MarketMobileStatRow label={t("Available")} value={availableLabel} />
+          <MarketMobileStatRow
+            label={t("Available")}
+            value={
+              <span>
+                {availableLabel}
+                {availableSecondaryLabel ? (
+                  <MarketMobileSupportingValue>{availableSecondaryLabel}</MarketMobileSupportingValue>
+                ) : null}
+              </span>
+            }
+          />
         </MarketMobileStatList>
       </Link>
       <MarketMobileActionFooter>
