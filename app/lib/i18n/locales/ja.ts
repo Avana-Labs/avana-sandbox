@@ -1446,7 +1446,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "ループ APY",
   "Loop market": "ループ市場",
   "LP APR": "LP APR",
-  "Live value of this collateral, and the LP trading fees it earns.": "この担保のリアルタイム評価額と、得られるLP取引手数料。",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "この担保のリアルタイム評価額と、得られるLP取引手数料。",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "過去 24 時間の市場全体の清算活動と清算間近のエクスポージャー。",

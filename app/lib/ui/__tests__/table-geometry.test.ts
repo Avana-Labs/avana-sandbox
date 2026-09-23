@@ -42,7 +42,16 @@ describe("shared column layout", () => {
   })
 
   it("fills 100% and sets min width where the tightest column hits its minimum", () => {
-    const layout = tableColumnLayout(["index", "identity", "compact", "metric", "compact", "compact", "gauge", "action"])
+    const layout = tableColumnLayout([
+      "index",
+      "identity",
+      "compact",
+      "metric",
+      "compact",
+      "compact",
+      "gauge",
+      "action",
+    ])
     expect(layout.widths.reduce((sum, width) => sum + pct(width), 0)).toBeCloseTo(100, 1)
     // Every data column is at least its minimum at minWidth, and it fits the reference width.
     const gauge = (pct(layout.widths[6]) / 100) * layout.minWidth

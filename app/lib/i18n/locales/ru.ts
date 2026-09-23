@@ -1408,7 +1408,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY ЦИКЛА",
   "Loop market": "Циклический рынок",
   "LP APR": "LP APR",
-  "Live value of this collateral, and the LP trading fees it earns.": "Текущая стоимость этого залога и торговые комиссии LP, которые он приносит.",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Текущая стоимость этого залога и торговые комиссии LP, которые он приносит.",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Активность ликвидаций по всему рынку и позиции у грани ликвидации за последние 24 часа.",

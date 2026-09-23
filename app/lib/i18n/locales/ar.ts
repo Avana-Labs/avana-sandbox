@@ -1382,7 +1382,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "عائد الحلقة APY",
   "Loop market": "سوق الحلقة",
   "LP APR": "LP APR",
-  "Live value of this collateral, and the LP trading fees it earns.": "القيمة الحية لهذا الضمان، ورسوم تداول LP التي يكسبها.",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "القيمة الحية لهذا الضمان، ورسوم تداول LP التي يكسبها.",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "نشاط التصفية على مستوى السوق والمراكز القريبة من التصفية خلال آخر 24 ساعة.",

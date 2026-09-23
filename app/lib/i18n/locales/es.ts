@@ -275,7 +275,8 @@ const dict: TranslationDictionary = {
   "Liquidation at": "Liquidación en",
   collateral: "colateral",
   "LP APR": "APR LP",
-  "Live value of this collateral, and the LP trading fees it earns.": "Valor en vivo de este colateral y las comisiones de trading LP que genera.",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Valor en vivo de este colateral y las comisiones de trading LP que genera.",
   "Remove LP": "Quitar LP",
   "Add Collateral": "Agregar colateral",
   "Credit Health": "Salud crediticia",

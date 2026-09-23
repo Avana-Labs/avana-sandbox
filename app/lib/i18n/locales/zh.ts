@@ -270,7 +270,8 @@ const dict: TranslationDictionary = {
   "Liquidation at": "清算于",
   collateral: "抵押品",
   "LP APR": "LP APR",
-  "Live value of this collateral, and the LP trading fees it earns.": "该抵押品的实时价值，以及其赚取的 LP 交易手续费。",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "该抵押品的实时价值，以及其赚取的 LP 交易手续费。",
   "Remove LP": "移除 LP",
   "Add Collateral": "添加抵押品",
   "Credit Health": "信用健康度",

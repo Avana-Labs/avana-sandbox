@@ -1396,7 +1396,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "लूप APY",
   "Loop market": "लूप मार्केट",
   "LP APR": "LP APR",
-  "Live value of this collateral, and the LP trading fees it earns.": "इस संपार्श्विक का लाइव मूल्य, और इससे मिलने वाली LP ट्रेडिंग फीस।",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "इस संपार्श्विक का लाइव मूल्य, और इससे मिलने वाली LP ट्रेडिंग फीस।",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "पिछले 24 घंटों में मार्केट-व्यापी लिक्विडेशन गतिविधि और लिक्विडेशन के करीब एक्सपोज़र।",
