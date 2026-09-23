@@ -1764,6 +1764,7 @@ const dict: TranslationDictionary = {
   "Complete onboarding": "完成新手引导",
   Testnet: "测试网",
   "Sandbox · testnet": "沙盒 · 测试网",
+  "Get Started": "开始",
 }
 
 export default dict

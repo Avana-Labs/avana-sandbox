@@ -1710,6 +1710,7 @@ const dict: TranslationDictionary = {
   "Complete onboarding": "온보딩 완료하기",
   Testnet: "테스트넷",
   "Sandbox · testnet": "샌드박스 · 테스트넷",
+  "Get Started": "시작하기",
 }
 
 export default dict

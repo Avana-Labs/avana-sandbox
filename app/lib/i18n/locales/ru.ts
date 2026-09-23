@@ -1753,6 +1753,7 @@ const dict: TranslationDictionary = {
   "Complete onboarding": "Завершить онбординг",
   Testnet: "Тестнет",
   "Sandbox · testnet": "Песочница · тестнет",
+  "Get Started": "Начать",
 }
 
 export default dict

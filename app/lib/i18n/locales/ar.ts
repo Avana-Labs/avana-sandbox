@@ -1715,6 +1715,7 @@ const dict: TranslationDictionary = {
   "Complete onboarding": "أكمل الإعداد",
   Testnet: "شبكة الاختبار",
   "Sandbox · testnet": "الساندبوكس · شبكة الاختبار",
+  "Get Started": "ابدأ",
 }
 
 export default dict

@@ -1779,6 +1779,7 @@ const dict: TranslationDictionary = {
   "Complete onboarding": "オンボーディングを完了",
   Testnet: "テストネット",
   "Sandbox · testnet": "サンドボックス · テストネット",
+  "Get Started": "はじめる",
 }
 
 export default dict
