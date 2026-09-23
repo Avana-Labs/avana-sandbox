@@ -107,7 +107,9 @@ export function ScrollableTable({
   const overflowing = scrollState.canPrev || scrollState.canNext
 
   return (
-    <div className="relative">
+    // overflow-hidden: without it a phone's layout viewport widens to the table's scroll width
+    // (the whole page then scrolls sideways) even though the inner scroller clips it.
+    <div className="relative overflow-hidden">
       <div
         ref={scrollerRef}
         className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

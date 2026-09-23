@@ -172,8 +172,8 @@ export function tableColumnLayout(
  */
 export const TABLE_COLUMN_PHONE_CLASS: Record<TableColumnKind, string> = {
   index: "max-md:hidden",
-  identity: "max-md:!w-[188px]",
-  identityCompact: "max-md:!w-[188px]",
+  identity: "max-md:!w-[204px]",
+  identityCompact: "max-md:!w-[204px]",
   compact: "max-md:!w-[104px]",
   metric: "max-md:!w-[136px]",
   metricWide: "max-md:!w-[176px]",
@@ -209,6 +209,6 @@ const TABLE_STICKY_DIVIDER =
  * scrolls away underneath it, then the data columns slide under the divider.
  */
 export function tableStickyCell(part: "header" | "body"): string {
-  // Tighter side padding on phones: the pinned column is only 188px there.
+  // Tighter side padding on phones: the pinned column is only 204px there.
   return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 max-md:!pl-3 max-md:!pr-2 ${TABLE_STICKY_DIVIDER}`
 }
