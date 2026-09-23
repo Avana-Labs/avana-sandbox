@@ -25,9 +25,7 @@ describe("BorrowableAssetsPanel loan variant", () => {
   })
 
   it("labels TOTAL BORROWS and LIQUIDITY as USD, never as a token quantity", () => {
-    const { container, getAllByText } = render(
-      <BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} />,
-    )
+    const { container, getAllByText } = render(<BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} />)
 
     // USD figures render as currency, not as a bare number with a token symbol.
     expect(getAllByText("$9.6M").length).toBeGreaterThan(0)
@@ -52,15 +50,12 @@ describe("BorrowableAssetsPanel loan variant", () => {
     expect(within(cells[4]).getByRole("img", { name: "Capacity filled 62%" })).toBeInTheDocument()
   })
 
-  it("renders capacity filled as the rounded utilization gauge on the mobile card", () => {
+  it("renders capacity filled as the rounded utilization gauge with the Borrow row action", () => {
     const raw: BorrowableAsset = { ...wbtc, utilization: 69.68000215736105 }
-    const { getAllByRole, queryAllByRole } = render(
-      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} />,
-    )
+    const { getAllByRole, queryAllByRole } = render(<BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} />)
 
     expect(getAllByRole("img", { name: "Capacity filled 70%" }).length).toBeGreaterThan(0)
     expect(queryAllByRole("button", { name: "Deposit" })).toHaveLength(0)
     expect(getAllByRole("button", { name: "Borrow" }).length).toBeGreaterThan(0)
-    expect(getAllByRole("button", { name: "Manage" }).length).toBeGreaterThan(0)
   })
 })

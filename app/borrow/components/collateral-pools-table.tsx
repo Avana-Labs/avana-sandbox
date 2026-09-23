@@ -2,7 +2,6 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -13,31 +12,19 @@ import {
   SortHeaderButton,
 } from "@/app/components/market-table-primitives"
 import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-} from "@/app/components/market-card-primitives"
-import {
   formatRiskPremium,
   getSpokeById,
-  type BorrowPoolEvent,
   type BorrowPoolRow,
   type BorrowSpoke,
   type BorrowableAsset,
   type DexGroup,
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
-import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
+import { TokenBubble } from "./atoms"
 import { formatApy } from "@/app/lib/format"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
@@ -56,38 +43,12 @@ import {
   TABLE_CELL_PADDING_TRAILING,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
+  TABLE_INDEX_PHONE_HIDDEN,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_RIGHT,
   tableColumnLayout,
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
-
-function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
-  if (!events || events.length === 0) return null
-  return (
-    <div className="mt-1 flex flex-wrap justify-end gap-1">
-      {events.map((event, index) => {
-        const tone = event.tone ?? "info"
-        const toneClass =
-          tone === "positive"
-            ? "bg-emerald-500/10 text-success"
-            : tone === "warning"
-              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-              : tone === "danger"
-                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                : "bg-surface-inset text-muted-foreground"
-        return (
-          <span
-            key={`${event.label}-${index}`}
-            className={cn("inline-flex items-center rounded-xs px-1.5 py-0.5 text-[10px] font-medium", toneClass)}
-          >
-            {event.label}
-          </span>
-        )
-      })}
-    </div>
-  )
-}
 
 type CollateralPoolsTableProps = {
   groups: ReadonlyArray<DexGroup>
@@ -95,12 +56,11 @@ type CollateralPoolsTableProps = {
   pending?: ReadonlyArray<PendingMarketRow>
   onViewMarket: (pool: BorrowPoolRow) => void
   onUseAsCollateral: (pool: BorrowPoolRow) => void
-  onBorrowAssetDesktop: (asset: BorrowableAsset) => void
-  onBorrowAssetMobile: (asset: BorrowableAsset) => void
+  /** Borrowable-tab row action (the workspace picks the desktop or phone behaviour). */
+  onBorrowAsset: (asset: BorrowableAsset) => void
 }
 
 type SectionTabId = "collateral" | "borrow"
-const INITIAL_MOBILE_COLLATERAL_ROWS = 4
 
 function SectionTabs({
   activeTab,
@@ -155,8 +115,8 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
       ? `${formatPairRate(p0 / p1)} ${quote}`
       : `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
-    <div className="flex min-w-0 items-center gap-4">
-      <div className="flex items-center">
+    <div className="flex min-w-0 items-center gap-4 max-md:gap-2">
+      <div className="flex shrink-0 items-center">
         <span className="relative z-[1]">
           <TokenBubble visual={pool.visuals[0]} size="table" ring={false} className="bg-transparent" />
         </span>
@@ -202,7 +162,9 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { t } = useTranslation()
   return (
     <tr className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`} onClick={() => onViewMarket(pool)}>
-      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_BG)}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_INDEX_PHONE_HIDDEN, TABLE_ROW_HOVER_BG)}>
+        {index + 1}
+      </td>
       <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
             navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
@@ -325,7 +287,7 @@ function CollateralDesktopTable({
     <ScrollableTable layout={COLLATERAL_TABLE_LAYOUT}>
       <thead>
         <tr className={TABLE_HEADER_ROW}>
-          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
+          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
             {sortHeader("asset", t("Asset"))}
           </th>
@@ -377,12 +339,12 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
   pending = [],
   onViewMarket,
   onUseAsCollateral,
-  onBorrowAssetDesktop,
+  onBorrowAsset,
 }: CollateralPoolsTableProps) {
   const spokes = groups.flatMap((group) => group.spokes)
 
   return (
-    <div className="hidden space-y-10 md:block">
+    <div className="space-y-10">
       {spokes.map((entry, index) => (
         <SpokeDesktopSection
           key={entry.spoke.id}
@@ -392,7 +354,7 @@ export const CollateralPoolsTable = memo(function CollateralPoolsTable({
           pending={pending.filter((row) => row.spoke === entry.spoke.id)}
           onViewMarket={onViewMarket}
           onUseAsCollateral={onUseAsCollateral}
-          onBorrowAsset={onBorrowAssetDesktop}
+          onBorrowAsset={onBorrowAsset}
           deferContent={index > 0}
         />
       ))}
@@ -458,7 +420,8 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
-          <h3 className="text-[22px] font-normal tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
+          {/* Phones: title first (left), tabs on the right; desktop: tabs left, title right. */}
+          <h3 className="min-w-0 truncate text-[16px] font-normal tracking-[-0.01em] text-foreground max-md:order-first dark:text-white md:text-[24px]">
             {spoke.label}
           </h3>
         </div>
@@ -481,204 +444,6 @@ function SpokeDesktopSection({
             <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} />
           )}
         </div>
-      </div>
-    </section>
-  )
-}
-
-export function CollateralPoolsList({
-  groups,
-  borrowAssetsBySpoke,
-  pending = [],
-  onViewMarket,
-  onUseAsCollateral,
-  onBorrowAssetMobile,
-}: CollateralPoolsTableProps) {
-  return (
-    <div className="space-y-8 md:hidden">
-      {groups
-        .flatMap((group) => group.spokes)
-        .map((entry, index) => (
-          <SpokeMobileSection
-            key={entry.spoke.id}
-            spoke={entry.spoke}
-            rows={entry.rows}
-            borrowAssets={borrowAssetsBySpoke[entry.spoke.id] ?? []}
-            pending={pending.filter((row) => row.spoke === entry.spoke.id)}
-            onViewMarket={onViewMarket}
-            onUseAsCollateral={onUseAsCollateral}
-            onBorrowAsset={onBorrowAssetMobile}
-            deferContent={index > 0}
-          />
-        ))}
-    </div>
-  )
-}
-
-function SpokeMobileSection({
-  spoke,
-  rows,
-  borrowAssets,
-  pending,
-  onViewMarket,
-  onUseAsCollateral,
-  onBorrowAsset,
-  deferContent,
-}: {
-  spoke: BorrowSpoke
-  rows: BorrowPoolRow[]
-  borrowAssets: BorrowableAsset[]
-  pending: PendingMarketRow[]
-  onViewMarket: (pool: BorrowPoolRow) => void
-  onUseAsCollateral: (pool: BorrowPoolRow) => void
-  onBorrowAsset: (asset: BorrowableAsset) => void
-  deferContent: boolean
-}) {
-  const router = useRouter()
-  // Each spoke/category owns its own Collateral/Borrowable toggle.
-  const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
-  const [expanded, setExpanded] = useState(false)
-  const [contentMounted, setContentMounted] = useState(!deferContent)
-  const sectionRef = useRef<HTMLElement | null>(null)
-  const { compact } = useCurrency()
-  const { t } = useTranslation()
-  const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
-  const hiddenRowCount = Math.max(0, rows.length - visibleRows.length)
-
-  useEffect(() => {
-    if (contentMounted) return
-    const section = sectionRef.current
-    if (!section || typeof IntersectionObserver === "undefined") {
-      setContentMounted(true)
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return
-        setContentMounted(true)
-        observer.disconnect()
-      },
-      { rootMargin: "400px 0px", threshold: 0 },
-    )
-    observer.observe(section)
-    return () => observer.disconnect()
-  }, [contentMounted])
-
-  // No `cv-section` here — content-visibility traps the sticky header. The title row
-  // is `sticky top-16` so it hangs under the site header while this spoke's cards
-  // scroll, then the next spoke's title takes over.
-  return (
-    <section ref={sectionRef} className="space-y-2">
-      <div className="sticky top-16 z-20 -mx-1 flex items-center justify-between gap-3 bg-background px-1 pb-3 pt-2">
-        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
-        <SectionTabs
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setContentMounted(true)
-            setActiveTab(tab)
-          }}
-        />
-      </div>
-
-      <div className="mt-4">
-        {!contentMounted ? (
-          <div
-            aria-hidden
-            className="min-h-[1080px] rounded-radius-md bg-table-row"
-            data-testid="deferred-mobile-spoke-content"
-          />
-        ) : activeTab === "collateral" ? (
-          <div className="space-y-3">
-            <ul className="space-y-3">
-              {visibleRows.map((pool) => (
-                <li key={pool.id}>
-                  <MarketMobileCard clickable onClick={() => onViewMarket(pool)}>
-                    <MarketMobileCardHeader
-                      identity={<TokenPairCell visuals={pool.visuals} name={formatBorrowPairLabel(pool)} size="md" />}
-                      metric={
-                        <MarketMobileMetric
-                          value={formatApy((pool.aprMin + pool.aprMax) / 2)}
-                          // Borrow has no APY here — this is the pool's LP trading fee,
-                          // so label it "Fees" to match the desktop FEES column.
-                          label={t("Fees")}
-                        />
-                      }
-                    />
-                    {pool.events && pool.events.length > 0 ? (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        <EventTagList events={pool.events} />
-                      </div>
-                    ) : null}
-                    <MarketMobileStatList>
-                      <MarketMobileStatRow label={t("Total Deposits")} value={compact(pool.tvlUsd)} />
-                      <MarketMobileStatRow
-                        label={t("Capacity Filled")}
-                        value={<CapacityFilled size="sm" value={pool.capacityFilledPct} />}
-                      />
-                      <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
-                      <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
-                      <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
-                    </MarketMobileStatList>
-                    <MarketMobileActionFooter>
-                      <MarketMobilePrimaryAction
-                        className="mt-0 flex-1"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onUseAsCollateral(pool)
-                        }}
-                      >
-                        <ActionIcon label="Pledge" />
-                        {t("Pledge")}
-                      </MarketMobilePrimaryAction>
-                      <MarketMobileSecondaryAction
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          router.push(
-                            actionPagePath("borrow", "borrow", {
-                              market: pool.id,
-                              return: `/borrow/markets/${pool.id}`,
-                            }),
-                          )
-                        }}
-                      >
-                        <ActionIcon label="Borrow" />
-                        {t("Borrow")}
-                      </MarketMobileSecondaryAction>
-                    </MarketMobileActionFooter>
-                  </MarketMobileCard>
-                </li>
-              ))}
-              {pending.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex items-center justify-between gap-3 rounded-radius-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground shadow-elev-1"
-                >
-                  <span>
-                    {row.label}
-                    <span className="ml-1 text-xs">· {row.subLabel}</span>
-                  </span>
-                  <PillButton variant="ghost" disabled>
-                    {t("Vote →")}
-                  </PillButton>
-                </li>
-              ))}
-            </ul>
-            {hiddenRowCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover"
-              >
-                {t("View {count} more {spoke} markets")
-                  .replace("{count}", String(hiddenRowCount))
-                  .replace("{spoke}", spoke.label.replace(" Spoke", "").toLowerCase())}
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <BorrowableAssetsPanel rows={borrowAssets} onBorrow={onBorrowAsset} />
-        )}
       </div>
     </section>
   )

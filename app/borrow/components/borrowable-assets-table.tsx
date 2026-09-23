@@ -14,17 +14,6 @@ import {
   ScrollableTable,
   SortHeaderButton,
 } from "@/app/components/market-table-primitives"
-import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-} from "@/app/components/market-card-primitives"
 import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { TokenBubble } from "./atoms"
@@ -44,6 +33,7 @@ import {
   TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
+  TABLE_INDEX_PHONE_HIDDEN,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_RIGHT,
   tableColumnLayout,
@@ -53,10 +43,9 @@ import {
 type BorrowableAssetsTableProps = {
   rows: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
-  onViewMarket?: (asset: BorrowableAsset) => void
 }
 
-export function BorrowableAssetsPanel({ rows, onBorrow, onViewMarket }: BorrowableAssetsTableProps) {
+export function BorrowableAssetsPanel({ rows, onBorrow }: BorrowableAssetsTableProps) {
   const { t } = useTranslation()
   if (rows.length === 0) {
     return (
@@ -66,101 +55,8 @@ export function BorrowableAssetsPanel({ rows, onBorrow, onViewMarket }: Borrowab
     )
   }
 
-  return (
-    <div>
-      <div className="hidden md:block">
-        <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
-      </div>
-
-      <ul className="space-y-3 md:hidden">
-        {rows.map((asset, index) => (
-          <BorrowableMobileCardRow
-            key={asset.id}
-            asset={asset}
-            index={index}
-            onBorrow={onBorrow}
-            onViewMarket={onViewMarket}
-          />
-        ))}
-      </ul>
-    </div>
-  )
+  return <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
 }
-
-// Memoized so an unchanged card doesn't re-render when a sibling row's data changes.
-// Reads router/currency/translation from hooks internally, keeping props to stable
-// primitives + references (asset, index, callbacks) so React.memo can bail out.
-const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
-  asset,
-  index,
-  onBorrow,
-  onViewMarket,
-}: {
-  asset: BorrowableAsset
-  index: number
-  onBorrow: (asset: BorrowableAsset) => void
-  onViewMarket?: (asset: BorrowableAsset) => void
-}) {
-  const router = useRouter()
-  const { compact } = useCurrency()
-  const { t } = useTranslation()
-  return (
-    <li>
-      <MarketMobileCard
-        clickable
-        onClick={() => {
-          onViewMarket?.(asset)
-          router.push(borrowAssetDetailPath(asset.id))
-        }}
-      >
-        <MarketMobileCardHeader
-          identity={
-            <div className="flex items-center gap-2.5">
-              <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
-              <MarketMobileIdentityText
-                title={asset.name}
-                subtitle={`${compact(asset.totalBorrowedUsd + asset.availableUsd)} ${t("Supply")}`}
-              />
-            </div>
-          }
-          metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label={t("Borrow APR")} />}
-        />
-
-        <MarketMobileStatList>
-          <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
-          <MarketMobileStatRow
-            label={t("Capacity Filled")}
-            value={<CapacityFilled size="sm" value={asset.utilization} />}
-          />
-          <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
-        </MarketMobileStatList>
-
-        <MarketMobileActionFooter>
-          <MarketMobilePrimaryAction
-            className="mt-0"
-            onClick={(event) => {
-              event.stopPropagation()
-              onBorrow(asset)
-            }}
-          >
-            <ActionIcon label="Borrow" />
-            {t("Borrow")}
-          </MarketMobilePrimaryAction>
-          <MarketMobileSecondaryAction
-            onClick={(event) => {
-              event.stopPropagation()
-              onViewMarket?.(asset)
-              router.push(borrowAssetDetailPath(asset.id))
-            }}
-          >
-            <ActionIcon label="Manage" />
-            {t("Manage")}
-          </MarketMobileSecondaryAction>
-        </MarketMobileActionFooter>
-      </MarketMobileCard>
-    </li>
-  )
-})
 
 // Memoized loan-variant row: reads price via the reactive `useCanonicalPriceFor` hook
 // and pulls router/currency/translation from hooks internally, so the only props are
@@ -183,7 +79,9 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
       className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
       onClick={() => router.push(borrowAssetDetailPath(asset.id))}
     >
-      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_BG)}>{index + 1}</td>
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_INDEX_PHONE_HIDDEN, TABLE_ROW_HOVER_BG)}>
+        {index + 1}
+      </td>
       <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
             navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
@@ -299,7 +197,7 @@ function LoanAssetsSection({
     <ScrollableTable layout={LOAN_TABLE_LAYOUT}>
       <thead>
         <tr className={TABLE_HEADER_ROW}>
-          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
+          <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
             {sortHeader("asset", t("Asset"))}
           </th>
