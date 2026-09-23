@@ -52,6 +52,7 @@
     "ask-ai:corpus:check": "node scripts/render-ask-ai-corpus.mjs --check",
     "test:e2e": "playwright test",
     "test:e2e:prepare-actions": "node scripts/action-e2e-fixtures.mjs",
+    "test:e2e:guest": "playwright test --config playwright.guest.config.ts",
     "test:e2e:audit": "playwright test tests/e2e/app-audit.spec.ts",
     "test:e2e:browser-soak": "playwright test tests/e2e/browser-session-soak.spec.ts --project=chromium",
     "test:e2e:performance": "playwright test tests/e2e/route-performance.spec.ts",

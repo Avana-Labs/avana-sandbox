@@ -3,14 +3,23 @@ import { expect, test } from "@playwright/test"
 /**
  * Guests browse every product route on live data; only the dashboard and umbrella show the
  * onboarding flow. Needs a closed gate (the default Playwright server runs the open gate):
- *   AVANA_GUEST_CLOSED_GATE_E2E=1 PLAYWRIGHT_BASE_URL=<server without NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE>
+ *   npm run test:e2e:guest
  */
 test.describe("guest browsing", () => {
   test.skip(
     process.env.AVANA_GUEST_CLOSED_GATE_E2E !== "1",
-    "Set AVANA_GUEST_CLOSED_GATE_E2E=1 against a server without NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE.",
+    "Closed-gate only: run `npm run test:e2e:guest`.",
   )
   test.use({ viewport: { width: 1440, height: 900 } })
+
+  // Fail loudly when pointed at an open-gate server (the default Playwright dev server), where
+  // every visitor is signed in and these assertions fail for the wrong reason.
+  test.beforeAll(async ({ request }) => {
+    const html = await (await request.get("/dashboard")).text()
+    if (!html.includes('data-testid="onboarding-canvas"')) {
+      throw new Error("The server under test runs the dev open gate. Use `npm run test:e2e:guest`.")
+    }
+  })
 
   for (const path of ["/", "/borrow/markets/bal-stable-gho-usdc"]) {
     test(`${path} shows the product with a Connect Wallet CTA`, async ({ page }) => {
