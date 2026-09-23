@@ -272,7 +272,7 @@ describe("ActionConfigureStage without a transacting wallet", () => {
   ])("sends a guest to the dashboard onboarding from the %s CTA", (_layout, props) => {
     const onPrimary = renderWith("guest", props)
     const cta = screen.getByTestId("action-footer-primary")
-    expect(cta).toHaveTextContent("No Wallet Connected")
+    expect(cta).toHaveTextContent("Connect Wallet")
     expect(cta).toHaveAttribute("href", "/dashboard")
     fireEvent.click(cta)
     expect(onPrimary).not.toHaveBeenCalled()
@@ -280,7 +280,7 @@ describe("ActionConfigureStage without a transacting wallet", () => {
 
   it("keeps the guest CTA even when the preview is blocked", () => {
     renderWith("guest", { preview: { ...preview, allowed: false, blockedReason: "Insufficient balance" } })
-    expect(screen.getByTestId("action-footer-primary")).toHaveTextContent("No Wallet Connected")
+    expect(screen.getByTestId("action-footer-primary")).toHaveTextContent("Connect Wallet")
   })
 
   it("asks a signed-in wallet that has not onboarded to complete onboarding", () => {

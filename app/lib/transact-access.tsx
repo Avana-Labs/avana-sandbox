@@ -20,7 +20,7 @@ export const TRANSACT_ACCESS_HREF = "/dashboard"
 
 /** Primary CTA label for a viewer who cannot transact yet, or null when they can. */
 export function transactAccessCtaLabel(access: TransactAccess) {
-  if (access === "guest") return "No Wallet Connected"
+  if (access === "guest") return "Connect Wallet"
   if (access === "needs-onboarding") return "Complete onboarding"
   return null
 }

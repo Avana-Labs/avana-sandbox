@@ -17,11 +17,11 @@ const renderBar = (access: TransactAccess) =>
   )
 
 describe("MobileDetailActionBar", () => {
-  it("collapses to one No Wallet Connected button for a guest", () => {
+  it("collapses to one Connect Wallet button for a guest", () => {
     renderBar("guest")
     const links = screen.getAllByRole("link")
     expect(links).toHaveLength(1)
-    expect(links[0]).toHaveTextContent("No Wallet Connected")
+    expect(links[0]).toHaveTextContent("Connect Wallet")
     expect(links[0]).toHaveAttribute("href", "/dashboard")
   })
 

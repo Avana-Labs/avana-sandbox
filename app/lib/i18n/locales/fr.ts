@@ -1798,7 +1798,6 @@ const dict: TranslationDictionary = {
   "Support request": "Demande de support",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Si quelque chose semble anormal, envoyez les détails et notre équipe pourra vous aider à trier le problème.",
-  "No Wallet Connected": "Aucun portefeuille connecté",
   "Complete onboarding": "Terminer l’intégration",
 }
 

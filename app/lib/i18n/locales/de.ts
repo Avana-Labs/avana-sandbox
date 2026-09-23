@@ -1804,7 +1804,6 @@ const dict: TranslationDictionary = {
   "Support request": "Support-Anfrage",
   "If something looks off, send the details and our team can help you triage the issue.":
     "Wenn etwas nicht stimmt, sende die Details — unser Team hilft dir, das Problem einzuordnen.",
-  "No Wallet Connected": "Keine Wallet verbunden",
   "Complete onboarding": "Onboarding abschließen",
 }
 

@@ -1776,7 +1776,6 @@ const dict: TranslationDictionary = {
   "Support request": "サポート依頼",
   "If something looks off, send the details and our team can help you triage the issue.":
     "おかしなものがあれば詳細を送ってください。チームが問題の切り分けをお手伝いします。",
-  "No Wallet Connected": "ウォレット未接続",
   "Complete onboarding": "オンボーディングを完了",
 }
 

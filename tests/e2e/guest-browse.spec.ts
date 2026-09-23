@@ -13,11 +13,11 @@ test.describe("guest browsing", () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   for (const path of ["/", "/borrow/markets/bal-stable-gho-usdc"]) {
-    test(`${path} shows the product with a No Wallet Connected CTA`, async ({ page }) => {
+    test(`${path} shows the product with a Connect Wallet CTA`, async ({ page }) => {
       await page.goto(path)
       await expect(page.getByTestId("onboarding-canvas")).toHaveCount(0)
       const cta = page.getByTestId("action-footer-primary")
-      await expect(cta).toHaveText("No Wallet Connected", { timeout: 20_000 })
+      await expect(cta).toHaveText("Connect Wallet", { timeout: 20_000 })
       await cta.click()
       await expect(page).toHaveURL(/\/dashboard$/)
       await expect(page.getByTestId("onboarding-canvas")).toBeVisible()
@@ -44,9 +44,9 @@ test.describe("guest browsing", () => {
     test.use({ viewport: { width: 390, height: 844 } })
 
     for (const path of ["/lend/markets/usdc", "/borrow/markets/bal-stable-gho-usdc"]) {
-      test(`${path} shows one No Wallet Connected button`, async ({ page }) => {
+      test(`${path} shows one Connect Wallet button`, async ({ page }) => {
         await page.goto(path)
-        const bar = page.locator("a[href='/dashboard']", { hasText: "No Wallet Connected" })
+        const bar = page.locator("a[href='/dashboard']", { hasText: "Connect Wallet" })
         await expect(bar).toHaveCount(1, { timeout: 20_000 })
         await expect(page.getByRole("link", { name: /Deposit|Withdraw|Supply|Claim/ })).toHaveCount(0)
       })

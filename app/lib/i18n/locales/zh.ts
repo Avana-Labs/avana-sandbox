@@ -1761,7 +1761,6 @@ const dict: TranslationDictionary = {
   "Support request": "支持请求",
   "If something looks off, send the details and our team can help you triage the issue.":
     "若发现异常，请发送详情，我们的团队可协助排查问题。",
-  "No Wallet Connected": "未连接钱包",
   "Complete onboarding": "完成新手引导",
 }
 

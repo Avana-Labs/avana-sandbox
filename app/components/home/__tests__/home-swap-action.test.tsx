@@ -100,6 +100,6 @@ it("sends a guest to the dashboard onboarding instead of reviewing a swap", () =
     </TransactAccessContext.Provider>,
   )
   const cta = screen.getByTestId("action-footer-primary")
-  expect(cta).toHaveTextContent("No Wallet Connected")
+  expect(cta).toHaveTextContent("Connect Wallet")
   expect(cta).toHaveAttribute("href", "/dashboard")
 })
