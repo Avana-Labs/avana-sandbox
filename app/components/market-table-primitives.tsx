@@ -10,6 +10,49 @@ export function DesktopTableSurface({ children, className }: { children: ReactNo
   return <div className={cn("overflow-hidden rounded-radius-xl bg-transparent", className)}>{children}</div>
 }
 
+export function SortIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 12 16"
+      fill="none"
+      className="size-[14px] shrink-0 text-muted-foreground/70 dark:text-white/60"
+    >
+      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/**
+ * Sortable column header label. Uppercases in CSS (`!uppercase`: Tailwind preflight resets
+ * `text-transform` on buttons, so the `<th>`'s uppercase would not reach the label) and never
+ * wraps, so every table's header strip reads the same.
+ */
+export function SortHeaderButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: ReactNode
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 whitespace-nowrap !uppercase transition-colors",
+        active ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
+      )}
+    >
+      <span>{label}</span>
+      <SortIcon />
+    </button>
+  )
+}
+
 const TABLE_SCROLL_ARROW_CLASS =
   "inline-flex size-6 items-center justify-center rounded-full text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-30 dark:text-white"
 
