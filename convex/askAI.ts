@@ -17,6 +17,7 @@ import type { Id } from "./_generated/dataModel"
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { getAuthedWallet } from "./sandbox/auth"
+import { recordTurnOutcome } from "./askAITelemetry"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -507,6 +508,7 @@ export const enqueueTurn = mutation({
       promptMessageId: saved.messageId,
       prompt: text,
       status: "queued",
+      timeoutOutcome: "pending",
       createdAt: now,
       updatedAt: now,
     })
@@ -538,7 +540,8 @@ export const claimQueuedTurn = internalMutation({
       .unique()
     if (!thread || thread.ownerSubject !== turn.ownerSubject || thread.status !== "active") {
       if (turn.budgetReservationId) await releaseUnstartedReservation(ctx, turn.budgetReservationId)
-      await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+      await recordTurnOutcome(ctx, turn, "cancelled")
+      await ctx.db.patch(turnId, { status: "cancelled", timeoutOutcome: "cancelled", updatedAt: Date.now() })
       return null
     }
     try {
@@ -574,7 +577,8 @@ export const timeoutRunningTurn = internalMutation({
   handler: async (ctx, { turnId }) => {
     const turn = await ctx.db.get(turnId)
     if (!turn || turn.status !== "running" || Date.now() - turn.updatedAt < ASK_AI_RUNNING_TIMEOUT_MS) return false
-    await ctx.db.patch(turnId, { status: "failed", updatedAt: Date.now() })
+    await recordTurnOutcome(ctx, turn, "timed_out")
+    await ctx.db.patch(turnId, { status: "failed", timeoutOutcome: "timed_out", updatedAt: Date.now() })
     await discardStrayAssistantMessage(ctx, turn.threadId)
     await scheduleNextQueuedTurn(ctx, turn.threadId)
     return true
@@ -633,7 +637,8 @@ export const cancelQueuedTurn = mutation({
     if (turn.ownerSubject !== ownerSubject) throw new Error("Ask AI turn not found")
     if (turn.status !== "queued") throw new Error("Only queued turns can be cancelled")
     if (turn.budgetReservationId) await releaseUnstartedReservation(ctx, turn.budgetReservationId)
-    await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+    await recordTurnOutcome(ctx, turn, "cancelled")
+    await ctx.db.patch(turnId, { status: "cancelled", timeoutOutcome: "cancelled", updatedAt: Date.now() })
     await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
 })
@@ -650,7 +655,12 @@ export const retryFailedTurn = mutation({
       enforceBurst: true,
       enforceConcurrent: true,
     })
-    await ctx.db.patch(turnId, { status: "queued", budgetReservationId, updatedAt: Date.now() })
+    await ctx.db.patch(turnId, {
+      status: "queued",
+      timeoutOutcome: "pending",
+      budgetReservationId,
+      updatedAt: Date.now(),
+    })
     await ctx.scheduler.runAfter(0, internal.askAIAgent.generateTurn, { turnId })
   },
 })
@@ -670,7 +680,8 @@ export const cancelRunningTurn = mutation({
         abortStream(ctx, components.agent, { streamId: stream.streamId, reason: "Cancelled by user" }),
       ),
     )
-    await ctx.db.patch(running._id, { status: "cancelled", updatedAt: Date.now() })
+    await recordTurnOutcome(ctx, running, "cancelled")
+    await ctx.db.patch(running._id, { status: "cancelled", timeoutOutcome: "cancelled", updatedAt: Date.now() })
     await scheduleNextQueuedTurn(ctx, threadId)
     return true
   },
@@ -797,7 +808,8 @@ export const completeGeneratedTurn = internalMutation({
       await adjustAskAICostBucket(ctx, turn.ownerSubject, Date.now(), usage.totalTokens, 0)
     }
     const now = Date.now()
-    await ctx.db.patch(turn._id, { status: "complete", updatedAt: now })
+    await recordTurnOutcome(ctx, turn, "completed")
+    await ctx.db.patch(turn._id, { status: "complete", timeoutOutcome: "completed", updatedAt: now })
     await ctx.db.patch(thread._id, { updatedAt: now })
     await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
@@ -827,7 +839,8 @@ export const failTurn = internalMutation({
     const turn = await ctx.db.get(turnId)
     if (!turn) return
     if (turn.status !== "running" || (budgetReservationId && turn.budgetReservationId !== budgetReservationId)) return
-    await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
+    await recordTurnOutcome(ctx, turn, "failed")
+    await ctx.db.patch(turn._id, { status: "failed", timeoutOutcome: "failed", updatedAt: Date.now() })
     await discardStrayAssistantMessage(ctx, turn.threadId)
     await scheduleNextQueuedTurn(ctx, turn.threadId)
   },

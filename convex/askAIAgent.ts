@@ -768,6 +768,7 @@ export const generateTurn = internalAction({
         },
       })
       await ctx.runMutation(internal.askAITelemetry.record, {
+        attemptId: String(turn.budgetReservationId ?? turn.turnId),
         ownerSubject: turn.ownerSubject,
         threadId: turn.threadId,
         promptMessageId: turn.promptMessageId,
@@ -797,6 +798,7 @@ export const generateTurn = internalAction({
       })
       // Keep the raw error in telemetry (detailed text, never client-visible)...
       await ctx.runMutation(internal.askAITelemetry.record, {
+        attemptId: String(turn.budgetReservationId ?? turn.turnId),
         ownerSubject: turn.ownerSubject,
         threadId: turn.threadId,
         promptMessageId: turn.promptMessageId,

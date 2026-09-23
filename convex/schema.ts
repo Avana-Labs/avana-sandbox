@@ -1864,6 +1864,15 @@ export default defineSchema({
     capacityAttempts: v.optional(v.number()),
     nextCapacityRetryAt: v.optional(v.number()),
     budgetReservationId: v.optional(v.id("askAIBudgetReservations")),
+    timeoutOutcome: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("completed"),
+        v.literal("failed"),
+        v.literal("timed_out"),
+        v.literal("cancelled"),
+      ),
+    ),
     threadId: v.string(),
     ownerSubject: v.string(),
     clientRequestId: v.optional(v.string()),
@@ -1914,12 +1923,16 @@ export default defineSchema({
     .index("by_message", ["messageId"]),
 
   askAITelemetry: defineTable({
+    attemptId: v.optional(v.string()),
+    timeoutOutcome: v.optional(
+      v.union(v.literal("completed"), v.literal("failed"), v.literal("timed_out"), v.literal("cancelled")),
+    ),
     ownerSubject: v.string(),
     threadId: v.string(),
     promptMessageId: v.string(),
-    status: v.union(v.literal("complete"), v.literal("failed")),
-    model: v.string(),
-    provider: v.string(),
+    status: v.union(v.literal("complete"), v.literal("failed"), v.literal("cancelled")),
+    model: v.optional(v.string()),
+    provider: v.optional(v.string()),
     durationMs: v.number(),
     inputTokens: v.optional(v.number()),
     outputTokens: v.optional(v.number()),
@@ -1933,6 +1946,7 @@ export default defineSchema({
     error: v.optional(v.string()),
     createdAt: v.number(),
   })
+    .index("by_attempt", ["attemptId"])
     .index("by_created", ["createdAt"])
     .index("by_status_created", ["status", "createdAt"])
     .index("by_owner_created", ["ownerSubject", "createdAt"]),
