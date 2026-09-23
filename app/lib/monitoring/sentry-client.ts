@@ -5,6 +5,7 @@
  * once `init` completes.
  */
 import { scheduleIdle } from "@/app/lib/web3/schedule-idle"
+import { isSentryEnabled } from "@/app/lib/monitoring/sentry-enabled"
 import { describeBlockedEval } from "@/app/lib/monitoring/csp-violation"
 
 type SentryModule = typeof import("@sentry/nextjs")
@@ -47,10 +48,10 @@ function loadSentry(): Promise<SentryModule> {
     const isProd = process.env.NODE_ENV === "production"
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      // Local `npm run dev` still has a DSN in `.env.local`. Keep the SDK quiet there so
-      // expected Convex OCC/auth noise and Fast Refresh unhandledRejections are not shipped
-      // to the shared project (and so Sentry itself does not spam the browser console).
-      enabled: isProd,
+      // Local `npm run dev` and a local `next start` still have a DSN in `.env.local`. Keep the SDK
+      // quiet there so expected Convex OCC/auth noise, Fast Refresh unhandledRejections and laptop
+      // test runs are not shipped to the shared project as production errors.
+      enabled: isSentryEnabled(),
 
       // Session Replay is intentionally NOT enabled. replayIntegration pulls in rrweb (~hundreds
       // of KB). Error + performance reporting is unaffected. If replay is ever needed again,

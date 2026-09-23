@@ -1,6 +1,7 @@
 import process from "node:process"
 import bundleAnalyzer from "@next/bundle-analyzer"
 import { withSentryConfig } from "@sentry/nextjs"
+import { sentryDeploymentFlag } from "./app/lib/monitoring/sentry-deployment-flag.mjs"
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -48,6 +49,10 @@ const isVercelPreview = process.env.VERCEL_ENV === "preview"
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // Inlined for server, edge and client: Sentry reports only from a Vercel deployment.
+  env: {
+    NEXT_PUBLIC_AVANA_SENTRY_DEPLOYED: sentryDeploymentFlag(process.env),
+  },
   typescript: {
     // Same duplication for `tsc`, but a type error CAN change behaviour, so this is only
     // skipped on preview builds — the feature-branch pushes that make up most of the build

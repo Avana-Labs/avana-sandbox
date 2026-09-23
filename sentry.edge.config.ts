@@ -4,10 +4,12 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs"
+import { isSentryEnabled } from "@/app/lib/monitoring/sentry-enabled"
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  enabled: process.env.NODE_ENV === "production",
+  // Vercel deployments only: a local `next start` must not report laptop test runs as production.
+  enabled: isSentryEnabled(),
 
   // Sampled at 10% in production to bound trace volume; raise locally if needed.
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
