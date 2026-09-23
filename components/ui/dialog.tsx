@@ -4,15 +4,14 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 
 import { cn } from "@/lib/utils"
+import { OVERLAY_SCRIM_CLASS } from "@/app/components/card-surface-tokens"
 
 const Dialog = DialogPrimitive.Root
 
 const DialogPortal = DialogPrimitive.Portal
 
-// The single scrim for every popup/overlay. Reuse it for any full-screen backdrop
-// so tint and blur strength stay consistent across surfaces.
-const overlayClassName =
-  "fixed inset-0 z-50 bg-black/25 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+// Tint and blur come from the shared OVERLAY_SCRIM_CLASS so every backdrop stays consistent.
+const overlayClassName = `fixed inset-0 z-50 ${OVERLAY_SCRIM_CLASS} data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0`
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
