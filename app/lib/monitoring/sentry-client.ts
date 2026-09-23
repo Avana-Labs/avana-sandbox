@@ -1,14 +1,14 @@
 /**
- * Lazy browser Sentry. `@sentry/nextjs` is ~63KB gzipped; a static import puts download, parse
- * and `init()` on every page's critical path ahead of hydration, so it loads on idle after
- * `load` instead. Errors thrown in the gap are buffered by two plain listeners and replayed
- * once `init` completes.
+ * Lazy browser Sentry. The SDK is tens of KB gzipped; a static import puts download, parse and
+ * `init()` on every page's critical path ahead of hydration, so it loads on idle after `load`
+ * instead, and not at all when reporting is off (local builds). Errors thrown in the gap are
+ * buffered by two plain listeners and replayed once `init` completes.
  */
 import { scheduleIdle } from "@/app/lib/web3/schedule-idle"
 import { isSentryEnabled } from "@/app/lib/monitoring/sentry-enabled"
 import { describeBlockedEval } from "@/app/lib/monitoring/csp-violation"
 
-type SentryModule = typeof import("@sentry/nextjs")
+type SentryModule = typeof import("./sentry-sdk")
 
 let modulePromise: Promise<SentryModule> | null = null
 let loaded: SentryModule | null = null
@@ -44,7 +44,7 @@ function onEarlyRejection(event: PromiseRejectionEvent) {
 
 function loadSentry(): Promise<SentryModule> {
   if (modulePromise) return modulePromise
-  modulePromise = import("@sentry/nextjs").then((Sentry) => {
+  modulePromise = import("./sentry-sdk").then((Sentry) => {
     const isProd = process.env.NODE_ENV === "production"
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -98,6 +98,7 @@ function loadSentry(): Promise<SentryModule> {
 
 /** Report an error now if the SDK is up, otherwise after it loads. Never throws. */
 export function captureException(error: unknown) {
+  if (!isSentryEnabled()) return
   if (loaded) {
     loaded.captureException(error)
     return
@@ -114,7 +115,7 @@ export function onRouterTransitionStart(href: string, navigationType: string) {
 
 /** Call once at startup: buffer early errors, then load the SDK off the critical path. */
 export function scheduleSentryLoad() {
-  if (typeof window === "undefined") return
+  if (typeof window === "undefined" || !isSentryEnabled()) return
   window.addEventListener("error", onEarlyError)
   window.addEventListener("unhandledrejection", onEarlyRejection)
   // Anonymous EvalError stacks omit the caller. The browser's CSP event provides

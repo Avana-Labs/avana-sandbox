@@ -4,9 +4,11 @@ const sentry = vi.hoisted(() => ({
   init: vi.fn(),
   captureEvent: vi.fn(),
   captureException: vi.fn(),
+  captureRouterTransitionStart: vi.fn(),
 }))
 vi.mock("@sentry/nextjs", () => sentry)
 vi.mock("@/app/lib/web3/schedule-idle", () => ({ scheduleIdle: vi.fn() }))
+vi.mock("@/app/lib/monitoring/sentry-enabled", () => ({ isSentryEnabled: () => true }))
 
 it("reports CSP source diagnostics with bounded duplicates while keeping both exceptions visible", async () => {
   const { scheduleSentryLoad } = await import("../sentry-client")
