@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { TokenPricesContext } from "@/app/lib/prices/token-prices-context"
 import { QuickStatsGrid } from "../QuickStatsGrid"
 
 const currencyRef = { current: "USD" as string }
@@ -52,5 +53,32 @@ describe("QuickStatsGrid currency conversion", () => {
     expect(queryByText("$312.4M")).toBeNull()
     // The percentage stat stays as-is (no mixed-currency artifact).
     expect(getByText("62.1%")).toBeInTheDocument()
+  })
+
+  it("updates the detail price when the shared live price context receives an oracle quote", () => {
+    currencyRef.current = "USD"
+    const detail = {
+      hero: { symbol: "WBTC" },
+      quickStats: [
+        { id: "price", label: "Price", value: "$65,000.00" },
+        { id: "utilization", label: "Utilization", value: "62.1%" },
+      ],
+    }
+    const { rerender } = render(
+      <TokenPricesContext.Provider value={{}}>
+        <QuickStatsGrid detail={detail} />
+      </TokenPricesContext.Provider>,
+    )
+
+    expect(screen.getByText("$65,000.00")).toBeInTheDocument()
+
+    rerender(
+      <TokenPricesContext.Provider value={{ wbtc: 84392.11 }}>
+        <QuickStatsGrid detail={detail} />
+      </TokenPricesContext.Provider>,
+    )
+
+    expect(screen.getByText("$84,392.11")).toBeInTheDocument()
+    expect(screen.getByText("62.1%")).toBeInTheDocument()
   })
 })

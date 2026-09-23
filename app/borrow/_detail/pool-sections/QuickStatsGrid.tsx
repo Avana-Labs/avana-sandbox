@@ -1,11 +1,14 @@
 "use client"
 
+import * as React from "react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { QuickStatsProduct } from "@/app/lib/detail-page/live-quick-stats"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { cn } from "@/lib/utils"
 
 type QuickStatLike = {
@@ -16,7 +19,7 @@ type QuickStatLike = {
 }
 
 type Props = {
-  detail: { quickStats: QuickStatLike[] }
+  detail: { hero?: unknown; quickStats: QuickStatLike[] }
   product?: QuickStatsProduct
   className?: string
   hideRisk?: boolean
@@ -110,7 +113,20 @@ function QuickStatsGridView({ detail, className, hideRisk = false, columns = 3 }
 }
 
 export function QuickStatsGrid(props: Props) {
-  // Every detail route merges its preload into `detail` on the server. Do not
-  // replace those visible stats during client hydration.
-  return <QuickStatsGridView {...props} />
+  const priceFor = useCanonicalPriceFor()
+  const hero = props.detail.hero
+  const symbol =
+    hero && typeof hero === "object" && "symbol" in hero && typeof hero.symbol === "string" ? hero.symbol : undefined
+  const price = symbol ? priceFor(symbol) : undefined
+  const quickStats = React.useMemo(() => {
+    if (price === undefined) return props.detail.quickStats
+    return props.detail.quickStats.map((stat) =>
+      stat.id === "price" ? { ...stat, value: formatTokenPrice(price) } : stat,
+    )
+  }, [price, props.detail.quickStats])
+  const detail = quickStats === props.detail.quickStats ? props.detail : { ...props.detail, quickStats }
+
+  // The shared reactive price source keeps detail-page stats aligned with market tables as oracle
+  // quotes arrive; all other preloaded stats remain untouched.
+  return <QuickStatsGridView {...props} detail={detail} />
 }
