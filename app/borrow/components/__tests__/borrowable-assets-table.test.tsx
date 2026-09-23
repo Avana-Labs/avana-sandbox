@@ -37,9 +37,12 @@ describe("BorrowableAssetsPanel loan variant", () => {
     expect(container.textContent).not.toMatch(/9\.6M\s+WBTC/)
     expect(container.textContent).not.toMatch(/4\.2M\s+WBTC/)
 
-    const capacityHeading = container.querySelector("thead th span.whitespace-nowrap")
-    expect(capacityHeading).toHaveTextContent("Capacity Filled")
-    expect(capacityHeading).toHaveClass("uppercase")
+    const capacityHeading = [...container.querySelectorAll("thead th button")].find((button) =>
+      button.textContent?.includes("Capacity Filled"),
+    )
+    expect(capacityHeading).toBeDefined()
+    // Shared SortHeaderButton: CSS uppercase on the button, never wraps.
+    expect(capacityHeading).toHaveClass("!uppercase", "whitespace-nowrap")
 
     const borrowableRow = container.querySelector("tbody tr")
     expect(borrowableRow).not.toBeNull()
