@@ -4,6 +4,7 @@ import { Component, Suspense, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { RouteContentSkeleton } from "@/app/components/loading-states"
 import { SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
+import { requiresOnboarding } from "@/app/lib/route-access"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AuthedGateChecker, type GateVerdict } from "./authed-sandbox-gate"
 import styles from "./onboarding-flow.module.css"
@@ -65,9 +66,9 @@ export function SignedInSandboxGate({
   children: ReactNode
 }) {
   const pathname = usePathname()
-  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/")
   const [verdict, setVerdict] = useState<GateVerdict>("unknown")
-  const showChildren = verdict === "done" || (verdict === "unknown" && (optimistic || isAskRoute))
+  // Open routes stay mounted whatever the verdict; only onboarding routes wait for "done".
+  const showChildren = !requiresOnboarding(pathname) || verdict === "done" || (verdict === "unknown" && optimistic)
 
   return (
     <GateErrorBoundary>
