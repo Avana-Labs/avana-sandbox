@@ -1469,11 +1469,9 @@ const dict: TranslationDictionary = {
   Sandbox: "Sandbox",
   "Scenario price": "Senaryo fiyatı",
   "Ask AI": "AI'ya sor",
-  "Search markets…": "Piyasa ara…",
   "Search Avana": "Avana'da ara",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Teminat havuzları, ödünç alınacak ve ödünç verilecek varlıkları arayın.",
-  "Search pools, borrow assets, lend assets": "Havuzları, borç alma ve ödünç verme varlıklarını arayın",
   "Select a position to preview.": "Önizlemek için bir pozisyon seçin.",
   "Select an asset for this swap.": "Bu takas için bir varlık seçin.",
   Selected: "Seçildi",

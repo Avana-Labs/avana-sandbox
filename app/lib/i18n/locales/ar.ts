@@ -1445,11 +1445,9 @@ const dict: TranslationDictionary = {
   Sandbox: "البيئة التجريبية",
   "Scenario price": "سعر السيناريو",
   "Ask AI": "اسأل الذكاء الاصطناعي",
-  "Search markets…": "بحث في الأسواق…",
   "Search Avana": "البحث في Avana",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "ابحث في مجمّعات الضمان وأصول الاقتراض وأصول الإقراض.",
-  "Search pools, borrow assets, lend assets": "ابحث في المجمّعات وأصول الاقتراض وأصول الإقراض",
   "Select a position to preview.": "اختر مركزًا للمعاينة.",
   "Select an asset for this swap.": "اختر أصلاً لهذه المبادلة.",
   Selected: "محدد",

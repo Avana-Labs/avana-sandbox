@@ -1461,11 +1461,9 @@ const dict: TranslationDictionary = {
   Sandbox: "सैंडबॉक्स",
   "Scenario price": "परिदृश्य मूल्य",
   "Ask AI": "AI से पूछें",
-  "Search markets…": "बाज़ार खोजें…",
   "Search Avana": "Avana खोजें",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "कोलैटरल पूल, उधार लेने के एसेट और उधार देने के एसेट खोजें।",
-  "Search pools, borrow assets, lend assets": "पूल, उधार एसेट, लेंड एसेट खोजें",
   "Select a position to preview.": "प्रीव्यू के लिए एक पोज़िशन चुनें।",
   "Select an asset for this swap.": "इस स्वैप के लिए एक एसेट चुनें।",
   Selected: "चयनित",

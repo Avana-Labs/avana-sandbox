@@ -1512,11 +1512,9 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "Verdiente Belohnungen",
   "Scenario price": "Szenario-Preis",
   "Ask AI": "KI fragen",
-  "Search markets…": "Märkte suchen…",
   "Search Avana": "Avana durchsuchen",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Suche nach Sicherheiten-Pools, Kredit-Assets und Verleih-Assets.",
-  "Search pools, borrow assets, lend assets": "Pools, Kredit-Assets, Verleih-Assets suchen",
   "Select a position to preview.": "Wähle eine Position für die Vorschau.",
   "Select an asset for this swap.": "Wähle ein Asset für diesen Swap.",
   Selected: "Ausgewählt",

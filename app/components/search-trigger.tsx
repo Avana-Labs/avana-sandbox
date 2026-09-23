@@ -61,7 +61,7 @@ export function SearchTrigger({
         className="flex h-full min-w-0 flex-1 items-center gap-2.5 bg-transparent text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:gap-3 lg:text-[15px] dark:text-muted-foreground"
       >
         <Search className="h-4 w-4 shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80 lg:h-[17px] lg:w-[17px]" />
-        <span className="min-w-0 flex-1 truncate">{t("Search markets…")}</span>
+        <span className="min-w-0 flex-1 truncate">{t("Search Avana")}</span>
       </button>
       <AskAssistantTrigger onClick={onAskClick} />
     </div>

@@ -436,7 +436,7 @@ export function SearchCommand({
               aria-activedescendant={
                 flatResults[activeIndex] ? `search-result-${flatResults[activeIndex].id}` : undefined
               }
-              placeholder={t("Search pools, borrow assets, lend assets")}
+              placeholder={t("Search Avana")}
               className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
