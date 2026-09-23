@@ -117,4 +117,67 @@ describe("HighlightCarousel", () => {
     expect(x).toBeLessThan(-20)
     expect(x).toBeGreaterThan(-222)
   })
+  it("drags the track with the pointer and swallows the click that ends the drag", () => {
+    const onCardClick = vi.fn()
+    const { container, getByText } = render(
+      <HighlightCarousel
+        durationSeconds={38}
+        renderSequence={(interactive) => (interactive ? <button onClick={onCardClick}>Market</button> : <div />)}
+      />,
+    )
+    const viewport = container.firstElementChild as HTMLDivElement
+    const track = viewport.firstElementChild as HTMLDivElement
+    const card = getByText("Market")
+
+    fireEvent.pointerDown(card, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 300 })
+    fireEvent.pointerMove(card, { pointerId: 1, pointerType: "mouse", clientX: 220 })
+    expect(track.style.transform).toBe("translate3d(-80px, 0, 0)")
+    // Dragging pauses the marquee.
+    expect(frames.size).toBe(0)
+
+    fireEvent.pointerUp(card, { pointerId: 1, pointerType: "mouse", clientX: 220 })
+    fireEvent.click(card)
+    expect(onCardClick).not.toHaveBeenCalled()
+
+    // Dragging right past the start wraps into the loop instead of exposing a gap.
+    fireEvent.pointerDown(card, { pointerId: 2, pointerType: "mouse", button: 0, clientX: 100 })
+    fireEvent.pointerMove(card, { pointerId: 2, pointerType: "mouse", clientX: 200 })
+    expect(track.style.transform).toBe("translate3d(-360px, 0, 0)")
+  })
+
+  it("keeps a click that moves less than the drag threshold", () => {
+    const onCardClick = vi.fn()
+    const { container, getByText } = render(
+      <HighlightCarousel
+        durationSeconds={38}
+        renderSequence={(interactive) => (interactive ? <button onClick={onCardClick}>Market</button> : <div />)}
+      />,
+    )
+    const track = (container.firstElementChild as HTMLDivElement).firstElementChild as HTMLDivElement
+    const card = getByText("Market")
+
+    fireEvent.pointerDown(card, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 300 })
+    fireEvent.pointerMove(card, { pointerId: 1, pointerType: "mouse", clientX: 297 })
+    fireEvent.pointerUp(card, { pointerId: 1, pointerType: "mouse", clientX: 297 })
+    fireEvent.click(card)
+
+    expect(onCardClick).toHaveBeenCalledTimes(1)
+    expect(track.style.transform).toBe("translate3d(0px, 0, 0)")
+  })
+
+  it("scrolls on horizontal trackpad swipes but leaves vertical wheel scrolling to the page", () => {
+    const { container } = render(<HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />)
+    const viewport = container.firstElementChild as HTMLDivElement
+    const track = viewport.firstElementChild as HTMLDivElement
+
+    const horizontal = new WheelEvent("wheel", { deltaX: 40, deltaY: 2, cancelable: true })
+    viewport.dispatchEvent(horizontal)
+    expect(horizontal.defaultPrevented).toBe(true)
+    expect(track.style.transform).toBe("translate3d(-40px, 0, 0)")
+
+    const vertical = new WheelEvent("wheel", { deltaX: 0, deltaY: 60, cancelable: true })
+    viewport.dispatchEvent(vertical)
+    expect(vertical.defaultPrevented).toBe(false)
+    expect(track.style.transform).toBe("translate3d(-40px, 0, 0)")
+  })
 })

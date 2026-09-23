@@ -102,7 +102,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
   // them every render churned the scroller's children and reflowed it (a flicker)
   // whenever live data swapped in or any parent re-rendered.
   const heroCards = useMemo(() => buildHeroCards(pageData), [pageData])
-  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
+  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel({ dragToScroll: true })
 
   return (
     <section className="mb-4">

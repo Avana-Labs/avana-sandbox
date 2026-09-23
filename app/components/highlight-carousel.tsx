@@ -1,6 +1,17 @@
 "use client"
 
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
@@ -15,6 +26,8 @@ export const HIGHLIGHT_CARD_CLASS = `relative block shrink-0 overflow-hidden tex
 
 const DEFAULT_MARQUEE_DURATION_SECONDS = 38
 const STEP_MS = 420
+/** Pointer travel (px) before a press becomes a drag, so taps and clicks on cards still work. */
+const DRAG_THRESHOLD_PX = 6
 const carouselPhaseByKey = new Map<string, number>()
 
 function easeOutCubic(t: number) {
@@ -55,6 +68,7 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
   ref,
 ) {
   const [hovered, setHovered] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
@@ -65,8 +79,30 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
   const stepFromXRef = useRef(0)
   const stepToXRef = useRef(0)
   const stepStartTimeRef = useRef<number | null>(null)
+  const dragRef = useRef<{ pointerId: number; startX: number; startTrackX: number; moved: boolean } | null>(null)
+  const suppressClickRef = useRef(false)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
-  const paused = hovered || reduceMotion || !isVisible
+  const paused = hovered || dragging || reduceMotion || !isVisible
+
+  /** Moves the track to `nextX`, wrapped into one sequence width so manual scrolling loops too. */
+  const moveTrackTo = useCallback(
+    (nextX: number) => {
+      const track = trackRef.current
+      // Measure live: a drag or swipe can arrive before the ResizeObserver reports a new width.
+      const sequenceWidth = sequenceRef.current?.offsetWidth || sequenceWidthRef.current
+      if (!track || sequenceWidth <= 0) return
+      sequenceWidthRef.current = sequenceWidth
+      let x = nextX
+      while (x <= -sequenceWidth) x += sequenceWidth
+      while (x > 0) x -= sequenceWidth
+      steppingRef.current = false
+      stepStartTimeRef.current = null
+      xRef.current = x
+      if (syncKey) carouselPhaseByKey.set(syncKey, Math.max(0, Math.min(1, -x / sequenceWidth)))
+      track.style.transform = `translate3d(${x}px, 0, 0)`
+    },
+    [syncKey],
+  )
 
   useLayoutEffect(() => {
     const sequence = sequenceRef.current
@@ -102,6 +138,24 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
     observer.observe(viewport)
     return () => observer.disconnect()
   }, [])
+
+  // Trackpad horizontal swipes (and shift+wheel) scroll the track. Vertical wheel
+  // movement is left alone so the page still scrolls. Registered natively because
+  // React's wheel listener is passive and cannot stop the browser's back/forward swipe.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const onWheel = (event: WheelEvent) => {
+      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientWidth : 1
+      const horizontal =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.shiftKey ? event.deltaY : 0
+      if (horizontal === 0) return
+      event.preventDefault()
+      moveTrackTo(xRef.current - horizontal * scale)
+    }
+    viewport.addEventListener("wheel", onWheel, { passive: false })
+    return () => viewport.removeEventListener("wheel", onWheel)
+  }, [moveTrackTo])
 
   useEffect(() => {
     if (paused) return
@@ -157,6 +211,49 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
     onHoverChange?.(next)
   }
 
+  // Mouse drag and touch swipe. A press only becomes a drag past the threshold, and
+  // the click that ends a drag is swallowed so it does not open the card under it.
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startTrackX: xRef.current, moved: false }
+  }
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    const dx = event.clientX - drag.startX
+    if (!drag.moved) {
+      if (Math.abs(dx) < DRAG_THRESHOLD_PX) return
+      drag.moved = true
+      event.currentTarget.setPointerCapture?.(event.pointerId)
+      setDragging(true)
+    }
+    moveTrackTo(drag.startTrackX + dx)
+  }
+
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    dragRef.current = null
+    if (!drag.moved) return
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    suppressClickRef.current = true
+    // A cancelled pointer never fires a click; clear the flag so the next real click works.
+    window.setTimeout(() => {
+      suppressClickRef.current = false
+    }, 0)
+    setDragging(false)
+  }
+
+  const onClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return
+    suppressClickRef.current = false
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
   useImperativeHandle(
     ref,
     () => ({
@@ -179,13 +276,7 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
 
         // Loop wrap would animate the whole track the wrong way — keep that instant.
         if (reduceMotion || Math.abs(nextX - fromX) > cardStep * 1.5) {
-          steppingRef.current = false
-          stepStartTimeRef.current = null
-          xRef.current = nextX
-          if (syncKey && sequenceWidth > 0) {
-            carouselPhaseByKey.set(syncKey, Math.max(0, Math.min(1, -nextX / sequenceWidth)))
-          }
-          track.style.transform = `translate3d(${nextX}px, 0, 0)`
+          moveTrackTo(nextX)
           return
         }
 
@@ -195,20 +286,27 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
         steppingRef.current = true
       },
     }),
-    [reduceMotion, syncKey],
+    [moveTrackTo, reduceMotion],
   )
 
   return (
     <div
       ref={viewportRef}
       className={cn(
-        "relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_1rem,black_calc(100%-1rem),transparent_100%)]",
+        "relative w-full touch-pan-y overflow-hidden [mask-image:linear-gradient(to_right,transparent_0,black_1rem,black_calc(100%-1rem),transparent_100%)]",
+        dragging && "cursor-grabbing select-none",
         className,
       )}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onClickCapture={onClickCapture}
+      onDragStart={(event) => event.preventDefault()}
     >
       {/* Left padding offsets the mask's left fade zone so the leading card is
           fully visible at rest; it sits outside the measured sequence so the
