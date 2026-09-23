@@ -9,50 +9,31 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
-import { AssetHero, AssetHeroIdentity, interestRateModelFromAssetDetail } from "@/app/borrow/_detail/asset-sections"
+import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { BORROW_ASSET_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import { cn } from "@/lib/utils"
 
-const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
-  ssr: false,
-  loading: () => <DeferredBlock className="h-[380px]" />,
-})
-const InterestRateModelCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
-)
-const AllocationBreakdownCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
-)
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
-)
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
-)
 const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
   ssr: false,
   loading: () => <DeferredBlock className="h-[320px]" />,
 })
+const AssetAnalyticsStack = dynamic(() => import("./asset-analytics-stack").then((mod) => mod.AssetAnalyticsStack), {
+  ssr: false,
+  loading: () => <DeferredDetailPlaceholder />,
+})
+
 function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
 }
@@ -121,22 +102,7 @@ export function AssetDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Asset analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
-                    <AllocationBreakdownCard detail={detail} />
-                    <CashflowCard detail={detail} />
-                    <DetailMarketTransactionsDeferred
-                      scope="asset"
-                      slug={detail.row.id}
-                      seedRows={seedRows}
-                      sessionRows={sessionRows}
-                      kindConfig={BORROW_ASSET_KIND_CONFIG}
-                      context={{ assetSymbol: detail.hero.symbol }}
-                    />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="borrow" />
+                    <AssetAnalyticsStack detail={detail} seedRows={seedRows} sessionRows={sessionRows} />
                   </DeferredDetailContent>
                 </section>
               </div>

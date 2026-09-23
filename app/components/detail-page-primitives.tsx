@@ -31,6 +31,17 @@ export function DetailPageWidth({ children, className }: { children: ReactNode; 
  */
 export const DEFERRED_DETAIL_ROOT_MARGIN = "1000px 0px"
 
+/** Skeleton for the deferred analytics stack, before it mounts and while its lazy module loads. */
+export function DeferredDetailPlaceholder({ className = "min-h-[120px]" }: { className?: string }) {
+  return (
+    <div aria-hidden className={cn("space-y-3 rounded-radius-md p-2", className)}>
+      <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
+      <div className="h-20 w-full animate-pulse rounded bg-muted/70" />
+      <div className="h-20 w-full animate-pulse rounded bg-muted/50" />
+    </div>
+  )
+}
+
 export function DeferredDetailContent({
   children,
   className,
@@ -64,15 +75,7 @@ export function DeferredDetailContent({
 
   return (
     <div ref={markerRef} className={className}>
-      {shouldMount ? (
-        children
-      ) : (
-        <div aria-hidden className={cn("space-y-3 rounded-radius-md p-2", placeholderClassName)}>
-          <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-          <div className="h-20 w-full animate-pulse rounded bg-muted/70" />
-          <div className="h-20 w-full animate-pulse rounded bg-muted/50" />
-        </div>
-      )}
+      {shouldMount ? children : <DeferredDetailPlaceholder className={placeholderClassName} />}
     </div>
   )
 }

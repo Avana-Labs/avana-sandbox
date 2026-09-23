@@ -10,45 +10,35 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { FlatStatsGrid, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapMultiplySessionRows, mapMultiplyTxRow } from "@/app/lib/detail-page/transaction-history"
-import { MULTIPLY_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
-import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+
+const MultiplyAnalyticsStack = dynamic(
+  () => import("./multiply-analytics-stack").then((mod) => mod.MultiplyAnalyticsStack),
+  {
+    ssr: false,
+    loading: () => <DeferredDetailPlaceholder />,
+  },
+)
 
 type Props = {
   detail: MultiplyMarketDetail
 }
 
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false },
-)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const DetailFaqSection = dynamic(
-  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
-  { ssr: false },
-)
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false },
-)
-
 export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
   const { walletAddress } = useAvanaIdentity()
@@ -123,26 +113,12 @@ export function MarketDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} />
-                    {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
-                      <LiquidationRiskSection stats={detail.liquidationRisk} />
-                    ) : null}
-                    <DetailMarketTransactionsDeferred
-                      scope="multiply"
-                      slug={marketId}
+                    <MultiplyAnalyticsStack
+                      detail={detail}
                       seedRows={seedRows}
                       sessionRows={sessionRows}
-                      kindConfig={MULTIPLY_KIND_CONFIG}
-                      context={{
-                        collateralSymbol: detail.row.protocol,
-                        borrowableSymbol: detail.row.asset,
-                      }}
+                      marketId={marketId}
                     />
-                    <DetailFaqSection
-                      title={t("Multiply FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>
                 </section>
               </div>

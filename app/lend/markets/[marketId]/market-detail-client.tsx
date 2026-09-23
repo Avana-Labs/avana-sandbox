@@ -13,40 +13,24 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import { LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowTxRow, mapLendSessionRows } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,
+  DeferredDetailPlaceholder,
   detailAnalyticsSectionClass,
   detailAnalyticsStackClass,
-  DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 
-const CashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
-  { ssr: false },
-)
-const InterestRateModelCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
-  { ssr: false },
-)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const DetailFaqSection = dynamic(
-  () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
-  { ssr: false },
-)
-const DetailMarketTransactionsDeferred = dynamic(
-  () =>
-    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
-      (mod) => mod.DetailMarketTransactions,
-    ),
-  { ssr: false },
-)
+const LendAnalyticsStack = dynamic(() => import("./lend-analytics-stack").then((mod) => mod.LendAnalyticsStack), {
+  ssr: false,
+  loading: () => <DeferredDetailPlaceholder />,
+})
 
 type Props = {
   detail: LendMarketDetail
@@ -131,31 +115,12 @@ export function LendMarketDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Lend market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <InterestRateModelCard
-                      utilizationPct={detail.utilizationPct}
-                      borrowAprPct={detail.borrowAprPct}
-                      protocolParameters={detail.protocolParameters}
-                      borrowedUsd={
-                        detail.supplyBorrow.borrowed.aggregate ?? detail.supplyBorrow.borrowed.points.at(-1)?.v
-                      }
-                      suppliedUsd={
-                        detail.supplyBorrow.supplied.aggregate ?? detail.supplyBorrow.supplied.points.at(-1)?.v
-                      }
-                    />
-                    <CashflowCard detail={detail} />
-                    <DetailMarketTransactionsDeferred
-                      scope="lend"
-                      slug={marketId}
+                    <LendAnalyticsStack
+                      detail={detail}
                       seedRows={seedRows}
                       sessionRows={sessionRows}
-                      kindConfig={LEND_KIND_CONFIG}
-                      context={{ assetSymbol: detail.hero.symbol }}
+                      marketId={marketId}
                     />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <DetailPageNotice product="lend" />
                   </DeferredDetailContent>
                 </section>
               </div>
