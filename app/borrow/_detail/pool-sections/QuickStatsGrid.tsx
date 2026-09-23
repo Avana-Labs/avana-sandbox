@@ -20,6 +20,8 @@ type QuickStatLike = {
 
 type Props = {
   detail: { hero?: unknown; quickStats: QuickStatLike[] }
+  /** Token represented by a price stat when the detail hero is a pair (e.g. Multiply collateral). */
+  priceSymbol?: string
   product?: QuickStatsProduct
   className?: string
   hideRisk?: boolean
@@ -115,8 +117,9 @@ function QuickStatsGridView({ detail, className, hideRisk = false, columns = 3 }
 export function QuickStatsGrid(props: Props) {
   const priceFor = useCanonicalPriceFor()
   const hero = props.detail.hero
-  const symbol =
+  const heroSymbol =
     hero && typeof hero === "object" && "symbol" in hero && typeof hero.symbol === "string" ? hero.symbol : undefined
+  const symbol = props.priceSymbol ?? heroSymbol
   const price = symbol ? priceFor(symbol) : undefined
   const quickStats = React.useMemo(() => {
     if (price === undefined) return props.detail.quickStats

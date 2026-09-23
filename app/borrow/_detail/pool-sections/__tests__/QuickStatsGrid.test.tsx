@@ -81,4 +81,20 @@ describe("QuickStatsGrid currency conversion", () => {
     expect(screen.getByText("$84,392.11")).toBeInTheDocument()
     expect(screen.getByText("62.1%")).toBeInTheDocument()
   })
+
+  it("uses an explicit collateral symbol for pair-market detail prices", () => {
+    currencyRef.current = "USD"
+    const detail = {
+      hero: { visuals: [{ symbol: "WBTC" }, { symbol: "WETH" }] },
+      quickStats: [{ id: "price", label: "Price", value: "$65,000.00" }],
+    }
+
+    render(
+      <TokenPricesContext.Provider value={{ wbtc: 84392.11 }}>
+        <QuickStatsGrid detail={detail} priceSymbol={detail.hero.visuals[0].symbol} />
+      </TokenPricesContext.Provider>,
+    )
+
+    expect(screen.getByText("$84,392.11")).toBeInTheDocument()
+  })
 })
