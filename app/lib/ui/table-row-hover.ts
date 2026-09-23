@@ -73,10 +73,14 @@ export const TABLE_COLUMN_MIN_PX = {
   compact: 104,
   /** Token amount over a USD sub-line. */
   metric: 136,
+  /** Value over a long sub-line (e.g. wallet value over its P/L). */
+  metricWide: 176,
   /** Capacity-filled ring + percentage (header label is the long one). */
   gauge: 164,
   /** One action button. */
   action: 160,
+  /** One action button in the narrower dashboard column (no "Review risk"-length labels). */
+  actionCompact: 144,
   /** Two action buttons side by side. */
   actions2: 212,
   /** Bare row-open arrow. */
@@ -96,6 +100,7 @@ const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set([
   "identity",
   "identityCompact",
   "action",
+  "actionCompact",
   "actions2",
   "arrow",
 ])
@@ -106,6 +111,7 @@ const ANCHOR_FLOOR_PX: Partial<Record<TableColumnKind, number>> = {
   identity: 232,
   identityCompact: 228,
   action: 144,
+  actionCompact: 140,
   actions2: 204,
   arrow: 56,
 }

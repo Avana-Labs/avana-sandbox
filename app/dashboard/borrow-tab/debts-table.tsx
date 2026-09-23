@@ -104,7 +104,7 @@ const DEBTS_LAYOUT = tableColumnLayout(
     "identityCompact", // Debt asset + collateral pool
     "metric", // Borrowed
     "metric", // Borrow APR + owed
-    "action", // Repay
+    "actionCompact", // Repay
   ],
   { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
 )

@@ -97,7 +97,7 @@ function PairedTokenIcons({ collateralSymbol, borrowSymbol }: { collateralSymbol
 const AVAILABLE_LAYOUT = tableColumnLayout(["identityCompact", "metric"], {
   referenceWidth: DASHBOARD_TABLE_REFERENCE_PX,
 })
-const AVAILABLE_WITH_ACTION_LAYOUT = tableColumnLayout(["identityCompact", "metric", "action"], {
+const AVAILABLE_WITH_ACTION_LAYOUT = tableColumnLayout(["identityCompact", "metric", "actionCompact"], {
   referenceWidth: DASHBOARD_TABLE_REFERENCE_PX,
 })
 const MULTIPLY_AVAILABLE_LAYOUT = tableColumnLayout(
@@ -105,7 +105,7 @@ const MULTIPLY_AVAILABLE_LAYOUT = tableColumnLayout(
     "identityCompact", // Supply X / Borrow Y
     "metric", // Available
     "compact", // Max APY + max leverage
-    "action", // Multiply
+    "actionCompact", // Multiply
   ],
   { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
 )
