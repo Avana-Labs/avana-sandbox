@@ -96,7 +96,7 @@ export function AssetHeroIdentity({
                 </span>
               ) : null}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
+            <div className="mt-0 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
               {isPlaceholderContract ? (

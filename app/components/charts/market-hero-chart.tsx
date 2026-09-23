@@ -215,7 +215,7 @@ function ChartMetricSelector({
             type="button"
             onClick={() => onTabChange?.(tab)}
             className={[
-              "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
+              "flex h-6 min-w-[52px] items-center justify-center rounded-full px-2 text-[10px] font-semibold transition-colors sm:text-[10.5px]",
               active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             ].join(" ")}
           >

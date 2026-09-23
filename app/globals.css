@@ -226,18 +226,23 @@
   }
 }
 
-/* Some tokenized-stock marks read as black on a dark background and disappear: Apple and
-   Micron are solid-black marks, and SpaceX is a black disc whose edge blends into the card.
+/* Some token marks read as black on a dark background and disappear: Apple, Micron, and
+   Balancer are solid-black marks, and SpaceX is a black disc whose edge blends into the card.
    Invert them in dark mode wherever the icon renders — borrow/lend/multiply cards, tables, the
    carousel, and search — not just the action pages. The selector matches both the raw path and
    the Next-optimized URL (both contain the file name), plus the sized WebP variants
-   (`/stock-Icons/w64/apple.webp`) the token icons are served as. */
+   (`/stock-Icons/w64/apple.webp`) the token icons are served as. Balancer's `bal` file name is
+   short, so it is anchored on the preceding slash (raw or URL-encoded). */
 .dark img[src*="apple.png"],
 .dark img[src*="apple.webp"],
 .dark img[src*="micron.png"],
 .dark img[src*="micron.webp"],
 .dark img[src*="spacex.png"],
-.dark img[src*="spacex.webp"] {
+.dark img[src*="spacex.webp"],
+.dark img[src*="/bal.png"],
+.dark img[src*="/bal.webp"],
+.dark img[src*="%2Fbal.png"],
+.dark img[src*="%2Fbal.webp"] {
   filter: invert(1);
 }
 
