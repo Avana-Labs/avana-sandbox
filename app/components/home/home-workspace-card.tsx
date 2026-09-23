@@ -3,6 +3,7 @@
 import { type ReactNode } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { TestnetMetricsBadge } from "@/app/components/testnet-metrics-badge"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
@@ -29,6 +30,7 @@ export function HomeWorkspaceCard({
       <div className="w-full max-w-[480px]" data-testid="home-workspace-card">
         <div className="flex items-center justify-between gap-2">
           <ActionWorkspaceTabs
+            className="flex-1"
             items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: item.label }))}
             value={mode}
             onChange={(value) => onModeChange(value as HomeMode)}
@@ -36,6 +38,7 @@ export function HomeWorkspaceCard({
             withIcons
             revealLabels
           />
+          <TestnetMetricsBadge label={t("Testnet")} size="compact" />
         </div>
 
         <div className="mt-3 flex flex-col gap-2">{children}</div>

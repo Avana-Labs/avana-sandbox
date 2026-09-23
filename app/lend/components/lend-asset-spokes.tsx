@@ -449,12 +449,12 @@ function AssetSection({
               <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
                 <colgroup>
                   <col className="w-[4%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[18%]" />
                   <col className="w-[24%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[12%]" />
                 </colgroup>
                 <thead>
                   <tr className={TABLE_HEADER_ROW}>

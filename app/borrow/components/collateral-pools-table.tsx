@@ -245,11 +245,6 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <CapacityFilled value={pool.capacityFilledPct} />
       </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-          <span className="tabular-nums">{compact(pool.availableUsd)}</span>
-        </div>
-      </td>
       <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
         <HoverActionGroup className="gap-2">
           {onUseAsCollateral ? (
@@ -287,9 +282,7 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const { t } = useTranslation()
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "capacityFilled" | "supplied">(
-    "asset",
-  )
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "capacityFilled">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -317,8 +310,6 @@ function CollateralDesktopTable({
           return (a.riskPremiumBps - b.riskPremiumBps) * direction
         case "capacityFilled":
           return ((a.capacityFilledPct ?? -1) - (b.capacityFilledPct ?? -1)) * direction
-        case "supplied":
-          return (a.availableUsd - b.availableUsd) * direction
         case "asset":
         default:
           return (
@@ -424,21 +415,6 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <button
-                type="button"
-                onClick={() => toggleSort("supplied")}
-                className={cn(
-                  "flex w-full items-center gap-2 transition-colors",
-                  sortKey === "supplied"
-                    ? "text-foreground dark:text-white"
-                    : "text-muted-foreground dark:text-white/42",
-                )}
-              >
-                <span>{t("AVAILABLE")}</span>
-                <SortIcon />
-              </button>
-            </th>
             <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <span className="sr-only">{t("Quick actions")}</span>
             </th>
@@ -456,7 +432,7 @@ function CollateralDesktopTable({
           ))}
           {pending.map((row) => (
             <tr key={row.id}>
-              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={9}>
+              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={8}>
                 {row.label}
                 <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
               </td>
