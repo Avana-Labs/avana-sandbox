@@ -8,6 +8,7 @@
 import type { WithoutSystemFields } from "convex/server"
 import { v } from "convex/values"
 import type { Doc } from "../_generated/dataModel"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { kindField } from "./kindField"
 import { readChangelog } from "../parameterChanges"
@@ -28,23 +29,27 @@ export function defineContentModule<WithKind extends boolean = false>(
   // The tables share one document shape (borrow adds `kind`), so type the reads and writes
   // against one of them. The args validator and the schema still validate every row.
   const tableName = table as "lendMarketContent"
+  /** Shared reader for `getContent`, so batched detail queries compose it instead of copying it. */
+  async function readContent(ctx: QueryCtx, slug: string) {
+    const row = await ctx.db
+      .query(tableName)
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    if (!row) return null
+    return {
+      description: row.description,
+      stats: row.stats,
+      history: row.history,
+      faqs: row.faqs,
+      changelog: await readChangelog(ctx, options.product, slug),
+    }
+  }
+
   return {
+    readContent,
     getContent: query({
       args: { slug: v.string() },
-      handler: async (ctx, { slug }) => {
-        const row = await ctx.db
-          .query(tableName)
-          .withIndex("by_slug", (q) => q.eq("slug", slug))
-          .unique()
-        if (!row) return null
-        return {
-          description: row.description,
-          stats: row.stats,
-          history: row.history,
-          faqs: row.faqs,
-          changelog: await readChangelog(ctx, options.product, slug),
-        }
-      },
+      handler: async (ctx, { slug }) => readContent(ctx, slug),
     }),
     upsertContent: internalMutation({
       args: {

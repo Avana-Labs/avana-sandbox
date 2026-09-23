@@ -33,6 +33,7 @@ import type * as borrow_spokes from "../borrow/spokes.js";
 import type * as cashflowHelpers from "../cashflowHelpers.js";
 import type * as contractAddresses from "../contractAddresses.js";
 import type * as crons from "../crons.js";
+import type * as detailHydration from "../detailHydration.js";
 import type * as fx from "../fx.js";
 import type * as legacyMarketCoverage from "../legacyMarketCoverage.js";
 import type * as lend_cashflow from "../lend/cashflow.js";
@@ -129,6 +130,7 @@ declare const fullApi: ApiFromModules<{
   cashflowHelpers: typeof cashflowHelpers;
   contractAddresses: typeof contractAddresses;
   crons: typeof crons;
+  detailHydration: typeof detailHydration;
   fx: typeof fx;
   legacyMarketCoverage: typeof legacyMarketCoverage;
   "lend/cashflow": typeof lend_cashflow;

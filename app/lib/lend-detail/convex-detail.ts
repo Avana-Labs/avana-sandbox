@@ -1,16 +1,6 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
-import {
-  fetchLendContent,
-  fetchLendContractAddresses,
-  fetchLendInterestRateModel,
-  fetchLendMarket,
-  fetchLendMarketSnapshot,
-  fetchLendRecentTransactions,
-  fetchLendRisk,
-  fetchLendRiskParameters,
-  fetchLendSupplyBorrow,
-} from "@/app/lib/lend-system/market-hydration-server"
+import { fetchLendDetailHydration } from "@/app/lib/lend-system/market-hydration-server"
 import type { PreloadedQuickStatRow } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { emptySeries, shouldStripMockSeriesForLive } from "@/app/lib/detail-page/strip-mock-series"
 import {
@@ -74,7 +64,8 @@ function irmProtocolParameters(irm: {
 
 function applyRiskParametersToAbout(
   detail: LendMarketDetail,
-  riskParameters: Awaited<ReturnType<typeof fetchLendRiskParameters>>,
+  riskParameters:
+    { parameters: Array<{ id: string; label: string; value: string; description?: string }> } | null | undefined,
 ): LendMarketDetail {
   if (!riskParameters?.parameters.length) return detail
   return {
@@ -133,7 +124,8 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   // supplyBorrow from Convex replaces PRNG series on the live path (C05).
   // The snapshot rides in the same batch: every key here comes from the catalog slug, so
   // waiting for it first only added a Convex round trip to every detail SSR.
-  const [
+  const hydration = await fetchLendDetailHydration(slug, `/lend/markets/${id}`)
+  const {
     snapshot,
     transactions,
     risk,
@@ -143,17 +135,7 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
     siloedMarket,
     contractAddresses,
     supplyBorrow,
-  ] = await Promise.all([
-    fetchLendMarketSnapshot(slug),
-    fetchLendRecentTransactions(slug),
-    fetchLendRisk(slug),
-    fetchLendContent(slug),
-    fetchLendRiskParameters(slug),
-    fetchLendInterestRateModel(slug),
-    fetchLendMarket(slug),
-    fetchLendContractAddresses(slug),
-    fetchLendSupplyBorrow(slug),
-  ])
+  } = hydration ?? {}
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   if (shouldFailClosedInLive(mode, snapshot != null)) return null
@@ -226,7 +208,7 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
         ...hydrated,
         hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
       },
-      contractAddresses,
+      contractAddresses ?? [],
     ),
     riskParameters,
   )

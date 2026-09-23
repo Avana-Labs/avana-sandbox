@@ -12,7 +12,7 @@ import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
 import type { AllocationRow } from "@/app/lib/borrow-detail/types"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
-import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
+import { reportServerFetchFailure, reportServerFetchSuccess } from "@/app/lib/detail-page/report-server-fetch-failure"
 
 // One client per request instead of one per fetch* helper. Request-scoped via React.cache;
 // falls back to a fresh client per call in the non-RSC test runtime.
@@ -26,6 +26,52 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
     return null
   }
 })
+
+export async function fetchBorrowPoolDetailHydration(slug: string, route?: string) {
+  const client = convexClient()
+  if (!client) return null
+  const startedAt = Date.now()
+  try {
+    const result = await client.query(api.detailHydration.getBorrowPoolDetail, { slug })
+    reportServerFetchSuccess(
+      "fetchBorrowPoolDetailHydration",
+      { product: "borrow", route, slug, query: "detailHydration.getBorrowPoolDetail" },
+      Date.now() - startedAt,
+    )
+    return result
+  } catch (error) {
+    reportServerFetchFailure("fetchBorrowPoolDetailHydration", error, {
+      product: "borrow",
+      route,
+      slug,
+      query: "detailHydration.getBorrowPoolDetail",
+    })
+    return null
+  }
+}
+
+export async function fetchBorrowAssetDetailHydration(slug: string, route?: string) {
+  const client = convexClient()
+  if (!client) return null
+  const startedAt = Date.now()
+  try {
+    const result = await client.query(api.detailHydration.getBorrowAssetDetail, { slug })
+    reportServerFetchSuccess(
+      "fetchBorrowAssetDetailHydration",
+      { product: "borrow", route, slug, query: "detailHydration.getBorrowAssetDetail" },
+      Date.now() - startedAt,
+    )
+    return result
+  } catch (error) {
+    reportServerFetchFailure("fetchBorrowAssetDetailHydration", error, {
+      product: "borrow",
+      route,
+      slug,
+      query: "detailHydration.getBorrowAssetDetail",
+    })
+    return null
+  }
+}
 
 /**
  * Convex market reference snapshots. Returns [] when unconfigured or unreachable so callers

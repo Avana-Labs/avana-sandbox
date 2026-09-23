@@ -2,4 +2,5 @@
 
 import { defineRiskParametersModule } from "../silo/riskParameters"
 
-export const { getRiskParameters, upsertRiskParameters } = defineRiskParametersModule("multiplyRiskParameters")
+export const { readRiskParameters, getRiskParameters, upsertRiskParameters } =
+  defineRiskParametersModule("multiplyRiskParameters")

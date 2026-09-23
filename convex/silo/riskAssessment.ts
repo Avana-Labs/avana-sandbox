@@ -9,6 +9,7 @@ import type { WithoutSystemFields } from "convex/server"
 import { v } from "convex/values"
 import type { Doc } from "../_generated/dataModel"
 import { internal } from "../_generated/api"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { kindField } from "./kindField"
 
@@ -75,16 +76,20 @@ export function defineRiskAssessmentModule<WithKind extends boolean = false>(
   // The tables share one document shape (borrow adds `kind`), so type the reads and writes
   // against one of them. The args validator and the schema still validate every row.
   const tableName = table as "lendRiskAssessments"
+  /** Shared reader for `getRisk`, so batched detail queries compose it instead of copying it. */
+  async function readRisk(ctx: QueryCtx, slug: string) {
+    const row = await ctx.db
+      .query(tableName)
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    return row ? shapeAssessment(row) : null
+  }
+
   return {
+    readRisk,
     getRisk: query({
       args: { slug: v.string() },
-      handler: async (ctx, { slug }) => {
-        const row = await ctx.db
-          .query(tableName)
-          .withIndex("by_slug", (q) => q.eq("slug", slug))
-          .unique()
-        return row ? shapeAssessment(row) : null
-      },
+      handler: async (ctx, { slug }) => readRisk(ctx, slug),
     }),
     upsertRiskAssessments: internalMutation({
       args: {

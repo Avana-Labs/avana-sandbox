@@ -5,6 +5,7 @@
  */
 
 import { v } from "convex/values"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { formatCompactUsdStatic } from "../../app/lib/format-usd-static"
 
@@ -63,24 +64,28 @@ export function defineLiquidationRiskModule(table: LiquidationDailyTable) {
   // Both tables share one document shape, so type the reads and writes against one of them.
   // The args validator and the schema still validate every row.
   const tableName = table as "multiplyLiquidationDaily"
+  /** Shared reader for `getLiquidationRisk`, so batched detail queries compose it instead of copying it. */
+  async function readLiquidationRisk(ctx: QueryCtx, slug: string) {
+    const rows = await ctx.db
+      .query(tableName)
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .order("desc")
+      .take(2)
+    const latest = rows[0]
+    if (!latest) return null
+    const previous = rows[1]
+    return {
+      slug,
+      day: latest.day,
+      stats: foldStats(latest, previous ?? null),
+    }
+  }
+
   return {
+    readLiquidationRisk,
     getLiquidationRisk: query({
       args: { slug: v.string() },
-      handler: async (ctx, { slug }) => {
-        const rows = await ctx.db
-          .query(tableName)
-          .withIndex("by_slug_day", (q) => q.eq("slug", slug))
-          .order("desc")
-          .take(2)
-        const latest = rows[0]
-        if (!latest) return null
-        const previous = rows[1]
-        return {
-          slug,
-          day: latest.day,
-          stats: foldStats(latest, previous ?? null),
-        }
-      },
+      handler: async (ctx, { slug }) => readLiquidationRisk(ctx, slug),
     }),
 
     upsertLiquidationDaily: internalMutation({

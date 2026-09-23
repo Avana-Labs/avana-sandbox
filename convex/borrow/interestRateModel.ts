@@ -2,4 +2,5 @@
 
 import { defineInterestRateModelModule } from "../silo/interestRateModel"
 
-export const { getInterestRateModel, upsertInterestRateModels } = defineInterestRateModelModule("borrow")
+export const { readInterestRateModel, getInterestRateModel, upsertInterestRateModels } =
+  defineInterestRateModelModule("borrow")

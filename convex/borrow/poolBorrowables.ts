@@ -4,24 +4,27 @@
  */
 
 import { v } from "convex/values"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
+
+export async function readPoolBorrowables(ctx: QueryCtx, poolSlug: string) {
+  const rows = await ctx.db
+    .query("borrowPoolBorrowables")
+    .withIndex("by_pool", (q) => q.eq("poolSlug", poolSlug))
+    .collect()
+  return rows
+    .map((row) => ({
+      id: row.assetSlug,
+      name: row.name,
+      symbol: row.symbol,
+      borrowAprPct: row.borrowAprPct,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
 
 export const getPoolBorrowables = query({
   args: { poolSlug: v.string() },
-  handler: async (ctx, { poolSlug }) => {
-    const rows = await ctx.db
-      .query("borrowPoolBorrowables")
-      .withIndex("by_pool", (q) => q.eq("poolSlug", poolSlug))
-      .collect()
-    return rows
-      .map((row) => ({
-        id: row.assetSlug,
-        name: row.name,
-        symbol: row.symbol,
-        borrowAprPct: row.borrowAprPct,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name))
-  },
+  handler: async (ctx, { poolSlug }) => readPoolBorrowables(ctx, poolSlug),
 })
 
 export const upsertPoolBorrowables = internalMutation({

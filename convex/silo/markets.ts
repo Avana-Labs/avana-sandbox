@@ -9,6 +9,7 @@
 import { v } from "convex/values"
 import type { WithoutSystemFields } from "convex/server"
 import type { Doc } from "../_generated/dataModel"
+import type { QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { kindField } from "./kindField"
 
@@ -52,37 +53,41 @@ export function defineMarketsModule<T extends MarketTable, Identity extends obje
   // against one of them. The args validator and the schema still validate every row;
   // `identity` sees the row as its real table type.
   const tableName = table as MarketTable as "lendMarkets"
+  /** Shared reader for `getMarket`, so batched detail queries compose it instead of copying it. */
+  async function readMarket(ctx: QueryCtx, slug: string) {
+    const row = await ctx.db
+      .query(tableName)
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    if (!row) return null
+    return {
+      slug: row.slug,
+      ...options.identity(row as unknown as Doc<T>),
+      chainId: row.chainId,
+      name: row.name,
+      symbol: row.symbol,
+      venueLabel: row.venueLabel,
+      category: row.category,
+      explorerUrl: row.explorerUrl,
+      reserveFactorPct: row.reserveFactorPct,
+      rewardsApyPct: row.rewardsApyPct,
+      description: row.description,
+      iconUrl: row.iconUrl,
+      spokeId: row.spokeId,
+      feeTier: row.feeTier,
+      maxLtvPct: row.maxLtvPct,
+      priceUsd: row.priceUsd,
+      visuals: row.visuals,
+      resources: row.resources,
+      createdAt: row.createdAt,
+    }
+  }
+
   return {
+    readMarket,
     getMarket: query({
       args: { slug: v.string() },
-      handler: async (ctx, { slug }) => {
-        const row = await ctx.db
-          .query(tableName)
-          .withIndex("by_slug", (q) => q.eq("slug", slug))
-          .unique()
-        if (!row) return null
-        return {
-          slug: row.slug,
-          ...options.identity(row as unknown as Doc<T>),
-          chainId: row.chainId,
-          name: row.name,
-          symbol: row.symbol,
-          venueLabel: row.venueLabel,
-          category: row.category,
-          explorerUrl: row.explorerUrl,
-          reserveFactorPct: row.reserveFactorPct,
-          rewardsApyPct: row.rewardsApyPct,
-          description: row.description,
-          iconUrl: row.iconUrl,
-          spokeId: row.spokeId,
-          feeTier: row.feeTier,
-          maxLtvPct: row.maxLtvPct,
-          priceUsd: row.priceUsd,
-          visuals: row.visuals,
-          resources: row.resources,
-          createdAt: row.createdAt,
-        }
-      },
+      handler: async (ctx, { slug }) => readMarket(ctx, slug),
     }),
     upsertMarkets: internalMutation({
       args: {

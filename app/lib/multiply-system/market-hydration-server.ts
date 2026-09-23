@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import type { MultiplyTokenParameterRow } from "@/app/lib/multiply-system/read-model"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
-import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"
+import { reportServerFetchFailure, reportServerFetchSuccess } from "@/app/lib/detail-page/report-server-fetch-failure"
 
 /**
  * Server-side Convex fetchers for the multiply detail page + list. Every fetcher degrades to
@@ -36,6 +36,29 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
     return null
   }
 })
+
+export async function fetchMultiplyDetailHydration(slug: string, route?: string) {
+  const client = convexClient()
+  if (!client) return null
+  const startedAt = Date.now()
+  try {
+    const result = await client.query(api.detailHydration.getMultiplyDetail, { slug })
+    reportServerFetchSuccess(
+      "fetchMultiplyDetailHydration",
+      { product: "multiply", route, slug, query: "detailHydration.getMultiplyDetail" },
+      Date.now() - startedAt,
+    )
+    return result
+  } catch (error) {
+    reportServerFetchFailure("fetchMultiplyDetailHydration", error, {
+      product: "multiply",
+      route,
+      slug,
+      query: "detailHydration.getMultiplyDetail",
+    })
+    return null
+  }
+}
 
 /** Latest-day reference snapshot for one multiply market (slug-scoped). */
 export async function fetchMultiplyMarketSnapshot(slug: string): Promise<MultiplyMarketSnapshot | null> {
