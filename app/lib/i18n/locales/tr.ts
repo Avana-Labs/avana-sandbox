@@ -1747,7 +1747,7 @@ const dict: TranslationDictionary = {
   "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
     "Avana platformu üzerinden başlatılan işlemlere önceden %0,15 (15 baz puan) tutarında Avana arayüz ücreti uygulanır. Faiz oranları, getiriler ve diğer işlem maliyetleri piyasaya, pozisyona ve işlem rotasına göre değişebilir.",
   "Complete onboarding": "Katılımı tamamla",
-  "Testnet": "Test ağı",
+  Testnet: "Test ağı",
   "Sandbox · testnet": "Sandbox · test ağı",
 }
 

@@ -15,7 +15,6 @@ import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-trigger"
 import { cn } from "@/lib/utils"
 
-
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()

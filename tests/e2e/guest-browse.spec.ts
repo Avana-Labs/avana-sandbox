@@ -6,10 +6,7 @@ import { expect, test } from "@playwright/test"
  *   npm run test:e2e:guest
  */
 test.describe("guest browsing", () => {
-  test.skip(
-    process.env.AVANA_GUEST_CLOSED_GATE_E2E !== "1",
-    "Closed-gate only: run `npm run test:e2e:guest`.",
-  )
+  test.skip(process.env.AVANA_GUEST_CLOSED_GATE_E2E !== "1", "Closed-gate only: run `npm run test:e2e:guest`.")
   test.use({ viewport: { width: 1440, height: 900 } })
 
   // Fail loudly when pointed at an open-gate server (the default Playwright dev server), where

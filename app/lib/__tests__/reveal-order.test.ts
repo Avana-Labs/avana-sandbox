@@ -19,7 +19,10 @@ describe("grouped progressive reveal order", () => {
   })
 
   it("orders multiply loops by collateral family, stable within a family", () => {
-    const rows = ["WBTC", "USDC", "WETH", "LINK", "DAI", "cbBTC", "wstETH"].map((protocol, index) => ({ protocol, index }))
+    const rows = ["WBTC", "USDC", "WETH", "LINK", "DAI", "cbBTC", "wstETH"].map((protocol, index) => ({
+      protocol,
+      index,
+    }))
     const ordered = orderLoopRowsByGroup(rows).map((row) => row.protocol)
     expect(ordered).toEqual(["USDC", "DAI", "WETH", "wstETH", "WBTC", "cbBTC", "LINK"])
   })

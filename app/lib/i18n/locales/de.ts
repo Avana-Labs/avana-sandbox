@@ -1805,7 +1805,7 @@ const dict: TranslationDictionary = {
   "If something looks off, send the details and our team can help you triage the issue.":
     "Wenn etwas nicht stimmt, sende die Details — unser Team hilft dir, das Problem einzuordnen.",
   "Complete onboarding": "Onboarding abschließen",
-  "Testnet": "Testnetz",
+  Testnet: "Testnetz",
   "Sandbox · testnet": "Sandbox · Testnetz",
 }
 
