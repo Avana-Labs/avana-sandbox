@@ -149,11 +149,14 @@ describe("sandbox onboarding + economy caps", () => {
     expect(catalog?.updatedAt).toBe(SENTINEL_UPDATED_AT)
   })
 
-  test("sizes lend legs at the live price, not the cached starter catalog's", async () => {
+  async function claimWithStaleCatalog(quoteUpdatedAt: number) {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await t.run(async (ctx) => {
       await seedStarterTestMarkets(ctx)
+      for (const row of await ctx.db.query("tokenPrices").collect()) {
+        await ctx.db.patch(row._id, { updatedAt: quoteUpdatedAt, status: "fresh" })
+      }
       // A current, fully-priced catalog cached when lend tokens were half today's price.
       await ctx.db.insert("sandboxStarterCatalog", {
         singleton: "starter",
@@ -178,9 +181,19 @@ describe("sandbox onboarding + economy caps", () => {
         .collect(),
     )
     expect(lendRows.length).toBeGreaterThan(0)
-    for (const row of lendRows) {
+    return lendRows
+  }
+
+  test("sizes lend legs at the live price, not the cached starter catalog's", async () => {
+    for (const row of await claimWithStaleCatalog(Date.now())) {
       // Valued at the live price the dashboard uses, the leg is worth exactly what was granted.
       expect(row.amount * starterTestPriceFor(row.symbol)).toBeCloseTo(row.valueUsd, 4)
+    }
+  })
+
+  test("falls back to the catalog price when the live quote is past its invalidation window", async () => {
+    for (const row of await claimWithStaleCatalog(Date.now() - 2 * 60 * 60 * 1000)) {
+      expect(row.amount * (starterTestPriceFor(row.symbol) / 2)).toBeCloseTo(row.valueUsd, 4)
     }
   })
 

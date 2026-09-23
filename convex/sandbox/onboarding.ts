@@ -14,6 +14,7 @@ import { readWalletSession, upsertWalletSession } from "../wallet/sessions"
 import { upsertPortfolioCurrent } from "./transactions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
 import { requireSandboxWalletForWrite } from "../writeRateLimit"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 import {
   assertCatalogCanSatisfyStarter,
   buildStarterAllocationPlan,
@@ -523,8 +524,10 @@ export const claim = mutation({
     const liveLegPriceUsd = async (scope: "lend" | "pool", slug: string, symbol: string | undefined) => {
       const catalogPriceUsd = catalogBySlug.get(slug)?.priceUsd
       if (scope === "lend") {
-        const live = symbol ? livePriceBySymbol.get(symbol.toLowerCase()) : undefined
-        if (live && Number.isFinite(live) && live > 0) return live
+        // Same freshness/status/confidence rules as execution: a quote left over from a stalled
+        // refresh would size the leg off a price the live readers no longer use.
+        const live = symbol ? await validatedTokenPriceUsd(ctx, symbol, now) : null
+        if (live) return live
       } else {
         const pool = await ctx.db
           .query("markets")
