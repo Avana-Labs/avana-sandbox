@@ -2,33 +2,23 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
   flex: 0 0 auto;
   border: 1px solid rgb(1 170 207 / 68%);
   border-radius: 9999px;
   background: rgb(1 170 207 / 8%);
-  padding: 0.22rem 0.48rem;
+  padding: 0.38rem 0.68rem;
   color: #54d9f2;
   font-family: var(--font-sans, sans-serif);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
     background-color 180ms ease;
-}
-
-.indicator {
-  width: 0.3rem;
-  height: 0.3rem;
-  flex: 0 0 auto;
-  border-radius: 9999px;
-  background: #01aacf;
-  box-shadow: 0 0 5px rgb(1 170 207 / 80%);
 }
 
 .sparkle {

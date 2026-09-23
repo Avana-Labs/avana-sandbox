@@ -303,6 +303,7 @@ const dict: TranslationDictionary = {
   "TOTAL BORROWS": "总借款",
   LIQUIDITY: "流动性",
   TVL: "TVL",
+  Testnet: "测试网",
   FEES: "费用",
   "MAX LTV": "最高 LTV",
   "RISK PREMIUM": "风险溢价",

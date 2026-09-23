@@ -1479,6 +1479,7 @@ const dict: TranslationDictionary = {
   "Trading Fees": "رسوم التداول",
   "Try a token symbol, pool pair, or action like borrow.": "جرّب رمز أصل أو زوج مجمّع أو إجراءً مثل الاقتراض.",
   TVL: "TVL",
+  Testnet: "شبكة الاختبار",
   Txn: "معاملة",
   "Unable to refresh the expired quote.": "تعذّر تحديث عرض السعر المنتهي.",
   Unavailable: "غير متاح",

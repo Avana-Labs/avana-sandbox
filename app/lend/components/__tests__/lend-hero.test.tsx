@@ -14,7 +14,7 @@ describe("LendHero", () => {
 
     expect(getByText("Lend TVL")).toBeInTheDocument()
     expect(getByText("$31.4M")).toBeInTheDocument()
-    expect(getByText("Testnet Metrics")).toBeInTheDocument()
+    expect(getByText("Testnet")).toBeInTheDocument()
     expect(getByText("Average APY")).toBeInTheDocument()
     expect(getByText("8.42%")).toBeInTheDocument()
     expect(getByText("Avg Utilization")).toBeInTheDocument()

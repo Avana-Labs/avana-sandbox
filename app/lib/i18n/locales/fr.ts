@@ -1579,6 +1579,7 @@ const dict: TranslationDictionary = {
   Swap: "Échanger",
   Tokens: "Tokens",
   TVL: "TVL",
+  Testnet: "Réseau de test",
   Txn: "Txn",
   X: "X",
   "1 year": "1 an",

@@ -1472,6 +1472,7 @@ const dict: TranslationDictionary = {
   "Trading Fees": "거래 수수료",
   "Try a token symbol, pool pair, or action like borrow.": "토큰 심볼, 풀 페어, 또는 대출 같은 작업을 시도해 보세요.",
   TVL: "TVL",
+  Testnet: "테스트 네트워크",
   Txn: "거래",
   "Unable to refresh the expired quote.": "만료된 견적을 새로 고칠 수 없습니다.",
   Unavailable: "사용 불가",

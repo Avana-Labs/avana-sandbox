@@ -4,9 +4,9 @@ import { TestnetMetricsBadge } from "../testnet-metrics-badge"
 
 describe("TestnetMetricsBadge", () => {
   it("renders its label while keeping decorative sparkles hidden from assistive technology", () => {
-    const { container } = render(<TestnetMetricsBadge />)
+    const { container } = render(<TestnetMetricsBadge label="Testnet" />)
 
     expect(screen.getByText("Testnet")).toBeInTheDocument()
-    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4)
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(3)
   })
 })

@@ -1505,6 +1505,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Попробуйте символ токена, пару пула или действие, например заём.",
   TVL: "TVL",
+  Testnet: "Тестовая сеть",
   Txn: "Транз.",
   "Unable to refresh the expired quote.": "Не удалось обновить истёкшую котировку.",
   Unavailable: "Недоступно",

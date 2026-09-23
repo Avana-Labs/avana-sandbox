@@ -1497,6 +1497,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Coba simbol token, pasangan pool, atau aksi seperti pinjam.",
   TVL: "TVL",
+  Testnet: "Jaringan uji",
   Txn: "Txn",
   "Unable to refresh the expired quote.": "Tidak dapat menyegarkan kuotasi yang kedaluwarsa.",
   Unavailable: "Tidak tersedia",

@@ -28,7 +28,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
           <p className="text-[13px] text-muted-foreground">{t("Lend TVL")}</p>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-data text-[17px] font-medium leading-none tracking-normal tabular-nums text-foreground md:text-[18px]">
             {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
-            <TestnetMetricsBadge />
+            <TestnetMetricsBadge label={t("Testnet")} />
           </p>
         </div>
 

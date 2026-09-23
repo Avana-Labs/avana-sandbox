@@ -308,6 +308,7 @@ const dict: TranslationDictionary = {
   "TOTAL BORROWS": "PRESTAMOS TOTALES",
   LIQUIDITY: "LIQUIDEZ",
   TVL: "TVL",
+  Testnet: "Red de pruebas",
   FEES: "COMISIONES",
   "MAX LTV": "LTV MAX.",
   "RISK PREMIUM": "PRIMA DE RIESGO",

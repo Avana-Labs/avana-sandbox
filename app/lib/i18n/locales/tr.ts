@@ -1503,6 +1503,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Bir token sembolü, havuz çifti veya borç alma gibi bir işlem deneyin.",
   TVL: "TVL",
+  Testnet: "Test ağı",
   Txn: "İşlem",
   "Unable to refresh the expired quote.": "Süresi dolmuş teklif yenilenemedi.",
   Unavailable: "Kullanılamıyor",

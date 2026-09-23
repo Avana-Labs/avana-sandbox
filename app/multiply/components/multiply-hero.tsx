@@ -26,7 +26,7 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
           <p className="text-[13px] text-muted-foreground">{t("Multiply TVL")}</p>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-data text-[17px] font-medium leading-none tracking-normal tabular-nums text-foreground md:text-[18px]">
             {showDollarAmounts ? fc.compact(metrics.totalLiquidityUsd) : HIDDEN}
-            <TestnetMetricsBadge />
+            <TestnetMetricsBadge label={t("Testnet")} />
           </p>
         </div>
 

@@ -1541,6 +1541,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "トークンシンボル、プールペア、または借入などのアクションをお試しください。",
   TVL: "TVL",
+  Testnet: "テストネット",
   Txn: "取引",
   "Unable to refresh the expired quote.": "期限切れの見積もりを更新できません。",
   Unavailable: "利用不可",

@@ -1496,6 +1496,7 @@ const dict: TranslationDictionary = {
   "Trading Fees": "ट्रेडिंग शुल्क",
   "Try a token symbol, pool pair, or action like borrow.": "कोई टोकन सिंबल, पूल जोड़ी, या उधार जैसी क्रिया आज़माएँ।",
   TVL: "TVL",
+  Testnet: "परीक्षण नेटवर्क",
   Txn: "लेनदेन",
   "Unable to refresh the expired quote.": "समाप्त हो चुके कोट को रिफ्रेश नहीं किया जा सका।",
   Unavailable: "अनुपलब्ध",
