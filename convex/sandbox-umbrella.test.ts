@@ -211,6 +211,10 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
     const act = (intentId: string, kind: "stake" | "startCooldown" | "unstake", amount: number) =>
       asUser.mutation(api.sandbox.umbrella.recordAction, { wallet: WALLET_A, intentId, kind, marketId: "weth", amount })
     await act("w-stake", "stake", 1)
+    const afterStake = await asUser.query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    // The market total grows by the stake's live value, matching the position.
+    expect(afterStake.markets.weth.totalStakedUsd).toBeCloseTo(7_000_000 + 2_000, 6)
+    expect(afterStake.positions.find((row) => row.marketId === "weth")?.suppliedUsd).toBeCloseTo(2_000, 6)
     // WETH doubles: the old USD-at-live ledger only let 0.5 WETH out and stranded the rest.
     await setWethPrice(4_000)
     await act("w-cool", "startCooldown", 1)

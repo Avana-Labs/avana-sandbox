@@ -519,6 +519,7 @@ export const getSessionState = query({
       marketIds.map((marketId, index) => {
         const base = UMBRELLA_MARKETS[marketId]
         const agg = aggregatesPerMarket.find((row) => row.marketId === marketId)
+        const livePriceUsd = convexPrices.get(base.symbol.toLowerCase()) ?? base.priceUsd
         const overlay = overlays[index]
         // No negative-fold guard needed: usd6() clamps every write to >= 0, so the summed
         // aggregates are non-negative by construction and `base + agg` >= base >= 0.
@@ -526,9 +527,12 @@ export const getSessionState = query({
           marketId,
           {
             ...base,
-            priceUsd: convexPrices.get(base.symbol.toLowerCase()) ?? base.priceUsd,
-            totalStakedUsd: base.totalStakedUsd + (agg?.stakedUsd ?? 0),
-            amountInCooldownUsd: base.amountInCooldownUsd + (agg?.cooldownUsd ?? 0),
+            priceUsd: livePriceUsd,
+            // The aggregate is token ledger at the reference price; the baselines are USD, so add
+            // it at the live price (a 1 WETH stake at $2,752 adds $2,752, not the $1,934 reference).
+            totalStakedUsd: base.totalStakedUsd + liveUsdFromLedgerUsd(marketId, agg?.stakedUsd ?? 0, livePriceUsd),
+            amountInCooldownUsd:
+              base.amountInCooldownUsd + liveUsdFromLedgerUsd(marketId, agg?.cooldownUsd ?? 0, livePriceUsd),
             currentDeficitUsd: overlay.currentDeficitUsd,
             deficitOffsetUsd: overlay.deficitOffsetUsd,
             totalSlashedUsd: overlay.totalSlashedUsd,
