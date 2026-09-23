@@ -132,7 +132,10 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
 
         <MarketMobileStatList>
           <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
-          <MarketMobileStatRow label={t("Capacity Filled")} value={<CapacityFilled value={asset.utilization} />} />
+          <MarketMobileStatRow
+            label={t("Capacity Filled")}
+            value={<CapacityFilled size="sm" value={asset.utilization} />}
+          />
           <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
         </MarketMobileStatList>
 

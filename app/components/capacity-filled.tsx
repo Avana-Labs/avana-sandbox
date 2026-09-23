@@ -3,10 +3,12 @@ import { cn } from "@/lib/utils"
 type CapacityFilledProps = {
   value?: number | null
   className?: string
+  /** `sm` fits a 20px mobile stat row, so the Capacity Filled row is as tall as its neighbours. */
+  size?: "md" | "sm"
 }
 
 /** Compact utilization gauge shared by the market tables. `value` is a percentage (0–100). */
-export function CapacityFilled({ value, className }: CapacityFilledProps) {
+export function CapacityFilled({ value, className, size = "md" }: CapacityFilledProps) {
   const hasValue = typeof value === "number" && Number.isFinite(value)
   const percentage = hasValue ? Math.min(100, Math.max(0, value)) : null
   const rounded = percentage === null ? null : Math.round(percentage)
@@ -16,9 +18,17 @@ export function CapacityFilled({ value, className }: CapacityFilledProps) {
     <div
       role="img"
       aria-label={rounded === null ? "Capacity filled unavailable" : `Capacity filled ${rounded}%`}
-      className={cn("inline-flex items-center gap-2.5 whitespace-nowrap", className)}
+      className={cn(
+        "inline-flex items-center whitespace-nowrap",
+        size === "sm" ? "gap-2 align-top leading-5" : "gap-2.5",
+        className,
+      )}
     >
-      <svg aria-hidden="true" viewBox="0 0 32 32" className="size-8 shrink-0 -rotate-90">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 32 32"
+        className={cn("shrink-0 -rotate-90", size === "sm" ? "size-5" : "size-8")}
+      >
         <circle
           cx="16"
           cy="16"

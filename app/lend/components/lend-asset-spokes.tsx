@@ -257,7 +257,12 @@ function AssetCardView({
         />
         <MarketMobileStatRow
           label={t("Capacity Filled")}
-          value={<CapacityFilled value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100} />}
+          value={
+            <CapacityFilled
+              size="sm"
+              value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100}
+            />
+          }
         />
         <MarketMobileStatRow
           label={t("Available")}

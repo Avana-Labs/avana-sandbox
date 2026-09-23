@@ -664,7 +664,10 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
             label={t("Max Leverage")}
             value={row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
           />
-          <MarketMobileStatRow label={t("Capacity Filled")} value={<CapacityFilled value={row.capacityFilledPct} />} />
+          <MarketMobileStatRow
+            label={t("Capacity Filled")}
+            value={<CapacityFilled size="sm" value={row.capacityFilledPct} />}
+          />
           <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
       </Link>

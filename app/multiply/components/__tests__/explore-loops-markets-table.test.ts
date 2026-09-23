@@ -35,6 +35,6 @@ describe("multiply capacity table", () => {
     expect(row).toContain("<CapacityFilled value={row.capacityFilledPct} />")
     expect(row).not.toMatch(/Deleverage/)
     expect(mobileCard.indexOf('t("Capacity Filled")')).toBeLessThan(mobileCard.indexOf('t("Available")'))
-    expect(mobileCard).toContain("<CapacityFilled value={row.capacityFilledPct} />")
+    expect(mobileCard).toContain('<CapacityFilled size="sm" value={row.capacityFilledPct} />')
   })
 })

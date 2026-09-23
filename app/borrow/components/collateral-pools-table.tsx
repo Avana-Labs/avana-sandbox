@@ -616,7 +616,7 @@ function SpokeMobileSection({
                       <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
                       <MarketMobileStatRow
                         label={t("Capacity Filled")}
-                        value={<CapacityFilled value={pool.capacityFilledPct} />}
+                        value={<CapacityFilled size="sm" value={pool.capacityFilledPct} />}
                       />
                       <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
                       <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
