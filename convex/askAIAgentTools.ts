@@ -23,7 +23,7 @@ export const readEngineSnapshotTool: Tool = createTool({
 
 export const readBorrowCapacityTool: Tool = createTool({
   description:
-    "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+    "Read the user's authoritative Credit Engine Borrow-product capacity, Borrow debt, health factor, and liquidation buffer. Multiply debt is separate and must not be counted as Borrow debt.",
   inputSchema: z.object({}),
   execute: (ctx): Promise<unknown> => ctx.runQuery(api.askAITools.borrowCapacity, {}),
 })
@@ -92,7 +92,7 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
     }),
     read_borrow_capacity: createTool({
       description:
-        "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+        "Read the user's authoritative Credit Engine Borrow-product capacity, Borrow debt, health factor, and liquidation buffer. Multiply debt is separate and must not be counted as Borrow debt.",
       inputSchema: z.object({}),
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId }),
     }),

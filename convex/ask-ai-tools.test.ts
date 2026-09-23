@@ -257,7 +257,7 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
   })
 
-  test("falls back to the current portfolio borrow capacity when no risk snapshot exists", async () => {
+  test("falls back to portfolio capacity using Borrow-product debt only", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()
     await t.run(async (ctx) => {
@@ -271,6 +271,17 @@ describe("Ask AI authenticated portfolio tools", () => {
         totalMultiplyExposureUsd: 0,
         totalEarnedUsd: 0,
       })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet: WALLET_A,
+        marketId: "eth-usdc",
+        assetId: "usdc",
+        poolId: "eth-usdc",
+        symbol: "USDC",
+        amount: 3_000,
+        valueUsd: 3_000,
+        state: "debt",
+        updatedAt: now,
+      })
     })
 
     await expect(t.withIdentity({ subject: WALLET_A }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject(
@@ -283,6 +294,46 @@ describe("Ask AI authenticated portfolio tools", () => {
           source: "portfolio_current",
         },
         asOf: now,
+      },
+    )
+  })
+
+  test("does not treat starter Multiply debt as Borrow debt", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", {
+        wallet: WALLET_A,
+        at: now,
+        totalValueUsd: 750_000,
+        totalSuppliedUsd: 1_250_000,
+        totalBorrowedUsd: 250_000,
+        availableToBorrowUsd: 245_000,
+        totalMultiplyExposureUsd: 500_000,
+        totalEarnedUsd: 0,
+      })
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet: WALLET_A,
+        marketId: "aave-gho",
+        assetId: "gho",
+        symbol: "GHO",
+        amount: 250_000,
+        valueUsd: 250_000,
+        state: "debt",
+        updatedAt: now,
+      })
+    })
+
+    await expect(t.withIdentity({ subject: WALLET_A }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject(
+      {
+        capacity: {
+          borrowCapacityUsd: 245_000,
+          availableBorrowCapacityUsd: 245_000,
+          totalBorrowedUsd: 0,
+          noDebt: true,
+          healthFactor: null,
+          source: "portfolio_current",
+        },
       },
     )
   })

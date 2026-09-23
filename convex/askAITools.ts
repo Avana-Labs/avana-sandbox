@@ -403,7 +403,7 @@ export const engineSnapshot = query({
 export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-  const [snapshot, portfolio] = await Promise.all([
+  const [snapshot, portfolio, borrowBalances] = await Promise.all([
     ctx.db
       .query("riskSnapshots")
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -413,29 +413,43 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
       .query("portfolioCurrent")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .unique(),
+    ctx.db
+      .query("walletBorrowBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
   ])
+  // portfolioCurrent.totalBorrowedUsd is portfolio-wide and includes Multiply debt. Borrow
+  // capacity must only use debt from the Borrow product, otherwise a newly onboarded wallet
+  // with the starter Multiply allocation appears to have already borrowed against LP collateral.
+  const borrowDebtUsd = borrowBalances
+    .filter((row) => row.state === "debt")
+    .reduce((sum, row) => sum + Math.max(0, row.valueUsd), 0)
   const capacity = snapshot
     ? { ...decodeBorrowRiskSnapshot(snapshot), source: "credit_engine_snapshot" as const }
     : portfolio
       ? {
-          borrowCapacityUsd: portfolio.availableToBorrowUsd + portfolio.totalBorrowedUsd,
+          borrowCapacityUsd: portfolio.availableToBorrowUsd + borrowDebtUsd,
           availableBorrowCapacityUsd: portfolio.availableToBorrowUsd,
-          totalBorrowedUsd: portfolio.totalBorrowedUsd,
+          totalBorrowedUsd: borrowDebtUsd,
           source: "portfolio_current" as const,
         }
       : null
-  // Decode the usd6 strings and wad health factor here: mixed with already-decoded numbers in
-  // the same payload, the model divides by 1e6/1e18 itself.
+  // Decode the usd6 strings and wad health factor before they reach the model. Every money
+  // value in this result is already denominated in USD, so the model never does unit conversion.
   const spokes = (snapshot?.spokes ?? []).map((spoke) => ({
     spokeId: spoke.spokeId,
     availableCreditUsd: Number(spoke.availableCreditUsd6) / 1_000_000,
     totalBorrowedUsd: Number(spoke.totalBorrowedUsd6) / 1_000_000,
     liquidationBufferUsd: Number(spoke.liquidationBufferUsd6) / 1_000_000,
     ...askAIHealthFactorValue(
-      spoke.healthFactorWad === null ? null : Number(spoke.healthFactorWad) / 1_000_000_000_000_000_000,
+      spoke.healthFactorWad === null ? "infinity" : Number(spoke.healthFactorWad) / 1_000_000_000_000_000_000,
     ),
   }))
-  const capacityHealthFactor = capacity && "healthFactor" in capacity ? capacity.healthFactor : null
+  const capacityHealthFactor = capacity && "healthFactor" in capacity ? capacity.healthFactor : undefined
+  const healthFactorValue =
+    capacity && capacity.totalBorrowedUsd === 0
+      ? askAIHealthFactorValue("infinity")
+      : askAIHealthFactorValue(capacityHealthFactor)
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
@@ -445,7 +459,7 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
           ...capacity,
           // The tool description promises a liquidation buffer, but only the raw spokes had it.
           liquidationBufferUsd: spokes.reduce((sum, spoke) => sum + spoke.liquidationBufferUsd, 0),
-          ...askAIHealthFactorValue(capacityHealthFactor),
+          ...healthFactorValue,
         }
       : null,
     spokes,
