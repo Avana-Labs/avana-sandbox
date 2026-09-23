@@ -503,7 +503,7 @@ function LoopMarketsSection({
                         onClick={() => toggleSort("capacityFilled")}
                         className={sortHeaderButtonClass(sortKey === "capacityFilled")}
                       >
-                        <span>{formatTableHeaderLabel(t("Capacity Filled"))}</span>
+                        <span className="whitespace-nowrap uppercase">{formatTableHeaderLabel(t("Capacity Filled"))}</span>
                         <SortIcon />
                       </button>
                     </th>

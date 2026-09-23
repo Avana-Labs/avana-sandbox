@@ -1,4 +1,4 @@
-import { render, cleanup } from "@testing-library/react"
+import { render, cleanup, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { BorrowableAssetsPanel } from "../borrowable-assets-table"
 import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
@@ -36,6 +36,17 @@ describe("BorrowableAssetsPanel loan variant", () => {
     // No cell mixes a USD magnitude with a token symbol (e.g. "9.6M WBTC").
     expect(container.textContent).not.toMatch(/9\.6M\s+WBTC/)
     expect(container.textContent).not.toMatch(/4\.2M\s+WBTC/)
+
+    const capacityHeading = container.querySelector("thead th span.whitespace-nowrap")
+    expect(capacityHeading).toHaveTextContent("Capacity Filled")
+    expect(capacityHeading).toHaveClass("uppercase")
+
+    const borrowableRow = container.querySelector("tbody tr")
+    expect(borrowableRow).not.toBeNull()
+    const cells = within(borrowableRow as HTMLElement).getAllByRole("cell")
+    expect(cells[3]).toHaveTextContent("$9.6M")
+    expect(within(cells[3]).queryByRole("img")).not.toBeInTheDocument()
+    expect(within(cells[4]).getByRole("img", { name: "Capacity filled 62%" })).toBeInTheDocument()
   })
 
   it("renders capacity filled as the rounded utilization gauge on the mobile card", () => {

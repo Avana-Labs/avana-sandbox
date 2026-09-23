@@ -258,9 +258,6 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
         </div>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CapacityFilled value={asset.utilization} />
-      </td>
-      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">
             {formatTokenQuantity(asset.totalBorrowedUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
@@ -269,6 +266,9 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
         <div className="mt-0.5 text-[13px] tracking-normal text-muted-foreground">
           <span className="tabular-nums">{compact(asset.totalBorrowedUsd)}</span>
         </div>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CapacityFilled value={asset.utilization} />
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
@@ -404,7 +404,7 @@ function LoanAssetsSection({
                     : "text-muted-foreground dark:text-white/42",
                 )}
               >
-                <span>{t("Capacity Filled")}</span>
+                <span className="whitespace-nowrap uppercase">{t("Capacity Filled")}</span>
                 <SortIcon />
               </button>
             </th>
@@ -581,7 +581,7 @@ function AssetsSection({
                   {t("Borrow APR")}
                 </th>
                 <th className="pb-2 pt-2.5 pl-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Capacity Filled")}
+                  <span className="whitespace-nowrap uppercase">{t("Capacity Filled")}</span>
                 </th>
                 <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Available")}
