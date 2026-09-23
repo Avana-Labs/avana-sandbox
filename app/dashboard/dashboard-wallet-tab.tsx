@@ -7,17 +7,7 @@ import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface, ScrollableTable } from "@/app/components/market-table-primitives"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
@@ -500,7 +490,7 @@ function WalletBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "token", "tokens")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="!rounded-none">
         <ScrollableTable layout={WALLET_TOKENS_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -560,58 +550,6 @@ function WalletBalanceSection({
           </tbody>
         </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => {
-          const pnl = tokenPnl(row, basisFor(row.assetId))
-          return (
-            <MarketMobileCard key={row.id}>
-              <MarketMobileCardHeader
-                identity={
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <TokenIcon symbol={row.symbol} size="table" />
-                    <MarketMobileIdentityText
-                      title={row.name}
-                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
-                    />
-                  </div>
-                }
-                metric={<MarketMobileMetric value={m(exact(row.valueUsd))} label={t("Value")} />}
-              />
-              <MarketMobileStatList>
-                <MarketMobileStatRow label={t("Balance")} value={m(formatAssetAmount(row.amount, row.symbol))} />
-                {pnl && showBalance ? (
-                  <MarketMobileStatRow
-                    label={t("P/L")}
-                    value={
-                      <PnlLine
-                        row={row}
-                        priceUsdAtClaim={basisFor(row.assetId)}
-                        exact={exact}
-                        showBalance={showBalance}
-                        variant="value"
-                      />
-                    }
-                  />
-                ) : null}
-              </MarketMobileStatList>
-              <MarketMobileActionFooter columns={1}>
-                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={`/swap?from=${encodeURIComponent(row.assetId)}`}>
-                    <ActionIcon label="swap" />
-                    {t("Swap")}
-                  </Link>
-                </Button>
-              </MarketMobileActionFooter>
-            </MarketMobileCard>
-          )
-        })}
-        {rows.length === 0 ? (
-          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
-            {t("No wallet balances found.")}
-          </MarketMobileCard>
-        ) : null}
-      </div>
     </section>
   )
 }
@@ -639,7 +577,7 @@ function PoolsBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="!rounded-none">
         <ScrollableTable layout={WALLET_POOLS_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -704,49 +642,6 @@ function PoolsBalanceSection({
           </tbody>
         </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
-          <Link key={row.id} href={poolDetailHref(row)} className="block">
-            <MarketMobileCard>
-              <MarketMobileCardHeader identity={<PoolIdentity row={row} markets={markets} />} />
-              <MarketMobileStatList>
-                <MarketMobileStatRow
-                  label={t("LTV")}
-                  value={m(row.ltvPct != null && Number.isFinite(row.ltvPct) ? formatLtvPct(row.ltvPct) : DASH)}
-                />
-                <MarketMobileStatRow
-                  label={t("Risk Premium")}
-                  value={m(
-                    (() => {
-                      const bps = resolvePoolRiskPremiumBps(row, markets)
-                      return bps != null ? formatRiskPremium(bps) : DASH
-                    })(),
-                  )}
-                />
-                <MarketMobileStatRow
-                  label={t("Balance")}
-                  value={
-                    <span>
-                      {row.unitPriceUsd && row.unitPriceUsd > 0
-                        ? m(`${formatPoolAmount(row.amount)} LP`)
-                        : m(exact(row.valueUsd))}
-                      {row.unitPriceUsd && row.unitPriceUsd > 0 ? (
-                        <MarketMobileSupportingValue>{m(exact(row.valueUsd))}</MarketMobileSupportingValue>
-                      ) : null}
-                    </span>
-                  }
-                />
-              </MarketMobileStatList>
-            </MarketMobileCard>
-          </Link>
-        ))}
-        {rows.length === 0 ? (
-          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
-            {t("No wallet balances found.")}
-          </MarketMobileCard>
-        ) : null}
-      </div>
     </section>
   )
 }

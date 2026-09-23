@@ -6,17 +6,7 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
-import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
@@ -203,7 +193,7 @@ export function DashboardInvestments({
         </div>
       ) : (
         <>
-          <DesktopTableSurface className="hidden !rounded-none md:block">
+          <DesktopTableSurface className="!rounded-none">
             <ScrollableTable layout={LEND_POSITIONS_LAYOUT}>
               <thead>
                 <tr className={TABLE_HEADER_ROW}>
@@ -313,89 +303,6 @@ export function DashboardInvestments({
               </tbody>
             </ScrollableTable>
           </DesktopTableSurface>
-
-          <div className="space-y-3 md:hidden">
-            {investments.map((token) => {
-              const marketId = resolveMarketId(token)
-              const detailHref = `/lend/markets/${marketId}`
-              return (
-                <MarketMobileCard key={token.id} clickable onClick={() => router.push(detailHref)}>
-                  <MarketMobileCardHeader
-                    identity={
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <TokenIcon symbol={token.symbol} size="table" />
-                        <MarketMobileIdentityText
-                          title={token.name}
-                          subtitle={<AssetPriceSubLabel symbol={token.symbol} />}
-                        />
-                      </div>
-                    }
-                    metric={<MarketMobileMetric value={`${token.apyPct.toFixed(2)}%`} label="APY" />}
-                  />
-                  <MarketMobileStatList>
-                    <MarketMobileStatRow
-                      label={t("Deposited")}
-                      value={
-                        <span>
-                          {m(formatTokenAmount(token.balance, token.symbol))}
-                          <MarketMobileSupportingValue>
-                            {m(formatUsdExact(token.suppliedUsd))}
-                          </MarketMobileSupportingValue>
-                        </span>
-                      }
-                    />
-                    <MarketMobileStatRow
-                      label={t("Earnings")}
-                      value={
-                        <span>
-                          <EarnedCell
-                            token={token}
-                            anchorMs={accrualSinceMs}
-                            show={showDollarAmounts}
-                            className="text-success"
-                          />
-                          <MarketMobileSupportingValue>
-                            {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
-                          </MarketMobileSupportingValue>
-                        </span>
-                      }
-                      valueClassName="text-success"
-                    />
-                  </MarketMobileStatList>
-                  <MarketMobileActionFooter>
-                    <Button
-                      type="button"
-                      variant="brand"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        router.push(
-                          actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }),
-                        )
-                      }}
-                    >
-                      <ActionIcon label="Deposit" />
-                      Add
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="brand-secondary"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        router.push(
-                          actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }),
-                        )
-                      }}
-                    >
-                      <ActionIcon label="Withdraw" />
-                      Withdraw
-                    </Button>
-                  </MarketMobileActionFooter>
-                </MarketMobileCard>
-              )
-            })}
-          </div>
         </>
       )}
     </section>

@@ -12,19 +12,10 @@ import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { formatTokenQuantity } from "@/app/lib/currency/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { LIQUIDATION_LTV, aprToneClass } from "@/app/lib/data/borrow-domain"
+import { LIQUIDATION_LTV } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 import { TokenIcon } from "@/app/components/token-icon"
-import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
 import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { cn } from "@/lib/utils"
@@ -58,7 +49,6 @@ type DebtsTableProps = {
     dailyInterest: number
   }
   onRepay: (context: DebtRowContext) => void
-  onManage: (context: DebtRowContext) => void
   showBalance?: boolean
   showSummary?: boolean
   showHeading?: boolean
@@ -113,14 +103,13 @@ export function DebtsPanel({
   rows,
   totals,
   onRepay,
-  onManage,
   showBalance = true,
   showSummary = true,
   showHeading = true,
 }: DebtsTableProps) {
   const { t } = useTranslation()
   const router = useRouter()
-  const { compact, exact } = useCurrency()
+  const { exact } = useCurrency()
   const priceFor = useCanonicalPriceFor()
   const m = (value: string) => (showBalance ? value : MASK)
   return (
@@ -146,7 +135,7 @@ export function DebtsPanel({
         </div>
       ) : (
         <>
-          <DesktopTableSurface className="hidden !rounded-none md:block">
+          <DesktopTableSurface className="!rounded-none">
             <ScrollableTable layout={DEBTS_LAYOUT}>
               <thead>
                 <tr className={TABLE_HEADER_ROW}>
@@ -247,80 +236,6 @@ export function DebtsPanel({
               </tbody>
             </ScrollableTable>
           </DesktopTableSurface>
-
-          <ul className="space-y-3 md:hidden">
-            {rows.map((row, index) => {
-              const rowKey = row.id ?? `${row.pool.id}-${index}`
-              return (
-                <MarketMobileCard
-                  key={rowKey}
-                  clickable
-                  onClick={() =>
-                    router.push(
-                      row.debtAssetId ? borrowAssetDetailPath(row.debtAssetId) : `/borrow/markets/${row.pool.id}`,
-                    )
-                  }
-                >
-                  <MarketMobileCardHeader
-                    identity={
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <TokenIcon symbol={row.debtAssetSymbol} size="table" />
-                        <MarketMobileIdentityText
-                          title={row.debtAssetSymbol}
-                          subtitle={t("against {pool}").replace("{pool}", row.pool.name)}
-                        />
-                      </div>
-                    }
-                    metric={
-                      <MarketMobileMetric
-                        value={m(compact(row.borrowedUsd))}
-                        label={t("Borrowed")}
-                        valueClassName="text-rose-500"
-                      />
-                    }
-                  />
-                  <MarketMobileStatList>
-                    <MarketMobileStatRow
-                      label={t("Borrow APR")}
-                      value={`${row.borrowApr.toFixed(2)}%`}
-                      valueClassName={aprToneClass(row.borrowApr)}
-                    />
-                    <MarketMobileStatRow
-                      label={t("Daily Interest")}
-                      value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
-                      valueClassName="text-rose-500"
-                    />
-                  </MarketMobileStatList>
-                  <MarketMobileActionFooter>
-                    <Button
-                      type="button"
-                      variant="brand"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onManage(row)
-                      }}
-                    >
-                      <ActionIcon label="Borrow" />
-                      {t("Borrow")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="brand-secondary"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onRepay(row)
-                      }}
-                    >
-                      <ActionIcon label="Repay" />
-                      {t("Repay")}
-                    </Button>
-                  </MarketMobileActionFooter>
-                </MarketMobileCard>
-              )
-            })}
-          </ul>
         </>
       )}
     </section>

@@ -20,17 +20,6 @@ const pool = {
   visuals: [poolVisual, stableVisual] as [typeof poolVisual, typeof stableVisual],
 }
 
-const supplyRow = {
-  pool,
-  borrowedUsd: 0,
-  remainingBorrowPowerUsd: 8400,
-  liquidationThresholdUsd: 9000,
-  healthFactor: Number.POSITIVE_INFINITY,
-  pairApr: 3.1,
-  feesUsd: 0,
-  feesLabel: "$0.00",
-}
-
 const debtRow = {
   id: "debt-1",
   pool,
@@ -53,48 +42,15 @@ vi.mock("@/app/components/display-preferences", () => ({
 
 vi.mock("@/app/dashboard/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
-  SuppliesPanel: ({
-    rows,
-    onClaimFees,
-    onAddCollateral,
-    onRemove,
-  }: {
-    rows: Array<typeof supplyRow>
-    onClaimFees: (row: typeof supplyRow) => void
-    onAddCollateral: (row: typeof supplyRow) => void
-    onRemove: (row: typeof supplyRow) => void
-  }) => (
-    <div>
-      <button type="button" onClick={() => onClaimFees(rows[0]!)}>
-        open-claim
-      </button>
-      <button type="button" onClick={() => onAddCollateral(rows[0]!)}>
-        open-supply
-      </button>
-      <button type="button" onClick={() => onRemove(rows[0]!)}>
-        open-remove
-      </button>
-    </div>
-  ),
+  SuppliesPanel: () => <div />,
 }))
 
 vi.mock("@/app/dashboard/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
-  DebtsPanel: ({
-    rows,
-    onRepay,
-    onManage,
-  }: {
-    rows: Array<typeof debtRow>
-    onRepay: (row: typeof debtRow) => void
-    onManage: (row: typeof debtRow) => void
-  }) => (
+  DebtsPanel: ({ rows, onRepay }: { rows: Array<typeof debtRow>; onRepay: (row: typeof debtRow) => void }) => (
     <div>
       <button type="button" onClick={() => onRepay(rows[0]!)}>
         open-repay
-      </button>
-      <button type="button" onClick={() => onManage(rows[0]!)}>
-        open-manage
       </button>
     </div>
   ),
@@ -105,26 +61,10 @@ describe("DashboardBorrowTab", () => {
     vi.clearAllMocks()
   })
 
-  it("routes dashboard supply actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/dashboard" />)
-
-    fireEvent.click(screen.getByText("open-claim"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/claim?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
-
-    fireEvent.click(screen.getByText("open-supply"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
-
-    fireEvent.click(screen.getByText("open-remove"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
-  })
-
   it("routes dashboard debt actions to shared action pages", () => {
     render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/dashboard" />)
 
     fireEvent.click(screen.getByText("open-repay"))
     expect(push).toHaveBeenCalledWith("/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
-
-    fireEvent.click(screen.getByText("open-manage"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
   })
 })

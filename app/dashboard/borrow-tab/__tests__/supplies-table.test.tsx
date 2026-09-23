@@ -1,5 +1,5 @@
 import { render, cleanup, within } from "@testing-library/react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 import { SuppliesPanel } from "../supplies-table"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 
@@ -47,7 +47,6 @@ describe("SuppliesPanel column scope", () => {
       <SuppliesPanel
         rows={[]}
         totals={{ collateral: 0, borrowed: 0, available: 0, fees: 0, averageHf: null }}
-        onClaimFees={vi.fn()}
         showSummary={false}
       />,
     )
@@ -64,7 +63,6 @@ describe("SuppliesPanel column scope", () => {
       <SuppliesPanel
         rows={[tinyRow]}
         totals={{ collateral: 2, borrowed: 0, available: 3_700, fees: 0, averageHf: 4.57 }}
-        onClaimFees={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
@@ -73,11 +71,10 @@ describe("SuppliesPanel column scope", () => {
 
     // The desktop table exposes the spoke-scoped credit columns. "Borrow Power"
     // and the health factor here reflect the whole spoke, not the $2 in this row.
-    expect(view.getAllByText("Borrow Power").length).toBeGreaterThan(0)
-    // The desktop column is now "Risk" — a combined health-factor + liquidation cell
-    // modelled on the Multiply tab. The mobile card keeps a "Health" stat row.
+    expect(view.getAllByText(/^BORROW POWER$/).length).toBeGreaterThan(0)
+    // The column is "Risk" — a combined health-factor + liquidation cell modelled on the
+    // Multiply tab (the same table renders on phones).
     expect(view.getAllByText(/^RISK$/).length).toBeGreaterThan(0)
-    expect(view.getAllByText(/^Health$/).length).toBeGreaterThan(0)
     // Liquidation value comes from the SAME field the My Debts table reads
     // (liquidationThresholdUsd), so the two tables never disagree. It is labelled
     // "Liq." with an (i) that explains it is a USD figure (vs Multiply's per-token price).

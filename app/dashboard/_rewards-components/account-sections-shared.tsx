@@ -10,16 +10,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
 import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -166,7 +157,7 @@ export function ProductAvailableCard({
         <span className="font-data text-[15px] tabular-nums text-foreground">{m(exact(total))}</span>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="!rounded-none">
         <ScrollableTable layout={action ? AVAILABLE_WITH_ACTION_LAYOUT : AVAILABLE_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -207,58 +198,6 @@ export function ProductAvailableCard({
           </tbody>
         </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
-          <MarketMobileCard key={row.id}>
-            <MarketMobileCardHeader
-              identity={
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <TokenIcon symbol={row.symbol} size="table" />
-                  <MarketMobileIdentityText title={row.name} subtitle={priceLabel(row.symbol)} />
-                </div>
-              }
-              metric={
-                <MarketMobileMetric
-                  value={m(formatAvailableAmount(row.amount, row.symbol))}
-                  label={m(exact(row.valueUsd))}
-                />
-              }
-            />
-            {action ? (
-              <MarketMobileActionFooter>
-                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={action.href(row)}>
-                    <ActionIcon label={action.icon} />
-                    {action.label}
-                  </Link>
-                </Button>
-                <Button asChild variant="brand-secondary" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={`/swap?to=${encodeURIComponent(row.assetId)}`}>
-                    <ActionIcon label="swap" />
-                    {t("Buy")}
-                  </Link>
-                </Button>
-              </MarketMobileActionFooter>
-            ) : (
-              <MarketMobileActionFooter>
-                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={`/swap?from=${encodeURIComponent(row.assetId)}`}>
-                    <ActionIcon label="swap" />
-                    {t("Swap")}
-                  </Link>
-                </Button>
-                <Button asChild variant="brand-secondary" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={`/swap?to=${encodeURIComponent(row.assetId)}`}>
-                    <ActionIcon label="swap" />
-                    {t("Buy")}
-                  </Link>
-                </Button>
-              </MarketMobileActionFooter>
-            )}
-          </MarketMobileCard>
-        ))}
-      </div>
     </section>
   )
 }
@@ -352,7 +291,7 @@ export function MultiplyAvailableMarketsCard({
         <span className="font-data text-[15px] tabular-nums text-foreground">{m(exact(total))}</span>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="!rounded-none">
         <ScrollableTable layout={MULTIPLY_AVAILABLE_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -430,63 +369,6 @@ export function MultiplyAvailableMarketsCard({
           </tbody>
         </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
-          <MarketMobileCard
-            key={row.market.id}
-            clickable
-            onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
-          >
-            <MarketMobileCardHeader
-              identity={
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
-                  <MarketMobileIdentityText
-                    title={row.market.collateralAsset.name}
-                    subtitle={formatTokenPrice(
-                      priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
-                    )}
-                  />
-                </div>
-              }
-              metric={
-                <MarketMobileMetric
-                  value={m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
-                  label={m(exact(row.valueUsd))}
-                />
-              }
-            />
-            <MarketMobileStatList>
-              <MarketMobileStatRow
-                label={t("Loop")}
-                value={
-                  <span className="inline-flex items-center gap-2">
-                    <span>{t("Borrow")}</span>
-                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
-                    <span>{row.market.borrowAsset.symbol}</span>
-                  </span>
-                }
-              />
-              <MarketMobileStatRow
-                label={t("APY")}
-                value={`${(row.market.economics.estimatedMaxApy * 100).toFixed(2)}% · Max ${resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x`}
-              />
-            </MarketMobileStatList>
-            <MarketMobileActionFooter>
-              <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                <Link
-                  href={actionPagePath("multiply", "multiply", { market: row.market.id })}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <ActionIcon label="multiply" />
-                  {t("Multiply")}
-                </Link>
-              </Button>
-            </MarketMobileActionFooter>
-          </MarketMobileCard>
-        ))}
-      </div>
     </section>
   )
 }

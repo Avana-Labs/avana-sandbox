@@ -10,27 +10,16 @@ import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
-  healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
-import { Button } from "@/components/ui/button"
 import {
   DesktopTableSurface,
   ROW_OPEN_ARROW_CLASS,
   RowOpenArrowIcon,
   ScrollableTable,
 } from "@/app/components/market-table-primitives"
-import { ActionIcon } from "@/app/components/action-icon"
-import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
 import { liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
@@ -67,9 +56,6 @@ const SUPPLIES_LAYOUT = tableColumnLayout(
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
   totals: { collateral: number; borrowed: number; available: number; fees: number; averageHf: number | null }
-  onClaimFees?: (context: SupplyRowContext) => void
-  onAddCollateral?: (context: SupplyRowContext) => void
-  onRemove?: (context: SupplyRowContext) => void
   showBalance?: boolean
   showSummary?: boolean
   showHeading?: boolean
@@ -97,7 +83,6 @@ function SuppliesMetricHeader({
 export function SuppliesPanel({
   rows,
   totals,
-  onClaimFees,
   showBalance = true,
   showSummary = true,
   showHeading = true,
@@ -125,7 +110,7 @@ export function SuppliesPanel({
         </div>
       ) : (
         <>
-          <DesktopTableSurface className="hidden !rounded-none md:block">
+          <DesktopTableSurface className="!rounded-none">
             <ScrollableTable layout={SUPPLIES_LAYOUT}>
               <thead>
                 <tr className={TABLE_HEADER_ROW}>
@@ -231,67 +216,6 @@ export function SuppliesPanel({
               </tbody>
             </ScrollableTable>
           </DesktopTableSurface>
-
-          <ul className="space-y-3 md:hidden">
-            {rows.map((row) => {
-              const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-                ReturnType<typeof homeVisualToBorrowVisual>,
-                ReturnType<typeof homeVisualToBorrowVisual>,
-              ]
-              const hf = row.healthFactor
-              // Single-source the label through formatHealthFactor so the mobile card
-              // caps/formats health identically to the desktop table and the hero card.
-              const hfLabel = formatHealthFactor(hf)
-              const hfTone = healthFactorBarTone(hf)
-              // Spoke/venue context so same-pair positions on different spokes stay distinct.
-              const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
-              return (
-                <MarketMobileCard
-                  key={row.pool.id}
-                  clickable
-                  onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
-                >
-                  <MarketMobileCardHeader
-                    identity={<TokenPairCell visuals={visuals} name={row.pool.name} subtitle={spokeLabel} size="md" />}
-                    metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
-                  />
-                  <MarketMobileStatList>
-                    <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
-                    <MarketMobileStatRow label={t("Liq.")} value={m(exact(row.liquidationThresholdUsd))} />
-                    <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
-                    <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
-                    <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
-                  </MarketMobileStatList>
-                  <MarketMobileActionFooter>
-                    <Button
-                      type="button"
-                      variant="brand"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onClaimFees?.(row)
-                      }}
-                    >
-                      <ActionIcon label="Claim" />
-                      {t("Claim")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="brand-secondary"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        router.push(`/borrow/markets/${row.pool.id}`)
-                      }}
-                    >
-                      <ActionIcon label="Manage" />
-                      {t("Manage")}
-                    </Button>
-                  </MarketMobileActionFooter>
-                </MarketMobileCard>
-              )
-            })}
-          </ul>
         </>
       )}
     </section>

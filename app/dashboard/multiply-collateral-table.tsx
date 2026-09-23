@@ -1,19 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ActionIcon } from "@/app/components/action-icon"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
 import {
   DesktopTableSurface,
   ROW_OPEN_ARROW_CLASS,
@@ -28,7 +17,6 @@ import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import { formatHealthFactor } from "@/app/lib/home-sim"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import {
@@ -58,7 +46,6 @@ const MULTIPLY_POSITIONS_LAYOUT = tableColumnLayout(
   ],
   { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
 )
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
@@ -121,16 +108,14 @@ export function MultiplyCollateralTable({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-            {t("My Loops")}
-          </h3>
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("My Loops")}</h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {formatSectionCount(activeRows.length, "loop", "loops")}
           </p>
         </div>
       ) : null}
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="!rounded-none">
         <ScrollableTable layout={MULTIPLY_POSITIONS_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -198,89 +183,6 @@ export function MultiplyCollateralTable({
           </tbody>
         </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {activeRows.map((row) => {
-          const apy = apyFor(row)
-          const band = healthFactorBand(row.healthFactor)
-          return (
-            <MarketMobileCard key={row.id} clickable onClick={() => openPosition(row)}>
-              <MarketMobileCardHeader
-                identity={<LoopIdentity row={row} />}
-                metric={
-                  apy ? (
-                    <MarketMobileMetric
-                      value={formatNetApyPct(apy.netApyPct)}
-                      label={t("Net APY")}
-                      valueClassName={netApyToneClass(apy.netApyPct)}
-                    />
-                  ) : (
-                    <MarketMobileMetric value="—" label={t("Net APY")} />
-                  )
-                }
-              />
-              <MarketMobileStatList>
-                <MarketMobileStatRow label={t("Value")} value={usd(positionEquityUsd(row))} />
-                <MarketMobileStatRow label={t("Exposure")} value={usd(row.collateralUsd)} />
-                {apy && showDollarAmounts ? (
-                  <MarketMobileStatRow
-                    label={t("Earned")}
-                    value={
-                      <LiveInterestEarnedUsd
-                        anchorMs={apy.accrualSinceMs}
-                        ratePerYearUsd={apy.ratePerYearUsd}
-                        baseUsd={apy.baseUsd}
-                      />
-                    }
-                    valueClassName="text-success"
-                  />
-                ) : null}
-                <MarketMobileStatRow
-                  label={t("Risk")}
-                  value={`${t("HF")} ${formatHealthFactor(row.healthFactor)} · ${liqPriceLabel(t, row, liqPrice)}`}
-                  valueClassName={band.textClass}
-                />
-              </MarketMobileStatList>
-              <MarketMobileActionFooter>
-                <Button
-                  type="button"
-                  variant="brand"
-                  className={MARKET_MOBILE_CTA_CLASS}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    router.push(
-                      actionPagePath("multiply", "multiply", {
-                        market: row.marketId,
-                        return: "/dashboard?tab=multiply",
-                      }),
-                    )
-                  }}
-                >
-                  <ActionIcon label="Multiply" />
-                  {t("Multiply")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="brand-secondary"
-                  className={MARKET_MOBILE_CTA_CLASS}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    router.push(
-                      actionPagePath("multiply", "deleverage", {
-                        market: row.marketId,
-                        return: "/dashboard?tab=multiply",
-                      }),
-                    )
-                  }}
-                >
-                  <ActionIcon label="Deleverage" />
-                  {t("Deleverage")}
-                </Button>
-              </MarketMobileActionFooter>
-            </MarketMobileCard>
-          )
-        })}
-      </div>
     </section>
   )
 }
@@ -310,19 +212,6 @@ function PairedTokenIcons({ row }: { row: PortfolioMultiplyCollateral }) {
         className="absolute bottom-0 right-0 z-10"
       />
     </span>
-  )
-}
-
-function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <PairedTokenIcons row={row} />
-      <MarketMobileIdentityText
-        title={`${row.collateralToken} / ${row.borrowableToken}`}
-        subtitle={`${row.multiplier.toFixed(2)}x ${t("leverage")}`}
-      />
-    </div>
   )
 }
 
