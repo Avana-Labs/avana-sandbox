@@ -18,8 +18,6 @@ import { cn } from "@/lib/utils"
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
-  // The logo link shows the testnet label, so its accessible name must contain that text too.
-  const homeLinkLabel = `${t("Home")}, ${t("Sandbox · testnet")}`
   // Guests can't reach product routes (SandboxGate routes them to onboarding), so don't prefetch
   // those routes for them. Signed-in users prefetch the full dynamic page payload;
   // automatic prefetch does not reliably warm these routes without loading boundaries.
@@ -172,7 +170,7 @@ export function Header() {
           <div className="flex shrink-0 items-center gap-4 2xl:gap-5">
             <Link
               href="/"
-              aria-label={homeLinkLabel}
+              aria-label={t("Home")}
               title={t("Home")}
               className="inline-flex min-w-0 shrink-0 items-center"
             >
@@ -207,7 +205,7 @@ export function Header() {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              aria-label={homeLinkLabel}
+              aria-label={t("Home")}
               title={t("Home")}
               className="inline-flex min-w-0 shrink-0 items-center"
             >
@@ -247,7 +245,7 @@ export function Header() {
             would cover the shared inset divider that desktop uses after scroll. */}
         <div className="relative flex h-full w-full items-center justify-between px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" aria-label={homeLinkLabel} title={t("Home")} className="inline-flex items-center">
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex items-center">
               {renderMobileBrand()}
             </Link>
 

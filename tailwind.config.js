@@ -98,7 +98,6 @@ module.exports = {
         "field-bottom": "hsl(var(--field-bottom))",
         brand: {
           DEFAULT: "hsl(var(--brand))",
-          text: "hsl(var(--brand-text))",
           foreground: "hsl(var(--brand-foreground))",
           soft: "hsl(var(--brand-soft))",
           "soft-foreground": "hsl(var(--brand-soft-foreground))",

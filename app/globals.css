@@ -110,8 +110,6 @@
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 8%;
     --brand-soft: 191 100% 95%;
-    /* Brand-tinted small text: the brand cyan is under 3:1 on white, this shade is ~5:1. */
-    --brand-text: 191 100% 29%;
     --brand-soft-foreground: 191 99% 41%;
 
     --radius: 0.75rem;
@@ -198,7 +196,6 @@
     --brand: 191 99% 41%;
     --brand-foreground: 0 0% 8%;
     --brand-soft: 191 55% 18%;
-    --brand-text: 191 99% 41%;
     --brand-soft-foreground: 191 99% 41%;
 
     /* Dark elevation: a faint inset top-light hairline gives every raised card a

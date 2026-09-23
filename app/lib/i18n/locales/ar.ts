@@ -1713,8 +1713,6 @@ const dict: TranslationDictionary = {
   "A 15 bps (0.15%) upfront Avana interface fee applies to transactions initiated through the Avana platform. Interest rates, returns, and other transaction costs may vary depending on the market, position, and execution route.":
     "تُطبَّق رسوم واجهة Avana بنسبة 15 نقطة أساس (0.15%) مقدمًا على المعاملات التي تبدأ عبر منصة Avana. قد تختلف أسعار الفائدة والعوائد وتكاليف المعاملات الأخرى حسب السوق والمركز ومسار التنفيذ.",
   "Complete onboarding": "أكمل الإعداد",
-  Testnet: "شبكة الاختبار",
-  "Sandbox · testnet": "الساندبوكس · شبكة الاختبار",
   "Get Started": "ابدأ",
   "Too many new Ask AI sessions from this network. Try again later.":
     "عدد كبير جدًا من جلسات Ask AI الجديدة من هذه الشبكة. حاول مرة أخرى لاحقًا.",

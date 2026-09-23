@@ -1762,8 +1762,6 @@ const dict: TranslationDictionary = {
   "If something looks off, send the details and our team can help you triage the issue.":
     "若发现异常，请发送详情，我们的团队可协助排查问题。",
   "Complete onboarding": "完成新手引导",
-  Testnet: "测试网",
-  "Sandbox · testnet": "沙盒 · 测试网",
   "Get Started": "开始",
   "Too many new Ask AI sessions from this network. Try again later.": "来自此网络的新 Ask AI 会话过多。请稍后再试。",
   "Ask AI is temporarily unavailable. Try again in a moment.": "Ask AI 暂时不可用。请稍后重试。",

@@ -1799,8 +1799,6 @@ const dict: TranslationDictionary = {
   "If something looks off, send the details and our team can help you triage the issue.":
     "Si quelque chose semble anormal, envoyez les détails et notre équipe pourra vous aider à trier le problème.",
   "Complete onboarding": "Terminer l’intégration",
-  Testnet: "Réseau de test",
-  "Sandbox · testnet": "Sandbox · réseau de test",
   "Get Started": "Commencer",
   "Too many new Ask AI sessions from this network. Try again later.":
     "Trop de nouvelles sessions Ask AI depuis ce réseau. Réessayez plus tard.",
