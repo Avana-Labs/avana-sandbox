@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${detail.hero.name} · Avana Borrow`,
     description: detail.about.description,
     path: `/borrow/markets/${marketId}`,
+    index: true,
     keywords: [detail.hero.name, "LP collateral", "borrow against AMM positions"],
   })
 }

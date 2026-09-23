@@ -6,9 +6,9 @@ type SeoMetadataInput = {
   description: string
   path: string
   keywords?: string[]
-  // Opt a route back into indexing. The root layout defaults every app route to noindex (the wallet
-  // gate serves crawlers the onboarding shell, and the marketing host owns brand SEO); only the
-  // routes with genuinely public content (/, /ask) pass index: true.
+  // Opt a route back into indexing. The root layout defaults every app route to noindex; routes
+  // that render public content for guests (/, /ask, Borrow, Lend, Multiply and their detail pages)
+  // pass index: true. The onboarding-gated dashboard and umbrella stay noindex.
   index?: boolean
 }
 

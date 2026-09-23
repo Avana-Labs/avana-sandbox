@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${detail.hero.name} · Avana Multiply`,
     description: detail.about.description,
     path: `/multiply/markets/${marketId}`,
+    index: true,
     keywords: [detail.hero.name, "leveraged LP strategy", "multiply market"],
   })
 }
