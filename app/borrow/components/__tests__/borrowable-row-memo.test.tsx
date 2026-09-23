@@ -15,14 +15,14 @@ beforeAll(() => {
 })
 
 // Spy on the per-row formatter so we can count how many times a SPECIFIC row is
-// rendered: the grouped desktop table (AssetsSection) calls formatApy(asset.borrowApr)
-// exactly once per row per render, so a call with a given APR value == that row rendered.
-vi.mock("@/app/lib/format", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/app/lib/format")>()
-  return { ...actual, formatApy: vi.fn(actual.formatApy) }
+// rendered: the desktop row (LoanAssetsRow) calls formatTokenQuantity(…, asset.symbol)
+// twice per render (total borrows + available), so calls for a symbol == that row rendered.
+vi.mock("@/app/lib/currency/format", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/app/lib/currency/format")>()
+  return { ...actual, formatTokenQuantity: vi.fn(actual.formatTokenQuantity) }
 })
 
-import { formatApy } from "@/app/lib/format"
+import { formatTokenQuantity } from "@/app/lib/currency/format"
 import { BorrowableAssetsPanel } from "../borrowable-assets-table"
 import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
 
@@ -50,18 +50,17 @@ const assetB: BorrowableAsset = {
   borrowApr: 5.5,
 }
 
-// The APR value that uniquely identifies row A across renders.
-const ROW_A_APR = assetA.borrowApr
+const FORMAT_CALLS_PER_ROW = 2
 
 function countRowARenders() {
-  const spy = vi.mocked(formatApy)
-  return spy.mock.calls.filter(([apr]) => apr === ROW_A_APR).length
+  const spy = vi.mocked(formatTokenQuantity)
+  return spy.mock.calls.filter(([, symbol]) => symbol === assetA.symbol).length / FORMAT_CALLS_PER_ROW
 }
 
 describe("BorrowableAssetsPanel row memoization", () => {
   afterEach(() => {
     cleanup()
-    vi.mocked(formatApy).mockClear()
+    vi.mocked(formatTokenQuantity).mockClear()
   })
 
   it("does not re-render an unchanged row when a sibling row's data changes", () => {
@@ -75,12 +74,12 @@ describe("BorrowableAssetsPanel row memoization", () => {
     expect(countRowARenders()).toBe(1)
 
     // Change ONLY row B's data (new object for B, same reference for A) and force the
-    // parent (and its AssetsSection) to re-render.
+    // parent (and its table) to re-render.
     const assetBChanged: BorrowableAsset = { ...assetB, borrowApr: 9.9, availableUsd: 1_111_111 }
     rerender(<BorrowableAssetsPanel rows={[assetA, assetBChanged]} onBorrow={onBorrow} />)
 
     // Row A's props (asset reference, index, onBorrow) are unchanged, so a memoized row
-    // must NOT re-render — formatApy(3.4) is not called a second time.
+    // must NOT re-render — its quantities are not formatted a second time.
     expect(countRowARenders()).toBe(1)
   })
 })

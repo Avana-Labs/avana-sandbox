@@ -25,12 +25,10 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
-import { BORROWABLE_CATEGORIES, aprToneClass, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
+import { aprToneClass, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
-import { formatApy } from "@/app/lib/format"
-import { TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
+import { TokenBubble } from "./atoms"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -47,7 +45,6 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
   tableColumnLayout,
   tableStickyCell,
@@ -57,17 +54,9 @@ type BorrowableAssetsTableProps = {
   rows: BorrowableAsset[]
   onBorrow: (asset: BorrowableAsset) => void
   onViewMarket?: (asset: BorrowableAsset) => void
-  groupByCategory?: boolean
-  variant?: "default" | "loan"
 }
 
-export function BorrowableAssetsPanel({
-  rows,
-  onBorrow,
-  onViewMarket,
-  groupByCategory = true,
-  variant = "default",
-}: BorrowableAssetsTableProps) {
+export function BorrowableAssetsPanel({ rows, onBorrow, onViewMarket }: BorrowableAssetsTableProps) {
   const { t } = useTranslation()
   if (rows.length === 0) {
     return (
@@ -77,56 +66,23 @@ export function BorrowableAssetsPanel({
     )
   }
 
-  const groups = groupByCategory
-    ? BORROWABLE_CATEGORIES.map((cat) => ({
-        ...cat,
-        assets: rows.filter((row) => row.category === cat.id),
-      })).filter((group) => group.assets.length > 0)
-    : [{ id: "all", label: "", dotClass: "", assets: rows }]
-
   return (
     <div>
-      {variant === "loan" && !groupByCategory ? (
-        <div className="hidden md:block">
-          <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
-        </div>
-      ) : (
-        <div className="hidden space-y-8 md:block">
-          {groups.map((group) => (
-            <AssetsSection
-              key={group.id}
-              label={group.label}
-              dotClass={group.dotClass}
-              assets={group.assets}
-              onBorrow={onBorrow}
-              hideHeader={!groupByCategory}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="space-y-6 md:hidden">
-        {groups.map((group) => (
-          <section key={group.id} className="space-y-2">
-            {groupByCategory ? (
-              <div className="mb-1">
-                <h3 className="text-[14px] font-medium tracking-tight">{group.label}</h3>
-              </div>
-            ) : null}
-            <ul className="space-y-2">
-              {group.assets.map((asset, index) => (
-                <BorrowableMobileCardRow
-                  key={asset.id}
-                  asset={asset}
-                  index={index}
-                  onBorrow={onBorrow}
-                  onViewMarket={onViewMarket}
-                />
-              ))}
-            </ul>
-          </section>
-        ))}
+      <div className="hidden md:block">
+        <LoanAssetsSection assets={rows} onBorrow={onBorrow} embedded />
       </div>
+
+      <ul className="space-y-2 md:hidden">
+        {rows.map((asset, index) => (
+          <BorrowableMobileCardRow
+            key={asset.id}
+            asset={asset}
+            index={index}
+            onBorrow={onBorrow}
+            onViewMarket={onViewMarket}
+          />
+        ))}
+      </ul>
     </div>
   )
 }
@@ -373,166 +329,6 @@ function LoanAssetsSection({
   return (
     <section className="space-y-5">
       <DesktopTableSurface>{table}</DesktopTableSurface>
-    </section>
-  )
-}
-
-// Memoized grouped-variant row. Price comes from the reactive `useCanonicalPriceFor`
-// hook; router/currency/translation are read from hooks internally so the props stay
-// stable (asset, index, onBorrow) and React.memo can bail out of unchanged rows.
-const AssetsRow = memo(function AssetsRow({
-  asset,
-  index,
-  onBorrow,
-}: {
-  asset: BorrowableAsset
-  index: number
-  onBorrow: (asset: BorrowableAsset) => void
-}) {
-  const priceFor = useCanonicalPriceFor()
-  const router = useRouter()
-  const { compact } = useCurrency()
-  const { t } = useTranslation()
-  return (
-    <tr
-      className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
-      onClick={() => router.push(borrowAssetDetailPath(asset.id))}
-    >
-      <td
-        className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-      >
-        {index + 1}
-      </td>
-      <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
-        {/* Real anchor on the primary cell: crawlable, copyable, and keyboard-focusable (Enter
-            navigates natively). stopPropagation keeps the row's own onClick from double-firing. */}
-        <Link
-          href={borrowAssetDetailPath(asset.id)}
-          onClick={(event) => event.stopPropagation()}
-          className="block rounded-radius-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <TokenSingleCell
-            visual={asset.visual}
-            name={asset.name}
-            subtitle={(() => {
-              const p = priceFor(asset.symbol)
-              return p !== undefined ? formatTokenPrice(p) : asset.subtitle
-            })()}
-            size="md"
-            eager={index < 2}
-          />
-        </Link>
-      </td>
-      <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-        <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
-          {formatApy(asset.borrowApr)}
-        </span>
-      </td>
-      <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CapacityFilled value={asset.utilization} />
-      </td>
-      <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
-        {compact(asset.availableUsd)}
-      </td>
-      <td
-        className={cn(
-          "py-2.5 pl-4 text-right font-data text-[13px] tabular-nums",
-          asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground",
-          TABLE_ROW_HOVER_BG,
-        )}
-      >
-        {asset.walletBalanceLabel}
-      </td>
-      <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="flex justify-end">
-          <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
-        </div>
-      </td>
-      <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-        <HoverActionGroup className="gap-2">
-          <Button
-            type="button"
-            size="table"
-            variant="table-secondary"
-            className="w-auto"
-            onClick={(event) => {
-              event.stopPropagation()
-              onBorrow(asset)
-            }}
-          >
-            <ActionIcon label="Borrow" />
-            {t("Borrow")}
-          </Button>
-        </HoverActionGroup>
-      </td>
-    </tr>
-  )
-})
-
-function AssetsSection({
-  label,
-  dotClass,
-  assets,
-  onBorrow,
-  hideHeader = false,
-}: {
-  label: string
-  dotClass: string
-  assets: BorrowableAsset[]
-  onBorrow: (asset: BorrowableAsset) => void
-  hideHeader?: boolean
-}) {
-  const { t } = useTranslation()
-  return (
-    <section className="mb-2">
-      {!hideHeader ? (
-        <div className="mb-3">
-          <h3 className="flex items-center gap-1.5 text-[14px] font-medium tracking-tight">
-            <span className={cn("size-1.5 rounded-full", dotClass)} aria-hidden />
-            {label}
-          </h3>
-        </div>
-      ) : null}
-
-      <DesktopTableSurface className="rounded-radius-md">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-[13px]">
-            <thead>
-              <tr className={TABLE_HEADER_ROW}>
-                <th className="pb-2 pt-2.5 pl-5 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  #
-                </th>
-                <th className="pb-2 pt-2.5 pl-5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Asset")}
-                </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Borrow APR")}
-                </th>
-                <th className="pb-2 pt-2.5 pl-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <span className="whitespace-nowrap uppercase">{t("Capacity Filled")}</span>
-                </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Available")}
-                </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Wallet Balance")}
-                </th>
-                <th className="w-20 pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  7D
-                </th>
-                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  <span className="sr-only">{t("Quick actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {assets.map((asset, index) => (
-                <AssetsRow key={asset.id} asset={asset} index={index} onBorrow={onBorrow} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </DesktopTableSurface>
     </section>
   )
 }

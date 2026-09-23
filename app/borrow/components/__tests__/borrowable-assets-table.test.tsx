@@ -26,7 +26,7 @@ describe("BorrowableAssetsPanel loan variant", () => {
 
   it("labels TOTAL BORROWS and LIQUIDITY as USD, never as a token quantity", () => {
     const { container, getAllByText } = render(
-      <BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
+      <BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} />,
     )
 
     // USD figures render as currency, not as a bare number with a token symbol.
@@ -55,7 +55,7 @@ describe("BorrowableAssetsPanel loan variant", () => {
   it("renders capacity filled as the rounded utilization gauge on the mobile card", () => {
     const raw: BorrowableAsset = { ...wbtc, utilization: 69.68000215736105 }
     const { getAllByRole, queryAllByRole } = render(
-      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
+      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} />,
     )
 
     expect(getAllByRole("img", { name: "Capacity filled 70%" }).length).toBeGreaterThan(0)
