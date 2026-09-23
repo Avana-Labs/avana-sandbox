@@ -10,6 +10,7 @@ import { applyLiveRates } from "@/app/lib/currency/rates"
 import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
 import type { CurrencyCode } from "@/app/components/display-preferences"
 import { validatedConvexPriceMap } from "./validated-convex-price"
+import { registerPriceSubscription } from "./price-subscription-telemetry"
 
 class TokenPricesErrorBoundary extends React.Component<
   { children: React.ReactNode; fallbackChildren: React.ReactNode },
@@ -34,6 +35,10 @@ function samePriceMap(a: Record<string, number>, b: Record<string, number>) {
 function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.ReactNode; seed?: Record<string, number> }) {
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
   const providerStatus = useQuery(api.prices.getPriceStatus, {})
+  React.useEffect(() => {
+    const route = typeof window === "undefined" ? "" : window.location.pathname
+    return registerPriceSubscription(route)
+  }, [])
   const rows = snapshot?.prices
   // Quote map stays on getPriceSnapshot (no health read). Provider checkedAt is a separate
   // subscription so identical refreshes do not invalidate every price consumer.
