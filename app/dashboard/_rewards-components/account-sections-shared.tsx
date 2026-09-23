@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
-import { DesktopTableSurface, ROW_OPEN_ARROW_CLASS, RowOpenArrowIcon } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
+import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   MarketMobileActionFooter,
@@ -30,7 +31,8 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
-  TABLE_BASE,
+  DASHBOARD_TABLE_REFERENCE_PX,
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
@@ -40,9 +42,10 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
   formatTableHeaderLabel,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
@@ -63,16 +66,49 @@ type AvailableRowAction = {
 
 function AvailableActionButton({ href, label, icon }: { href: string; label: string; icon: string }) {
   return (
-    <div className="flex justify-end">
-      <Button asChild size="table" variant="table-primary" className="w-auto">
+    <HoverActionGroup className="gap-2">
+      <Button asChild size="table" variant="table-primary" className={TABLE_ACTION_BUTTON}>
         <Link href={href}>
           <ActionIcon label={icon} />
           {label}
         </Link>
       </Button>
-    </div>
+    </HoverActionGroup>
   )
 }
+
+function PairedTokenIcons({ collateralSymbol, borrowSymbol }: { collateralSymbol: string; borrowSymbol: string }) {
+  return (
+    <span
+      className="relative block shrink-0"
+      style={{ height: TOKEN_ICON_TABLE_PX, width: TOKEN_ICON_TABLE_PAIR_WIDTH_PX }}
+    >
+      <TokenIcon symbol={collateralSymbol} size="table" className="absolute left-0 top-0" />
+      <TokenIcon
+        symbol={borrowSymbol}
+        size="md"
+        pixelSize={pairedLoopBorrowPx(TOKEN_ICON_TABLE_PX)}
+        className="absolute bottom-0 right-0 z-10"
+      />
+    </span>
+  )
+}
+
+const AVAILABLE_LAYOUT = tableColumnLayout(["identityCompact", "metric"], {
+  referenceWidth: DASHBOARD_TABLE_REFERENCE_PX,
+})
+const AVAILABLE_WITH_ACTION_LAYOUT = tableColumnLayout(["identityCompact", "metric", "action"], {
+  referenceWidth: DASHBOARD_TABLE_REFERENCE_PX,
+})
+const MULTIPLY_AVAILABLE_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact", // Supply X / Borrow Y
+    "metric", // Available
+    "compact", // Max APY + max leverage
+    "action", // Multiply
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
 
 const MASK = "••••"
 
@@ -131,45 +167,35 @@ export function ProductAvailableCard({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full min-w-[480px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-          <colgroup>
-            <col className={action ? "w-[42%]" : "w-[56%]"} />
-            <col className={action ? "w-[30%]" : "w-[44%]"} />
-            {action ? <col className="w-[28%]" /> : null}
-          </colgroup>
+        <ScrollableTable layout={action ? AVAILABLE_WITH_ACTION_LAYOUT : AVAILABLE_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right", action ? "" : "pr-5")}>
-                {formatTableHeaderLabel(t("Available"))}
+              <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                {formatTableHeaderLabel(t("Asset"))}
               </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
               {action ? (
-                <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={action.label} />
+                <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                  <span className="sr-only">{action.label}</span>
+                </th>
               ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => (
               <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
-                <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
+                <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
-                      <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>{priceLabel(row.symbol)}</div>
+                      <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>{priceLabel(row.symbol)}</div>
                     </div>
                   </div>
                 </td>
-                <td
-                  className={cn(
-                    "text-right",
-                    action
-                      ? cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)
-                      : cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT),
-                  )}
-                >
+                <td className={cn(action ? TABLE_CELL_PADDING : TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_BG)}>
                   <div className={TABLE_CELL_NUMERIC}>{m(formatAvailableAmount(row.amount, row.symbol))}</div>
-                  <div className={TABLE_CELL_SECONDARY}>{m(exact(row.valueUsd))}</div>
+                  <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>{m(exact(row.valueUsd))}</div>
                 </td>
                 {action ? (
                   <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
@@ -179,7 +205,7 @@ export function ProductAvailableCard({
               </tr>
             ))}
           </tbody>
-        </table>
+        </ScrollableTable>
       </DesktopTableSurface>
 
       <div className="space-y-3 md:hidden">
@@ -327,21 +353,17 @@ export function MultiplyAvailableMarketsCard({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full min-w-[700px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-          <colgroup>
-            <col className="w-[28%]" />
-            <col className="w-[25%]" />
-            <col className="w-[18%]" />
-            <col className="w-[20%]" />
-            <col className="w-[9%]" />
-          </colgroup>
+        <ScrollableTable layout={MULTIPLY_AVAILABLE_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Supply"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Available"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Loop"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                {formatTableHeaderLabel(t("Loop"))}
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Multiply")} />
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                <span className="sr-only">{t("Multiply")}</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
@@ -360,55 +382,53 @@ export function MultiplyAvailableMarketsCard({
                   }
                 }}
               >
-                <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
+                <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
+                  {/* Same identity as the Multiply markets table: what you supply over what you borrow. */}
                   <div className="flex min-w-0 items-center gap-3">
-                    <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
+                    <PairedTokenIcons
+                      collateralSymbol={row.market.collateralAsset.symbol}
+                      borrowSymbol={row.market.borrowAsset.symbol}
+                    />
                     <div className="min-w-0">
-                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.market.collateralAsset.name}</div>
-                      <div className={cn(TABLE_CELL_SECONDARY, "truncate")}>
-                        {formatTokenPrice(
-                          priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
-                        )}
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>
+                        {t("Supply")} {row.market.collateralAsset.symbol}
+                      </div>
+                      <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
+                        {t("Borrow")} {row.market.borrowAsset.symbol}
                       </div>
                     </div>
                   </div>
                 </td>
-                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                   <div className={TABLE_CELL_NUMERIC}>
                     {m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
                   </div>
-                  <div className={TABLE_CELL_SECONDARY}>{m(exact(row.valueUsd))}</div>
+                  <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>{m(exact(row.valueUsd))}</div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-                  <div className={TABLE_CELL_PRIMARY}>{t("Borrow")}</div>
-                  <div className="mt-0.5 flex items-center gap-2">
-                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
-                    <span className={TABLE_CELL_SECONDARY}>{row.market.borrowAsset.symbol}</span>
-                  </div>
-                </td>
-                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-                  <div className={cn(TABLE_CELL_NUMERIC, "tabular-nums")}>
-                    {(row.market.economics.estimatedMaxApy * 100).toFixed(2)}%
-                  </div>
-                  <div className={TABLE_CELL_SECONDARY}>
+                  <div className={TABLE_CELL_NUMERIC}>{(row.market.economics.estimatedMaxApy * 100).toFixed(2)}%</div>
+                  <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
                     Max {resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x
                   </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                  <Link
-                    href={actionPagePath("multiply", "multiply", { market: row.market.id })}
-                    aria-label={t("Multiply")}
-                    title={t("Multiply")}
-                    className={ROW_OPEN_ARROW_CLASS}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <RowOpenArrowIcon />
-                  </Link>
+                  {/* A labeled pill, not the row-open arrow: this starts a Multiply, it doesn't open the detail. */}
+                  <HoverActionGroup className="gap-2">
+                    <Button asChild size="table" variant="table-primary" className={TABLE_ACTION_BUTTON}>
+                      <Link
+                        href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <ActionIcon label="Multiply" />
+                        {t("Multiply")}
+                      </Link>
+                    </Button>
+                  </HoverActionGroup>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </ScrollableTable>
       </DesktopTableSurface>
 
       <div className="space-y-3 md:hidden">
