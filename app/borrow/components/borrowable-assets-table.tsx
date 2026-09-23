@@ -25,7 +25,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
-import { aprToneClass, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
+import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { TokenBubble } from "./atoms"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
@@ -104,7 +104,6 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  const aprTone = aprToneClass(asset.borrowApr)
   return (
     <li>
       <MarketMobileCard
@@ -118,16 +117,13 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
           identity={
             <div className="flex items-center gap-2.5">
               <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
-              <MarketMobileIdentityText title={asset.symbol} subtitle={asset.name} />
+              <MarketMobileIdentityText
+                title={asset.name}
+                subtitle={`${compact(asset.totalBorrowedUsd + asset.availableUsd)} ${t("Supply")}`}
+              />
             </div>
           }
-          metric={
-            <MarketMobileMetric
-              value={`${asset.borrowApr.toFixed(2)}%`}
-              label={t("Borrow APR")}
-              valueClassName={aprTone}
-            />
-          }
+          metric={<MarketMobileMetric value={`${asset.borrowApr.toFixed(2)}%`} label={t("Borrow APR")} />}
         />
 
         <MarketMobileStatList>
@@ -245,7 +241,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
 const LOAN_TABLE_LAYOUT = tableColumnLayout([
   "index",
   "identity",
-  "compact", // Borrow APY
+  "compact", // Borrow APR
   "metric", // Total borrows
   "gauge", // Capacity filled
   "metric", // Available
@@ -307,7 +303,7 @@ function LoanAssetsSection({
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
             {sortHeader("asset", t("Asset"))}
           </th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Borrow APY"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Borrow APR"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("borrows", t("Total Borrows"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("liquidity", t("Available"))}</th>

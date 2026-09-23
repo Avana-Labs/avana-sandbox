@@ -23,7 +23,6 @@ import {
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
 import {
-  aprToneClass,
   formatRiskPremium,
   getSpokeById,
   type BorrowPoolEvent,
@@ -603,7 +602,6 @@ function SpokeMobileSection({
                           // Borrow has no APY here — this is the pool's LP trading fee,
                           // so label it "Fees" to match the desktop FEES column.
                           label={t("Fees")}
-                          valueClassName={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                         />
                       }
                     />
@@ -613,7 +611,7 @@ function SpokeMobileSection({
                       </div>
                     ) : null}
                     <MarketMobileStatList>
-                      <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
+                      <MarketMobileStatRow label={t("Total Deposits")} value={compact(pool.tvlUsd)} />
                       <MarketMobileStatRow
                         label={t("Capacity Filled")}
                         value={<CapacityFilled size="sm" value={pool.capacityFilledPct} />}
