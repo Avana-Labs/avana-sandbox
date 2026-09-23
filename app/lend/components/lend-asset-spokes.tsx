@@ -68,6 +68,15 @@ type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
 type AssetGroup = LendPageData["assetGroups"][number]
 const LEND_PAGE_SIZE = 12
 
+/**
+ * Sort each group's rows by the table's default order (asset name) BEFORE the progressive reveal
+ * slices them. Slicing unsorted rows and letting the table sort them put newly revealed rows above
+ * rows already on screen, so the list jumped as it grew.
+ */
+export function orderLendGroupsForReveal(groups: AssetGroup[]): AssetGroup[] {
+  return groups.map((group) => ({ ...group, rows: [...group.rows].sort((a, b) => a.name.localeCompare(b.name)) }))
+}
+
 export function paginateLendAssetGroups(groups: AssetGroup[], page: number, pageSize = LEND_PAGE_SIZE) {
   const start = Math.max(0, page) * pageSize
   const end = start + pageSize
@@ -617,7 +626,7 @@ export function LendAssetSpokes({
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    return groups
+    const filtered = groups
       .map((group) => {
         const rows = group.rows.filter((row) => {
           const matchesSearch =
@@ -628,6 +637,7 @@ export function LendAssetSpokes({
         return { ...group, rows }
       })
       .filter((group) => group.rows.length > 0)
+    return orderLendGroupsForReveal(filtered)
   }, [groups, search, currentTab])
   const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0)
 

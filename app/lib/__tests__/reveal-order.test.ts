@@ -27,3 +27,23 @@ describe("grouped progressive reveal order", () => {
     expect(ordered).toEqual(["USDC", "DAI", "WETH", "wstETH", "WBTC", "cbBTC", "LINK"])
   })
 })
+
+describe("lend grouped reveal order", () => {
+  it("pre-sorts each group by the table's default (name) so revealing only appends below", async () => {
+    const { orderLendGroupsForReveal, paginateLendAssetGroups } =
+      await import("@/app/lend/components/lend-asset-spokes")
+    const group = (title: string, names: string[]) => ({ title, rows: names.map((name) => ({ name })) })
+    const groups = orderLendGroupsForReveal([
+      group("Stable", ["USDT", "DAI", "USDC"]),
+      group("ETH", ["wstETH", "ETH"]),
+    ] as never)
+    let previous: string[] = []
+    for (let count = 1; count <= 5; count++) {
+      const shown = paginateLendAssetGroups(groups, 0, count).flatMap((g) =>
+        [...g.rows].sort((a, b) => a.name.localeCompare(b.name)).map((row) => row.name),
+      )
+      expect(shown.slice(0, previous.length)).toEqual(previous)
+      previous = shown
+    }
+  })
+})
