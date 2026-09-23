@@ -14,6 +14,7 @@ import {
 } from "@/app/components/charts"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TestnetMetricsBadge } from "@/app/components/testnet-metrics-badge"
 import {
   isPlaceholderHeroContractAddress,
   isSafeHeroLink,
@@ -44,7 +45,8 @@ export function LendHeroIdentity({
   className?: string
 }) {
   const { t } = useTranslation()
-  const chainLabel = detail.hero.chain
+  // Testnet: read again by the commented-out network label below.
+  // const chainLabel = detail.hero.chain
   const contractLabel = resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)
   // Suppress copy + Etherscan when the address is a synthetic placeholder that
   // points at no real contract.
@@ -74,7 +76,10 @@ export function LendHeroIdentity({
               </span>
             </div>
             <div className="mt-0 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
-              <span>{chainLabel}</span>
+              {/* Testnet: the network label is swapped for the Testnet badge until mainnet.
+                  Restore this line and delete the badge when testnet ends:
+                  <span>{chainLabel}</span> */}
+              <TestnetMetricsBadge label={t("Testnet")} />
               <span aria-hidden className="h-5 w-px bg-border" />
               {isPlaceholderContract ? (
                 <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
