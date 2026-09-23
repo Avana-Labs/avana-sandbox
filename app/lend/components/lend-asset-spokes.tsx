@@ -480,7 +480,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "asset"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("ASSET")}</span>
@@ -495,7 +495,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "supplyApy"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("APY")}</span>
@@ -510,7 +510,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "totalDeposits"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("TOTAL DEPOSITS")}</span>
@@ -525,7 +525,7 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "utilization"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("UTILIZATION")}</span>
@@ -540,7 +540,7 @@ function AssetSection({
                           "flex w-full items-center gap-2 transition-colors",
                           sortKey === "availableLiquidity"
                             ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
+                            : "text-muted-foreground dark:text-white/42",
                         )}
                       >
                         <span>{t("AVAILABLE")}</span>

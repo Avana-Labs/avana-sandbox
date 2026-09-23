@@ -31,7 +31,7 @@ function SortIcon() {
 function headerButtonClass(active: boolean) {
   return cn(
     "flex items-center gap-2 transition-colors",
-    active ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+    active ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
   )
 }
 

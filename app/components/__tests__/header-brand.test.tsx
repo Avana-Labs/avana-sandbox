@@ -18,3 +18,13 @@ describe("header brand testnet label", () => {
     expect(screen.queryByText("Sandbox · testnet")).toBeNull()
   })
 })
+
+describe("header home link name", () => {
+  it("includes the visible testnet label, so the link's name matches what is on screen", async () => {
+    const { readFileSync } = await import("node:fs")
+    const { resolve } = await import("node:path")
+    const header = readFileSync(resolve(__dirname, "../header.tsx"), "utf8")
+    expect(header).not.toMatch(/aria-label=\{t\("Home"\)\}/)
+    expect(header).toMatch(/const homeLinkLabel = `\$\{t\("Home"\)\}, \$\{t\("Sandbox · testnet"\)\}`/)
+  })
+})

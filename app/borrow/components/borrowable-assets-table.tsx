@@ -391,7 +391,7 @@ function LoanAssetsSection({
                   "flex items-center gap-2 transition-colors",
                   sortKey === "asset"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("ASSET")}</span>
@@ -404,7 +404,7 @@ function LoanAssetsSection({
                 onClick={() => toggleSort("apy")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("BORROW APY")}</span>
@@ -419,7 +419,7 @@ function LoanAssetsSection({
                   "flex items-center gap-2 transition-colors",
                   sortKey === "borrows"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("TOTAL BORROWS")}</span>
@@ -434,7 +434,7 @@ function LoanAssetsSection({
                   "flex w-full items-center gap-2 transition-colors",
                   sortKey === "liquidity"
                     ? "text-foreground dark:text-white"
-                    : "text-muted-foreground/70 dark:text-white/42",
+                    : "text-muted-foreground dark:text-white/42",
                 )}
               >
                 <span>{t("AVAILABLE")}</span>

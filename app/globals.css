@@ -89,7 +89,7 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Semantic status colors (light) — matched to Tailwind emerald/amber/rose-600 */
-    --success: 160 84% 30%;
+    --success: 160 84% 26%; /* 30% was 3.98:1 on cards for 12px APY/fee text */
     --success-foreground: 0 0% 100%;
     --warning: 32 95% 44%;
     --warning-foreground: 0 0% 100%;
