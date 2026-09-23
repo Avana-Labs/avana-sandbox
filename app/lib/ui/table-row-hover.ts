@@ -209,5 +209,6 @@ const TABLE_STICKY_DIVIDER =
  * scrolls away underneath it, then the data columns slide under the divider.
  */
 export function tableStickyCell(part: "header" | "body"): string {
-  return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 ${TABLE_STICKY_DIVIDER}`
+  // Tighter side padding on phones: the pinned column is only 188px there.
+  return `${part === "header" ? TABLE_STICKY_HEADER : TABLE_STICKY_BODY} left-0 max-md:!pl-3 max-md:!pr-2 ${TABLE_STICKY_DIVIDER}`
 }
