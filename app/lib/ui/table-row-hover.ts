@@ -67,6 +67,8 @@ export const TABLE_COLUMN_MIN_PX = {
   index: 56,
   /** Asset / pool / loop identity (icon + two text lines). Pinned while the rest scrolls. */
   identity: 264,
+  /** Identity in the narrower dashboard column. Pinned like `identity`. */
+  identityCompact: 228,
   /** Short single value: APY, fees, LTV, leverage, premium. */
   compact: 104,
   /** Token amount over a USD sub-line. */
@@ -76,7 +78,7 @@ export const TABLE_COLUMN_MIN_PX = {
   /** One action button. */
   action: 160,
   /** Two action buttons side by side. */
-  actions2: 236,
+  actions2: 212,
   /** Bare row-open arrow. */
   arrow: 72,
 } as const
@@ -89,19 +91,30 @@ export type TableColumnKind = keyof typeof TABLE_COLUMN_MIN_PX
  * action columns (and the pinned divider) land in the same place on every table; only the
  * data columns in between vary.
  */
-const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set(["index", "identity", "action", "actions2", "arrow"])
+const ANCHOR_KINDS: ReadonlySet<TableColumnKind> = new Set([
+  "index",
+  "identity",
+  "identityCompact",
+  "action",
+  "actions2",
+  "arrow",
+])
 
 /** Smallest width an anchor column may shrink to before the table scrolls instead. */
 const ANCHOR_FLOOR_PX: Partial<Record<TableColumnKind, number>> = {
   index: 44,
   identity: 232,
+  identityCompact: 212,
   action: 144,
-  actions2: 228,
+  actions2: 204,
   arrow: 56,
 }
 
 /** Market pages' content column (`max-w-[1152px]`). */
 export const MARKET_TABLE_REFERENCE_PX = 1152
+
+/** Dashboard main column beside the activity rail at the 1152px page width. */
+export const DASHBOARD_TABLE_REFERENCE_PX = 712
 
 export type TableColumnLayout = {
   /** Table min-width in px — the table fits its container above this and scrolls below it. */
@@ -132,7 +145,9 @@ export function tableColumnLayout(
   const minWidth = Math.ceil(
     Math.max(
       ...kinds.map((kind, index) => {
-        const floor = ANCHOR_KINDS.has(kind) ? (ANCHOR_FLOOR_PX[kind] ?? TABLE_COLUMN_MIN_PX[kind]) : TABLE_COLUMN_MIN_PX[kind]
+        const floor = ANCHOR_KINDS.has(kind)
+          ? (ANCHOR_FLOOR_PX[kind] ?? TABLE_COLUMN_MIN_PX[kind])
+          : TABLE_COLUMN_MIN_PX[kind]
         return shares[index] > 0 ? floor / shares[index] : 0
       }),
     ),
