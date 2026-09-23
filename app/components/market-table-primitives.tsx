@@ -128,7 +128,7 @@ export function ScrollableTable({
         />
       ) : null}
       {overflowing ? (
-        <div className="absolute right-0 top-0 z-[3] flex h-[33px] items-center gap-1 bg-gradient-to-r from-transparent via-table-header to-table-header pl-6 pr-3">
+        <div className="absolute right-0 top-0 z-[3] flex h-[33px] items-center gap-1 bg-table-header pl-1 pr-3 before:pointer-events-none before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-gradient-to-l before:from-table-header before:to-transparent">
           <button
             type="button"
             aria-label={t("Scroll table left")}
