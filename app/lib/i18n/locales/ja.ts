@@ -1780,6 +1780,10 @@ const dict: TranslationDictionary = {
   Testnet: "テストネット",
   "Sandbox · testnet": "サンドボックス · テストネット",
   "Get Started": "はじめる",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "このネットワークからの新しい Ask AI セッションが多すぎます。後でもう一度お試しください。",
+  "Ask AI is temporarily unavailable. Try again in a moment.":
+    "Ask AI は一時的に利用できません。しばらくしてからもう一度お試しください。",
 }
 
 export default dict

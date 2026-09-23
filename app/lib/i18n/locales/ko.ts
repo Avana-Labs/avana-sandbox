@@ -1711,6 +1711,10 @@ const dict: TranslationDictionary = {
   Testnet: "테스트넷",
   "Sandbox · testnet": "샌드박스 · 테스트넷",
   "Get Started": "시작하기",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "이 네트워크에서 새 Ask AI 세션이 너무 많습니다. 나중에 다시 시도하세요.",
+  "Ask AI is temporarily unavailable. Try again in a moment.":
+    "Ask AI를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.",
 }
 
 export default dict

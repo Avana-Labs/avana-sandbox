@@ -1,13 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   ASK_AI_GUEST_COOKIE,
   MINT_THROTTLE_MAX,
   allowGuestMint,
-  isGuestMintAllowed,
+  guestMintDecision,
   readAskGuestId,
   readClientIp,
   resetGuestMintThrottle,
 } from "../route-utils"
+
+vi.spyOn(console, "error").mockImplementation(() => undefined)
 
 describe("Ask AI durable guest identity", () => {
   it("reuses a valid durable guest cookie", () => {
@@ -24,20 +26,54 @@ describe("Ask AI durable guest identity", () => {
 })
 
 describe("Ask AI shared guest mint configuration", () => {
-  it("fails closed in production when the shared Convex secret is missing", async () => {
-    const previousNodeEnv = process.env.NODE_ENV
-    const previousUrl = process.env.NEXT_PUBLIC_CONVEX_URL
-    const previousSecret = process.env.CONVEX_RATE_LIMIT_SECRET
+  const keys = ["NODE_ENV", "VERCEL", "NEXT_PUBLIC_CONVEX_URL", "CONVEX_RATE_LIMIT_SECRET"] as const
+  let saved: Record<string, string | undefined> = {}
+  beforeEach(() => {
+    saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]))
+    resetGuestMintThrottle()
     process.env.NODE_ENV = "production"
     process.env.NEXT_PUBLIC_CONVEX_URL = "https://staging.convex.cloud"
     delete process.env.CONVEX_RATE_LIMIT_SECRET
-    await expect(isGuestMintAllowed("203.0.113.7")).resolves.toBe(false)
-    if (previousNodeEnv === undefined) delete process.env.NODE_ENV
-    else process.env.NODE_ENV = previousNodeEnv
-    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_CONVEX_URL
-    else process.env.NEXT_PUBLIC_CONVEX_URL = previousUrl
-    if (previousSecret === undefined) delete process.env.CONVEX_RATE_LIMIT_SECRET
-    else process.env.CONVEX_RATE_LIMIT_SECRET = previousSecret
+  })
+  afterEach(() => {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key]
+      else process.env[key] = saved[key]
+    }
+  })
+
+  it("reports the shared limiter as unavailable on a Vercel deployment missing its secret", async () => {
+    process.env.VERCEL = "1"
+    await expect(guestMintDecision("203.0.113.7")).resolves.toBe("unavailable")
+  })
+
+  it("falls back to the in-memory limiter for a local production build", async () => {
+    delete process.env.VERCEL
+    await expect(guestMintDecision("203.0.113.7")).resolves.toBe("allowed")
+  })
+})
+
+describe("Ask AI guest session route", () => {
+  const keys = ["NODE_ENV", "VERCEL", "NEXT_PUBLIC_CONVEX_URL", "CONVEX_RATE_LIMIT_SECRET"] as const
+  let saved: Record<string, string | undefined> = {}
+  beforeEach(() => {
+    saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]))
+  })
+  afterEach(() => {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key]
+      else process.env[key] = saved[key]
+    }
+  })
+
+  it("answers 503, not a misleading rate limit, when the limiter is unavailable", async () => {
+    process.env.NODE_ENV = "production"
+    process.env.VERCEL = "1"
+    process.env.NEXT_PUBLIC_CONVEX_URL = "https://staging.convex.cloud"
+    delete process.env.CONVEX_RATE_LIMIT_SECRET
+    const { POST } = await import("../route")
+    const response = await POST(new Request("https://app.avana.cc/api/ask-ai/session", { method: "POST" }))
+    expect(response.status).toBe(503)
   })
 })
 

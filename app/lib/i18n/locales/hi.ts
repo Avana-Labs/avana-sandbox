@@ -1743,6 +1743,10 @@ const dict: TranslationDictionary = {
   Testnet: "टेस्टनेट",
   "Sandbox · testnet": "सैंडबॉक्स · टेस्टनेट",
   "Get Started": "शुरू करें",
+  "Too many new Ask AI sessions from this network. Try again later.":
+    "इस नेटवर्क से बहुत सारे नए Ask AI सत्र। बाद में फिर से प्रयास करें।",
+  "Ask AI is temporarily unavailable. Try again in a moment.":
+    "Ask AI अस्थायी रूप से उपलब्ध नहीं है। कुछ देर में फिर से प्रयास करें।",
 }
 
 export default dict
