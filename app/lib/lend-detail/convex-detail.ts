@@ -232,8 +232,8 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   )
 }
 
-// Request-scoped memoization so generateMetadata + the page body share one Convex
-// fan-out per request instead of running it twice.
+// Request-scoped memoization keeps the detail builder safe if the route is rendered
+// more than once during the same RSC request.
 export const getLendMarketDetailFromConvex = cache(getLendMarketDetailFromConvexUncached)
 
 /** Merge page preloadQuery results onto lend detail (C03 — avoid double HTTP fetch). */

@@ -7,7 +7,6 @@ import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
 import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
-import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { SITE_URL } from "@/app/lib/site-url"
@@ -29,11 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       path: `/lend/markets/${marketId}`,
       keywords: ["supply yield", "DeFi lend market"],
     })
-  const detail = preferLive(
-    await getLendMarketDetailFromConvex(marketId),
-    getLendMarketDetail(marketId),
-    `lend market metadata:${marketId}`,
-  )
+  const detail = getLendMarketDetail(marketId)
   if (!detail)
     return {
       title: "Lend market · Avana",

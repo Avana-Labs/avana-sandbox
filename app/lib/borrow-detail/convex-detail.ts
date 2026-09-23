@@ -527,9 +527,9 @@ function stripAssetHeroMetricSeriesForLive(detail: AssetDetail): AssetDetail {
   }
 }
 
-// Request-scoped memoization: `generateMetadata` and the page body both call these
-// builders per request. Without cache() each detail render runs the full Convex
-// fan-out twice. React.cache() dedups by argument for the lifetime of the request.
+// Request-scoped memoization keeps these builders safe if the route is rendered more
+// than once during the same RSC request. Metadata uses the static catalog and does
+// not invoke this live fan-out.
 export const getPoolDetailFromConvex = cache(getPoolDetailFromConvexUncached)
 export const getAssetDetailFromConvex = cache(getAssetDetailFromConvexUncached)
 
