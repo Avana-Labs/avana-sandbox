@@ -14,7 +14,7 @@ vi.mock("@/app/lib/prices/token-prices-context", () => ({
 
 afterEach(cleanup)
 
-describe("LendAssetSpokes withdrawal availability", () => {
+describe("LendAssetSpokes capacity display and actions", () => {
   it("paginates globally while preserving asset groups", () => {
     const firstPage = paginateLendAssetGroups(LEND_ASSET_GROUPS, 0, 4)
     const secondPage = paginateLendAssetGroups(LEND_ASSET_GROUPS, 1, 4)
@@ -26,25 +26,14 @@ describe("LendAssetSpokes withdrawal availability", () => {
     )
   })
 
-  it("disables Withdraw when the wallet has no supplied position", () => {
+  it.each([true, false])("shows the capacity gauge and Deposit without Withdraw (desktop: %s)", (isDesktop) => {
     const group = LEND_ASSET_GROUPS[0]!
-    const rows = group.rows.slice(0, 2)
-    const firstRow = rows[0]! as (typeof rows)[number] & { marketId?: string }
-    const withdrawableId = firstRow.marketId ?? firstRow.symbol.toLowerCase()
+    const rows = group.rows.slice(0, 1).map((row) => ({ ...row, utilizationValue: 0.1968 }))
 
-    render(
-      <LendAssetSpokes
-        groups={[{ ...group, rows }]}
-        onDeposit={vi.fn()}
-        withdrawableMarketIds={new Set([withdrawableId])}
-      />,
-    )
+    render(<LendAssetSpokes groups={[{ ...group, rows }]} onDeposit={vi.fn()} initialIsDesktop={isDesktop} />)
 
-    const buttons = screen.getAllByRole("button", { name: "Withdraw" })
-    const enabled = buttons.filter((button) => !button.hasAttribute("disabled"))
-    const disabled = buttons.filter((button) => button.hasAttribute("disabled"))
-    expect(enabled).toHaveLength(1)
-    expect(disabled).toHaveLength(1)
-    expect(disabled[0]).toHaveAttribute("title", "No supplied position to withdraw")
+    expect(screen.getByRole("img", { name: "Capacity filled 20%" })).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "Deposit" }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole("button", { name: "Withdraw" })).not.toBeInTheDocument()
   })
 })

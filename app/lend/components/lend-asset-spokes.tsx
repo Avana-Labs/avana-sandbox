@@ -2,9 +2,9 @@
 
 import Image from "next/image"
 import { ActionIcon } from "@/app/components/action-icon"
+import { CapacityFilled } from "@/app/components/capacity-filled"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
@@ -14,7 +14,6 @@ import {
   MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
   MarketMobileSupportingValue,
@@ -135,20 +134,17 @@ function AssetRowView({
   index,
   delay,
   onDeposit,
-  canWithdraw,
 }: {
   row: AssetRow
   index: number
   delay: number
   onDeposit?: (marketId: string) => void
-  canWithdraw: boolean
 }) {
   const { t } = useTranslation()
   const { ctx } = useCurrency()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
-  const detailReturn = detailHref
   return (
     <tr
       className={`${TABLE_BODY_ROW} asset-swap group cursor-pointer transition-colors`}
@@ -192,7 +188,7 @@ function AssetRowView({
       <td
         className={`py-3 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
       >
-        <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
+        <CapacityFilled value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100} />
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
@@ -221,27 +217,6 @@ function AssetRowView({
                 <ActionIcon label="Deposit" />
                 {t("Deposit")}
               </Button>
-              <Button
-                type="button"
-                size="table"
-                variant="table-secondary"
-                className="w-auto"
-                disabled={!canWithdraw}
-                title={canWithdraw ? undefined : t("No supplied position to withdraw")}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (!canWithdraw) return
-                  router.push(
-                    actionPagePath("lend", "withdraw", {
-                      market: marketId,
-                      return: detailReturn,
-                    }),
-                  )
-                }}
-              >
-                <ActionIcon label="Withdraw" />
-                {t("Withdraw")}
-              </Button>
             </HoverActionGroup>
           </div>
         ) : null}
@@ -254,19 +229,16 @@ function AssetCardView({
   row,
   index,
   onDeposit,
-  canWithdraw,
 }: {
   row: AssetRow
   index: number
   onDeposit?: (marketId: string) => void
-  canWithdraw: boolean
 }) {
   const { t } = useTranslation()
   const { ctx } = useCurrency()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
-  const detailReturn = detailHref
   return (
     <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
       <MarketMobileCardHeader
@@ -290,7 +262,10 @@ function AssetCardView({
             </span>
           }
         />
-        <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
+        <MarketMobileStatRow
+          label={t("Capacity Filled")}
+          value={<CapacityFilled value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100} />}
+        />
         <MarketMobileStatRow
           label={t("Available")}
           value={
@@ -315,23 +290,6 @@ function AssetCardView({
             <ActionIcon label="Deposit" />
             {t("Deposit")}
           </MarketMobilePrimaryAction>
-          <MarketMobileSecondaryAction
-            disabled={!canWithdraw}
-            title={canWithdraw ? undefined : t("No supplied position to withdraw")}
-            onClick={(event) => {
-              event.stopPropagation()
-              if (!canWithdraw) return
-              router.push(
-                actionPagePath("lend", "withdraw", {
-                  market: marketId,
-                  return: detailReturn,
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Withdraw" />
-            {t("Withdraw")}
-          </MarketMobileSecondaryAction>
         </MarketMobileActionFooter>
       ) : null}
     </MarketMobileCard>
@@ -343,7 +301,6 @@ function AssetSection({
   subtitle,
   rows,
   onDeposit,
-  withdrawableMarketIds,
   initialIsDesktop,
   deferContent,
 }: {
@@ -351,7 +308,6 @@ function AssetSection({
   subtitle?: string
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds: ReadonlySet<string>
   initialIsDesktop: boolean
   deferContent: boolean
 }) {
@@ -447,15 +403,7 @@ function AssetSection({
             <div className="space-y-4">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetCardView
-                    key={row.symbol}
-                    row={row}
-                    index={index}
-                    onDeposit={onDeposit}
-                    canWithdraw={withdrawableMarketIds.has(
-                      "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase(),
-                    )}
-                  />
+                  <AssetCardView key={row.symbol} row={row} index={index} onDeposit={onDeposit} />
                 ))
               ) : (
                 <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
@@ -537,7 +485,7 @@ function AssetSection({
                             : "text-muted-foreground dark:text-white/42",
                         )}
                       >
-                        <span>{t("UTILIZATION")}</span>
+                        <span>{t("CAPACITY FILLED")}</span>
                         <SortIcon />
                       </button>
                     </th>
@@ -568,14 +516,7 @@ function AssetSection({
                 >
                   {sortedRows.length > 0 ? (
                     sortedRows.map((row, index) => (
-                      <AssetRowView
-                        key={row.symbol}
-                        row={row}
-                        index={index}
-                        delay={index * 40}
-                        onDeposit={onDeposit}
-                        canWithdraw={withdrawableMarketIds.has(row.marketId ?? row.symbol.toLowerCase())}
-                      />
+                      <AssetRowView key={row.symbol} row={row} index={index} delay={index * 40} onDeposit={onDeposit} />
                     ))
                   ) : (
                     <tr>
@@ -597,12 +538,10 @@ function AssetSection({
 export function LendAssetSpokes({
   groups = DEFAULT_ASSET_GROUPS,
   onDeposit,
-  withdrawableMarketIds = new Set<string>(),
   initialIsDesktop = true,
 }: {
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds?: ReadonlySet<string>
   initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
@@ -680,7 +619,6 @@ export function LendAssetSpokes({
                 subtitle={group.subtitle}
                 rows={group.rows}
                 onDeposit={onDeposit}
-                withdrawableMarketIds={withdrawableMarketIds}
                 initialIsDesktop={initialIsDesktop}
                 deferContent={index > 0}
               />
