@@ -25,13 +25,14 @@ import {
   MarketMobileStatRow,
   MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
-import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
 import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { cn } from "@/lib/utils"
 
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import {
-  TABLE_BASE,
+  DASHBOARD_TABLE_REFERENCE_PX,
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
@@ -41,8 +42,9 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  tableColumnLayout,
+  tableStickyCell,
   formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 
@@ -97,6 +99,16 @@ function OwedCell({ row, show, className }: { row: DebtRowContext; show: boolean
 }
 const TICK_COUNT = 28
 
+const DEBTS_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact", // Debt asset + collateral pool
+    "metric", // Borrowed
+    "metric", // Borrow APR + owed
+    "action", // Repay
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
+
 export function DebtsPanel({
   rows,
   totals,
@@ -134,121 +146,107 @@ export function DebtsPanel({
         </div>
       ) : (
         <>
-          <div className="hidden md:block">
-            <DesktopTableSurface className="!rounded-none">
-              <div className="overflow-x-auto">
-                <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-                  <colgroup>
-                    <col className="w-[34%]" />
-                    <col className="w-[20%]" />
-                    <col className="w-[20%]" />
-                    <col className="w-[26%]" />
-                  </colgroup>
-                  <thead>
-                    <tr className={TABLE_HEADER_ROW}>
-                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
-                        <DebtsMetricHeader
-                          label={t("Debt")}
-                          help={t("The asset you've borrowed against your collateral.")}
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                        <DebtsMetricHeader
-                          label={t("Borrowed")}
-                          help={t("Your outstanding loan balance in this asset, valued live.")}
-                          align="right"
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                        <DebtsMetricHeader
-                          label={t("Borrow APR")}
-                          help={t(
-                            "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.",
-                          )}
-                          align="right"
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border dark:divide-white/6">
-                    {rows.map((row) => {
-                      // A debt row is the borrowed asset, so it opens the asset detail page (not the
-                      // collateral pool market); fall back to the pool only when the asset id is absent.
-                      const detailHref = row.debtAssetId
-                        ? borrowAssetDetailPath(row.debtAssetId)
-                        : `/borrow/markets/${row.pool.id}`
-                      const debtSymbol = row.debtAssetSymbol
-                      // `borrowedUsd` is a USD amount (currentDebtValueUsd6). The primary line is the
-                      // token quantity owed — USD ÷ live price — and the secondary line is that USD
-                      // value, mirroring the Lend Assets "Deposited" column. Never render the USD
-                      // amount as a token count, and never multiply a *Usd field by price again.
-                      const debtPrice = priceFor(debtSymbol)
-                      const debtTokenQty = debtPrice != null && debtPrice > 0 ? row.borrowedUsd / debtPrice : null
-                      return (
-                        <tr
-                          key={row.id ?? row.pool.id}
-                          className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
-                          onClick={() => router.push(detailHref)}
-                        >
-                          <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
-                            {/* Debt is a single borrowed token, not the collateral LP pool — show the
+          <DesktopTableSurface className="hidden !rounded-none md:block">
+            <ScrollableTable layout={DEBTS_LAYOUT}>
+              <thead>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                    <DebtsMetricHeader
+                      label={t("Debt")}
+                      help={t("The asset you've borrowed against your collateral.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <DebtsMetricHeader
+                      label={t("Borrowed")}
+                      help={t("Your outstanding loan balance in this asset, valued live.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <DebtsMetricHeader
+                      label={t("Borrow APR")}
+                      help={t(
+                        "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.",
+                      )}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                    <span className="sr-only">{t("Repay")}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-white/6">
+                {rows.map((row) => {
+                  // A debt row is the borrowed asset, so it opens the asset detail page (not the
+                  // collateral pool market); fall back to the pool only when the asset id is absent.
+                  const detailHref = row.debtAssetId
+                    ? borrowAssetDetailPath(row.debtAssetId)
+                    : `/borrow/markets/${row.pool.id}`
+                  const debtSymbol = row.debtAssetSymbol
+                  // `borrowedUsd` is a USD amount (currentDebtValueUsd6). The primary line is the
+                  // token quantity owed — USD ÷ live price — and the secondary line is that USD
+                  // value, mirroring the Lend Assets "Deposited" column. Never render the USD
+                  // amount as a token count, and never multiply a *Usd field by price again.
+                  const debtPrice = priceFor(debtSymbol)
+                  const debtTokenQty = debtPrice != null && debtPrice > 0 ? row.borrowedUsd / debtPrice : null
+                  return (
+                    <tr
+                      key={row.id ?? row.pool.id}
+                      className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+                      onClick={() => router.push(detailHref)}
+                    >
+                      <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
+                        {/* Debt is a single borrowed token, not the collateral LP pool — show the
                             borrowed asset, with the collateral market as context. */}
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <TokenIcon symbol={debtSymbol} size="table" />
-                              <div className="min-w-0">
-                                <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{debtSymbol}</div>
-                                <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
-                                  {t("against {pool}").replace("{pool}", row.pool.name)}
-                                </div>
-                              </div>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <TokenIcon symbol={debtSymbol} size="table" />
+                          <div className="min-w-0">
+                            <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{debtSymbol}</div>
+                            <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
+                              {t("against {pool}").replace("{pool}", row.pool.name)}
                             </div>
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                            <div className={TABLE_CELL_NUMERIC}>
-                              {showBalance
-                                ? debtTokenQty != null
-                                  ? formatTokenQuantity(debtTokenQty, debtSymbol)
-                                  : exact(row.borrowedUsd)
-                                : MASK}
-                            </div>
-                            <div className={TABLE_CELL_SECONDARY}>
-                              {debtTokenQty != null ? m(exact(row.borrowedUsd)) : null}
-                            </div>
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                            <div className={TABLE_CELL_NUMERIC}>{row.borrowApr.toFixed(2)}%</div>
-                            <OwedCell
-                              row={row}
-                              show={showBalance}
-                              className={cn(TABLE_CELL_SECONDARY, "text-rose-500")}
-                            />
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                            <HoverActionGroup className="gap-2">
-                              <Button
-                                type="button"
-                                size="table"
-                                variant="table-primary"
-                                className="w-auto"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  onRepay(row)
-                                }}
-                              >
-                                <ActionIcon label="Repay" />
-                                {t("Repay")}
-                              </Button>
-                            </HoverActionGroup>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </DesktopTableSurface>
-          </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>
+                          {showBalance
+                            ? debtTokenQty != null
+                              ? formatTokenQuantity(debtTokenQty, debtSymbol)
+                              : exact(row.borrowedUsd)
+                            : MASK}
+                        </div>
+                        <div className={TABLE_CELL_SECONDARY}>
+                          {debtTokenQty != null ? m(exact(row.borrowedUsd)) : null}
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>{row.borrowApr.toFixed(2)}%</div>
+                        <OwedCell row={row} show={showBalance} className={cn(TABLE_CELL_SECONDARY, "text-rose-500")} />
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                        <HoverActionGroup className="gap-2">
+                          <Button
+                            type="button"
+                            size="table"
+                            variant="table-primary"
+                            className={TABLE_ACTION_BUTTON}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onRepay(row)
+                            }}
+                          >
+                            <ActionIcon label="Repay" />
+                            {t("Repay")}
+                          </Button>
+                        </HoverActionGroup>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ScrollableTable>
+          </DesktopTableSurface>
 
           <ul className="space-y-5 md:hidden">
             {rows.map((row, index) => {
