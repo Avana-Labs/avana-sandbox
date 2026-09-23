@@ -14,6 +14,7 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-trigger"
 import { cn } from "@/lib/utils"
+import { shouldPrefetchNavigation } from "./navigation-prefetch"
 
 export function Header() {
   const pathname = usePathname()
@@ -105,7 +106,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={isSignedIn}
+          prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${
@@ -131,7 +132,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={isSignedIn}
+          prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`group inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${

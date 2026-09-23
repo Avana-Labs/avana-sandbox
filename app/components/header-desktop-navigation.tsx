@@ -11,6 +11,7 @@ import {
   type DesktopMenuId,
 } from "@/app/components/header-desktop-menu-data"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { shouldPrefetchNavigation } from "./navigation-prefetch"
 
 const DeferredHeaderDesktopMenuPanel = dynamic(() => import("@/app/components/header-desktop-menu-panel"), {
   ssr: false,
@@ -165,7 +166,7 @@ export default function HeaderDesktopNavigation({
               <Link
                 key={link.href}
                 href={link.href}
-                prefetch={isSignedIn}
+                prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
                 aria-haspopup="true"
                 aria-expanded={isOpen}
                 aria-controls={`desktop-menu-${menuId}`}
@@ -191,7 +192,7 @@ export default function HeaderDesktopNavigation({
             <Link
               key={link.href}
               href={link.href}
-              prefetch={isSignedIn}
+              prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
               onMouseEnter={closeDesktopMenu}
               onFocus={closeDesktopMenu}
               className={`${PILL_CLASS} ${isSection ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
