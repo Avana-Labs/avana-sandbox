@@ -97,4 +97,27 @@ describe("QuickStatsGrid currency conversion", () => {
 
     expect(screen.getByText("$84,392.11")).toBeInTheDocument()
   })
+
+  it("updates a pool pair rate from both live token quotes", () => {
+    currencyRef.current = "USD"
+    const detail = {
+      hero: { visuals: [{ symbol: "WBTC" }, { symbol: "WETH" }] },
+      quickStats: [{ id: "price", label: "Price", value: "33.61 WETH" }],
+    }
+    const { rerender } = render(
+      <TokenPricesContext.Provider value={{}}>
+        <QuickStatsGrid detail={detail} pricePair={["WBTC", "WETH"]} />
+      </TokenPricesContext.Provider>,
+    )
+
+    expect(screen.getByText("33.61 WETH")).toBeInTheDocument()
+
+    rerender(
+      <TokenPricesContext.Provider value={{ wbtc: 84392.11, weth: 2500 }}>
+        <QuickStatsGrid detail={detail} pricePair={["WBTC", "WETH"]} />
+      </TokenPricesContext.Provider>,
+    )
+
+    expect(screen.getByText("33.76 WETH")).toBeInTheDocument()
+  })
 })

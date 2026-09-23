@@ -93,7 +93,12 @@ export function PoolDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} product="borrow" hideRisk />
+                        <QuickStatsGrid
+                          detail={detail}
+                          product="borrow"
+                          hideRisk
+                          pricePair={[detail.row.visuals[0].symbol, detail.row.visuals[1].symbol]}
+                        />
                       </section>
                       <RiskSection detail={detail} />
                     </>
