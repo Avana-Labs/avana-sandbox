@@ -36,6 +36,7 @@ import {
 } from "@/app/lib/ui/table-row-hover"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MarketFiltersBar, MarketFiltersEmptyState } from "@/app/lib/ui/market-filters"
 import {
@@ -53,11 +54,36 @@ import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressi
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 
-/** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
+/**
+ * Line under the asset name. Touch / phone: the real DefiLlama price. Desktop (hover-capable, md+):
+ * the ticker, which flips over to the price while the row is hovered. Unpriced assets show the
+ * ticker everywhere.
+ */
 function AssetSubLabel({ symbol }: { symbol: string }) {
   const priceFor = useCanonicalPriceFor()
   const price = priceFor(symbol)
-  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
+  const ticker = formatTokenDisplaySymbol(symbol)
+  if (price === undefined) return <>{ticker}</>
+  const priceLabel = formatTokenPrice(price)
+  const face = "block truncate transition-[transform,opacity] duration-300 ease-out [backface-visibility:hidden] motion-reduce:transition-none"
+  return (
+    <>
+      <span className="block truncate [@media(hover:hover)_and_(min-width:768px)]:hidden">{priceLabel}</span>
+      <span className="relative hidden [perspective:240px] [@media(hover:hover)_and_(min-width:768px)]:block">
+        <span className={cn(face, "origin-top group-hover:opacity-0 group-hover:[transform:translateY(-50%)_rotateX(90deg)]")}>
+          {ticker}
+        </span>
+        <span
+          className={cn(
+            face,
+            "absolute inset-0 origin-bottom opacity-0 [transform:translateY(50%)_rotateX(-90deg)] group-hover:opacity-100 group-hover:[transform:none]",
+          )}
+        >
+          {priceLabel}
+        </span>
+      </span>
+    </>
+  )
 }
 
 type AssetRow = LendPageData["assetGroups"][number]["rows"][number] & {
