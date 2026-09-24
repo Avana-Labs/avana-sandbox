@@ -1,5 +1,6 @@
 "use client"
 
+import { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
 import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
@@ -39,8 +40,7 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
-/** Asset the homepage Sell field starts on. */
-export const DEFAULT_SELL_ASSET_ID = "eth"
+export { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
 
 export function HomeSwapAction() {
   const { t } = useTranslation()

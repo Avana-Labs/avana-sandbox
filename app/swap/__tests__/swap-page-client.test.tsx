@@ -39,16 +39,17 @@ describe("SwapPageClient", () => {
     expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/dashboard")
   })
 
-  it("starts with no assets selected on the standalone swap route", () => {
+  it("starts Sell on ETH like the homepage, with Buy empty, on the standalone swap route", () => {
     render(
       <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
         <SwapPageClient />
       </AvanaSessionsProvider>,
     )
 
-    expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("ETH")
     expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("Select asset")
     expect(screen.getByRole("button", { name: "Select assets" })).toBeDisabled()
+    expect(screen.getByText(/Step 1 of 3/)).toBeInTheDocument()
   })
 
   it("renders the canonical swap page", () => {

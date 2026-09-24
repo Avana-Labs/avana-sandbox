@@ -15,22 +15,30 @@ function actionFlowStepIndex(stage: ActionStage) {
   return 3
 }
 
+/** Flows without a Select stage (swap picks assets inline) count only their own steps. */
+function flowSteps(hasSelectStep: boolean) {
+  return hasSelectStep ? ACTION_FLOW_STEPS : ACTION_FLOW_STEPS.slice(1)
+}
+
 export function ActionFlowHeader({
   stage,
   onClose,
   mobileOnly = false,
+  hasSelectStep = true,
 }: {
   stage: ActionStage
   onClose: () => void
   mobileOnly?: boolean
+  hasSelectStep?: boolean
 }) {
   const { t } = useTranslation()
-  const activeIndex = actionFlowStepIndex(stage)
-  const activeStep = ACTION_FLOW_STEPS[activeIndex]
-  const progress = ((activeIndex + 1) / ACTION_FLOW_STEPS.length) * 100
+  const steps = flowSteps(hasSelectStep)
+  const activeIndex = Math.max(0, actionFlowStepIndex(stage) - (hasSelectStep ? 0 : 1))
+  const activeStep = steps[activeIndex]!
+  const progress = ((activeIndex + 1) / steps.length) * 100
   const stepText = t("Step {current} of {total} · {label}")
     .replace("{current}", String(activeIndex + 1))
-    .replace("{total}", String(ACTION_FLOW_STEPS.length))
+    .replace("{total}", String(steps.length))
     .replace("{label}", t(activeStep))
 
   return (

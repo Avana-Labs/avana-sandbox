@@ -1,5 +1,6 @@
 "use client"
 
+import { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
 import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 import dynamic from "next/dynamic"
 
@@ -96,7 +97,8 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const networkGuard = useActionNetworkGuard()
   const canonicalPriceFor = useCanonicalPriceFor()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "")
+  // Sell starts on ETH like the homepage swap; Buy stays empty until the user picks it.
+  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? DEFAULT_SELL_ASSET_ID)
   const [outputAssetId, setOutputAssetId] = useState(
     initialTo && initialTo !== initialFrom ? initialTo : initialFrom ? fallbackOutput(initialFrom) : "",
   )
@@ -389,6 +391,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
       closeHref={returnHref}
       flowHeaderStage={stage}
+      flowHeaderHasSelectStep={false}
       hideTitle={stage === "review" || stage === "success" || isTransactionStage}
     >
       {isTransactionStage ? (
