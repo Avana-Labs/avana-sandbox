@@ -525,7 +525,7 @@ function WalletBalanceSection({
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
                         <TickerPriceFlip
                           symbol={row.symbol}
-                          price={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : undefined}
+                          detail={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : undefined}
                         />
                       </div>
                     </div>

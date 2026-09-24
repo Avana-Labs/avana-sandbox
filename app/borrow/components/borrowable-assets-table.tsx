@@ -19,6 +19,7 @@ import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { TokenBubble } from "./atoms"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { cn } from "@/lib/utils"
+import { TickerPriceFlip } from "@/app/lib/ui/token-ticker-price-label"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -94,7 +95,10 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
           <div className="min-w-0">
             <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{asset.name}</div>
             <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
-              {compact(asset.totalBorrowedUsd + asset.availableUsd)} {t("Supply")}
+              <TickerPriceFlip
+                symbol={asset.symbol}
+                detail={`${compact(asset.totalBorrowedUsd + asset.availableUsd)} ${t("Supply")}`}
+              />
             </div>
           </div>
         </Link>
