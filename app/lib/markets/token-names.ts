@@ -1,29 +1,7 @@
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { SWAP_ASSETS } from "@/app/lib/swap-system/catalog"
 import { getRegistryToken } from "@/app/lib/tokens/registry"
-
-/** Names for pool-only tokens that neither the Lend catalog nor the swap catalog lists. */
-const EXTRA_NAMES: Record<string, string> = {
-  AURA: "Aura Finance",
-  BRETT: "Brett",
-  CRVUSD: "Curve USD",
-  DAI: "Dai",
-  DEGEN: "Degen",
-  FRAX: "Frax",
-  LUSD: "Liquity USD",
-  MIM: "Magic Internet Money",
-  PYUSD: "PayPal USD",
-  SDAI: "Savings Dai",
-  SUSDE: "Staked USDe",
-  TBTC: "tBTC",
-  "USD+": "Overnight USD+",
-  USDE: "Ethena USDe",
-  USDS: "Sky Dollar",
-  VIRTUAL: "Virtual Protocol",
-  WELL: "Moonwell",
-  WETH: "Wrapped Ether",
-  ZORA: "Zora",
-}
+import { EXTRA_NAMES } from "@/app/lib/markets/extra-token-names"
 
 let names: Map<string, string> | null = null
 

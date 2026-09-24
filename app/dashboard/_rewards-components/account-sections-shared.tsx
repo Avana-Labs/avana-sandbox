@@ -185,7 +185,7 @@ export function ProductAvailableCard({
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
                       <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
-                        <TokenTickerPriceLabel symbol={row.symbol} name={row.name} />
+                        <TokenTickerPriceLabel symbol={row.symbol} />
                       </div>
                     </div>
                   </div>

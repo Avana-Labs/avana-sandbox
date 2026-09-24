@@ -33,6 +33,25 @@ describe("swap wallet balance classification", () => {
     ])
   })
 
+  it("names an off-catalog token stored as its ticker by its full name", () => {
+    const [op] = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "wallet-op",
+          walletId: "w1",
+          assetId: "op",
+          symbol: "OP",
+          name: "OP",
+          amount: 100.27,
+          valueUsd: 13.21,
+          sourceType: "wallet",
+        },
+      ],
+    })
+    expect(op).toMatchObject({ symbol: "OP", name: "Optimism" })
+  })
+
   it("shows LP wallet balances but marks them unswappable", () => {
     const lp = buildDashboardWalletBalanceRows({ walletId: "w1", balances }).find((row) => row.id === "wallet-lp")
 
