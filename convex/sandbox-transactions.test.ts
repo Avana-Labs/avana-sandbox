@@ -839,6 +839,91 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
   })
 
+  // Prod 2026-09-23: both wallets holding LP collateral could not borrow or repay once the pool's
+  // live LP price rose above the price at claim (cbBTC/USDC $43,750 claimed, pledge valued $48,668).
+  describe("LP collateral conservation is measured in LP tokens, not frozen USD", () => {
+    const LP_SLUG = "uni-v3-bluechip-weth-usdc"
+    const ONE_LP = 10n ** 18n
+
+    async function seedOwnedLp(t: ReturnType<typeof convexTest>, liveLpPriceUsd: number) {
+      await t.run(async (ctx) => {
+        await ctx.db.insert("markets", {
+          scope: "pool",
+          slug: LP_SLUG,
+          chainId: 1,
+          name: "WETH / USDC",
+          symbol: "WETH/USDC",
+          priceUsd: liveLpPriceUsd,
+          createdAt: 0,
+        })
+        // 1 LP token claimed at $40,000.
+        await ctx.db.insert("walletBorrowBalances", {
+          wallet: WALLET.toLowerCase(),
+          marketId: LP_SLUG,
+          poolId: LP_SLUG,
+          symbol: "WETH/USDC",
+          amount: 1,
+          valueUsd: 40_000,
+          state: "collateral",
+          updatedAt: 1,
+        })
+      })
+    }
+
+    function pledge(intentId: string, lpTokens: bigint, kind = "borrow") {
+      return borrowIntent(intentId, {
+        kind,
+        marketSlug: LP_SLUG,
+        position: {
+          status: "open",
+          marketSlug: LP_SLUG,
+          debtValueUsd6: "1000000000",
+          collateral: [
+            {
+              marketSlug: LP_SLUG,
+              collateralShares: lpTokens.toString(),
+              principalTokenAmount: lpTokens.toString(),
+              collateralEnabled: true,
+            },
+          ],
+        },
+      })
+    }
+
+    test("borrowing against the LP tokens a wallet owns succeeds after the LP price rises", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 44_000)
+      await expect(
+        t
+          .withIdentity({ subject: WALLET })
+          .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-up", ONE_LP)),
+      ).resolves.toBeDefined()
+    })
+
+    test("a write keeps the stored LP token count exact", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 44_000)
+      await t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-keep", (ONE_LP * 3n) / 4n, "withdraw"))
+      const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+      const byState = Object.fromEntries(rows.filter((r) => r.marketId === LP_SLUG).map((r) => [r.state, r]))
+      expect(byState.collateral?.amount).toBeCloseTo(0.75, 9)
+      expect(byState.poolAvailable?.amount).toBeCloseTo(0.25, 9)
+      expect(byState.collateral?.valueUsd).toBeCloseTo(30_000, 6)
+    })
+
+    test("pledging more LP tokens than the wallet owns is still rejected", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 40_000)
+      await expect(
+        t
+          .withIdentity({ subject: WALLET })
+          .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-over", (ONE_LP * 12n) / 10n)),
+      ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
+    })
+  })
+
   test("rejects a Multiply position without authenticated-wallet collateral", async () => {
     const t = convexTest(schema, modules)
     await expect(
@@ -1594,5 +1679,55 @@ describe("liquid credits convert USD to tokens at a real price, not $1/token", (
     )
     // $1,000 of WETH ≈ 0.3638 WETH, not 1,000 WETH.
     expect((await liquidRow(t, "weth"))?.amount).toBeCloseTo(1000 / 2749.05, 6)
+  })
+})
+
+describe("backfillBorrowLpTokenAmounts", () => {
+  test("converts USD-in-amount LP rows to token counts at the live LP price and is idempotent", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "lp-btc",
+        chainId: 1,
+        name: "BTC LP",
+        symbol: "BTC-LP",
+        priceUsd: 42_000,
+        createdAt: 0,
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "lp-stable",
+        chainId: 1,
+        name: "Stable LP",
+        symbol: "S-LP",
+        priceUsd: 1.0006,
+        createdAt: 0,
+      })
+      for (const marketId of ["lp-btc", "lp-stable"]) {
+        await ctx.db.insert("walletBorrowBalances", {
+          wallet: WALLET.toLowerCase(),
+          marketId,
+          poolId: marketId,
+          symbol: marketId,
+          amount: 42_000,
+          valueUsd: 42_000,
+          state: "collateral",
+          updatedAt: 1,
+        })
+      }
+    })
+    const { internal } = await import("./_generated/api")
+    const dry = await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: true })
+    expect(dry.planned).toEqual([expect.objectContaining({ marketId: "lp-btc", toAmount: 1 })])
+    const unchanged = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(unchanged.every((row) => row.amount === 42_000)).toBe(true)
+
+    await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: false })
+    const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(rows.find((row) => row.marketId === "lp-btc")).toMatchObject({ amount: 1, valueUsd: 42_000 })
+    expect(rows.find((row) => row.marketId === "lp-stable")?.amount).toBe(42_000)
+    const rerun = await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: false })
+    expect(rerun.planned).toEqual([])
   })
 })

@@ -284,20 +284,37 @@ async function syncBorrowProductCollateralRows(
       ? sibling.valueUsd / sibling.amount
       : (pool?.lpTokenPriceUsd ?? market?.priceUsd ?? 1)
 
+  // Keep `amount` an exact LP token count: the pledged legs carry it, and the conservation check
+  // compares tokens. Deriving it from the client's USD at the claim price drifted with every
+  // price move. USD stays on the claim basis so the live reprice (liveLp / claimLp) still applies.
+  const legTokens = (position.collateral ?? []).reduce<number | undefined>((sum, leg) => {
+    const tokens = collateralLegTokenAmount(leg)
+    return sum === undefined || tokens === undefined ? undefined : sum + tokens
+  }, 0)
+  const ownedTokens =
+    poolRows.length > 0 && (await borrowRowsHoldLpTokens(ctx, marketSlug, poolRows))
+      ? poolRows.reduce((sum, row) => sum + row.amount, 0)
+      : undefined
+  const pledgedTokens = position.status === "closed" ? 0 : legTokens
+  const tokenSplit =
+    pledgedTokens !== undefined && ownedTokens !== undefined && (position.collateral ?? []).length > 0
+      ? { pledged: Math.min(pledgedTokens, ownedTokens), available: Math.max(0, ownedTokens - pledgedTokens) }
+      : undefined
+
   await upsertProductBalanceValue(ctx, "walletBorrowBalances", wallet, {
     marketId: marketSlug,
     poolId,
     symbol,
-    amount: priceUsd > 0 ? availableUsd / priceUsd : availableUsd,
-    valueUsd: availableUsd,
+    amount: tokenSplit ? tokenSplit.available : priceUsd > 0 ? availableUsd / priceUsd : availableUsd,
+    valueUsd: tokenSplit ? tokenSplit.available * priceUsd : availableUsd,
     state: "poolAvailable",
   })
   await upsertProductBalanceValue(ctx, "walletBorrowBalances", wallet, {
     marketId: marketSlug,
     poolId,
     symbol,
-    amount: priceUsd > 0 ? pledgedUsd / priceUsd : pledgedUsd,
-    valueUsd: pledgedUsd,
+    amount: tokenSplit ? tokenSplit.pledged : priceUsd > 0 ? pledgedUsd / priceUsd : pledgedUsd,
+    valueUsd: tokenSplit ? tokenSplit.pledged * priceUsd : pledgedUsd,
     state: "collateral",
   })
 }
@@ -663,23 +680,66 @@ async function assertBorrowCollateralConserved(
 ) {
   if (args.product !== "borrow" || !args.position || args.position.status === "closed") return
   const legs = args.position.collateral ?? []
-  const nextByMarket = new Map<string, number>()
+  const nextByMarket = new Map<string, { usd: number; tokens: number | undefined }>()
   for (const leg of legs) {
     const { valueUsd } = await serverCollateralValueUsd(ctx, leg)
-    nextByMarket.set(leg.marketSlug, (nextByMarket.get(leg.marketSlug) ?? 0) + valueUsd)
+    const tokens = collateralLegTokenAmount(leg)
+    const current = nextByMarket.get(leg.marketSlug) ?? { usd: 0, tokens: 0 }
+    nextByMarket.set(leg.marketSlug, {
+      usd: current.usd + valueUsd,
+      tokens: current.tokens === undefined || tokens === undefined ? undefined : current.tokens + tokens,
+    })
   }
   const rows = await ctx.db
     .query("walletBorrowBalances")
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
     .collect()
-  for (const [marketSlug, nextUsd] of nextByMarket) {
-    const ownedUsd = rows
-      .filter((row) => row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"))
-      .reduce((sum, row) => sum + row.valueUsd, 0)
-    if (nextUsd > ownedUsd + 0.02) {
+  for (const [marketSlug, next] of nextByMarket) {
+    const owned = rows.filter(
+      (row) => row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"),
+    )
+    const ownedUsd = owned.reduce((sum, row) => sum + row.valueUsd, 0)
+    // LP tokens are the conserved quantity: the stored USD is frozen at claim while the pledge is
+    // valued at the live LP price, so a USD comparison rejected every borrow and repay once the
+    // pool price rose. Rows still holding USD in `amount` (early onboarding) keep the USD check.
+    const ownedTokens = (await borrowRowsHoldLpTokens(ctx, marketSlug, owned))
+      ? owned.reduce((sum, row) => sum + row.amount, 0)
+      : undefined
+    const exceeds =
+      next.tokens !== undefined && ownedTokens !== undefined
+        ? next.tokens > ownedTokens * (1 + 1e-9) + 1e-12
+        : next.usd > ownedUsd + 0.02
+    if (exceeds) {
       throw new Error("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
     }
   }
+}
+
+/** LP token quantity of an 18-decimal collateral leg; undefined for the legacy usd6 leg shape. */
+function collateralLegTokenAmount(leg: { collateralShares: string; principalTokenAmount: string }) {
+  const principal = BigInt(leg.principalTokenAmount)
+  const raw = principal > 0n ? principal : BigInt(leg.collateralShares)
+  if (raw < 10n ** 12n) return undefined
+  return Number(raw / 10n ** 6n) / 1e12
+}
+
+/**
+ * Whether these rows store an LP token count in `amount`. Early onboarding wrote the USD value
+ * there (implied unit price ≈ $1); that is only a token count when the pool's LP price is ≈ $1.
+ */
+async function borrowRowsHoldLpTokens(
+  ctx: MutationCtx,
+  marketSlug: string,
+  rows: ReadonlyArray<{ amount: number; valueUsd: number }>,
+) {
+  const priced = rows.filter((row) => row.amount > 0 && row.valueUsd > 0)
+  if (priced.length === 0) return rows.every((row) => row.amount === 0 && row.valueUsd === 0)
+  if (priced.every((row) => Math.abs(row.valueUsd / row.amount - 1) > 1e-3)) return true
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", marketSlug))
+    .unique()
+  return typeof market?.priceUsd === "number" && market.priceUsd > 0.5 && market.priceUsd < 2
 }
 
 /**
