@@ -850,10 +850,17 @@ async function multiplyLiquidDebit(
     return null
   }
   const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
-  if (!liquid || liquid.valueUsd + 0.02 < increaseUsd || !(liquid.amount > 0)) {
+  if (!liquid || !(liquid.amount > 0)) {
     throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
   }
-  const priceUsd = liquid.valueUsd / liquid.amount
+  // Tokens at today's price, not the row's cost basis: at the cost basis ($105/AAVE) a $138 top-up
+  // debited 1.31 AAVE for 1 AAVE of collateral.
+  const priceUsd =
+    (await validatedTokenPriceUsd(ctx, assetId, now)) ??
+    (liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : undefined)
+  if (!priceUsd || liquid.amount * priceUsd + 0.02 < increaseUsd) {
+    throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
+  }
   return { assetId, symbol: liquid.symbol, tokenAmount: increaseUsd / priceUsd }
 }
 

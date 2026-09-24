@@ -738,7 +738,13 @@ export function MultiplyActionPageClient({
     isExitKind && position
       ? formatActionUsd(position.collateralAmount * collateralPriceUsd, { exact: true })
       : undefined
-  const collateralBalanceLabel = showCollateralBalance ? "Balance" : isExitKind && position ? "Position" : undefined
+  // Multiply funds from its own "Available to loop" budget (the dashboard Multiply tab figure), not
+  // the wallet balance, so name it the same way.
+  const collateralBalanceLabel = showCollateralBalance
+    ? "Available to loop"
+    : isExitKind && position
+      ? "Position"
+      : undefined
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
     : isExitKind && position

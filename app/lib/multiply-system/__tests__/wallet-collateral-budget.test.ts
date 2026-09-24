@@ -76,3 +76,22 @@ describe("deriveMultiplyCollateralBudgetUsd", () => {
     expect(budget["eth-usdt"]).toBeUndefined()
   })
 })
+
+// Prod 2026-09-23: the dev wallet holds 119.05 AAVE bought at ~$105; the Multiply form offered
+// 90.33 AAVE because it divided that cost basis by today's $138 price.
+describe("deriveMultiplyCollateralBudgetUsd live valuation", () => {
+  it("values a liquid holding at amount × today's price, not its cost basis", async () => {
+    const { setCanonicalPrices, resetCanonicalPrices } = await import("@/app/lib/prices/canonical")
+    setCanonicalPrices({ AAVE: 138.4 })
+    try {
+      const budget = deriveMultiplyCollateralBudgetUsd({
+        explicitBucketsUsd: {},
+        markets: { "aave-gho": { collateralAsset: { symbol: "AAVE" } } },
+        liquidHoldings: [{ symbol: "AAVE", valueUsd: 12_499.88, amount: 119.05 }],
+      })
+      expect(budget["aave-gho"]! / 138.4).toBeCloseTo(119.05, 6)
+    } finally {
+      resetCanonicalPrices()
+    }
+  })
+})

@@ -1940,3 +1940,61 @@ describe("multiply open/add never shrinks an existing loop", () => {
     ).rejects.toThrow(/STALE_WRITE/)
   })
 })
+
+describe("wallet-funded Multiply debits tokens at today's price", () => {
+  test("a $138 top-up debits 1 AAVE, not the cost-basis 1.31 AAVE", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "aave",
+        llamaId: "test:aave",
+        priceUsd: 138,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "aave-gho",
+        name: "AAVE / GHO",
+        symbol: "AAVE",
+        chainId: 1,
+        createdAt: 0,
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 119.05,
+        valueUsd: 12_499.88,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("aave-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "aave-gho",
+        requestedAmountUsd6: "138000000",
+        executedAmountUsd6: "138000000",
+        amountUsd: 138,
+        position: {
+          status: "open",
+          marketSlug: "aave-gho",
+          assetId: "aave",
+          collateralAmount: 1,
+          collateralValueUsd: 138,
+          debtValueUsd: 0,
+          multiplier: 1,
+          ltv: 0,
+        },
+      }),
+    )
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(118.05, 6)
+  })
+})
