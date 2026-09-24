@@ -151,7 +151,7 @@ function AssetRowView({
           <div className="min-w-0">
             <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
             <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
-              <TokenTickerPriceLabel symbol={row.symbol} />
+              <TokenTickerPriceLabel symbol={row.symbol} name={row.name} />
             </div>
           </div>
         </div>

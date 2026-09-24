@@ -11,11 +11,22 @@ const FACE =
 /**
  * Line under a token name in a table row. Touch / phone: `detail` (a unit price, "$18.5M Supply").
  * Desktop (hover-capable, md+): the ticker, which flips over to `detail` while the row is hovered —
- * the row must carry Tailwind's `group` class. Without a detail it shows the ticker everywhere.
+ * the row must carry Tailwind's `group` class. Without a detail it shows the ticker everywhere; when
+ * the name already is the ticker ("OP") it shows the detail everywhere, since the ticker adds nothing.
  */
-export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: string | undefined }) {
+export function TickerPriceFlip({
+  symbol,
+  name,
+  detail,
+}: {
+  symbol: string
+  /** The row's primary label. */
+  name: string
+  detail: string | undefined
+}) {
   const ticker = formatTokenDisplaySymbol(symbol)
   if (detail === undefined) return <>{ticker}</>
+  if (name.trim().toUpperCase() === ticker.toUpperCase()) return <>{detail}</>
   return (
     <>
       <span className="block truncate [@media(hover:hover)_and_(min-width:768px)]:hidden">{detail}</span>
@@ -42,8 +53,10 @@ export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: st
 }
 
 /** `TickerPriceFlip` with the live canonical (DefiLlama) unit price. */
-export function TokenTickerPriceLabel({ symbol }: { symbol: string }) {
+export function TokenTickerPriceLabel({ symbol, name }: { symbol: string; name: string }) {
   const priceFor = useCanonicalPriceFor()
   const price = priceFor(symbol)
-  return <TickerPriceFlip symbol={symbol} detail={price === undefined ? undefined : formatTokenPrice(price)} />
+  return (
+    <TickerPriceFlip symbol={symbol} name={name} detail={price === undefined ? undefined : formatTokenPrice(price)} />
+  )
 }

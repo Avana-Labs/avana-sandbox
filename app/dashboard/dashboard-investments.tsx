@@ -223,7 +223,7 @@ export function DashboardInvestments({
                           <div className="flex min-w-0 flex-col">
                             <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
                             <span className={cn("min-w-0 truncate tabular-nums", TABLE_CELL_SECONDARY)}>
-                              <TokenTickerPriceLabel symbol={token.symbol} />
+                              <TokenTickerPriceLabel symbol={token.symbol} name={token.name} />
                             </span>
                           </div>
                         </div>

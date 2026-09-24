@@ -97,6 +97,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
             <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
               <TickerPriceFlip
                 symbol={asset.symbol}
+                name={asset.name}
                 detail={`${compact(asset.totalBorrowedUsd + asset.availableUsd)} ${t("Supply")}`}
               />
             </div>
