@@ -12,7 +12,7 @@ import { tokenDisplayName } from "@/app/lib/markets/token-names"
 
 // ----- Chains ----------------------------------------------------------------
 
-export type ChainId = "testnet" | "ethereum" | "avalanche" | "base" | "robinhood"
+export type ChainId = "testnet" | "ethereum" | "avalanche" | "robinhood"
 
 export type FilterOption<Id extends string = string> = {
   id: Id
@@ -26,10 +26,9 @@ export type FilterOption<Id extends string = string> = {
 }
 
 export const CHAIN_OPTIONS: ReadonlyArray<FilterOption<ChainId>> = [
-  { id: "testnet", label: "Testnet" },
+  { id: "testnet", label: "Testnet", iconSrc: "/asset-icons/testnet.png" },
   { id: "ethereum", label: "Ethereum", brand: true, iconSrc: "/asset-icons/eth.png" },
   { id: "avalanche", label: "Avalanche", brand: true, iconSrc: "/asset-icons/avalanche.png" },
-  { id: "base", label: "Base", brand: true, iconSrc: "/asset-icons/base.png" },
   { id: "robinhood", label: "Robinhood", brand: true, iconSrc: "/stock-Icons/robinhood.png" },
 ]
 

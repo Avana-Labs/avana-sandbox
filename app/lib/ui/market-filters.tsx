@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react"
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -78,29 +78,7 @@ function CheckIcon({ className }: { className?: string }) {
   )
 }
 
-/** Testnet has no logo: a brand-tinted disc with a wrench, the universal "test/dev build" mark. */
-function TestnetGlyph({ size }: { size: number }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand dark:bg-brand/15"
-      style={{ width: size, height: size }}
-    >
-      <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.62, height: size * 0.62 }}>
-        <path
-          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  )
-}
-
 function OptionIcon({ option, size }: { option: FilterOption; size: number }) {
-  if (option.id === "testnet") return <TestnetGlyph size={size} />
   if (!option.iconSrc) {
     return (
       <span
@@ -301,6 +279,7 @@ function FacetPopover({
   trigger,
   panelWidth,
   fitContent = false,
+  rowCount,
   onClearFacet,
   selectedCount,
   children,
@@ -310,6 +289,8 @@ function FacetPopover({
   panelWidth: number
   /** Shrink to the widest option (short lists like Chains/Hubs) instead of a fixed width. */
   fitContent?: boolean
+  /** Option rows plus any tab strip, to size the room the panel needs below its pill. */
+  rowCount: number
   onClearFacet: () => void
   selectedCount: number
   children: (inputRef: React.MutableRefObject<HTMLInputElement | null>) => ReactNode
@@ -319,6 +300,28 @@ function FacetPopover({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const anchorRef = useRef<HTMLSpanElement | null>(null)
   const [alignOffset, setAlignOffset] = useState(0)
+  // Radix mounts the portaled panel a render after `open` flips, so measure it when its node
+  // attaches: clamp it inside the viewport gutter using its REAL width (content-sized panels are
+  // narrower than their max), which keeps it under its pill.
+  const measurePanel = (node: HTMLDivElement | null) => {
+    if (!node?.offsetWidth) return
+    setAlignOffset(horizontalOffset(anchorRef.current, node.offsetWidth))
+    // Make room below only once the panel exists: a smooth scroll started during the click is
+    // cancelled by the mount, which left the panel open short for a beat.
+    scrollRoomBelow(anchorRef.current, panelHeightFor(rowCount))
+  }
+
+  // Close once the pill scrolls under the sticky site header (or off-screen), so the panel never
+  // floats detached over the header.
+  useEffect(() => {
+    if (!open) return
+    const closeWhenHidden = () => {
+      const rect = anchorRef.current?.getBoundingClientRect()
+      if (rect && (rect.bottom < SITE_HEADER_PX || rect.top > window.innerHeight)) setOpen(false)
+    }
+    window.addEventListener("scroll", closeWhenHidden, { passive: true })
+    return () => window.removeEventListener("scroll", closeWhenHidden)
+  }, [open])
   const clearLabel = t("Clear {facet} filter").replace("{facet}", t(FACET_TITLES[facet]))
 
   return (
@@ -328,7 +331,6 @@ function FacetPopover({
         if (next) {
           revealInRail(anchorRef.current)
           setAlignOffset(horizontalOffset(anchorRef.current, panelWidth))
-          scrollRoomBelow(anchorRef.current)
         }
         setOpen(next)
       }}
@@ -362,6 +364,7 @@ function FacetPopover({
       </PopoverPrimitive.Anchor>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
+          ref={measurePanel}
           side="bottom"
           align="start"
           sideOffset={8}
@@ -389,21 +392,30 @@ function FacetPopover({
   )
 }
 
-/** Room to guarantee below the pill before opening: the panel max height (380px) + gutter. */
-const PANEL_ROOM_PX = 392
+/** Height of the sticky site header the pills scroll under. */
+const SITE_HEADER_PX = 64
+
+/** Tallest a panel gets (matches the `max-h` in PANEL_CLASS). */
+const PANEL_MAX_PX = 380
+/** Search row + section header + list padding + borders; each option row is 36px. */
+const PANEL_CHROME_PX = 80
+const ROW_PX = 36
+
+function panelHeightFor(rowCount: number) {
+  return Math.min(PANEL_MAX_PX, PANEL_CHROME_PX + rowCount * ROW_PX)
+}
 
 /**
- * Scrolls the page just enough that the panel has room to drop down below its pill, rather than
- * opening a squashed list against the bottom of a short viewport.
+ * Scrolls the page only as far as needed for THIS panel to open fully below its pill (the pill's
+ * 8px offset + a 12px gutter included); a panel that already fits never moves the page.
  */
-function scrollRoomBelow(anchor: HTMLElement | null) {
+function scrollRoomBelow(anchor: HTMLElement | null, panelHeight: number) {
   if (!anchor || typeof window === "undefined") return
   const rect = anchor.getBoundingClientRect()
-  const shortfall = rect.bottom + PANEL_ROOM_PX - window.innerHeight
+  const shortfall = rect.bottom + 8 + panelHeight + 12 - window.innerHeight
   if (shortfall <= 0) return
-  // Never scroll the pill itself under the sticky site header (64px) + a little air.
-  const maxScroll = Math.max(0, rect.top - 88)
-  const delta = Math.min(shortfall, maxScroll)
+  // Never scroll the pill itself under the sticky site header + a little air.
+  const delta = Math.min(shortfall, Math.max(0, rect.top - SITE_HEADER_PX - 24))
   if (delta > 0) window.scrollBy({ top: delta, behavior: "smooth" })
 }
 
@@ -474,6 +486,7 @@ function OptionListFacet({
       trigger={trigger}
       panelWidth={288}
       fitContent
+      rowCount={options.length}
       selectedCount={selected.length}
       onClearFacet={() => onChange(() => [])}
     >
@@ -540,6 +553,7 @@ function AssetFacet({
       facet="assets"
       trigger={trigger}
       panelWidth={324}
+      rowCount={options.length + 1}
       selectedCount={selected.length}
       onClearFacet={() => onChange(() => [])}
     >
@@ -703,9 +717,7 @@ export function MarketFiltersBar({
       {selectedChains.length === 1 ? (
         <OptionIcon option={selectedChains[0]} size={20} />
       ) : (
-        <ChainCluster
-          chains={selectedChains.length > 1 ? selectedChains : CHAIN_OPTIONS.filter((chain) => chain.id !== "testnet")}
-        />
+        <ChainCluster chains={selectedChains.length > 1 ? selectedChains : CHAIN_OPTIONS} />
       )}
       <span className="whitespace-nowrap">
         {selectedChains.length === 0

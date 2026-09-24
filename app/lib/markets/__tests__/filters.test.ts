@@ -18,7 +18,7 @@ import {
 
 describe("market filter model", () => {
   it("offers exactly the requested chains, testnet first", () => {
-    expect(CHAIN_OPTIONS.map((chain) => chain.label)).toEqual(["Testnet", "Ethereum", "Avalanche", "Base", "Robinhood"])
+    expect(CHAIN_OPTIONS.map((chain) => chain.label)).toEqual(["Testnet", "Ethereum", "Avalanche", "Robinhood"])
   })
 
   it("puts every market on testnet only until mainnet", () => {
