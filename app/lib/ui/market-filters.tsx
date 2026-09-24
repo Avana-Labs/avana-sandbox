@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react"
-import { Popover as PopoverPrimitive } from "radix-ui"
+import { lazy, Suspense, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { sizedLocalIconSrc } from "@/app/lib/local-asset-icons"
 import { MOBILE_EDGE_RAIL_CLASS } from "@/app/lib/ui/horizontal-rail"
 import { TokenIcon } from "@/app/components/token-icon"
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
+import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
+import { CloseIcon, FACET_TITLES, StaticFacetPill, type FacetPopoverProps } from "@/app/lib/ui/market-filter-pill"
 import {
   ASSET_TABS,
   CHAIN_OPTIONS,
@@ -52,14 +53,6 @@ function ChevronsUpDownIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  )
-}
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={cn("size-4 shrink-0", className)}>
-      <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
@@ -117,18 +110,6 @@ function ChainCluster({ chains }: { chains: ReadonlyArray<FilterOption> }) {
 }
 
 // ----- Pieces --------------------------------------------------------------------------------
-
-const PILL_BASE =
-  "group/pill inline-flex h-9 shrink-0 items-center rounded-full border text-[14px] font-medium tracking-[-0.01em] transition-colors " +
-  "border-border bg-card text-foreground hover:bg-surface-hover " +
-  "dark:border-white/[0.07] dark:bg-[#1c1c1c] dark:text-white dark:hover:bg-[#232323]"
-
-const PILL_OPEN = "bg-surface-hover dark:bg-[#252525] dark:border-white/[0.12]"
-
-const PANEL_CLASS =
-  "z-[60] flex w-[min(var(--panel-width),calc(100vw-24px))] data-[fit=content]:w-max data-[fit=content]:min-w-[216px] data-[fit=content]:max-w-[min(var(--panel-width),calc(100vw-24px))] flex-col overflow-hidden rounded-[14px] border border-border bg-popover text-popover-foreground shadow-elev-2 outline-none " +
-  "max-h-[min(380px,var(--radix-popover-content-available-height))] dark:border-white/[0.08] dark:bg-[#1c1c1c] " +
-  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[side=bottom]:slide-in-from-top-1"
 
 function useLabel() {
   const { t } = useTranslation()
@@ -274,182 +255,21 @@ function EmptyMatches() {
 
 // ----- Facet popover -------------------------------------------------------------------------
 
-function FacetPopover({
-  facet,
-  trigger,
-  panelWidth,
-  fitContent = false,
-  rowCount,
-  onClearFacet,
-  selectedCount,
-  children,
-}: {
-  facet: FacetId
-  trigger: (open: boolean) => ReactNode
-  panelWidth: number
-  /** Shrink to the widest option (short lists like Chains/Hubs) instead of a fixed width. */
-  fitContent?: boolean
-  /** Option rows plus any tab strip, to size the room the panel needs below its pill. */
-  rowCount: number
-  onClearFacet: () => void
-  selectedCount: number
-  children: (inputRef: React.MutableRefObject<HTMLInputElement | null>) => ReactNode
-}) {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-  const anchorRef = useRef<HTMLSpanElement | null>(null)
-  const [alignOffset, setAlignOffset] = useState(0)
-  // Radix mounts the portaled panel a render after `open` flips, so measure it when its node
-  // attaches: clamp it inside the viewport gutter using its REAL width (content-sized panels are
-  // narrower than their max), which keeps it under its pill.
-  // An inline ref runs again on every re-render (each option toggle), so position and scroll only
-  // on the first attach of each opening — toggling an option must never move the page.
-  const measuredRef = useRef(false)
-  const measurePanel = (node: HTMLDivElement | null) => {
-    if (!node?.offsetWidth || measuredRef.current) return
-    measuredRef.current = true
-    setAlignOffset(horizontalOffset(anchorRef.current, node.offsetWidth))
-    // Make room below only once the panel exists: a smooth scroll started during the click is
-    // cancelled by the mount, which left the panel open short for a beat.
-    scrollRoomBelow(anchorRef.current, panelHeightFor(rowCount))
-  }
+// Radix Popover is ~19 KiB gzip and nothing else on these pages uses it, so it loads after mount;
+// the server and the first client render show the identical closed pill.
+const LazyFacetPopover = lazy(() => import("@/app/lib/ui/market-filter-popover"))
 
-  // Close once the pill scrolls under the sticky site header (or off-screen), so the panel never
-  // floats detached over the header.
-  useEffect(() => {
-    if (!open) return
-    const closeWhenHidden = () => {
-      const rect = anchorRef.current?.getBoundingClientRect()
-      if (rect && (rect.bottom < SITE_HEADER_PX || rect.top > window.innerHeight)) setOpen(false)
-    }
-    window.addEventListener("scroll", closeWhenHidden, { passive: true })
-    return () => window.removeEventListener("scroll", closeWhenHidden)
-  }, [open])
-  const clearLabel = t("Clear {facet} filter").replace("{facet}", t(FACET_TITLES[facet]))
-
+function FacetPopover(props: FacetPopoverProps) {
+  const mounted = useHasMounted()
+  // A click on the stand-in pill while the chunk loads opens the panel once it arrives.
+  const [openOnLoad, setOpenOnLoad] = useState(false)
+  const pill = <StaticFacetPill {...props} onOpen={() => setOpenOnLoad(true)} />
+  if (!mounted) return pill
   return (
-    <PopoverPrimitive.Root
-      open={open}
-      onOpenChange={(next) => {
-        if (next) {
-          measuredRef.current = false
-          revealInRail(anchorRef.current)
-          setAlignOffset(horizontalOffset(anchorRef.current, panelWidth))
-        }
-        setOpen(next)
-      }}
-    >
-      <PopoverPrimitive.Anchor asChild>
-        <span
-          ref={anchorRef}
-          className={cn(PILL_BASE, open && PILL_OPEN)}
-          data-facet={facet}
-          data-state={open ? "open" : "closed"}
-        >
-          <PopoverPrimitive.Trigger
-            className={cn(
-              "inline-flex h-full items-center gap-2 rounded-full pl-3.5 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              selectedCount > 0 && facet !== "chains" ? "pr-1" : "pr-3.5",
-            )}
-          >
-            {trigger(open)}
-          </PopoverPrimitive.Trigger>
-          {selectedCount > 0 && facet !== "chains" ? (
-            <button
-              type="button"
-              aria-label={clearLabel}
-              onClick={onClearFacet}
-              className="mr-1.5 inline-flex size-6 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-hover hover:text-foreground dark:text-white/70 dark:hover:text-white"
-            >
-              <CloseIcon />
-            </button>
-          ) : null}
-        </span>
-      </PopoverPrimitive.Anchor>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          ref={measurePanel}
-          side="bottom"
-          align="start"
-          sideOffset={8}
-          // Always drop DOWN (no flip above the pill); the horizontal offset is computed on open
-          // so a pill near the right edge (phones) still opens fully on-screen.
-          avoidCollisions={false}
-          alignOffset={alignOffset}
-          collisionPadding={12}
-          aria-label={t(FACET_TITLES[facet])}
-          className={PANEL_CLASS}
-          data-fit={fitContent ? "content" : undefined}
-          style={{ ["--panel-width" as string]: `${panelWidth}px` }}
-          onOpenAutoFocus={(event) => {
-            // Touch screens would pop the keyboard over the list; keep focus on the panel there.
-            event.preventDefault()
-            if (typeof window !== "undefined" && window.matchMedia?.("(hover: hover)").matches) {
-              inputRef.current?.focus()
-            }
-          }}
-        >
-          {children(inputRef)}
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+    <Suspense fallback={pill}>
+      <LazyFacetPopover {...props} initialOpen={openOnLoad} />
+    </Suspense>
   )
-}
-
-/** Height of the sticky site header the pills scroll under. */
-const SITE_HEADER_PX = 64
-
-/** Tallest a panel gets (matches the `max-h` in PANEL_CLASS). */
-const PANEL_MAX_PX = 380
-/** Search row + section header + list padding + borders; each option row is 36px. */
-const PANEL_CHROME_PX = 80
-const ROW_PX = 36
-
-function panelHeightFor(rowCount: number) {
-  return Math.min(PANEL_MAX_PX, PANEL_CHROME_PX + rowCount * ROW_PX)
-}
-
-/**
- * Scrolls the page only as far as needed for THIS panel to open fully below its pill (the pill's
- * 8px offset + a 12px gutter included); a panel that already fits never moves the page.
- */
-function scrollRoomBelow(anchor: HTMLElement | null, panelHeight: number) {
-  if (!anchor || typeof window === "undefined") return
-  const rect = anchor.getBoundingClientRect()
-  const shortfall = rect.bottom + 8 + panelHeight + 12 - window.innerHeight
-  if (shortfall <= 0) return
-  // Never scroll the pill itself under the sticky site header + a little air.
-  const delta = Math.min(shortfall, Math.max(0, rect.top - SITE_HEADER_PX - 24))
-  if (delta > 0) window.scrollBy({ top: delta, behavior: "smooth" })
-}
-
-/** On the phone rail, scroll a partly hidden pill fully into view before its panel anchors to it. */
-function revealInRail(anchor: HTMLElement | null) {
-  const rail = anchor?.parentElement
-  if (!anchor || !rail || rail.scrollWidth <= rail.clientWidth) return
-  const pill = anchor.getBoundingClientRect()
-  const box = rail.getBoundingClientRect()
-  const inset = 12
-  if (pill.left < box.left + inset) rail.scrollLeft -= box.left + inset - pill.left
-  else if (pill.right > box.right - inset) rail.scrollLeft += pill.right - (box.right - inset)
-}
-
-/** Offset from the pill's left edge that keeps a `panelWidth` panel inside a 12px viewport gutter. */
-function horizontalOffset(anchor: HTMLElement | null, panelWidth: number) {
-  if (!anchor || typeof window === "undefined") return 0
-  const gutter = 12
-  const width = Math.min(panelWidth, window.innerWidth - gutter * 2)
-  const left = anchor.getBoundingClientRect().left
-  const clamped = Math.min(Math.max(left, gutter), window.innerWidth - gutter - width)
-  return Math.round(clamped - left)
-}
-
-const FACET_TITLES: Record<FacetId, string> = {
-  chains: "Chains",
-  hubs: "Hubs",
-  markets: "Markets",
-  assets: "Assets",
 }
 
 function matchesQuery(query: string, ...values: string[]) {

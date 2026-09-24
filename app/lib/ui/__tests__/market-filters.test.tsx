@@ -1,5 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react"
-import { useState } from "react"
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { useState, type ReactElement } from "react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import type { LanguageCode } from "@/app/components/display-preferences"
 import { TRANSLATIONS, translate } from "@/app/lib/i18n/translations"
@@ -75,6 +75,13 @@ function Harness({ onChange }: { onChange?: (next: MarketFilterState) => void })
   )
 }
 
+/** Renders, then waits for the lazily loaded Radix popover to replace the static pills. */
+async function renderBar(ui: ReactElement) {
+  const result = render(ui)
+  await waitFor(() => expect(result.container.querySelector("[data-pill=static]")).toBeNull())
+  return result
+}
+
 function openFacet(name: RegExp) {
   fireEvent.click(screen.getByRole("button", { name }))
   return screen.getByRole("dialog")
@@ -89,8 +96,15 @@ describe("MarketFiltersBar", () => {
     expect(screen.getAllByRole("textbox", { name: "Search assets" })).toHaveLength(1)
   })
 
-  it("opens and closes a panel from its pill", () => {
+  it("opens a pill clicked before the popover chunk loads", async () => {
     render(<Harness />)
+    fireEvent.click(screen.getByRole("button", { name: /^Hubs$/ }))
+    const panel = await screen.findByRole("dialog")
+    expect(within(panel).getByText("Hubs", { selector: "span" })).toBeInTheDocument()
+  })
+
+  it("opens and closes a panel from its pill", async () => {
+    await renderBar(<Harness />)
     const trigger = screen.getByRole("button", { name: /All Chains/ })
     expect(trigger).toHaveAttribute("aria-expanded", "false")
     fireEvent.click(trigger)
@@ -105,9 +119,9 @@ describe("MarketFiltersBar", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false")
   })
 
-  it("names the chain pill after the selection", () => {
+  it("names the chain pill after the selection", async () => {
     const onChange = vi.fn()
-    render(<Harness onChange={onChange} />)
+    await renderBar(<Harness onChange={onChange} />)
     const panel = openFacet(/All Chains/)
     fireEvent.click(within(panel).getByRole("checkbox", { name: /Ethereum/ }))
     expect(onChange).toHaveBeenLastCalledWith({ ...EMPTY_MARKET_FILTERS, chains: ["ethereum"] })
@@ -117,9 +131,9 @@ describe("MarketFiltersBar", () => {
     expect(screen.getByRole("button", { name: /Chains \(2\)/ })).toBeInTheDocument()
   })
 
-  it("shows the selection count on the pill and clears it from the × and from Clear", () => {
+  it("shows the selection count on the pill and clears it from the × and from Clear", async () => {
     const onChange = vi.fn()
-    render(<Harness onChange={onChange} />)
+    await renderBar(<Harness onChange={onChange} />)
     const panel = openFacet(/^Hubs$/)
     const clear = within(panel).getByRole("button", { name: "Clear" })
     expect(clear).toBeDisabled()
@@ -136,8 +150,8 @@ describe("MarketFiltersBar", () => {
     expect(screen.getByRole("button", { name: /^Hubs$/ })).toBeInTheDocument()
   })
 
-  it("keeps every option when toggled in quick succession", () => {
-    render(<Harness />)
+  it("keeps every option when toggled in quick succession", async () => {
+    await renderBar(<Harness />)
     const panel = openFacet(/^Markets$/)
     const [first, second] = within(panel).getAllByRole("checkbox")
     act(() => {
@@ -147,8 +161,8 @@ describe("MarketFiltersBar", () => {
     expect(screen.getByRole("button", { name: "Markets (2)" })).toBeInTheDocument()
   })
 
-  it("shows per-option counts that follow the other active filters", () => {
-    render(<Harness />)
+  it("shows per-option counts that follow the other active filters", async () => {
+    await renderBar(<Harness />)
     const hubs = openFacet(/^Hubs$/)
     // 2 stablecoins, WETH + WBTC correlated, AAVE volatile.
     expect(within(hubs).getByRole("checkbox", { name: /Stable/ })).toHaveTextContent("2")
@@ -161,8 +175,8 @@ describe("MarketFiltersBar", () => {
     expect(within(markets).getByRole("checkbox", { name: /ETH Based/ })).toHaveTextContent("0")
   })
 
-  it("narrows a panel's options with its search box", () => {
-    render(<Harness />)
+  it("narrows a panel's options with its search box", async () => {
+    await renderBar(<Harness />)
     const panel = openFacet(/^Markets$/)
     fireEvent.change(within(panel).getByRole("textbox", { name: "Search markets" }), { target: { value: "eth" } })
     expect(within(panel).getAllByRole("checkbox")).toHaveLength(1)
@@ -171,8 +185,8 @@ describe("MarketFiltersBar", () => {
     expect(within(panel).getByText("No matches")).toBeInTheDocument()
   })
 
-  it("groups assets under tabs and hides tabs with no assets", () => {
-    render(<Harness />)
+  it("groups assets under tabs and hides tabs with no assets", async () => {
+    await renderBar(<Harness />)
     const panel = openFacet(/^Assets$/)
     const tabs = within(panel).getAllByRole("tab")
     expect(tabs.map((tab) => tab.textContent)).toEqual(["All", "Stablecoins", "ETH", "BTC", "Other"])
@@ -187,9 +201,9 @@ describe("MarketFiltersBar", () => {
     expect(screen.getByRole("button", { name: "Assets (1)" })).toBeInTheDocument()
   })
 
-  it("offers a single Clear all once anything is filtered", () => {
+  it("offers a single Clear all once anything is filtered", async () => {
     const onChange = vi.fn()
-    render(<Harness onChange={onChange} />)
+    await renderBar(<Harness onChange={onChange} />)
     expect(screen.queryByRole("button", { name: "Clear all" })).toBeNull()
     const panel = openFacet(/^Hubs$/)
     fireEvent.click(within(panel).getByRole("checkbox", { name: /Stable/ }))
@@ -198,8 +212,8 @@ describe("MarketFiltersBar", () => {
     expect(onChange).toHaveBeenLastCalledWith(EMPTY_MARKET_FILTERS)
   })
 
-  it("lists the Borrow DEXes with roadmap ones disabled as Soon", () => {
-    render(
+  it("lists the Borrow DEXes with roadmap ones disabled as Soon", async () => {
+    await renderBar(
       <MarketFiltersBar
         items={[]}
         value={EMPTY_MARKET_FILTERS}
@@ -218,9 +232,9 @@ describe("MarketFiltersBar", () => {
     expect(within(panel).getByRole("checkbox", { name: /Uniswap V3/ })).toBeEnabled()
   })
 
-  it("renders translated labels", () => {
+  it("renders translated labels", async () => {
     i18n.language = "DE"
-    render(<Harness />)
+    await renderBar(<Harness />)
     expect(screen.getByRole("button", { name: /Alle Chains/ })).toBeInTheDocument()
     const panel = openFacet(/^Knotenpunkte$/)
     expect(within(panel).getByRole("checkbox", { name: /Stabil/ })).toBeInTheDocument()
