@@ -1,5 +1,6 @@
 "use client"
 
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -258,7 +259,7 @@ export function HomeSwapAction() {
       })
       setStage("success")
     } catch (error) {
-      setOutcome({ tone: "error", message: error instanceof Error ? error.message : t("Swap failed.") })
+      setOutcome({ tone: "error", message: actionErrorMessage(error, t("Swap failed.")) })
       setStage("error")
     } finally {
       setIsPending(false)

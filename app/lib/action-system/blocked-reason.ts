@@ -46,6 +46,24 @@ const REASON_RULES: ReasonRule[] = [
     message: "There isn't enough liquidity for this amount right now. Try a smaller amount.",
   },
   { match: /amount must be positive/i, message: "Enter an amount greater than zero." },
+  {
+    match: /\bINSUFFICIENT_COLLATERAL_BALANCE\b/,
+    message: "You're pledging more LP than you hold in this pool. Lower the amount.",
+  },
+  { match: /\bINSUFFICIENT_BALANCE\b/, message: "You don't have enough balance for this amount. Lower the amount." },
+  {
+    match: /\b(STALE_WRITE|REVISION_REQUIRED)\b/,
+    message: "This position changed in another tab. Reload the page and try again.",
+  },
+  {
+    match: /\bINVALID_TRANSITION\b/,
+    message: "Your balance changed before this could be confirmed. Reload the page and try again.",
+  },
+  // A Convex failure with no code: "[CONVEX M(module:fn)] [Request ID: …] Server Error".
+  {
+    match: /\[CONVEX [QMA]\(|\bServer Error\b|\bRequest ID\b/,
+    message: "Something went wrong on our side and nothing was changed. Try again in a moment.",
+  },
 ]
 
 // Anything that still exposes an internal identifier: a hex wallet address, the
@@ -65,4 +83,23 @@ export function humanizeBlockedReason(reason: string | null | undefined): string
   }
   if (LEAKS_INTERNAL.test(reason) || RAW_CODE_PREFIX.test(reason.trim())) return GENERIC_BLOCKED_MESSAGE
   return reason
+}
+
+/**
+ * User-facing copy for an error thrown by a submit. Reads the ConvexError payload
+ * (`error.data`, which carries the backend code) before the message, which for a
+ * Convex failure is the raw "[CONVEX M(...)] Server Error" string.
+ */
+export function actionErrorMessage(error: unknown, fallback: string): string {
+  const data = (error as { data?: unknown } | null | undefined)?.data
+  const payload =
+    data && typeof data === "object"
+      ? [(data as { code?: unknown }).code, (data as { message?: unknown }).message]
+          .filter((part): part is string => typeof part === "string")
+          .join(": ")
+      : typeof data === "string"
+        ? data
+        : ""
+  const raw = payload || (error instanceof Error ? error.message : "")
+  return (raw && humanizeBlockedReason(raw)) || fallback
 }

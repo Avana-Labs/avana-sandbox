@@ -33,7 +33,7 @@ import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-sys
 import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 
 export function lendSuccessMetrics(
   metrics: ActionPreviewUi["metrics"],
@@ -409,7 +409,7 @@ export function LendActionPageClient({
       setOutcome({
         tone: "error",
         title: t("Something went wrong"),
-        message: humanizeBlockedReason(rawMessage) ?? t("Unable to sign the transaction"),
+        message: actionErrorMessage(error, t("Unable to sign the transaction")),
       })
       setStage("error")
     } finally {

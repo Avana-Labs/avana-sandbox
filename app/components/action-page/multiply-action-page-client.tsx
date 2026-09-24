@@ -45,7 +45,7 @@ import {
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount, formatActionUsd } from "@/app/lib/action-system/formatters"
 import { useCanonicalPriceFor, usePriceFor, usePriceFreshness } from "@/app/lib/prices/token-prices-context"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function MultiplyActionPageClient({
@@ -589,7 +589,7 @@ export function MultiplyActionPageClient({
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
+        message: actionErrorMessage(error, "Transaction was cancelled"),
       })
       setStage("error")
     } finally {
@@ -677,7 +677,7 @@ export function MultiplyActionPageClient({
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
+        message: actionErrorMessage(error, "Transaction was cancelled"),
       })
       setStage("error")
     } finally {

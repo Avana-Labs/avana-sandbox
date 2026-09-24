@@ -40,7 +40,7 @@ import {
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage, humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import {
@@ -1067,7 +1067,7 @@ export function BorrowActionPageClient({
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
+        message: actionErrorMessage(error, "Transaction was cancelled"),
       })
       setStage("error")
     } finally {
