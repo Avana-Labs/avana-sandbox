@@ -14,6 +14,7 @@
  * Fixed-point amounts cross the wire as decimal strings (see schema encoding contract).
  */
 
+import { codedError } from "../codedError"
 import { ConvexError, v, type Infer } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
@@ -411,7 +412,7 @@ const positionPayload = v.object({
 
 function validatePositionPayload(position: Infer<typeof positionPayload>) {
   if ((position.collateral?.length ?? 0) > MAX_POSITION_LEGS || (position.debt?.length ?? 0) > MAX_POSITION_LEGS) {
-    throw new Error(`INVALID_POSITION: a position may contain at most ${MAX_POSITION_LEGS} collateral and debt legs.`)
+    throw codedError(`INVALID_POSITION: a position may contain at most ${MAX_POSITION_LEGS} collateral and debt legs.`)
   }
   for (const [field, value] of Object.entries({
     collateralValueUsd6: position.collateralValueUsd6,
@@ -456,7 +457,7 @@ function validateTransactionTransition(
   const requested = BigInt(args.requestedAmountUsd6)
   const executed = BigInt(args.executedAmountUsd6)
   if (requested > 0n && executed > requested) {
-    throw new Error("INVALID_TRANSITION: executed amount exceeds the requested amount.")
+    throw codedError("INVALID_TRANSITION: executed amount exceeds the requested amount.")
   }
   assertClose(args.amountUsd, Number(executed) / 1_000_000, "amountUsd")
 
@@ -468,7 +469,7 @@ function validateTransactionTransition(
     multiply: new Set(["multiply", "deleverage", "close"]),
   }
   if (!allowedKinds[args.product].has(args.kind)) {
-    throw new Error(`INVALID_TRANSITION: ${args.kind} is not valid for ${args.product}.`)
+    throw codedError(`INVALID_TRANSITION: ${args.kind} is not valid for ${args.product}.`)
   }
 
   if (!args.position) return
@@ -480,7 +481,7 @@ function validateTransactionTransition(
     // interest accrues client-side; the ledger itself is written from the server's token math.
     const tolerance = Math.max(0.02, before * 0.01)
     if (!Number.isFinite(after) || Math.abs(after - Math.max(0, expected)) > tolerance) {
-      throw new Error(
+      throw codedError(
         `INVALID_TRANSITION: lend supplied balance does not match the server recomputation ` +
           `(before=${before}, after=${after}, amount=${args.amountUsd}, expected=${Math.max(0, expected)}).`,
       )
@@ -490,7 +491,7 @@ function validateTransactionTransition(
     const collateral = args.position.collateralValueUsd ?? 0
     const debt = args.position.debtValueUsd ?? 0
     if (collateral < 0 || debt < 0 || debt > collateral) {
-      throw new Error("INVALID_TRANSITION: multiply collateral and debt are inconsistent.")
+      throw codedError("INVALID_TRANSITION: multiply collateral and debt are inconsistent.")
     }
     const equity = collateral - debt
     const expectedMultiplier = equity > 0 ? collateral / equity : 1
@@ -506,12 +507,12 @@ function validateTransactionTransition(
       (existing.collateralAmount ?? 0) > 0 &&
       (args.position.collateralAmount ?? 0) < (existing.collateralAmount ?? 0) * (1 - 1e-6)
     ) {
-      throw new Error("STALE_WRITE: this Multiply position changed; reload it before adding to it.")
+      throw codedError("STALE_WRITE: this Multiply position changed; reload it before adding to it.")
     }
     // Leverage caps must be enforced here, not just by the UI slider: a tampered client can
     // submit an internally-consistent position above MULTIPLY_ACTION_MAX_LEVERAGE.
     if ((args.position.multiplier ?? 1) > MAX_MULTIPLIER + 0.01) {
-      throw new Error("INVALID_TRANSITION: multiplier exceeds the protocol maximum.")
+      throw codedError("INVALID_TRANSITION: multiplier exceeds the protocol maximum.")
     }
   }
 }
@@ -530,7 +531,7 @@ async function serverCollateralValueUsd(
   const shares = BigInt(row.collateralShares)
   const raw = principal > 0n ? principal : shares
   if (raw <= 0n) {
-    throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+    throw codedError(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
   }
 
   const [pool, market] = await Promise.all([
@@ -551,12 +552,12 @@ async function serverCollateralValueUsd(
       ? priceUsd && priceUsd > 0
         ? tokenNotionalToUsd(raw, priceUsd)
         : (() => {
-            throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+            throw codedError(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
           })()
       : Number(raw) / 1_000_000
 
   if (!(valueUsd > 0)) {
-    throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+    throw codedError(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
   }
   return { valueUsd, pool }
 }
@@ -595,7 +596,7 @@ async function assertBorrowSolvent(
 
   const collateralRows = (args.position.collateral ?? []).filter((row) => row.collateralEnabled !== false)
   if (collateralRows.length === 0) {
-    throw new Error("INVALID_TRANSITION: borrow debt has no backing collateral.")
+    throw codedError("INVALID_TRANSITION: borrow debt has no backing collateral.")
   }
 
   let liquidationValueUsd = 0
@@ -610,7 +611,7 @@ async function assertBorrowSolvent(
   }
 
   if (debtUsd > liquidationValueUsd + 0.01) {
-    throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
+    throw codedError("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
 }
 
@@ -741,7 +742,7 @@ async function assertBorrowCollateralConserved(
         ? next.tokens > ownedTokens * (1 + 1e-9) + 1e-12
         : next.usd > ownedUsd + 0.02
     if (exceeds) {
-      throw new Error("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
+      throw codedError("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
     }
   }
 }
@@ -801,7 +802,7 @@ async function canonicalMultiplyCollateralId(
   const canonical = market?.symbol?.toLowerCase()
   if (!canonical) return undefined
   if (clientAssetId && liquidAssetIdFromArgs(clientAssetId) !== canonical) {
-    throw new Error(`INVALID_TRANSITION: ${marketSlug} collateral is ${canonical}, not ${clientAssetId}.`)
+    throw codedError(`INVALID_TRANSITION: ${marketSlug} collateral is ${canonical}, not ${clientAssetId}.`)
   }
   return canonical
 }
@@ -845,13 +846,13 @@ async function multiplyLiquidDebit(
     .reduce((sum, row) => sum + row.valueUsd, 0)
   if (explicitUsd > 0) {
     if (explicitUsd + 0.02 < increaseUsd) {
-      throw new Error("INSUFFICIENT_BALANCE: not enough Multiply collateral for this action.")
+      throw codedError("INSUFFICIENT_BALANCE: not enough Multiply collateral for this action.")
     }
     return null
   }
   const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
   if (!liquid || !(liquid.amount > 0)) {
-    throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
+    throw codedError("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
   }
   // Tokens at today's price, not the row's cost basis: at the cost basis ($105/AAVE) a $138 top-up
   // debited 1.31 AAVE for 1 AAVE of collateral.
@@ -859,7 +860,7 @@ async function multiplyLiquidDebit(
     (await validatedTokenPriceUsd(ctx, assetId, now)) ??
     (liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : undefined)
   if (!priceUsd || liquid.amount * priceUsd + 0.02 < increaseUsd) {
-    throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
+    throw codedError("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
   }
   return { assetId, symbol: liquid.symbol, tokenAmount: increaseUsd / priceUsd }
 }
@@ -1271,7 +1272,7 @@ export const recordTransaction = mutation({
       if (args.marketSlug !== undefined) requireBoundedIdentifier(args.marketSlug, "marketSlug")
       if (args.assetId !== undefined) requireBoundedIdentifier(args.assetId, "assetId")
       if ((args.rewardClaims?.length ?? 0) > MAX_POSITION_LEGS) {
-        throw new Error(`INVALID_INPUT: rewardClaims may contain at most ${MAX_POSITION_LEGS} rows.`)
+        throw codedError(`INVALID_INPUT: rewardClaims may contain at most ${MAX_POSITION_LEGS} rows.`)
       }
       for (const claim of args.rewardClaims ?? []) {
         requireBoundedIdentifier(claim.rewardPositionId, "rewardPositionId")
@@ -1312,7 +1313,7 @@ export const recordTransaction = mutation({
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", windowStart))
         .take(MAX_TX_PER_HOUR)
       if (recent.length >= MAX_TX_PER_HOUR) {
-        throw new Error(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
+        throw codedError(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
       }
 
       const status = args.status ?? "success"
@@ -1359,7 +1360,7 @@ export const recordTransaction = mutation({
             const years = Math.max(0, now - lastWriteAt) / (365 * 24 * 3600 * 1000)
             const maxTokens = depositedAmount * (1 + 0.5 * years) * (1 + 1e-6) + 1e-9
             if (tokens > maxTokens) {
-              throw new Error("INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount.")
+              throw codedError("INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount.")
             }
           }
         }
@@ -1385,13 +1386,13 @@ export const recordTransaction = mutation({
         // silently clobbering a concurrent one (two tabs on the same wallet/market).
         const currentRevision = existing?.revision ?? 0
         if (existing && args.expectedRevision == null) {
-          throw new Error(
+          throw codedError(
             `REVISION_REQUIRED: ${args.product} position for ${marketSlug} already exists; ` +
               "reload it and submit its expectedRevision.",
           )
         }
         if (existing && args.expectedRevision !== currentRevision) {
-          throw new Error(
+          throw codedError(
             `STALE_WRITE: ${args.product} position for ${marketSlug} changed since it was read ` +
               `(expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
           )
@@ -1524,7 +1525,7 @@ export const recordTransaction = mutation({
           // liquid row with enough USD value. Never fail open when the row is absent: clamping that
           // nonexistent source to zero while crediting the product bucket mints net worth.
           if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
-            throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
+            throw codedError("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
           }
           await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now, priceUsd)
         }
@@ -1570,7 +1571,7 @@ export const recordRewardsClaim = mutation({
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     requireBoundedIdentifier(args.intentId, "intentId")
     requireBoundedIdentifier(args.syntheticTxHash, "syntheticTxHash")
-    if (args.taskIds.length > 32) throw new Error("INVALID_CLAIM: at most 32 task ids may be claimed at once")
+    if (args.taskIds.length > 32) throw codedError("INVALID_CLAIM: at most 32 task ids may be claimed at once")
     for (const taskId of args.taskIds) requireBoundedIdentifier(taskId, "taskId")
     const prior = await ctx.db
       .query("transactions")
@@ -1579,8 +1580,8 @@ export const recordRewardsClaim = mutation({
     if (prior) return { transactionId: prior._id, idempotent: true }
 
     const taskIds = args.taskIds
-    if (taskIds.length === 0) throw new Error("EMPTY_CLAIM: at least one task id is required")
-    if (new Set(taskIds).size !== taskIds.length) throw new Error("DUPLICATE_TASK_ID")
+    if (taskIds.length === 0) throw codedError("EMPTY_CLAIM: at least one task id is required")
+    if (new Set(taskIds).size !== taskIds.length) throw codedError("DUPLICATE_TASK_ID")
     const amountUsd = deriveClaimAmountUsd(taskIds)
 
     const [walletTransactions, rewardsState] = await Promise.all([
@@ -1646,7 +1647,7 @@ export const recordRewardsClaim = mutation({
       }
     }
     for (const id of taskIds) {
-      if (!isEligible(id)) throw new Error(`TASK_NOT_ELIGIBLE: ${id}`)
+      if (!isEligible(id)) throw codedError(`TASK_NOT_ELIGIBLE: ${id}`)
     }
 
     // Single-claim guard: reject any task id already paid out on a prior successful claim row
@@ -1661,7 +1662,7 @@ export const recordRewardsClaim = mutation({
     }
     for (const id of taskIds) {
       if (alreadyClaimed.has(id)) {
-        throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
+        throw codedError(`TASK_ALREADY_CLAIMED: ${id}`)
       }
     }
 
@@ -2060,7 +2061,7 @@ export const recordSwap = mutation({
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", windowStart))
       .take(MAX_TX_PER_HOUR)
     if (recent.length >= MAX_TX_PER_HOUR) {
-      throw new Error(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
+      throw codedError(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
     }
 
     const status = args.status ?? "success"
@@ -2070,7 +2071,7 @@ export const recordSwap = mutation({
     // still needs a positive input (the amount attempted) and a non-negative USD value.
     const outputAmountValid = status === "success" ? args.outputAmount > 0 : args.outputAmount >= 0
     if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
-      throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
+      throw codedError("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
     }
     // Server-authoritative: the output + USD are recomputed from the LIVE oracle via the shared
     // swap engine and used for both the balance delta and the persisted row, so client quotes
@@ -2083,18 +2084,18 @@ export const recordSwap = mutation({
     const outputSymbol = getSwapEngineAsset(args.outputAssetId)?.symbol ?? args.outputSymbol
     if (status === "success") {
       if (!isSwapPairRoutable(args.inputAssetId, args.outputAssetId)) {
-        throw new Error("INVALID_SWAP: this pair is not swap-routable.")
+        throw codedError("INVALID_SWAP: this pair is not swap-routable.")
       }
       const [inputPrice, outputPrice] = await Promise.all([
         validatedTokenPriceUsd(ctx, inputSymbol, now),
         validatedTokenPriceUsd(ctx, outputSymbol, now),
       ])
       if (!inputPrice || !outputPrice) {
-        throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
+        throw codedError("INVALID_SWAP: both token prices must be current and server-verifiable.")
       }
       const held = await readWalletLiquidBalance(ctx, wallet, args.inputAssetId)
       if (!held || held.amount + 1e-12 < args.inputAmount) {
-        throw new Error("INSUFFICIENT_BALANCE: not enough liquid input token for this swap.")
+        throw codedError("INSUFFICIENT_BALANCE: not enough liquid input token for this swap.")
       }
       const math = computeSwapQuoteMath({
         inputAmount: args.inputAmount,

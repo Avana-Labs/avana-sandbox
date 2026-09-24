@@ -1,3 +1,4 @@
+import { codedError } from "../codedError"
 import { v } from "convex/values"
 import { internalMutation, mutation, query } from "../_generated/server"
 import { getAuthedWallet, getAuthSubject } from "../sandbox/auth"
@@ -52,7 +53,7 @@ export const getMine = query({
   args: {},
   handler: async (ctx) => {
     const wallet = await getAuthedWallet(ctx)
-    if (!wallet) throw new Error("UNAUTHENTICATED: connect a wallet and sign in to read your profile.")
+    if (!wallet) throw codedError("UNAUTHENTICATED: connect a wallet and sign in to read your profile.")
     return ctx.db
       .query("walletProfiles")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -64,7 +65,7 @@ export const savePreferences = mutation({
   args: { preferences: preferencesValidator },
   handler: async (ctx, args) => {
     const wallet = await getAuthedWallet(ctx)
-    if (!wallet) throw new Error("UNAUTHENTICATED: connect a wallet and sign in to update your profile.")
+    if (!wallet) throw codedError("UNAUTHENTICATED: connect a wallet and sign in to update your profile.")
 
     const [existing, authSubject] = await Promise.all([
       ctx.db

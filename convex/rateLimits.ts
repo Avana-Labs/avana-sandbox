@@ -1,3 +1,4 @@
+import { codedError } from "./codedError"
 import { v } from "convex/values"
 import { mutation } from "./_generated/server"
 
@@ -40,7 +41,7 @@ export const consume = mutation({
   handler: async (ctx, { key, limit, windowMs, secret }) => {
     const requiredSecret = process.env.CONVEX_RATE_LIMIT_SECRET
     if (!requiredSecret || !safeEqual(secret, requiredSecret)) {
-      throw new Error("UNAUTHORIZED: rate-limit secret required")
+      throw codedError("UNAUTHORIZED: rate-limit secret required")
     }
     if (
       key.length === 0 ||
@@ -52,7 +53,7 @@ export const consume = mutation({
       windowMs < MIN_WINDOW_MS ||
       windowMs > MAX_WINDOW_MS
     ) {
-      throw new Error("INVALID_RATE_LIMIT: key/limit/windowMs out of bounds")
+      throw codedError("INVALID_RATE_LIMIT: key/limit/windowMs out of bounds")
     }
 
     const now = Date.now()

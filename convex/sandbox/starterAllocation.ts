@@ -1,3 +1,4 @@
+import { codedError } from "../codedError"
 export const STARTER_EQUITY_USD = 1_000_000
 
 export const STARTER_BUCKETS = {
@@ -93,7 +94,7 @@ function allocateBucket(
   seed: number,
 ): StarterAllocationLeg[] {
   if (candidates.length === 0) {
-    throw new Error("STARTER_CATALOG_INCOMPLETE: allocation bucket has no eligible markets.")
+    throw codedError("STARTER_CATALOG_INCOMPLETE: allocation bucket has no eligible markets.")
   }
   const normalizedSeed = seed >>> 0
   const count = Math.min(desiredCount, candidates.length)
@@ -154,7 +155,7 @@ export function assertCatalogCanSatisfyStarter(wallet: string, markets: readonly
   for (const req of bucketReqs) {
     const available = byScope(req.scope).length
     if (available < req.count) {
-      throw new Error(
+      throw codedError(
         `ONBOARDING_CATALOG_INCOMPLETE: ${SCOPE_TO_BUCKET[req.scope]} bucket needs ${req.count} ${req.scope} markets, found ${available}.`,
       )
     }
@@ -171,7 +172,7 @@ export function assertCatalogCanSatisfyStarter(wallet: string, markets: readonly
   for (const leg of chosen) {
     const price = priceBySlug.get(leg.marketSlug)
     if (price === undefined || !(price > 0) || !Number.isFinite(price)) {
-      throw new Error(
+      throw codedError(
         `ONBOARDING_CATALOG_INCOMPLETE: selected market "${leg.marketSlug}" has no positive price (got ${String(price)}).`,
       )
     }
@@ -257,7 +258,7 @@ export function buildStarterAllocationPlan(wallet: string, markets: readonly Sta
     0,
   )
   if (Math.round(total * 100) !== targetCents) {
-    throw new Error(`STARTER_ALLOCATION_INVALID: expected ${STARTER_EQUITY_USD}, received ${total}.`)
+    throw codedError(`STARTER_ALLOCATION_INVALID: expected ${STARTER_EQUITY_USD}, received ${total}.`)
   }
   return plan
 }

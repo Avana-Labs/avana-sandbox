@@ -2049,3 +2049,28 @@ describe("lend books the typed token quantity", () => {
     expect(tx?.tokenAmount).toBe(0.5)
   })
 })
+
+// Prod 2026-09-23: 100 unauthenticated wallet-balance polls each returned a bare
+// "[Request ID: …] Server Error"; the client could not tell sign-in from any other failure.
+describe("blocked states carry stable ConvexError codes", () => {
+  test("an unauthenticated wallet read fails with code UNAUTHENTICATED", async () => {
+    const t = convexTest(schema, modules)
+    const error = await t.query(api.wallet.productBalances.listForWallet, { wallet: WALLET }).then(
+      () => null,
+      (caught: unknown) => caught,
+    )
+    expect((error as { data?: { code?: string } } | null)?.data?.code).toBe("UNAUTHENTICATED")
+  })
+
+  test("a read of another wallet fails with code WALLET_MISMATCH", async () => {
+    const t = convexTest(schema, modules)
+    const error = await t
+      .withIdentity({ subject: WALLET })
+      .query(api.wallet.productBalances.listForWallet, { wallet: OTHER })
+      .then(
+        () => null,
+        (caught: unknown) => caught,
+      )
+    expect((error as { data?: { code?: string } } | null)?.data?.code).toBe("WALLET_MISMATCH")
+  })
+})

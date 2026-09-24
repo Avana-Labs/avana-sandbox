@@ -12,6 +12,7 @@
  * subject), so wallets never contend on a shared row. The cap is deliberately generous: a legit flow
  * writes a handful of rows, so 300/min/identity never trips while still bounding a spray.
  */
+import { codedError } from "./codedError"
 import { RateLimiter } from "@convex-dev/rate-limiter"
 import { components } from "./_generated/api"
 import type { MutationCtx } from "./_generated/server"
@@ -34,7 +35,7 @@ export async function consumeWriteBudget(ctx: MutationCtx, key: string): Promise
     allowed = true
   }
   if (!allowed) {
-    throw new Error("RATE_LIMITED: too many sandbox writes in a short window; please retry shortly.")
+    throw codedError("RATE_LIMITED: too many sandbox writes in a short window; please retry shortly.")
   }
 }
 

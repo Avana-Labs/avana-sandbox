@@ -8,6 +8,7 @@
  * not own, so the gate is on the liquidator identity, never the victim.
  */
 
+import { codedError } from "../codedError"
 import { v } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
@@ -43,13 +44,13 @@ const LIQUIDATION_THRESHOLD_CAP_PCT = 95
 
 function requirePositiveUsd6(value: string, field: string) {
   if (value.length === 0 || value.length > 80 || !/^\d+$/.test(value) || BigInt(value) <= 0n) {
-    throw new Error(`INVALID_LIQUIDATION: ${field} must be a positive usd6 integer.`)
+    throw codedError(`INVALID_LIQUIDATION: ${field} must be a positive usd6 integer.`)
   }
 }
 
 function requireOptionalWad(value: string | null, field: string) {
   if (value !== null && (value.length === 0 || value.length > 80 || !/^\d+$/.test(value))) {
-    throw new Error(`INVALID_LIQUIDATION: ${field} must be a non-negative integer WAD.`)
+    throw codedError(`INVALID_LIQUIDATION: ${field} must be a non-negative integer WAD.`)
   }
 }
 
@@ -112,12 +113,12 @@ export const recordLiquidation = mutation({
   },
   handler: async (ctx, args) => {
     const liquidator = await getAuthedWallet(ctx)
-    if (!liquidator) throw new Error("UNAUTHENTICATED: sign in to record a liquidation.")
+    if (!liquidator) throw codedError("UNAUTHENTICATED: sign in to record a liquidation.")
     if (liquidator !== args.liquidatorWallet.toLowerCase()) {
-      throw new Error("LIQUIDATOR_MISMATCH: the caller must be the liquidator.")
+      throw codedError("LIQUIDATOR_MISMATCH: the caller must be the liquidator.")
     }
     if (!args.intentId || args.intentId.length > MAX_INTENT_ID_LENGTH) {
-      throw new Error("INVALID_LIQUIDATION: intentId is required and must be at most 128 characters.")
+      throw codedError("INVALID_LIQUIDATION: intentId is required and must be at most 128 characters.")
     }
     const prior = await ctx.db
       .query("liquidationActions")
@@ -125,14 +126,14 @@ export const recordLiquidation = mutation({
       .unique()
     if (prior) return { id: prior._id, hash: prior.syntheticTxHash, idempotent: true }
     if (!args.positionId) {
-      throw new Error("INVALID_LIQUIDATION: a victim position is required.")
+      throw codedError("INVALID_LIQUIDATION: a victim position is required.")
     }
     requirePositiveUsd6(args.repaidUsd6, "repaidUsd6")
     requirePositiveUsd6(args.seizedCollateralUsd6, "seizedCollateralUsd6")
     requireOptionalWad(args.healthFactorWadBefore, "healthFactorWadBefore")
     requireOptionalWad(args.healthFactorWadAfter, "healthFactorWadAfter")
     if (args.healthFactorWadBefore !== null && BigInt(args.healthFactorWadBefore) >= 1_000_000_000_000_000_000n) {
-      throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
+      throw codedError("INVALID_LIQUIDATION: the victim position is not underwater.")
     }
     const now = Date.now()
     const recent = await ctx.db
@@ -140,7 +141,7 @@ export const recordLiquidation = mutation({
       .withIndex("by_liquidator_at", (q) => q.eq("liquidatorWallet", liquidator).gte("at", now - 60 * 60 * 1000))
       .take(MAX_LIQUIDATIONS_PER_HOUR)
     if (recent.length >= MAX_LIQUIDATIONS_PER_HOUR) {
-      throw new Error(`RATE_LIMITED: more than ${MAX_LIQUIDATIONS_PER_HOUR} liquidations in the last hour.`)
+      throw codedError(`RATE_LIMITED: more than ${MAX_LIQUIDATIONS_PER_HOUR} liquidations in the last hour.`)
     }
     const hash = `sim-liquidate-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
@@ -148,7 +149,7 @@ export const recordLiquidation = mutation({
       const position = await ctx.db.get(args.positionId)
       const victim = args.wallet.toLowerCase()
       if (!position || position.wallet !== victim || position.product !== "borrow") {
-        throw new Error("INVALID_LIQUIDATION: position does not belong to the victim wallet.")
+        throw codedError("INVALID_LIQUIDATION: position does not belong to the victim wallet.")
       }
       const [collateralRows, debtRows] = await Promise.all([
         ctx.db
@@ -161,9 +162,9 @@ export const recordLiquidation = mutation({
           .collect(),
       ])
       const debt = args.debtPositionId ? debtRows.find((row) => row._id === args.debtPositionId) : debtRows[0]
-      if (!debt) throw new Error("INVALID_LIQUIDATION: debt position was not found.")
+      if (!debt) throw codedError("INVALID_LIQUIDATION: debt position was not found.")
       if (args.marketSlug && args.marketSlug !== position.marketSlug) {
-        throw new Error("INVALID_LIQUIDATION: market does not match the victim position.")
+        throw codedError("INVALID_LIQUIDATION: market does not match the victim position.")
       }
 
       // Server-side solvency + sizing gate. `healthFactorWadBefore` is CLIENT-supplied and
@@ -172,7 +173,7 @@ export const recordLiquidation = mutation({
       // `assertBorrowSolvent` — and cap repay/seize by a real close factor × liquidation bonus.
       const debtTotalUsd6 = debtRows.reduce((sum, row) => sum + BigInt(row.principalBorrowedUsd6), 0n)
       if (debtTotalUsd6 <= 0n) {
-        throw new Error("INVALID_LIQUIDATION: the victim position has no debt to liquidate.")
+        throw codedError("INVALID_LIQUIDATION: the victim position has no debt to liquidate.")
       }
       let liquidationValueUsd = 0
       for (const collateral of collateralRows) {
@@ -183,12 +184,12 @@ export const recordLiquidation = mutation({
       const debtTotalUsd = Number(debtTotalUsd6) / 1_000_000
       // HF = risk-adjusted collateral / debt; reject a solvent victim (HF ≥ 1) outright.
       if (liquidationValueUsd >= debtTotalUsd) {
-        throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
+        throw codedError("INVALID_LIQUIDATION: the victim position is not underwater.")
       }
       const repay = BigInt(args.repaidUsd6)
       // Close factor: repay at most 50% of the outstanding debt per liquidation.
       if (repay * 10_000n > debtTotalUsd6 * BigInt(LIQUIDATION_CLOSE_FACTOR_BPS)) {
-        throw new Error("INVALID_LIQUIDATION: repay exceeds the close factor.")
+        throw codedError("INVALID_LIQUIDATION: repay exceeds the close factor.")
       }
       // Seize ≤ repay × (1 + liquidation bonus), with the bonus clamped server-side.
       const bonusBps = BigInt(
@@ -199,7 +200,7 @@ export const recordLiquidation = mutation({
       )
       const maxSeizeUsd6 = (repay * (10_000n + bonusBps)) / 10_000n
       if (BigInt(args.seizedCollateralUsd6) > maxSeizeUsd6) {
-        throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the close-factor × bonus cap.")
+        throw codedError("INVALID_LIQUIDATION: seized collateral exceeds the close-factor × bonus cap.")
       }
 
       // A liquidation is an exchange, not a free write: charge the authenticated keeper in the
@@ -208,13 +209,13 @@ export const recordLiquidation = mutation({
       const debtAssetId = debt.baseAssetId.toLowerCase()
       const debtPriceUsd = await validatedTokenPriceUsd(ctx, debtAssetId, now)
       if (debtPriceUsd === null) {
-        throw new Error("ORACLE_UNAVAILABLE: current debt-asset price is required for liquidation.")
+        throw codedError("ORACLE_UNAVAILABLE: current debt-asset price is required for liquidation.")
       }
       const liquidatorBalance = await readWalletLiquidBalance(ctx, liquidator, debtAssetId)
       const repaidUsd = Number(repay) / 1_000_000
       const repaymentTokens = repaidUsd / debtPriceUsd
       if (!liquidatorBalance || liquidatorBalance.amount + 1e-9 < repaymentTokens) {
-        throw new Error("INSUFFICIENT_LIQUIDATOR_BALANCE: keeper cannot fund this repayment.")
+        throw codedError("INSUFFICIENT_LIQUIDATOR_BALANCE: keeper cannot fund this repayment.")
       }
       await applyLiquidAssetDelta(
         ctx,
@@ -256,7 +257,7 @@ export const recordLiquidation = mutation({
         remainingSeize -= seized
       }
       if (remainingSeize > 0n) {
-        throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the position value.")
+        throw codedError("INVALID_LIQUIDATION: seized collateral exceeds the position value.")
       }
 
       const collateralBefore = collateralRows.reduce((sum, row) => sum + BigInt(row.collateralValueUsd6 ?? "0"), 0n)
@@ -292,7 +293,7 @@ export const recordLiquidation = mutation({
         ])
         const collateralPriceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
         if (!collateralPriceUsd || !Number.isFinite(collateralPriceUsd) || collateralPriceUsd <= 0) {
-          throw new Error(`ORACLE_UNAVAILABLE: current LP price is required for ${collateralMarket}.`)
+          throw codedError(`ORACLE_UNAVAILABLE: current LP price is required for ${collateralMarket}.`)
         }
         await adjustProductBalanceUsd(
           ctx,

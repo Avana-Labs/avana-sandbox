@@ -1,3 +1,4 @@
+import { codedError } from "../codedError"
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { internalMutation, internalQuery, mutation, query } from "../_generated/server"
@@ -636,7 +637,7 @@ export const recordAction = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    if (!args.intentId || args.intentId.length > MAX_UMBRELLA_INTENT_LENGTH) throw new Error("INVALID_INTENT_ID")
+    if (!args.intentId || args.intentId.length > MAX_UMBRELLA_INTENT_LENGTH) throw codedError("INVALID_INTENT_ID")
     const existingTx = await ctx.db
       .query("transactions")
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
@@ -649,16 +650,16 @@ export const recordAction = mutation({
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", now - 60 * 60 * 1000))
       .take(MAX_UMBRELLA_TX_PER_HOUR)
     if (recent.length >= MAX_UMBRELLA_TX_PER_HOUR) {
-      throw new Error(`RATE_LIMITED: more than ${MAX_UMBRELLA_TX_PER_HOUR} wallet transactions in the last hour.`)
+      throw codedError(`RATE_LIMITED: more than ${MAX_UMBRELLA_TX_PER_HOUR} wallet transactions in the last hour.`)
     }
 
     const market = UMBRELLA_MARKETS[args.marketId]
-    if (!Number.isFinite(args.amount) || args.amount < 0) throw new Error("INVALID_AMOUNT")
+    if (!Number.isFinite(args.amount) || args.amount < 0) throw codedError("INVALID_AMOUNT")
     const amount = Math.max(0, args.amount)
-    if (args.kind !== "claim" && amount <= 0) throw new Error("INVALID_AMOUNT")
+    if (args.kind !== "claim" && amount <= 0) throw codedError("INVALID_AMOUNT")
     const livePriceUsd = args.kind === "claim" ? null : await validatedTokenPriceUsd(ctx, market.symbol, now)
     if (args.kind !== "claim" && !livePriceUsd) {
-      throw new Error("ORACLE_UNAVAILABLE: Umbrella actions require a current Convex token price.")
+      throw codedError("ORACLE_UNAVAILABLE: Umbrella actions require a current Convex token price.")
     }
     const liquid = await readLiquidBalance(ctx, wallet, args.marketId)
     const position = await readUmbrellaPosition(ctx, wallet, args.marketId)
@@ -675,7 +676,7 @@ export const recordAction = mutation({
       : null
 
     if (args.kind === "stake") {
-      if (amount > liquid) throw new Error("INSUFFICIENT_BALANCE")
+      if (amount > liquid) throw codedError("INSUFFICIENT_BALANCE")
       await upsertLiquidBalance(ctx, wallet, args.marketId, liquid - amount, now, livePriceUsd!)
       const nextSuppliedUsd = suppliedUsd + amountUsd
       const payload = {
@@ -711,7 +712,7 @@ export const recordAction = mutation({
         revision: (position.revision ?? 0) + 1,
       })
     } else if (args.kind === "startCooldown") {
-      if (!position) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      if (!position) throw codedError("INVALID_COOLDOWN_AMOUNT")
       // A wallet may hold several concurrent tranches per market, each on its own 20-day /
       // 2-day clock, as long as total cooling <= supplied. The budget is
       // `supplied - (cooling + ready)`: EXPIRED tranches are excluded, because a lapsed
@@ -722,7 +723,7 @@ export const recordAction = mutation({
       const nonExpiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) !== "expired")
       const activeCoolingUsd6 = nonExpiredTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
       const activeCoolingUsd = Number(activeCoolingUsd6) / 1_000_000
-      if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw codedError("INVALID_COOLDOWN_AMOUNT")
       // Retire the recovered expired tranches so they leave the aggregate and can never be
       // double-counted against the new one. This is the UI's "restart cooldown" path.
       for (const tranche of expiredTranches) {
@@ -748,7 +749,7 @@ export const recordAction = mutation({
       })
       await recomputePositionAggregate(ctx, wallet, args.marketId, position._id, now)
     } else {
-      if (!position) throw new Error("COOLDOWN_NOT_READY")
+      if (!position) throw codedError("COOLDOWN_NOT_READY")
       // Unstake consumes ready tranches FIFO (earliest endsAt first). An expired tranche
       // still carrying cooling USD means the window lapsed and must be restarted — never
       // silently swallowed.
@@ -760,10 +761,10 @@ export const recordAction = mutation({
       const readyUsd6 = readyTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
       const readyUsd = Number(readyUsd6) / 1_000_000
       if (readyTranches.length === 0) {
-        if (expiredTranches.length > 0) throw new Error("WITHDRAWAL_WINDOW_EXPIRED")
-        throw new Error("COOLDOWN_NOT_READY")
+        if (expiredTranches.length > 0) throw codedError("WITHDRAWAL_WINDOW_EXPIRED")
+        throw codedError("COOLDOWN_NOT_READY")
       }
-      if (amountUsd > readyUsd + 1e-9) throw new Error("INSUFFICIENT_COOLDOWN_BALANCE")
+      if (amountUsd > readyUsd + 1e-9) throw codedError("INSUFFICIENT_COOLDOWN_BALANCE")
       // Consume FIFO across ready tranches.
       let remaining = amountUsd
       for (const tranche of readyTranches) {
