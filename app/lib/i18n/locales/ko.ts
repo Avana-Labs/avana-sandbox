@@ -57,6 +57,7 @@ const dict: TranslationDictionary = {
   Today: "오늘",
   Yesterday: "어제",
   "Choose collateral": "담보 선택",
+  "Show more": "더 보기",
   "Shared credit": "공유 크레딧",
   "Choose asset to borrow": "빌릴 자산 선택",
   "Choose collateral first": "먼저 담보를 선택하세요",

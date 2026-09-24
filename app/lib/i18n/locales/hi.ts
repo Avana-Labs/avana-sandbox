@@ -65,6 +65,7 @@ const dict: TranslationDictionary = {
   Today: "आज",
   Yesterday: "कल",
   "Choose collateral": "कोलैटरल चुनें",
+  "Show more": "और दिखाएँ",
   "Shared credit": "साझा क्रेडिट",
   "Choose asset to borrow": "उधार लेने के लिए एसेट चुनें",
   "Choose collateral first": "पहले कोलैटरल चुनें",

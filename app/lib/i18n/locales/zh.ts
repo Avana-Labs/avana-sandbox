@@ -132,6 +132,7 @@ const dict: TranslationDictionary = {
   "Open X": "打开 X",
   "Share on X": "分享到 X",
   "Choose collateral": "选择抵押品",
+  "Show more": "显示更多",
   "Shared credit": "共享额度",
   "Choose asset to borrow": "选择借款资产",
   "Choose collateral first": "请先选择抵押品",

@@ -21,7 +21,7 @@ import {
 } from "@/app/dashboard/convex-activity"
 
 const MASK = "••••"
-const ACTIVITY_PAGE_SIZE = 25
+const ACTIVITY_PAGE_SIZE = 10
 const ACTIVITY_MAX = 200
 
 const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
@@ -193,7 +193,6 @@ export function RecentActivity({
   const { t } = useTranslation()
   const router = useRouter()
   const scrollRef = React.useRef<HTMLDivElement>(null)
-  const sentinelRef = React.useRef<HTMLDivElement>(null)
   const [limit, setLimit] = React.useState(ACTIVITY_PAGE_SIZE)
   const cachedConvexRef = React.useRef<PortfolioActivityRow[]>([])
 
@@ -216,24 +215,9 @@ export function RecentActivity({
   const sortedRows = React.useMemo(() => mergeActivityRows(seedRows, convexRows), [convexRows, seedRows])
 
   const loadMore = React.useCallback(() => {
-    if (!hasMore || isLoadingMore) return
+    if ((!hasMore && sortedRows.length <= limit) || isLoadingMore) return
     setLimit((current) => Math.min(current + ACTIVITY_PAGE_SIZE, ACTIVITY_MAX))
-  }, [hasMore, isLoadingMore])
-
-  React.useEffect(() => {
-    const root = scrollRef.current
-    const target = sentinelRef.current
-    if (!root || !target || !hasMore) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) loadMore()
-      },
-      { root, rootMargin: "80px", threshold: 0 },
-    )
-    observer.observe(target)
-    return () => observer.disconnect()
-  }, [hasMore, loadMore, sortedRows.length])
+  }, [hasMore, isLoadingMore, limit, sortedRows.length])
 
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
 
@@ -264,7 +248,7 @@ export function RecentActivity({
           tabIndex={0}
         >
           <div className="divide-y divide-border">
-            {sortedRows.map((row) => {
+            {sortedRows.slice(0, limit).map((row) => {
               const interactive = Boolean(row.txHash)
               return (
                 <div
@@ -305,7 +289,14 @@ export function RecentActivity({
                       {row.primaryLabel}
                     </div>
                     <div className="mt-0.5 truncate text-[12px] leading-4 text-muted-foreground">
-                      {[t(KIND_LABEL[row.kind]), row.secondaryLabel || null, formatRelativeTime(row.at)]
+                      {[
+                        t(KIND_LABEL[row.kind]),
+                        // A sub-label repeating the kind read "Claim · Claim".
+                        row.secondaryLabel && row.secondaryLabel.toLowerCase() !== KIND_LABEL[row.kind].toLowerCase()
+                          ? row.secondaryLabel
+                          : null,
+                        formatRelativeTime(row.at),
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </div>
@@ -333,13 +324,17 @@ export function RecentActivity({
               )
             })}
           </div>
-          {hasMore ? (
-            <div
-              ref={sentinelRef}
-              className="border-t border-border px-3.5 py-3 text-center text-[12px] text-muted-foreground"
-              aria-live="polite"
-            >
-              {isLoadingMore ? `${t("Loading")}…` : null}
+          {/* Paged: 10 rows, then "Show more" (the feed used to scroll through every row). */}
+          {hasMore || sortedRows.length > limit ? (
+            <div className="border-t border-border px-3.5 py-2.5 text-center" aria-live="polite">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={isLoadingMore}
+                className="text-[13px] font-medium text-brand hover:underline disabled:text-muted-foreground disabled:no-underline"
+              >
+                {isLoadingMore ? `${t("Loading")}…` : t("Show more")}
+              </button>
             </div>
           ) : null}
         </div>

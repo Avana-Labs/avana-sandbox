@@ -57,6 +57,7 @@ const dict: TranslationDictionary = {
   Today: "今日",
   Yesterday: "昨日",
   "Choose collateral": "担保を選択",
+  "Show more": "さらに表示",
   "Shared credit": "共有クレジット",
   "Choose asset to borrow": "借り入れる資産を選択",
   "Choose collateral first": "先に担保を選択してください",

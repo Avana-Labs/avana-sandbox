@@ -57,6 +57,7 @@ const dict: TranslationDictionary = {
   Today: "Hari ini",
   Yesterday: "Kemarin",
   "Choose collateral": "Pilih jaminan",
+  "Show more": "Tampilkan lebih banyak",
   "Shared credit": "Kredit bersama",
   "Choose asset to borrow": "Pilih aset untuk dipinjam",
   "Choose collateral first": "Pilih jaminan terlebih dahulu",
