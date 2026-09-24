@@ -5,7 +5,7 @@ import {
   toReceiptData,
 } from "@/app/sandbox/transactions/[hash]/synthetic-transaction-client"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system"
-import { SANDBOX_NETWORK_FEE_USD, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
+import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 
 describe("swapTransactionToReceiptData", () => {
   it("maps canonical swap metadata to the shared receipt", () => {
@@ -114,12 +114,10 @@ describe("toReceiptData — synthetic (non-swap) row", () => {
     marketSlug: "usdc",
   }
 
-  it("records the single canonical network fee — equal to the review estimate (#F1)", () => {
+  it("records the 15 bps platform fee — equal to the review estimate (#F1)", () => {
     const data = toReceiptData(baseRow)
-    // The recorded receipt fee is exactly the constant the preview reads, so the
-    // "~$0.03" estimate can never confirm as a ~30x-larger "$0.89".
-    expect(data.networkFeeUsd).toBe(SANDBOX_NETWORK_FEE_USD)
-    expect(formatActionFeeSummary(baseRow.amountUsd)).toBe(`~ $${SANDBOX_NETWORK_FEE_USD.toFixed(2)}`)
+    expect(data.networkFeeUsd).toBeCloseTo(1.5, 9)
+    expect(formatActionFeeSummary(baseRow.amountUsd)).toBe("~ $1.50")
   })
 
   it("derives a real token symbol from the market slug when no asset is stored (#F3)", () => {

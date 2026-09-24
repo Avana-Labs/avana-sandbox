@@ -26,7 +26,7 @@ const base: ActionSuccessUi = {
 afterEach(cleanup)
 
 describe("ActionSuccessStage network fee", () => {
-  it("uses the canonical sandbox fee for non-swap actions", () => {
+  it("charges the 15 bps platform fee on the amount for non-swap actions", () => {
     render(
       <ActionSuccessStage
         closeHref="/lend"
@@ -35,6 +35,7 @@ describe("ActionSuccessStage network fee", () => {
           receiptContext: {
             verb: "Deposit",
             amountLabel: "1000 USDC",
+            amountUsd: 1000,
             rateLabel: "Supply APY",
             rateValue: "5.00%",
             marketValue: "USDC · Core",
@@ -42,7 +43,7 @@ describe("ActionSuccessStage network fee", () => {
         }}
       />,
     )
-    expect(screen.getByTestId("net-fee").textContent).toBe(String(SANDBOX_NETWORK_FEE_USD))
+    expect(screen.getByTestId("net-fee").textContent).toBe("1.5")
   })
 
   it("keeps the real swap quote fee for swaps (not forced to $0.03)", () => {

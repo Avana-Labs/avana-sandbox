@@ -177,7 +177,9 @@ export function mapMultiplyPreviewToActionUi(
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
     metrics,
-    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
+    networkFeeLabel: formatActionFeeSummary(
+      scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd)),
+    ),
     risk:
       preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < NEAR_LIQUIDATION_HF)
         ? {
@@ -271,7 +273,9 @@ export function mapDeleveragePreviewToActionUi(
         value: liqPrice != null ? formatActionUsd(liqPrice) : "—",
       },
     ],
-    networkFeeLabel: formatActionFeeSummary(preview.after.collateralValueUsd, 0.04),
+    networkFeeLabel: formatActionFeeSummary(
+      Math.max(0, preview.before.collateralValueUsd - preview.after.collateralValueUsd),
+    ),
     risk:
       preview.riskLabel === "danger"
         ? {

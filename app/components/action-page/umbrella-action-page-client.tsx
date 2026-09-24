@@ -177,7 +177,7 @@ function previewFor({
     maxAmount,
     assetSymbol: market.symbol,
     metrics,
-    networkFeeLabel: formatActionFeeSummary(0, 0.03),
+    networkFeeLabel: formatActionFeeSummary(amountUsd),
     risk:
       kind === "stake" || kind === "cooldown"
         ? {

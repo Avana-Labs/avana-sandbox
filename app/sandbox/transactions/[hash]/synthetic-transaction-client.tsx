@@ -10,7 +10,7 @@ import { ExternalLink } from "@/app/components/icons"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
 import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
-import { SANDBOX_NETWORK_FEE_USD } from "@/app/lib/action-system/formatters"
+import { avanaPlatformFeeUsd } from "@/app/lib/action-system/formatters"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -150,7 +150,7 @@ export function toReceiptData(receipt: {
     marketValue: receipt.marketSlug ? receipt.marketSlug.toUpperCase() : null,
     // The review estimate and the receipt read one canonical fee, so a "~$0.03"
     // estimate can no longer confirm as "$0.89" (#F1).
-    networkFeeUsd: SANDBOX_NETWORK_FEE_USD,
+    networkFeeUsd: avanaPlatformFeeUsd(receipt.amountUsd),
     block: syntheticBlockFromHash(hash),
     dateMs: receipt.at,
     hash,

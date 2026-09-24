@@ -69,12 +69,20 @@ export function formatActionNetworkFee(value: number) {
  */
 export const SANDBOX_NETWORK_FEE_USD = 0.03
 
+/** Avana interface fee: 15 bps of the transaction's USD value (see the fee tooltip). */
+export const AVANA_PLATFORM_FEE_BPS = 15
+
+export function avanaPlatformFeeUsd(amountUsd: number) {
+  if (!Number.isFinite(amountUsd) || amountUsd <= 0) return 0
+  return (amountUsd * AVANA_PLATFORM_FEE_BPS) / 10_000
+}
+
 /**
- * The sandbox engines deduct no protocol fee, so the network fee is the only cost. Params are
- * kept for call-site compatibility but unused.
+ * The "Avana Platform Fee" row: 15 bps of the action's USD amount. It read a flat "~$0.03" for
+ * $100 and $5,000 alike. The extra params are kept for call-site compatibility.
  */
-export function formatActionFeeSummary(_amountUsd: number, _networkFeeUsd = SANDBOX_NETWORK_FEE_USD, _bps = 30) {
-  return formatActionNetworkFee(SANDBOX_NETWORK_FEE_USD)
+export function formatActionFeeSummary(amountUsd: number, _networkFeeUsd?: number, _bps?: number) {
+  return formatActionNetworkFee(avanaPlatformFeeUsd(amountUsd))
 }
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {

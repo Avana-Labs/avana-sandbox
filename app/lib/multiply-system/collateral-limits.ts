@@ -80,7 +80,7 @@ export function buildMultiplyOverCapPreviewUi(options: {
     balanceValue: formatActionAmount(options.maxCollateralAmount, options.collateralSymbol, 6),
     maxAmount: options.maxCollateralAmount,
     metrics: [],
-    networkFeeLabel: formatActionFeeSummary(0, 0.04),
+    networkFeeLabel: formatActionFeeSummary(options.collateralAmount * options.collateralPriceUsd),
     risk: null,
     blockedReason: reason,
     validationErrors: [reason],
