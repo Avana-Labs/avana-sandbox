@@ -79,6 +79,11 @@ export function PoolPickerDialog({
                   <span className="font-data text-[13px] font-normal tabular-nums">
                     {mode === "repay" ? (debtUsd > 0 ? compact(debtUsd) : t("No debt")) : compact(pool.collateralUsd)}
                   </span>
+                  {/* The value is the credit shared across this pool's group (e.g. every Uniswap
+                      v2 pool), which read as LP the wallet holds in this pool. */}
+                  {mode !== "repay" && pool.ownCollateralUsd === 0 && pool.collateralUsd > 0 ? (
+                    <span className="text-[11px] leading-4 text-muted-foreground">{t("Shared credit")}</span>
+                  ) : null}
                   <span
                     className={cn("inline-flex items-center gap-1 text-[11px] font-normal leading-4", status.textClass)}
                   >

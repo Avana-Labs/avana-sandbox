@@ -57,6 +57,7 @@ const dict: TranslationDictionary = {
   Today: "Vandaag",
   Yesterday: "Gisteren",
   "Choose collateral": "Kies onderpand",
+  "Shared credit": "Gedeeld krediet",
   "Choose asset to borrow": "Kies asset om te lenen",
   "Choose collateral first": "Kies eerst onderpand",
   "No borrowable assets for this collateral.": "Geen leenbare assets voor dit onderpand.",

@@ -65,6 +65,7 @@ const dict: TranslationDictionary = {
   Today: "اليوم",
   Yesterday: "أمس",
   "Choose collateral": "اختر الضمان",
+  "Shared credit": "رصيد مشترك",
   "Choose asset to borrow": "اختر الأصل المراد اقتراضه",
   "Choose collateral first": "اختر الضمان أولاً",
   "No borrowable assets for this collateral.": "لا توجد أصول قابلة للاقتراض لهذا الضمان.",

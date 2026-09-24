@@ -120,6 +120,41 @@ describe("borrow product balances", () => {
     expect(collateral?.ltvPct).toBe(76.5)
   })
 
+  // Prod 2026-09-23: the dashboard's Pools table showed the dev wallet's unpledged AURA/WETH and
+  // WBTC/ETH LP at a flat $43,750.00; with no collateral row the reprice had no anchor.
+  test("reprices an unpledged pool balance at the live LP price", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: MARKET,
+        chainId: 1,
+        name: "ETH / USDC",
+        symbol: "ETH / USDC",
+        maxLtvPct: 76.5,
+        priceUsd: 150,
+        createdAt: 1,
+      })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet,
+        marketId: MARKET,
+        poolId: "eth-usdc-lp",
+        symbol: "ETH / USDC LP",
+        amount: 8,
+        valueUsd: 1000,
+        state: "poolAvailable",
+        updatedAt: Date.now(),
+      })
+    })
+    const balances = await t
+      .withIdentity({ subject: WALLET })
+      .query(api.wallet.productBalances.listForWallet, { wallet: WALLET })
+    const available = balances.borrow.find((row) => row.marketId === MARKET && row.state === "poolAvailable")
+    expect(available?.valueUsd).toBeCloseTo(1200, 6)
+    expect(available?.amount).toBeCloseTo(8, 6)
+  })
+
   test("does NOT inflate USD-denominated seeded collateral against a live LP unit price", async () => {
     const t = convexTest(schema, modules)
     const wallet = WALLET.toLowerCase()

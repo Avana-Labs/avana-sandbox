@@ -135,6 +135,7 @@ const dict: TranslationDictionary = {
   "Open X": "Abrir X",
   "Share on X": "Compartir en X",
   "Choose collateral": "Elige el colateral",
+  "Shared credit": "Crédito compartido",
   "Choose asset to borrow": "Elige el activo a pedir prestado",
   "Choose collateral first": "Primero elige el colateral",
   "No borrowable assets for this collateral.": "No hay activos para pedir prestado con este colateral.",

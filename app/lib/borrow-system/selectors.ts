@@ -231,12 +231,16 @@ export function selectAllAvailableCollateralPools(state: BorrowSystemState, wall
     // $0.00 while a borrow against that scope is allowed.
     const metrics = account ? metricsForPosition(state, walletId, market.id) : null
     const collateralUsd = metrics ? fixedToNumber(metrics.poolCollateralValueUsd6, 6) : 0
+    const ownCollateralUsd = (account?.collateralPositions ?? [])
+      .filter((position) => position.marketId === market.id)
+      .reduce((sum, position) => sum + fixedToNumber(currentCollateralValueUsd6(position, market), 6), 0)
     return {
       id: market.id,
       name: market.display.name,
       venue: market.display.venue,
       category: `${market.display.venue} ${market.display.feeTier}`,
       collateralUsd,
+      ownCollateralUsd,
       maxLtv: Math.round(fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 1000) / 10,
       borrowPowerUsd: metrics ? fixedToNumber(metrics.creditLimitUsd6, 6) : 0,
       liquidationUsd: metrics ? fixedToNumber(metrics.liquidationValueUsd6, 6) : 0,

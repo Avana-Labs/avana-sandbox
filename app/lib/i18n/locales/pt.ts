@@ -56,6 +56,7 @@ const dict: TranslationDictionary = {
   Today: "Hoje",
   Yesterday: "Ontem",
   "Choose collateral": "Escolha a garantia",
+  "Shared credit": "Crédito compartilhado",
   "Choose asset to borrow": "Escolha o ativo para tomar emprestado",
   "Choose collateral first": "Escolha a garantia primeiro",
   "No borrowable assets for this collateral.": "Nenhum ativo para tomar emprestado com esta garantia.",
