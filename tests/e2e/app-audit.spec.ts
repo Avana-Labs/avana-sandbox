@@ -205,31 +205,19 @@ test.describe("Borrow pages", () => {
     const viewport = testInfo.project.name
     await browseRoute(page, viewport, "/borrow", { clickTabs: false })
 
-    // Click category tabs (desktop bar or mobile dropdown)
-    const desktopCategoryTabs = page.locator(".hidden.md\\:flex button").filter({
-      hasText: /^(All|BTC Based|ETH Based|Forex Based|Utility Based|Smart Pools)$/,
-    })
-    const mobileCategoryDropdown = page.locator(".flex.md\\:hidden button[aria-haspopup='listbox']").first()
-
-    if (
-      await desktopCategoryTabs
-        .first()
-        .isVisible()
-        .catch(() => false)
-    ) {
-      const count = await desktopCategoryTabs.count()
-      for (let i = 0; i < count; i++) {
-        await desktopCategoryTabs.nth(i).click()
-        await page.waitForTimeout(300)
-      }
-    } else if (await mobileCategoryDropdown.isVisible().catch(() => false)) {
-      await mobileCategoryDropdown.click()
-      const btcOption = page.getByRole("button", { name: "BTC Based", exact: true })
-      if (await btcOption.isVisible().catch(() => false)) {
-        await btcOption.click()
-        await page.waitForTimeout(300)
-      }
+    // Open each filter pill (All Chains / Hubs / Markets / Assets), pick the first live option,
+    // then clear everything again.
+    const filters = page.getByTestId("market-filters")
+    for (const facet of ["chains", "hubs", "markets", "assets"]) {
+      await filters.locator(`[data-facet='${facet}'] > button`).first().click()
+      const panel = page.getByRole("dialog")
+      await expect(panel).toBeVisible()
+      await panel.getByRole("checkbox").and(page.locator(":not([disabled])")).first().click()
+      await page.keyboard.press("Escape")
+      await expect(panel).toBeHidden()
     }
+    const clearAll = filters.getByRole("button", { name: "Clear all" })
+    if (await clearAll.isVisible().catch(() => false)) await clearAll.click()
 
     // Click first pool link if available
     const poolLink = page.locator("a[href*='/borrow/']").first()

@@ -37,8 +37,17 @@ import {
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
-import { CATEGORY_CHIPS, matchesCategory, type CategoryChip } from "@/app/lib/markets/category"
+import { MarketFiltersBar, MarketFiltersEmptyState } from "@/app/lib/ui/market-filters"
+import {
+  EMPTY_MARKET_FILTERS,
+  LEND_MARKET_OPTIONS,
+  buildAssetOptions,
+  lendFilterItem,
+  matchesMarketFilters,
+  type MarketFilterState,
+} from "@/app/lib/markets/filters"
+
+const isLendCategory = (value: string) => LEND_MARKET_OPTIONS.some((option) => option.id === value)
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
@@ -390,20 +399,24 @@ export function LendAssetSpokes({
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
-  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
-  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>(() => {
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a Markets category via ?category=.
+  const [filters, setFilters] = useState<MarketFilterState>(() => {
     const param = searchParams?.get("category")
-    return param && CATEGORY_CHIPS.lend.some((chip) => chip.id === param) ? (param as CategoryChip["id"]) : "all"
+    return { ...EMPTY_MARKET_FILTERS, markets: param && isLendCategory(param) ? [param] : [] }
   })
 
-  // Deep links from the header mega-menu ("View all") keep the chip in sync when the query
-  // changes on this same page; the #markets hash on the link handles scrolling here.
+  // Deep links from the header mega-menu ("View all") keep the Markets filter in sync when the
+  // query changes on this same page; the #markets hash on the link handles scrolling here.
   const categoryParam = searchParams?.get("category")
   useEffect(() => {
-    if (categoryParam && CATEGORY_CHIPS.lend.some((chip) => chip.id === categoryParam)) {
-      setCurrentTab(categoryParam as CategoryChip["id"])
+    if (categoryParam && isLendCategory(categoryParam)) {
+      setFilters((current) => ({ ...current, markets: [categoryParam] }))
     }
   }, [categoryParam])
+
+  const allRows = useMemo(() => groups.flatMap((group) => group.rows), [groups])
+  const filterItems = useMemo(() => allRows.map((row) => lendFilterItem(row.symbol)), [allRows])
+  const assetOptions = useMemo(() => buildAssetOptions(allRows), [allRows])
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -413,14 +426,14 @@ export function LendAssetSpokes({
         const rows = group.rows.filter((row) => {
           const matchesSearch =
             query.length === 0 || row.name.toLowerCase().includes(query) || row.symbol.toLowerCase().includes(query)
-          return matchesSearch && matchesCategory(row.symbol, currentTab)
+          return matchesSearch && matchesMarketFilters(lendFilterItem(row.symbol), filters)
         })
 
         return { ...group, rows }
       })
       .filter((group) => group.rows.length > 0)
     return orderLendGroupsForReveal(filtered)
-  }, [groups, search, currentTab])
+  }, [groups, search, filters])
   const totalRows = filteredGroups.reduce((sum, group) => sum + group.rows.length, 0)
 
   // Reveal assets on scroll instead of paginating: only the first chunk of rows
@@ -429,7 +442,7 @@ export function LendAssetSpokes({
   const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
     total: totalRows,
     chunkSize: LEND_PAGE_SIZE,
-    resetKey: `${currentTab}|${search.trim().toLowerCase()}`,
+    resetKey: `${JSON.stringify(filters)}|${search.trim().toLowerCase()}`,
   })
   const revealedGroups = useMemo(
     () => paginateLendAssetGroups(filteredGroups, 0, visibleCount),
@@ -443,10 +456,12 @@ export function LendAssetSpokes({
       style={{ overflowAnchor: "none" }}
     >
       <div className="py-2.5">
-        <MarketFilterBar
-          chips={CATEGORY_CHIPS.lend}
-          tab={currentTab}
-          onTabChange={setCurrentTab}
+        <MarketFiltersBar
+          items={filterItems}
+          value={filters}
+          onChange={setFilters}
+          marketOptions={LEND_MARKET_OPTIONS}
+          assetOptions={assetOptions}
           search={search}
           onSearchChange={setSearch}
           searchPlaceholder={t("Search assets")}
@@ -472,9 +487,13 @@ export function LendAssetSpokes({
             </div>
           ))
         ) : (
-          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
-            {t("No assets match these filters.")}
-          </div>
+          <MarketFiltersEmptyState
+            message={t("No assets match these filters.")}
+            onClear={() => {
+              setFilters(EMPTY_MARKET_FILTERS)
+              setSearch("")
+            }}
+          />
         )}
       </div>
 

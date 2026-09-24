@@ -105,8 +105,8 @@ describe("BorrowWorkspace zero-result search", () => {
     expect(screen.getByText(/No markets match/)).toBeInTheDocument()
     expect(screen.getByText(/zzz-no-match/)).toBeInTheDocument()
 
-    // Clearing the search restores the list.
-    fireEvent.click(screen.getByRole("button", { name: /clear search/i }))
+    // Clearing the filters (search included) restores the list.
+    fireEvent.click(screen.getByRole("button", { name: /clear filters/i }))
     expect(screen.getByTestId("pools-table")).toBeInTheDocument()
     expect(screen.queryByText(/No markets match/)).toBeNull()
   })
