@@ -40,7 +40,7 @@ describe("borrow preview builders", () => {
 
   it("matches engine repay simulations", () => {
     const state = makeExampleBorrowSystemState()
-    const model = buildRepayPreviewModel(state, "wallet-1", EXAMPLE_WALLET_1_DEBT_ID, 300)
+    const model = buildRepayPreviewModel(state, "wallet-1", EXAMPLE_WALLET_1_DEBT_ID, 300, state.now)
     const simulation = simulateRepay(state, {
       type: "repay",
       walletId: "wallet-1",
@@ -91,5 +91,22 @@ describe("borrow preview builders", () => {
         ? null
         : Number.parseFloat(formatFixed(simulation.after.metrics.healthFactorWad, 18)),
     )
+  })
+})
+
+// Prod 2026-09-23: the dashboard showed 900.67 USDC owed while Repay offered a $899.70 maximum,
+// so a "full" repay left the interest accrued since the last write behind.
+describe("buildRepayPreviewModel accrual", () => {
+  it("counts interest accrued since the last write in the owed amount", () => {
+    const state = makeExampleBorrowSystemState()
+    const atLastWrite = buildRepayPreviewModel(state, "wallet-1", EXAMPLE_WALLET_1_DEBT_ID, 1, state.now)
+    const aMonthLater = buildRepayPreviewModel(
+      state,
+      "wallet-1",
+      EXAMPLE_WALLET_1_DEBT_ID,
+      1,
+      state.now + 30 * 86_400_000,
+    )
+    expect(aMonthLater.remainingDebtUsd).toBeGreaterThan(atLastWrite.remainingDebtUsd)
   })
 })

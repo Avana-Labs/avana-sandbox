@@ -42,7 +42,7 @@ describe("resolve borrow context", () => {
       borrowableAssets: [],
     }
 
-    const items = repaySelectItemsForWallet(session, "demo-wallet")
+    const items = repaySelectItemsForWallet(session, "demo-wallet", session.state.now)
     expect(items[0]?.trailingLabel).toContain("$1,250")
   })
 

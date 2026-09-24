@@ -2,7 +2,13 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
+import {
+  accrueBorrowSystemState,
+  parseFixed,
+  currentDebtValueUsd6,
+  usd6ToNumber,
+  wadToPercent,
+} from "@/app/lib/credit-engine"
 import {
   buildClaimBorrowAction,
   buildHomeClaimPreview,
@@ -177,9 +183,11 @@ export function BorrowActionPageClient({
   const lastInitialAssetIdRef = useRef(initialAssetId)
   const lastInitialMarketIdRef = useRef(initialMarketId)
 
+  // Accrued to now so Outstanding debt and Max include the interest since the last write (the
+  // dashboard figure); the stored index made a "full" repay leave that interest behind.
   const debtPositions = useMemo(
-    () => session.state.accounts[walletId]?.debtPositions ?? [],
-    [session.state.accounts, walletId],
+    () => accrueBorrowSystemState(session.state, Date.now()).accounts[walletId]?.debtPositions ?? [],
+    [session.state, walletId],
   )
   const [debtPositionId, setDebtPositionId] = useState(initialDebtId ?? "")
 
@@ -654,6 +662,7 @@ export function BorrowActionPageClient({
             debtPositionId: debtPosition.id,
             assetId: debtPosition.assetId,
             amountUsd6: parseFixed(repayAmountUsd.toFixed(6), 6),
+            at: Date.now(),
           }),
         )
         .then((preview) => {
@@ -934,6 +943,8 @@ export function BorrowActionPageClient({
           debtPositionId: debtPosition.id,
           assetId: debtPosition.assetId,
           amountUsd6: parseFixed(repay.amountUsd.toFixed(6), 6),
+          // Accrue to now so a full repay covers the interest since the last write.
+          at: Date.now(),
         })
       } else if (kind === "claim") {
         const positions = resolveClaimPositions(session, walletId, marketId)
