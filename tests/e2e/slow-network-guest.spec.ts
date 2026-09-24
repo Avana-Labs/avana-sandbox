@@ -11,12 +11,31 @@ test.describe("cold visits on slow connections", () => {
     await cdp.send("Network.setCacheDisabled", { cacheDisabled: true })
     await cdp.send("Network.emulateNetworkConditions", {
       offline: false,
-      latency: 150,
-      downloadThroughput: 200_000,
-      uploadThroughput: 93_750,
+      latency: 400,
+      downloadThroughput: 50_000,
+      uploadThroughput: 50_000,
       connectionType: "cellular3g",
     })
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 })
+  })
+
+  test("home workspace appears on a cold Slow 3G visit", async ({ page }) => {
+    const startedAt = Date.now()
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await expect(page.getByRole("main")).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole("button", { name: "Select Asset" })).toBeVisible({ timeout: 20_000 })
+
+    const firstContentfulPaintMs = await page.evaluate(
+      () => performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? null,
+    )
+    expect(firstContentfulPaintMs, "Slow 3G landing page should paint real workspace content").not.toBeNull()
+    const interactiveMs = Date.now() - startedAt
+    await test.info().attach("cold-slow-3g-landing-metrics.json", {
+      body: JSON.stringify({ firstContentfulPaintMs, interactiveMs }, null, 2),
+      contentType: "application/json",
+    })
+    expect(firstContentfulPaintMs).toBeLessThan(8_000)
+    expect(interactiveMs, "Slow 3G landing workspace exceeded its cold-visit budget").toBeLessThan(12_000)
   })
 
   test("first search tap works without waiting for result icons", async ({ page }) => {
