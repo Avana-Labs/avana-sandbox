@@ -1,5 +1,6 @@
 "use client"
 
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
 import dynamic from "next/dynamic"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -356,6 +357,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
   const primaryLabel =
     !inputAsset || !outputAsset
       ? "Select assets"
@@ -443,7 +445,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               tone="inset"
             />
           </div>
-
           {amount.trim() && inputAsset && !validation.valid && validation.reason ? (
             <div
               className="rounded-radius-lg border border-danger/30 bg-danger/10 px-4 py-3 text-[14px] text-foreground"
@@ -452,7 +453,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               {swapValidationMessage(validation.reason, inputAsset)}
             </div>
           ) : null}
-
           {outcome ? (
             <div
               className={`rounded-radius-xl border p-4 text-[14px] ${
@@ -464,25 +464,34 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               {outcome.message}
             </div>
           ) : null}
-
-          <ActionFooter
-            primaryLabel={primaryLabel}
-            secondaryHref={returnHref}
-            primaryDisabled={
-              Boolean(networkGuard.blockedReason) ||
-              !validation.valid ||
-              quoteState === "loading" ||
-              (!quote && quoteState !== "error")
-            }
-            onPrimary={() => {
-              if (quoteState === "error") {
-                setQuoteRetry((current) => current + 1)
-                return
+          {/* A guest saw a disabled "Select assets" with no way forward; match the configure stage. */}
+          {accessLabel ? (
+            <ActionFooter
+              primaryLabel={t(accessLabel)}
+              primaryHref={TRANSACT_ACCESS_HREF}
+              secondaryHref={returnHref}
+              sticky
+            />
+          ) : (
+            <ActionFooter
+              primaryLabel={primaryLabel}
+              secondaryHref={returnHref}
+              primaryDisabled={
+                Boolean(networkGuard.blockedReason) ||
+                !validation.valid ||
+                quoteState === "loading" ||
+                (!quote && quoteState !== "error")
               }
-              if (previewUi) setStage("review")
-            }}
-            sticky
-          />
+              onPrimary={() => {
+                if (quoteState === "error") {
+                  setQuoteRetry((current) => current + 1)
+                  return
+                }
+                if (previewUi) setStage("review")
+              }}
+              sticky
+            />
+          )}
         </div>
       ) : null}
 

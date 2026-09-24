@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { SwapPageClient } from "@/app/swap/swap-page-client"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -26,6 +27,18 @@ function renderSwap() {
 }
 
 describe("SwapPageClient", () => {
+  // Prod 2026-09-23: a guest on /swap saw only a disabled "Select assets" button.
+  it("sends a guest to connect a wallet instead of a disabled button", () => {
+    render(
+      <TransactAccessContext.Provider value="guest">
+        <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
+          <SwapPageClient />
+        </AvanaSessionsProvider>
+      </TransactAccessContext.Provider>,
+    )
+    expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/dashboard")
+  })
+
   it("starts with no assets selected on the standalone swap route", () => {
     render(
       <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
