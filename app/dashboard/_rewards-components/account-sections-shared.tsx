@@ -14,7 +14,6 @@ import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {} from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
@@ -41,6 +40,7 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+import { TokenTickerPriceLabel } from "@/app/lib/ui/token-ticker-price-label"
 
 /** Adaptive token-amount precision so `amount × unit price` reconciles with the USD value. */
 function formatAvailableAmount(value: number, symbol: string) {
@@ -147,10 +147,6 @@ export function ProductAvailableCard({
   if (rows.length === 0) return null
   const total = rows.reduce((sum, row) => sum + row.valueUsd, 0)
   const m = (value: string) => (showDollarAmounts ? value : MASK)
-  const priceLabel = (symbol: string) => {
-    const price = priceFor(symbol)
-    return price !== undefined ? formatTokenPrice(price) : symbol
-  }
 
   return (
     <section className="min-w-0 space-y-3">
@@ -188,7 +184,9 @@ export function ProductAvailableCard({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
-                      <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>{priceLabel(row.symbol)}</div>
+                      <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
+                        <TokenTickerPriceLabel symbol={row.symbol} />
+                      </div>
                     </div>
                   </div>
                 </td>

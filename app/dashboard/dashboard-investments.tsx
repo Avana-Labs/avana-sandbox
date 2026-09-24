@@ -11,8 +11,6 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { formatTokenPrice } from "@/app/lib/prices/format"
 import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
@@ -35,6 +33,7 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+import { TokenTickerPriceLabel } from "@/app/lib/ui/token-ticker-price-label"
 
 const MASK = "••••"
 
@@ -83,17 +82,6 @@ function formatTokenAmount(value: number, symbol: string) {
 
 function resolveMarketId(token: PortfolioSupplyPosition) {
   return token.marketId ?? token.symbol.toLowerCase()
-}
-
-/**
- * Asset second line: the live unit price, falling back to the symbol when the
- * oracle has none — identical to the lend markets table (`AssetSubLabel`), so
- * this dashboard table matches it for ANY onboarded token, priced or not.
- */
-function AssetPriceSubLabel({ symbol }: { symbol: string }) {
-  const priceFor = useCanonicalPriceFor()
-  const price = priceFor(symbol)
-  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
 }
 
 /**
@@ -234,8 +222,8 @@ export function DashboardInvestments({
                           <TokenIcon symbol={token.symbol} size="table" />
                           <div className="flex min-w-0 flex-col">
                             <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
-                            <span className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
-                              <AssetPriceSubLabel symbol={token.symbol} />
+                            <span className={cn("min-w-0 truncate tabular-nums", TABLE_CELL_SECONDARY)}>
+                              <TokenTickerPriceLabel symbol={token.symbol} />
                             </span>
                           </div>
                         </div>

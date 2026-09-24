@@ -33,6 +33,7 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+import { TickerPriceFlip } from "@/app/lib/ui/token-ticker-price-label"
 
 const WALLET_TOKENS_LAYOUT = tableColumnLayout(
   [
@@ -522,7 +523,10 @@ function WalletBalanceSection({
                         {row.name}
                       </div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                        {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
+                        <TickerPriceFlip
+                          symbol={row.symbol}
+                          price={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : undefined}
+                        />
                       </div>
                     </div>
                   </div>
