@@ -1752,6 +1752,9 @@ const dict: TranslationDictionary = {
   "Total value of LP positions pledged to this market by all users.":
     "모든 사용자가 이 마켓에 담보로 맡긴 LP 포지션의 총 가치입니다.",
   "Your wallet balance of this token, ready to use.": "지갑에 있는 이 토큰의 잔액으로, 바로 사용할 수 있습니다.",
+  "Asset on": "자산 네트워크",
+  "Market on": "마켓 네트워크",
+  "View on explorer": "익스플로러에서 보기",
 }
 
 export default dict

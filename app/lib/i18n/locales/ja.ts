@@ -1823,6 +1823,9 @@ const dict: TranslationDictionary = {
   "Total value of LP positions pledged to this market by all users.":
     "全ユーザーがこのマーケットに担保として預けたLPポジションの総額。",
   "Your wallet balance of this token, ready to use.": "このトークンのウォレット残高。すぐに使えます。",
+  "Asset on": "資産のネットワーク",
+  "Market on": "マーケットのネットワーク",
+  "View on explorer": "エクスプローラーで表示",
 }
 
 export default dict

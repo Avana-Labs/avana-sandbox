@@ -1801,6 +1801,9 @@ const dict: TranslationDictionary = {
   "Total amount supplied to this market by all users.": "所有用户向此市场供应的总额。",
   "Total value of LP positions pledged to this market by all users.": "所有用户在此市场质押的 LP 头寸总价值。",
   "Your wallet balance of this token, ready to use.": "你钱包中此代币的余额，可随时使用。",
+  "Asset on": "资产所在网络",
+  "Market on": "市场所在网络",
+  "View on explorer": "在浏览器中查看",
 }
 
 export default dict

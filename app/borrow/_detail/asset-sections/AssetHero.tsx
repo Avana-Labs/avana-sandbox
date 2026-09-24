@@ -1,17 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { Copy, Globe, MessageSquare } from "@/app/components/icons"
+import { Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TestnetMetricsBadge } from "@/app/components/testnet-metrics-badge"
+import { HeroContractLine } from "@/app/components/hero-contract-line"
 import {
   buildFeedFromRangeSeries,
-  formatHeroContractLabel,
   isPlaceholderHeroContractAddress,
   isSafeHeroLink,
   resolveHeroContractAddress,
@@ -46,7 +45,6 @@ export function AssetHeroIdentity({
       ? detail.hero.contractAddress
       : null
   const contractAddress = providedContractAddress ?? resolveHeroContractAddress(detail.id)
-  const contractLabel = detail.hero.contractLabel ?? formatHeroContractLabel(contractAddress)
   // A synthetic placeholder (or a purely id-derived fallback address) points at no
   // real contract — suppress the copy action and the Etherscan link for it.
   const isPlaceholderContract = !providedContractAddress || isPlaceholderHeroContractAddress(providedContractAddress)
@@ -97,30 +95,12 @@ export function AssetHeroIdentity({
                 </span>
               ) : null}
             </div>
-            <div className="mt-0 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
-              {/* Testnet: the network label is swapped for the Testnet badge until mainnet.
-                  Restore this line and delete the badge when testnet ends:
-                  <span className="leading-none text-foreground/75">{detail.hero.chain}</span> */}
-              <TestnetMetricsBadge label={t("Testnet")} />
-              <span aria-hidden className="h-5 w-px bg-border" />
-              {isPlaceholderContract ? (
-                <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
-                  {contractLabel}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(contractAddress)
-                  }}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
-                  aria-label={`${t("Copy")} ${contractLabel}`}
-                >
-                  <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                  <span>{contractLabel}</span>
-                </button>
-              )}
-            </div>
+            <HeroContractLine
+              contextLabel="Asset on"
+              address={contractAddress}
+              isPlaceholder={isPlaceholderContract}
+              explorerHref={`https://etherscan.io/address/${contractAddress}`}
+            />
           </div>
         </div>
 

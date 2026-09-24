@@ -100,6 +100,12 @@ export function isPlaceholderHeroContractAddress(address?: string | null): boole
   return body.toLowerCase() === chunk.repeat(5)
 }
 
+/** The explorer URL only when it points at a real contract address; otherwise null. */
+export function contractExplorerHref(url?: string | null): string | null {
+  const address = addressFromExplorerUrl(url ?? undefined)
+  return url && address && !isPlaceholderHeroContractAddress(address) ? url : null
+}
+
 /** Unsafe only when the URL wraps a synthetic placeholder address (a fake explorer link). */
 export function isSafeHeroLink(url?: string | null): boolean {
   if (!url) return false

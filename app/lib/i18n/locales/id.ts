@@ -1791,6 +1791,9 @@ const dict: TranslationDictionary = {
   "Total value of LP positions pledged to this market by all users.":
     "Total nilai posisi LP yang dijaminkan ke pasar ini oleh semua pengguna.",
   "Your wallet balance of this token, ready to use.": "Saldo token ini di wallet kamu, siap digunakan.",
+  "Asset on": "Aset di",
+  "Market on": "Pasar di",
+  "View on explorer": "Lihat di explorer",
 }
 
 export default dict

@@ -1801,6 +1801,9 @@ const dict: TranslationDictionary = {
   "Total value of LP positions pledged to this market by all users.":
     "Общая стоимость LP-позиций, внесённых в залог на этот рынок всеми пользователями.",
   "Your wallet balance of this token, ready to use.": "Баланс этого токена в вашем кошельке, готовый к использованию.",
+  "Asset on": "Актив в",
+  "Market on": "Рынок в",
+  "View on explorer": "Открыть в обозревателе",
 }
 
 export default dict
