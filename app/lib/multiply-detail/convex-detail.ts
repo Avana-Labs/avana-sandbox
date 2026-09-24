@@ -27,7 +27,7 @@ import {
   sortAboutContractAddressRows,
 } from "@/app/lib/detail-page/about-contract-addresses"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
-import { getMultiplyMarketDetail } from "./index"
+import { getMultiplyMarketDetail, withLiveMultiplyRates } from "./index"
 import type { MultiplyMarketDetail, MultiplyTxHistoryRow } from "./index"
 import type { QuickStat } from "@/app/lib/borrow-detail"
 
@@ -157,7 +157,7 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     { clearWhenMissing: mode === "live" },
   )
 
-  return applyRiskParametersToAbout(
+  const withRiskParameters = applyRiskParametersToAbout(
     injectMultiplyContractAddressStats(
       {
         ...hydrated,
@@ -167,6 +167,7 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     ),
     riskParameters,
   )
+  return withLiveMultiplyRates(withRiskParameters, snapshot)
 }
 
 /**
