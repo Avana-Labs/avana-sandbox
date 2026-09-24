@@ -79,11 +79,12 @@ export function formatActionFeeSummary(_amountUsd: number, _networkFeeUsd = SAND
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
-  // Strip trailing zeros in both branches so whole amounts read "12500" not
-  // "12500.00" while fractional amounts keep their significant digits.
-  const rounded =
-    assetAmount >= 100
-      ? assetAmount.toFixed(2).replace(/\.?0+$/, "")
-      : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
+  // Trailing zeros drop in both branches ("12,500", not "12,500.00") while fractional amounts
+  // keep their significant digits. Thousands are grouped: "13099.82" and "78102749.86" were
+  // hard to read next to the grouped USD figures.
+  const rounded = assetAmount.toLocaleString("en-US", {
+    maximumFractionDigits: assetAmount >= 100 ? 2 : Math.min(digits, 6),
+    minimumFractionDigits: 0,
+  })
   return `${rounded} ${symbol}`
 }

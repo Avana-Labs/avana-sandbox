@@ -1,5 +1,6 @@
 "use client"
 
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { useRouter } from "next/navigation"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -223,7 +224,7 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
         <PairedTokenIcons row={row} />
         <span className="min-w-0">
           <span className={cn("block truncate", TABLE_CELL_PRIMARY)}>
-            {row.collateralToken} / {row.borrowableToken}
+            {formatTokenDisplaySymbol(row.collateralToken)} / {formatTokenDisplaySymbol(row.borrowableToken)}
           </span>
           <span className={cn("block truncate", TABLE_CELL_SECONDARY)}>
             {row.multiplier.toFixed(2)}x {t("leverage")}
@@ -286,7 +287,7 @@ function liqPriceLabel(
   liqPrice: (value: number | null) => string,
 ) {
   if (row.liquidationPriceUsd == null) return `${t("Liq.")} —`
-  return `${t("Liq.")} ${liqPrice(row.liquidationPriceUsd)} (${row.collateralToken})`
+  return `${t("Liq.")} ${liqPrice(row.liquidationPriceUsd)} (${formatTokenDisplaySymbol(row.collateralToken)})`
 }
 
 function RiskCell({ row, liqPrice }: { row: PortfolioMultiplyCollateral; liqPrice: (value: number | null) => string }) {

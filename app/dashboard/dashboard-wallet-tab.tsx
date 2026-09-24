@@ -433,7 +433,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
           />
           <WalletMetric
             label={t("Avana Boost")}
-            value={boost != null ? `${boost.toFixed(2)}×` : DASH}
+            value={boost != null ? `${boost.toFixed(2)}x` : DASH}
             description="Your Avana rank — a per-wallet standing that boosts your edge across Lend, Borrow, and Swap. The higher it climbs, the more it unlocks."
           />
           <WalletMetric

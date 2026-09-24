@@ -1,5 +1,6 @@
 "use client"
 
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { Suspense, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -330,17 +331,17 @@ export function MultiplyAvailableMarketsCard({
                     />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>
-                        {t("Supply")} {row.market.collateralAsset.symbol}
+                        {t("Supply")} {formatTokenDisplaySymbol(row.market.collateralAsset.symbol)}
                       </div>
                       <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
-                        {t("Borrow")} {row.market.borrowAsset.symbol}
+                        {t("Borrow")} {formatTokenDisplaySymbol(row.market.borrowAsset.symbol)}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                   <div className={TABLE_CELL_NUMERIC}>
-                    {m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
+                    {m(formatAvailableAmount(row.amount, formatTokenDisplaySymbol(row.market.collateralAsset.symbol)))}
                   </div>
                   <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>{m(exact(row.valueUsd))}</div>
                 </td>
