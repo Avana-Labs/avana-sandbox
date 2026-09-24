@@ -1248,7 +1248,7 @@ export function BorrowActionPageClient({
           }}
           variant="inset"
           amountField={stackedAmountField}
-          switchable={!initialMarketId && Boolean(supplyAssetOptions)}
+          switchable={!initialMarketId && Boolean(supplyAssetOptions) && (stage === "configure" || stage === "error")}
         />
       ) : showCollateralContextBar ? (
         <ActionBorrowContextBar
@@ -1260,7 +1260,9 @@ export function BorrowActionPageClient({
           variant={useWorkspaceFields ? "inset" : "card"}
           workspace={useWorkspaceFields}
           amountField={stackedAmountField}
-          switchable={!(sidebar && kind === "claim")}
+          // Locked from Review on: the quote was built for this collateral, and switching it there
+          // left Review showing a quote for the old pool.
+          switchable={!(sidebar && kind === "claim") && (stage === "configure" || stage === "error")}
         />
       ) : null}
 

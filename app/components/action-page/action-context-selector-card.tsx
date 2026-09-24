@@ -12,6 +12,7 @@ export function ActionContextSelectorCard({
   collateralSymbol,
   borrowSymbol,
   onClick,
+  switchable = true,
 }: {
   label: string
   value: string
@@ -19,6 +20,8 @@ export function ActionContextSelectorCard({
   collateralSymbol: string
   borrowSymbol?: string
   onClick: () => void
+  /** False once the choice is locked in (Review onward): no chevron, not clickable. */
+  switchable?: boolean
   /** Retained for call-site compatibility; the card now matches SwapStyleField
    *  padding/label in every layout so the collateral card is flush with the
    *  amount fields around it. */
@@ -26,7 +29,13 @@ export function ActionContextSelectorCard({
 }) {
   const { t } = useTranslation()
   return (
-    <button type="button" onClick={onClick} className="w-full text-left" data-testid="action-context-selector-card">
+    <button
+      type="button"
+      onClick={switchable ? onClick : undefined}
+      disabled={!switchable}
+      className="w-full text-left disabled:cursor-default"
+      data-testid="action-context-selector-card"
+    >
       {/* Match SwapStyleField exactly (surface padding, 15px label, mt-1.5/mt-1 spacing)
           so the collateral card has the same rhythm as the amount/percent fields it sits
           beside — on the homepage, the detail-page sidebars, and the full action pages. */}
@@ -53,9 +62,11 @@ export function ActionContextSelectorCard({
                 (icon + label + chevron). LP pairs read "LP"; a single-asset
                 collateral shows its ticker. */}
             <span>{borrowSymbol ? "LP" : collateralSymbol}</span>
-            <span className="text-muted-foreground" aria-hidden>
-              ▾
-            </span>
+            {switchable ? (
+              <span className="text-muted-foreground" aria-hidden>
+                ▾
+              </span>
+            ) : null}
           </div>
         </div>
         {approxUsdLabel ? (
