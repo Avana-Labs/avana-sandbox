@@ -235,12 +235,15 @@ export function mapBorrowRepayPreviewToActionUi(
     amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
+    // In the debt token, like the amount typed; the USD equivalent sits under the input.
     rateLabel: "Repay amount",
-    rateValue: formatActionUsd(options.amountUsd),
+    rateValue: formatActionAmount(amountTokens, options.symbol),
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Outstanding debt",
-    balanceValue: formatActionUsd(beforeDebt, { exact: true }),
+    balanceValue: price
+      ? formatActionAmount(beforeDebt / price, options.symbol, 4)
+      : formatActionUsd(beforeDebt, { exact: true }),
     maxAmount: price ? beforeDebt / price : beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
@@ -271,7 +274,7 @@ export function mapBorrowRepayPreviewToActionUi(
     blockedReason: allowed
       ? null
       : exceedsDebt
-        ? `Amount exceeds outstanding debt. Maximum repay is ${formatActionUsd(beforeDebt, { exact: true })}.`
+        ? `Amount exceeds outstanding debt. Maximum repay is ${price ? formatActionAmount(beforeDebt / price, options.symbol, 4) : formatActionUsd(beforeDebt, { exact: true })}.`
         : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,

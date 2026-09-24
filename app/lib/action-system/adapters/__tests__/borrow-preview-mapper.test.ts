@@ -106,6 +106,22 @@ describe("borrow preview mappers", () => {
     expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is $2,500.00.")
   })
 
+  // The repay field is typed in the debt token; the limit read in USD ("Maximum repay is $899.70").
+  it("states the over-repay limit and outstanding debt in the debt token when priced", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "USDC",
+      amountUsd: 5000,
+      priceUsd: 1,
+      marketLabel: "USDC · Core",
+      remainingDebtUsd: 0,
+      yearlyInterestSavedUsd: 0,
+      exceedsDebt: true,
+    })
+    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is 2,500 USDC.")
+    expect(ui.balanceValue).toBe("2,500 USDC")
+    expect(ui.rateValue).toBe("5,000 USDC")
+  })
+
   it("allows a repay within the outstanding debt", () => {
     const ui = mapBorrowRepayPreviewToActionUi(preview, {
       symbol: "USDC",

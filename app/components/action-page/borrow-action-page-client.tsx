@@ -43,7 +43,7 @@ import {
   ActionSessionLoading,
   shouldShowActionSessionLoading,
 } from "@/app/components/action-page/action-session-loading"
-import { formatActionUsd } from "@/app/lib/action-system/formatters"
+import { formatActionAmount, formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { actionErrorMessage, humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
@@ -363,10 +363,14 @@ export function BorrowActionPageClient({
     if (kind !== "repay" || !debtPosition) return null
     const priceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
     const debtUsd = usd6ToNumber(currentDebtValueUsd6(debtPosition))
+    const maxTokens = priceUsd > 0 ? debtUsd / priceUsd : debtUsd
+    const symbol = session.state.assets[debtPosition.assetId]?.symbol
     return {
       debtUsd,
-      valueLabel: formatActionUsd(debtUsd, { exact: true }),
-      maxTokens: priceUsd > 0 ? debtUsd / priceUsd : debtUsd,
+      // In the debt token, the unit typed into the field ("944.83 USDC", not "$944.70").
+      valueLabel:
+        priceUsd > 0 && symbol ? formatActionAmount(maxTokens, symbol, 4) : formatActionUsd(debtUsd, { exact: true }),
+      maxTokens,
     }
   }, [kind, debtPosition, session.state.assets])
 
