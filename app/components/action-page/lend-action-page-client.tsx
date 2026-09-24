@@ -29,7 +29,12 @@ import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
-import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
+import {
+  formatActionAmount,
+  formatActionFeeSummary,
+  formatActionUsd,
+  formatActionUsdBeforeAfter,
+} from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
@@ -40,13 +45,30 @@ export function lendSuccessMetrics(
   kind: "deposit" | "withdraw",
   amount: number,
   symbol: string,
+  now = Date.now(),
 ) {
   if (kind !== "withdraw") return metrics
-  return metrics.map((metric) =>
-    metric.id === "withdrawable-balance"
-      ? { ...metric, label: "Wallet received", value: formatActionAmount(amount, symbol, 4) }
-      : metric,
-  )
+  return metrics.map((metric) => {
+    if (metric.id === "withdrawable-balance") {
+      return { ...metric, label: "Wallet received", value: formatActionAmount(amount, symbol, 4) }
+    }
+    // The review ticks accrued earnings live; the receipt freezes them at submit time. It read
+    // "$0.00 → $0.00" after the review showed "$0.30 → $0.28".
+    if (metric.liveUsd) {
+      const { anchorMs, before, after } = metric.liveUsd
+      const years = anchorMs != null ? Math.max(0, now - anchorMs) / (365 * 24 * 3600 * 1000) : 0
+      const beforeUsd = before.baseUsd + years * before.ratePerYearUsd
+      const afterUsd = after.baseUsd + years * after.ratePerYearUsd
+      return {
+        ...metric,
+        liveUsd: undefined,
+        value: formatActionUsdBeforeAfter(beforeUsd, afterUsd),
+        before: formatActionUsd(beforeUsd),
+        after: formatActionUsd(afterUsd),
+      }
+    }
+    return metric
+  })
 }
 
 export function LendActionPageClient({
@@ -378,6 +400,9 @@ export function LendActionPageClient({
               balanceAmount: position?.currentSuppliedAmount ?? 0,
               assetPriceUsd,
               poolAvailableLiquidity: market.availableLiquidity,
+              // Same accrual as the review, so the receipt does not drop to the un-accrued $0.
+              accrualSinceMs,
+              liveAccrual: true,
             })
 
       const simulated = session.readAdapter.mode === "sandbox"
