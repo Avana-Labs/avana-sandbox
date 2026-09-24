@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuthedQueryArgs } from "@/app/lib/convex/use-authed-query-args"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useQuery } from "convex/react"
@@ -183,9 +184,11 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
   const { t } = useTranslation()
   const swap = useSwapSessionContext()
   const { authedWallet, isSignedIn } = useSiweAuth()
+  // Wait for Convex auth, not just the SIWE session: querying in between threw UNAUTHENTICATED
+  // ("[CONVEX Q(...getTransactionByHash)] Server Error") on phones, where auth lands later.
   const receipt = useQuery(
     api.sandbox.transactions.getTransactionByHash,
-    isSignedIn && authedWallet ? { wallet: authedWallet, hash } : "skip",
+    useAuthedQueryArgs(isSignedIn && authedWallet ? { wallet: authedWallet, hash } : null),
   )
   const swapTransaction = swap.transactionHistory.find(
     (transaction) =>
