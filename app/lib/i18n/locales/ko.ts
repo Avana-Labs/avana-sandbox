@@ -58,7 +58,7 @@ const dict: TranslationDictionary = {
   Yesterday: "어제",
   "Choose collateral": "담보 선택",
   "Cooldown expired": "쿨다운 만료",
-  "Closed": "종료됨",
+  Closed: "종료됨",
   "Show more": "더 보기",
   "Shared credit": "공유 크레딧",
   "Choose asset to borrow": "빌릴 자산 선택",

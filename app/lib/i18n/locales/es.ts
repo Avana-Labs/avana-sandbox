@@ -136,7 +136,7 @@ const dict: TranslationDictionary = {
   "Share on X": "Compartir en X",
   "Choose collateral": "Elige el colateral",
   "Cooldown expired": "Enfriamiento vencido",
-  "Closed": "Cerrada",
+  Closed: "Cerrada",
   "Show more": "Mostrar más",
   "Shared credit": "Crédito compartido",
   "Choose asset to borrow": "Elige el activo a pedir prestado",

@@ -133,7 +133,7 @@ const dict: TranslationDictionary = {
   "Share on X": "分享到 X",
   "Choose collateral": "选择抵押品",
   "Cooldown expired": "冷却期已过期",
-  "Closed": "已关闭",
+  Closed: "已关闭",
   "Show more": "显示更多",
   "Shared credit": "共享额度",
   "Choose asset to borrow": "选择借款资产",

@@ -58,7 +58,7 @@ const dict: TranslationDictionary = {
   Yesterday: "Вчера",
   "Choose collateral": "Выберите залог",
   "Cooldown expired": "Период ожидания истёк",
-  "Closed": "Закрыто",
+  Closed: "Закрыто",
   "Show more": "Показать ещё",
   "Shared credit": "Общий кредит",
   "Choose asset to borrow": "Выберите актив для займа",

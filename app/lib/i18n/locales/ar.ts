@@ -66,7 +66,7 @@ const dict: TranslationDictionary = {
   Yesterday: "أمس",
   "Choose collateral": "اختر الضمان",
   "Cooldown expired": "انتهت فترة التهدئة",
-  "Closed": "مغلقة",
+  Closed: "مغلقة",
   "Show more": "عرض المزيد",
   "Shared credit": "رصيد مشترك",
   "Choose asset to borrow": "اختر الأصل المراد اقتراضه",
