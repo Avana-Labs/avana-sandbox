@@ -374,7 +374,8 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
       value: formatCompactUsd(row.availableUsd),
       delta: deltaUp(0.6),
     },
-    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApy, 2), delta: deltaUp(0.1) },
+    // The LP's trading-fee APR; the Borrow list and Explore cards call it "LP APR".
+    { id: "supplyApy", label: "LP APR", value: formatPct(supplyApy, 2), delta: deltaUp(0.1) },
     { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
     // Borrow APY is Convex-sourced — the mock never has enough to derive a real value
     // (it would have to know the pool's utilization + reserve factor + constituent asset

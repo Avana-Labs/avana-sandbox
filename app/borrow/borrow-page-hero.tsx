@@ -47,9 +47,9 @@ function buildHeroCards(pageData: BorrowPageData) {
       pool,
       title: formatBorrowPairLabel(pool),
       // LTV is the headline (more important than availability); the line below is the
-      // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
+      // pool's own trading-fee APR — "LP APR", the name the table and detail page use.
       value: `${formatLtvPct(pool.ltv)} LTV`,
-      delta: `${formatApy(averageApr(pool))} Fees`,
+      delta: `${formatApy(averageApr(pool))} LP APR`,
       deltaClassName: "text-apy-positive",
     }))
 

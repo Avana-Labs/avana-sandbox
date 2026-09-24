@@ -26,8 +26,6 @@ import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/li
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { TokenBubble } from "./atoms"
 import { formatApy } from "@/app/lib/format"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { CapacityFilled } from "@/app/components/capacity-filled"
@@ -102,18 +100,10 @@ function SectionTabs({
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  const priceFor = useCanonicalPriceFor()
-  // Sub-label is the live pool price — the pair spot rate: the base leg priced in the quote leg
-  // (WBTC/WETH → "33.71 WETH", WBTC/USDC → "64,426.09 USDC"), so it differs per pool and is never
-  // a mislabeled "$" for a non-USD pair. Falls back to fee tier + TVL when either leg is unpriced.
-  const base = pool.visuals[0].symbol
-  const quote = pool.visuals[1].symbol
-  const p0 = priceFor(base)
-  const p1 = priceFor(quote)
-  const subtitle =
-    p0 !== undefined && p1 !== undefined && p1 > 0
-      ? `${formatPairRate(p0 / p1)} ${quote}`
-      : `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
+  // One sub-label for every pool: fee tier + TVL. The pair spot rate ("84,457.84 USDC" for
+  // WBTC/USDC) read like the LP's price and was missing for unpriced legs, which then showed
+  // this format instead, so rows in one table read two different ways.
+  const subtitle = `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4 max-md:gap-2">
       <div className="flex shrink-0 items-center">
@@ -291,7 +281,7 @@ function CollateralDesktopTable({
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
             {sortHeader("asset", t("Asset"))}
           </th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Fees"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("LP APR"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("deposits", t("Total Deposits"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("Max LTV"))}</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("risk", t("Premium"))}</th>
