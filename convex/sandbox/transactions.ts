@@ -497,6 +497,17 @@ function validateTransactionTransition(
     const expectedLtv = collateral > 0 ? debt / collateral : 0
     assertClose(args.position.multiplier ?? 1, expectedMultiplier, "multiply multiplier", 0.0001)
     assertClose(args.position.ltv ?? 0, expectedLtv, "multiply LTV", 0.0001)
+    // Opening/adding ("multiply") never shrinks an open loop; unwinding goes through deleverage or
+    // close. A client that missed the persisted loop sent a fresh position and the write replaced
+    // it (prod: a $83,333 AAVE/GHO loop became a $207 one).
+    if (
+      args.kind === "multiply" &&
+      existing?.status === "open" &&
+      (existing.collateralAmount ?? 0) > 0 &&
+      (args.position.collateralAmount ?? 0) < (existing.collateralAmount ?? 0) * (1 - 1e-6)
+    ) {
+      throw new Error("STALE_WRITE: this Multiply position changed; reload it before adding to it.")
+    }
     // Leverage caps must be enforced here, not just by the UI slider: a tampered client can
     // submit an internally-consistent position above MULTIPLY_ACTION_MAX_LEVERAGE.
     if ((args.position.multiplier ?? 1) > MAX_MULTIPLIER + 0.01) {

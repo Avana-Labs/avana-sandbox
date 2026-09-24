@@ -1893,3 +1893,50 @@ describe("lend withdraw is bounded by the deposited tokens", () => {
     expect(deposited?.valueUsd).toBeCloseTo(18_750, 1)
   })
 })
+
+describe("multiply open/add never shrinks an existing loop", () => {
+  test("rejects a multiply write that would replace a larger open loop", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "multiply",
+        marketSlug: "aave-gho",
+        status: "open",
+        assetId: "aave",
+        collateralAmount: 793,
+        collateralValueUsd: 83_333,
+        debtValueUsd: 41_667,
+        multiplier: 2,
+        ltv: 0.5,
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+    })
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("mult-replace", {
+          product: "multiply",
+          kind: "multiply",
+          marketSlug: "aave-gho",
+          requestedAmountUsd6: "207450000",
+          executedAmountUsd6: "207450000",
+          amountUsd: 207.45,
+          expectedRevision: 0,
+          position: {
+            status: "open",
+            marketSlug: "aave-gho",
+            assetId: "aave",
+            collateralAmount: 1.5,
+            collateralValueUsd: 207.45,
+            debtValueUsd: 69.15,
+            multiplier: 207.45 / (207.45 - 69.15),
+            ltv: 69.15 / 207.45,
+          },
+        }),
+      ),
+    ).rejects.toThrow(/STALE_WRITE/)
+  })
+})
