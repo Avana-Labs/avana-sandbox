@@ -21,6 +21,7 @@ type RecordTransactionArgs = {
   requestedAmountUsd6: string
   executedAmountUsd6: string
   amountUsd: number
+  tokenAmount?: number
   simulated: boolean
   /** Optimistic-concurrency token: the position revision this write was computed from.
    *  The server rejects the write (STALE_WRITE) if the stored position has advanced past it. */
@@ -87,6 +88,8 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
     requestedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
     executedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
     amountUsd,
+    // The typed token quantity; the server books it when its price agrees with the oracle.
+    tokenAmount: item.kind === "claim" ? undefined : item.amount,
     simulated: item.simulated,
     position: position
       ? {

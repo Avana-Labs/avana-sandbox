@@ -205,8 +205,11 @@ describe("SandboxMultiplyTransactionAdapter", () => {
 
     expect(updated.collateralValueUsd).toBeGreaterThan(existing.collateralValueUsd)
     expect(updated.debtValueUsd).toBeGreaterThan(existing.debtValueUsd)
+    // The recorded amount is the equity added (what the wallet pays), not the exposure added.
     expect(result.historyItem.amountUsd).toBeCloseTo(
-      result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd,
+      result.preview.after.collateralValueUsd -
+        result.preview.after.debtValueUsd -
+        (result.preview.before.collateralValueUsd - result.preview.before.debtValueUsd),
     )
     expect(portfolio.creditLines.totalCollateralUsd).toBeCloseTo(updated.collateralValueUsd)
     expect(portfolio.creditLines.totalBorrowedUsd).toBeCloseTo(updated.debtValueUsd)

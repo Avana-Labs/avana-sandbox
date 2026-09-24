@@ -1998,3 +1998,54 @@ describe("wallet-funded Multiply debits tokens at today's price", () => {
     expect(liquid?.amount).toBeCloseTo(118.05, 6)
   })
 })
+
+describe("lend books the typed token quantity", () => {
+  test("a 0.5 AAVE deposit priced 0.4% off the oracle moves exactly 0.5 AAVE", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "aave",
+        llamaId: "test:aave",
+        priceUsd: 137.3,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 10,
+        valueUsd: 1_373,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
+    const amountUsd = 0.5 * 137.85
+    await t.withIdentity({ subject: WALLET }).mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "aave-typed",
+      product: "lend" as const,
+      kind: "deposit",
+      marketSlug: "aave",
+      assetId: "aave",
+      requestedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      executedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      amountUsd: Math.round(amountUsd * 1e6) / 1e6,
+      tokenAmount: 0.5,
+      simulated: true,
+      position: {
+        status: "open" as const,
+        marketSlug: "aave",
+        suppliedUsd6: String(Math.round(amountUsd * 1e6)),
+        earnedUsd6: "0",
+      },
+    })
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(9.5, 9)
+    const tx = await t.run((ctx) => ctx.db.query("transactions").unique())
+    expect(tx?.tokenAmount).toBe(0.5)
+  })
+})

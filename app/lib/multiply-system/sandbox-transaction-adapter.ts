@@ -59,7 +59,14 @@ function netApyForPositionState(
  */
 function recordedAmountUsd(actionType: MultiplyAction["type"], preview: MultiplyTransactionPreview): number {
   if (actionType === "multiply") {
-    return Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
+    // The equity the wallet puts in (what the activity feed shows leaving the wallet), matching
+    // close, which records the equity returned. The exposure added read -$207 for $138 paid.
+    return Math.max(
+      0,
+      preview.after.collateralValueUsd -
+        preview.after.debtValueUsd -
+        (preview.before.collateralValueUsd - preview.before.debtValueUsd),
+    )
   }
   if (actionType === "deleverage") {
     return Math.max(0, preview.before.debtValueUsd - preview.after.debtValueUsd)

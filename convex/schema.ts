@@ -1281,6 +1281,9 @@ export default defineSchema({
      *  position's current multiplier, or deleverages render as leverage increases. */
     multiplierBefore: v.optional(v.number()),
     multiplierAfter: v.optional(v.number()),
+    /** Lend deposit/withdraw: tokens moved, priced at the oracle when written, so history does not
+     *  re-derive the quantity from USD at today's price (an AAVE withdraw read 0.864, 1.14, 0.868). */
+    tokenAmount: v.optional(v.number()),
     /** Swap-only: token identity + amounts, so the activity feed renders
      *  "0.001 ETH → 1.925 USDC" from the durable row alone. */
     swapInputSymbol: v.optional(v.string()),

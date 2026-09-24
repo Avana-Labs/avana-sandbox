@@ -1242,6 +1242,8 @@ export const recordTransaction = mutation({
     requestedAmountUsd6: v.string(),
     executedAmountUsd6: v.string(),
     amountUsd: v.number(),
+    /** Lend deposit/withdraw: the typed token quantity, booked when its price matches the oracle. */
+    tokenAmount: v.optional(v.number()),
     simulated: v.optional(v.boolean()),
     healthFactorWadBefore: v.optional(v.union(v.string(), v.null())),
     healthFactorWadAfter: v.optional(v.union(v.string(), v.null())),
@@ -1343,8 +1345,13 @@ export const recordTransaction = mutation({
           (await validatedTokenPriceUsd(ctx, liquidAssetIdFromArgs(args.assetId, marketSlug), now)) ??
           lendLedgerPriceUsd
         if (priceUsd && priceUsd > 0) {
-          const tokens = args.amountUsd / priceUsd
-          lendTokenMove = { tokens, priceUsd }
+          // Book the typed quantity when the client priced it within 2% of the oracle (it reads
+          // the same feed moments apart), so 0.5 AAVE moves 0.5, not 0.502.
+          const typed = args.tokenAmount
+          const typedMatches =
+            typed !== undefined && typed > 0 && Math.abs(args.amountUsd / typed / priceUsd - 1) <= 0.02
+          const tokens = typedMatches ? typed : args.amountUsd / priceUsd
+          lendTokenMove = { tokens, priceUsd: tokens > 0 && args.amountUsd > 0 ? args.amountUsd / tokens : priceUsd }
           if (depositedAmount > 0) lendSuppliedBeforeUsd = depositedAmount * priceUsd
           if (args.kind === "withdraw") {
             // Interest accrues client-side between writes; allow at most a 50% APY on the balance.
@@ -1480,6 +1487,7 @@ export const recordTransaction = mutation({
         healthFactorWadAfter: args.healthFactorWadAfter,
         multiplierBefore: args.multiplierBefore,
         multiplierAfter: args.multiplierAfter,
+        tokenAmount: lendTokenMove?.tokens,
         syntheticTxHash: hash,
         simulated,
         at: now,
@@ -2193,6 +2201,7 @@ export const getActivity = query({
       status: t.status as string,
       amountUsd: t.amountUsd,
       marketSlug: t.marketSlug ?? null,
+      claimedTaskIds: t.claimedTaskIds ?? null,
       hash: t.syntheticTxHash,
       at: t.at,
     }))

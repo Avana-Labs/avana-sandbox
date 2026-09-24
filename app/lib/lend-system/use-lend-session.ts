@@ -52,7 +52,8 @@ export function lendAmountsFromTokens(
   earnedUsd: number,
   assetPriceUsd: number | undefined,
 ): { suppliedAmount: number; principalAmount: number; interestEarnedAmount: number } {
-  const interestEarnedAmount = assetPriceUsd && assetPriceUsd > 0 ? Math.min(depositedTokens, earnedUsd / assetPriceUsd) : 0
+  const interestEarnedAmount =
+    assetPriceUsd && assetPriceUsd > 0 ? Math.min(depositedTokens, earnedUsd / assetPriceUsd) : 0
   return {
     suppliedAmount: depositedTokens,
     interestEarnedAmount,
@@ -103,6 +104,8 @@ type ConvexLendWalletData = {
     status: "success" | "failed" | "pending"
     marketSlug?: string
     amountUsd: number
+    /** Tokens moved, recorded by the server for lend deposits and withdrawals. */
+    tokenAmount?: number
     syntheticTxHash: string
     simulated: boolean
     at: number
@@ -313,7 +316,8 @@ export function useLendSession({
         if (position.product !== "lend") continue
         const market = stateRef.current.markets[position.marketSlug]
         const ledgerSuppliedUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
-        const depositedTokens = position.status === "open" ? depositedTokensByMarket.get(position.marketSlug) : undefined
+        const depositedTokens =
+          position.status === "open" ? depositedTokensByMarket.get(position.marketSlug) : undefined
         const priceUsd = market?.assetPriceUsd && market.assetPriceUsd > 0 ? market.assetPriceUsd : undefined
         const suppliedValueUsd =
           depositedTokens !== undefined && priceUsd !== undefined ? depositedTokens * priceUsd : ledgerSuppliedUsd
@@ -388,7 +392,11 @@ export function useLendSession({
             // `amount` is a TOKEN quantity (the read-model multiplies it by assetPriceUsd) but the
             // Convex row records USD, so convert back here. Claims are USD and pass through.
             amount:
-              kind === "claim" || !(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd,
+              kind === "claim"
+                ? transaction.amountUsd
+                : (transaction.tokenAmount ??
+                  (!(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd)),
+            amountUsd: transaction.amountUsd,
             simulated: transaction.simulated,
             timestamp: transaction.at,
             hash: transaction.syntheticTxHash,
