@@ -10,6 +10,7 @@ import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtim
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
+import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 
 function normalizeBorrowAssetKey(value: string) {
   return value.trim().toLowerCase()
@@ -239,13 +240,17 @@ export function borrowSelectItemsForMarket(
     // asset) and is surfaced separately in the configure step, so pinning it here
     // made every row read the same "$X available".
     const liquidityUsd = assetAvailableUsd(session.state, asset.id)
+    // The same asset is borrowable in several spokes (USD Coin appeared twice for guests), so
+    // name the spoke. "liquidity" because "available" read as the wallet's own borrow limit.
+    const spokeId = session.state.assets[asset.id]?.spokeId ?? asset.id.split(":")[0]
     return {
       id: asset.id,
       name: asset.name,
       symbol: asset.symbol,
+      sublabel: (spokeId && getBorrowSpoke(spokeId)?.label) || asset.symbol,
       trailingLabel:
         liquidityUsd != null
-          ? `${formatActionUsd(liquidityUsd, { compact: true })} available`
+          ? `${formatActionUsd(liquidityUsd, { compact: true })} liquidity`
           : `${asset.borrowApr.toFixed(2)}% APR`,
     }
   })
