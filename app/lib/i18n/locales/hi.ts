@@ -1400,6 +1400,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "लूप APY",
   "Loop market": "लूप मार्केट",
   "LP APR": "LP APR",
+  "Pool APR": "पूल APR",
   "Live value of this collateral, and the LP trading fees it earns.":
     "इस संपार्श्विक का लाइव मूल्य, और इससे मिलने वाली LP ट्रेडिंग फीस।",
   LT: "LT",

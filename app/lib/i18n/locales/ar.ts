@@ -1386,6 +1386,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "عائد الحلقة APY",
   "Loop market": "سوق الحلقة",
   "LP APR": "LP APR",
+  "Pool APR": "APR المجمع",
   "Live value of this collateral, and the LP trading fees it earns.":
     "القيمة الحية لهذا الضمان، ورسوم تداول LP التي يكسبها.",
   LT: "LT",

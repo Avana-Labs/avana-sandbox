@@ -9,16 +9,15 @@ const FACE =
   "block truncate [grid-area:1/1] transition-[transform,opacity] duration-300 ease-out [backface-visibility:hidden] motion-reduce:transition-none"
 
 /**
- * Line under a token name in a table row. Touch / phone: `detail` (a unit price, "$18.5M Supply").
- * Desktop (hover-capable, md+): the ticker, which flips over to `detail` while the row is hovered —
- * the row must carry Tailwind's `group` class. Without a detail it shows the ticker everywhere.
+ * Secondary line in a table row. Touch / phone: `touch` (defaults to `back`). Desktop
+ * (hover-capable, md+): `front`, which flips over to `back` while the row is hovered — the row
+ * must carry Tailwind's `group` class. Both faces share one grid cell, so the line is as wide as
+ * the longer face.
  */
-export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: string | undefined }) {
-  const ticker = formatTokenDisplaySymbol(symbol)
-  if (detail === undefined) return <>{ticker}</>
+export function HoverFlip({ front, back, touch = back }: { front: string; back: string; touch?: string }) {
   return (
     <>
-      <span className="block truncate [@media(hover:hover)_and_(min-width:768px)]:hidden">{detail}</span>
+      <span className="block truncate [@media(hover:hover)_and_(min-width:768px)]:hidden">{touch}</span>
       <span className="hidden [perspective:240px] [@media(hover:hover)_and_(min-width:768px)]:grid">
         <span
           className={cn(
@@ -26,7 +25,7 @@ export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: st
             "origin-top group-hover:opacity-0 group-hover:[transform:translateY(-50%)_rotateX(90deg)]",
           )}
         >
-          {ticker}
+          {front}
         </span>
         <span
           className={cn(
@@ -34,11 +33,18 @@ export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: st
             "origin-bottom opacity-0 [transform:translateY(50%)_rotateX(-90deg)] group-hover:opacity-100 group-hover:[transform:none]",
           )}
         >
-          {detail}
+          {back}
         </span>
       </span>
     </>
   )
+}
+
+/** Token line: the ticker, flipping to `detail` (a unit price, "$18.5M Supply"); ticker alone without one. */
+export function TickerPriceFlip({ symbol, detail }: { symbol: string; detail: string | undefined }) {
+  const ticker = formatTokenDisplaySymbol(symbol)
+  if (detail === undefined) return <>{ticker}</>
+  return <HoverFlip front={ticker} back={detail} />
 }
 
 /** `TickerPriceFlip` with the live canonical (DefiLlama) unit price. */

@@ -27,6 +27,7 @@ import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { TokenBubble } from "./atoms"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
+import { HoverFlip } from "@/app/lib/ui/token-ticker-price-label"
 import { Button } from "@/components/ui/button"
 import { CapacityFilled } from "@/app/components/capacity-filled"
 
@@ -100,10 +101,10 @@ function SectionTabs({
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  // One sub-label for every pool: fee tier + TVL. The pair spot rate ("84,457.84 USDC" for
-  // WBTC/USDC) read like the LP's price and was missing for unpriced legs, which then showed
-  // this format instead, so rows in one table read two different ways.
-  const subtitle = `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
+  // Sub-label: TVL, flipping to the risk premium on desktop row hover (the premium has no column
+  // of its own). Phones show both on one line.
+  const tvl = `${compact(pool.tvlUsd)} ${t("TVL")}`
+  const premium = `${t("Premium")}: ${formatRiskPremium(pool.riskPremiumBps)}`
   return (
     <div className="flex min-w-0 items-center gap-4 max-md:gap-2">
       <div className="flex shrink-0 items-center">
@@ -119,7 +120,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
           {formatBorrowPairLabel(pool)}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-normal text-muted-foreground dark:text-white/38">
-          {subtitle}
+          <HoverFlip front={tvl} back={premium} touch={`${tvl} · ${premium}`} />
         </div>
       </div>
     </div>
@@ -176,9 +177,6 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
           {t("LT")}: {formatLtvPct(poolLiquidationThresholdPct(pool))}
         </div>
       </td>
-      <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
-        {formatRiskPremium(pool.riskPremiumBps)}
-      </td>
       <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
         <CapacityFilled value={pool.capacityFilledPct} />
       </td>
@@ -208,10 +206,9 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
 const COLLATERAL_TABLE_LAYOUT = tableColumnLayout([
   "index",
   "identity",
-  "compact", // Fees
+  "compact", // Pool APR
   "metric", // Total deposits
   "compact", // Max LTV
-  "compact", // Premium
   "gauge", // Capacity filled
   "action",
 ])
@@ -230,7 +227,7 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const { t } = useTranslation()
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "capacityFilled">("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "capacityFilled">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -254,8 +251,6 @@ function CollateralDesktopTable({
           return (a.ltv - b.ltv) * direction
         case "deposits":
           return (a.tvlUsd - b.tvlUsd) * direction
-        case "risk":
-          return (a.riskPremiumBps - b.riskPremiumBps) * direction
         case "capacityFilled":
           return ((a.capacityFilledPct ?? -1) - (b.capacityFilledPct ?? -1)) * direction
         case "asset":
@@ -282,7 +277,7 @@ function CollateralDesktopTable({
             {sortHeader("asset", t("Asset"), t("The liquidity pool you can pledge as collateral to borrow against."))}
           </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-            {sortHeader("apy", t("LP APR"), t("Annual trading-fee yield earned by this liquidity pool."))}
+            {sortHeader("apy", t("Pool APR"), t("Annual trading-fee yield earned by this liquidity pool."))}
           </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>
             {sortHeader(
@@ -293,13 +288,6 @@ function CollateralDesktopTable({
           </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>
             {sortHeader("cf", t("Max LTV"), t("The most you can borrow as a share of your collateral value."))}
-          </th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
-            {sortHeader(
-              "risk",
-              t("Premium"),
-              t("An additional cost on your borrow rate based on the riskiness of your collateral"),
-            )}
           </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4")}>
             {sortHeader(
