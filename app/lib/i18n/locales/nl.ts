@@ -1767,6 +1767,36 @@ const dict: TranslationDictionary = {
   "Send report": "Melding versturen",
   "Thanks! Your report was sent.": "Bedankt! Je melding is verstuurd.",
   "Capacity Filled": "Benutte capaciteit",
+  "A token in your wallet you can put to work here.": "Een token in je wallet dat je hier kunt inzetten.",
+  "Amount still available to borrow from this market.": "Bedrag dat in deze markt nog beschikbaar is om te lenen.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Jaarlijkse rente die je betaalt over geleende middelen. Deze beweegt mee met de benutting.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Jaarlijks rendement dat je verdient door dit asset te verstrekken.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Jaarlijks rendement uit handelskosten van deze liquiditeitspool.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Onderpandfactor: hoeveel je per dollar onderpand kunt lenen. LT is de liquidatiedrempel.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Geschat nettorendement bij maximale hefboom, na leenkosten.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Middelen die nu niet zijn uitgeleend, beschikbaar om op te nemen of te lenen.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Aandeel van de verstrekte middelen dat nu is uitgeleend. Hogere benutting verhoogt de rente en kan opnames vertragen.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "De liquiditeitspool die je als onderpand kunt inzetten om tegen te lenen.",
+  "The maximum leverage available on this loop.": "De maximale hefboom die beschikbaar is voor deze loop.",
+  "The most you can borrow as a share of your collateral value.":
+    "Het maximum dat je kunt lenen als aandeel van je onderpandwaarde.",
+  "The token you can borrow against your collateral.": "Het token dat je tegen je onderpand kunt lenen.",
+  "The token you can supply to earn yield.": "Het token dat je kunt verstrekken om rendement te verdienen.",
+  "Total amount currently borrowed from this market by all users.":
+    "Totaal bedrag dat alle gebruikers momenteel uit deze markt lenen.",
+  "Total amount supplied to this market by all users.":
+    "Totaal bedrag dat alle gebruikers aan deze markt hebben verstrekt.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Totale waarde van LP-posities die alle gebruikers in deze markt als onderpand hebben ingezet.",
+  "Your wallet balance of this token, ready to use.": "Je walletsaldo van dit token, klaar voor gebruik.",
 }
 
 export default dict

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
-import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup, ScrollableTable } from "@/app/components/market-table-primitives"
@@ -58,10 +58,9 @@ function InvestmentsMetricHeader({
   align?: "left" | "right"
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+    <TableHeaderHint hint={help} className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
       {formatTableHeaderLabel(label)}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 

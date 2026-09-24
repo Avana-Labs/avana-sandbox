@@ -1732,6 +1732,32 @@ const dict: TranslationDictionary = {
   "Send report": "إرسال البلاغ",
   "Thanks! Your report was sent.": "شكرًا! تم إرسال بلاغك.",
   "Capacity Filled": "السعة المستخدمة",
+  "A token in your wallet you can put to work here.": "رمز في محفظتك يمكنك استثماره هنا.",
+  "Amount still available to borrow from this market.": "المبلغ الذي لا يزال متاحًا للاقتراض من هذا السوق.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "معدل الفائدة السنوي الذي تدفعه على الأموال المقترضة. يتغير مع نسبة الاستخدام.",
+  "Annual percentage yield you earn by supplying this asset.": "العائد السنوي الذي تحصل عليه من خلال توفير هذا الأصل.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "العائد السنوي من رسوم التداول الذي يحققه مجمع السيولة هذا.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "عامل الضمان: مقدار ما يمكنك اقتراضه مقابل كل دولار من الضمان. LT هو حد التصفية.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "صافي العائد التقديري عند أقصى رافعة، بعد تكاليف الاقتراض.",
+  "Funds not currently borrowed, available to withdraw or borrow.": "أموال غير مقترضة حاليًا، متاحة للسحب أو الاقتراض.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "حصة الأموال المودعة المقترضة حاليًا. يرفع الاستخدام الأعلى المعدلات وقد يؤخر عمليات السحب.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "مجمع السيولة الذي يمكنك رهنه كضمان للاقتراض مقابله.",
+  "The maximum leverage available on this loop.": "أقصى رافعة متاحة في هذه الحلقة.",
+  "The most you can borrow as a share of your collateral value.": "أقصى ما يمكنك اقتراضه كنسبة من قيمة ضمانك.",
+  "The token you can borrow against your collateral.": "الرمز الذي يمكنك اقتراضه مقابل ضمانك.",
+  "The token you can supply to earn yield.": "الرمز الذي يمكنك توفيره لتحقيق عائد.",
+  "Total amount currently borrowed from this market by all users.":
+    "إجمالي المبلغ المقترض حاليًا من هذا السوق من قبل جميع المستخدمين.",
+  "Total amount supplied to this market by all users.": "إجمالي المبلغ المودع في هذا السوق من قبل جميع المستخدمين.",
+  "Total value of LP positions pledged to this market by all users.":
+    "إجمالي قيمة مراكز LP المرهونة في هذا السوق من قبل جميع المستخدمين.",
+  "Your wallet balance of this token, ready to use.": "رصيد هذا الرمز في محفظتك، جاهز للاستخدام.",
 }
 
 export default dict

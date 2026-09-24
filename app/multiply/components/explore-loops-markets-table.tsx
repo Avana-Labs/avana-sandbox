@@ -399,8 +399,8 @@ function LoopMarketsSection({ title, rows }: { title: string; rows: MultiplyPage
     })
   }, [rows, sortDirection, sortKey])
 
-  const sortHeader = (key: LoopSortKey, label: string) => (
-    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  const sortHeader = (key: LoopSortKey, label: string, hint?: string) => (
+    <SortHeaderButton label={label} hint={hint} active={sortKey === key} onClick={() => toggleSort(key)} />
   )
 
   return (
@@ -422,13 +422,39 @@ function LoopMarketsSection({ title, rows }: { title: string; rows: MultiplyPage
               <tr className={TABLE_HEADER_ROW}>
                 <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                  {sortHeader("protocol", t("Loop"))}
+                  {sortHeader(
+                    "protocol",
+                    t("Loop"),
+                    t("The collateral you supply and the asset you borrow against it to build leverage."),
+                  )}
                 </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("APY"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("rewards", t("Leverage"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("CF"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("points", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("apy", t("APY"), t("Estimated net yield at maximum leverage, after borrow costs."))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("rewards", t("Leverage"), t("The maximum leverage available on this loop."))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "cf",
+                    t("CF"),
+                    t(
+                      "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.",
+                    ),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "capacityFilled",
+                    t("Capacity Filled"),
+                    t(
+                      "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.",
+                    ),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("points", t("Available"), t("Amount still available to borrow from this market."))}
+                </th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                   <span className="sr-only">{t("Quick actions")}</span>
                 </th>

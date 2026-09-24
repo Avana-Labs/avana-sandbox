@@ -1797,6 +1797,32 @@ const dict: TranslationDictionary = {
   "Send report": "レポートを送信",
   "Thanks! Your report was sent.": "ありがとうございます。レポートを送信しました。",
   "Capacity Filled": "使用済み容量",
+  "A token in your wallet you can put to work here.": "ここで活用できるウォレット内のトークン。",
+  "Amount still available to borrow from this market.": "このマーケットでまだ借りられる金額。",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "借りた資金に対して支払う年間金利。利用率に応じて変動します。",
+  "Annual percentage yield you earn by supplying this asset.": "この資産を供給して得られる年間利回り。",
+  "Annual trading-fee yield earned by this liquidity pool.": "この流動性プールが取引手数料から得る年間利回り。",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "担保係数：担保1ドルあたり借りられる金額。LTは清算しきい値です。",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "借入コスト控除後の、最大レバレッジ時の推定純利回り。",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "現在貸し出されておらず、引き出しや借入に使える資金。",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "供給資金のうち現在貸し出されている割合。利用率が高いと金利が上がり、引き出しが遅れることがあります。",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "担保として預け入れ、借入に使える流動性プール。",
+  "The maximum leverage available on this loop.": "このループで利用できる最大レバレッジ。",
+  "The most you can borrow as a share of your collateral value.": "担保価値に対して借りられる最大の割合。",
+  "The token you can borrow against your collateral.": "担保を使って借りられるトークン。",
+  "The token you can supply to earn yield.": "供給して利回りを得られるトークン。",
+  "Total amount currently borrowed from this market by all users.":
+    "全ユーザーがこのマーケットから現在借りている総額。",
+  "Total amount supplied to this market by all users.": "全ユーザーがこのマーケットに供給した総額。",
+  "Total value of LP positions pledged to this market by all users.":
+    "全ユーザーがこのマーケットに担保として預けたLPポジションの総額。",
+  "Your wallet balance of this token, ready to use.": "このトークンのウォレット残高。すぐに使えます。",
 }
 
 export default dict

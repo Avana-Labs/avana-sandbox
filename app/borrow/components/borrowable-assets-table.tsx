@@ -189,8 +189,8 @@ function LoanAssetsSection({
     })
   }, [assets, sortDirection, sortKey])
 
-  const sortHeader = (key: typeof sortKey, label: string) => (
-    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  const sortHeader = (key: typeof sortKey, label: string, hint?: string) => (
+    <SortHeaderButton label={label} hint={hint} active={sortKey === key} onClick={() => toggleSort(key)} />
   )
 
   const table = (
@@ -199,12 +199,32 @@ function LoanAssetsSection({
         <tr className={TABLE_HEADER_ROW}>
           <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-            {sortHeader("asset", t("Asset"))}
+            {sortHeader("asset", t("Asset"), t("The token you can borrow against your collateral."))}
           </th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("Borrow APR"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("borrows", t("Total Borrows"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("liquidity", t("Available"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "apy",
+              t("Borrow APR"),
+              t("Annual interest rate you pay on borrowed funds. It moves with utilization."),
+            )}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "borrows",
+              t("Total Borrows"),
+              t("Total amount currently borrowed from this market by all users."),
+            )}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "capacityFilled",
+              t("Capacity Filled"),
+              t("Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals."),
+            )}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader("liquidity", t("Available"), t("Amount still available to borrow from this market."))}
+          </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
             <span className="sr-only">{t("Quick actions")}</span>
           </th>

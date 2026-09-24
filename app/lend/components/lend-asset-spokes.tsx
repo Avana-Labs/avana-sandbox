@@ -273,8 +273,8 @@ function AssetSection({
     })
   }, [rows, sortDirection, sortKey])
 
-  const sortHeader = (key: typeof sortKey, label: string) => (
-    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  const sortHeader = (key: typeof sortKey, label: string, hint?: string) => (
+    <SortHeaderButton label={label} hint={hint} active={sortKey === key} onClick={() => toggleSort(key)} />
   )
 
   useEffect(() => {
@@ -323,12 +323,34 @@ function AssetSection({
               <tr className={TABLE_HEADER_ROW}>
                 <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                  {sortHeader("asset", t("Asset"))}
+                  {sortHeader("asset", t("Asset"), t("The token you can supply to earn yield."))}
                 </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("supplyApy", t("APY"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("totalDeposits", t("Total Deposits"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("utilization", t("Capacity Filled"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("availableLiquidity", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("supplyApy", t("APY"), t("Annual percentage yield you earn by supplying this asset."))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "totalDeposits",
+                    t("Total Deposits"),
+                    t("Total amount supplied to this market by all users."),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "utilization",
+                    t("Capacity Filled"),
+                    t(
+                      "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.",
+                    ),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "availableLiquidity",
+                    t("Available"),
+                    t("Funds not currently borrowed, available to withdraw or borrow."),
+                  )}
+                </th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                   {/* Names the action column for screen readers (an empty <th> isn't a header). */}
                   <span className="sr-only">{t("Quick actions")}</span>

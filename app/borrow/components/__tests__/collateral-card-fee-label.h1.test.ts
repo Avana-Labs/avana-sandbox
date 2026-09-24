@@ -7,7 +7,7 @@ describe("collateral table labels the LP fee as LP APR, not APY (H1)", () => {
     const source = readFileSync(resolve(__dirname, "../collateral-pools-table.tsx"), "utf8")
     const table = source.slice(source.indexOf("function CollateralDesktopTable"))
     // The column is the pool's LP trading fee (formatApy of the fee band), not a yield APY.
-    expect(table).toContain('sortHeader("apy", t("LP APR"))')
+    expect(table).toContain('sortHeader("apy", t("LP APR"),')
     expect(table).not.toContain('t("APY")')
   })
 })

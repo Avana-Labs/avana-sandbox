@@ -1,5 +1,6 @@
 "use client"
 
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { Suspense, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
@@ -163,9 +164,15 @@ export function ProductAvailableCard({
           <thead>
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                {formatTableHeaderLabel(t("Asset"))}
+                <TableHeaderHint hint={t("A token in your wallet you can put to work here.")}>
+                  {formatTableHeaderLabel(t("Asset"))}
+                </TableHeaderHint>
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Your wallet balance of this token, ready to use.")}>
+                  {formatTableHeaderLabel(t("Available"))}
+                </TableHeaderHint>
+              </th>
               {action ? (
                 <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                   <span className="sr-only">{action.label}</span>
@@ -297,10 +304,22 @@ export function MultiplyAvailableMarketsCard({
           <thead>
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                {formatTableHeaderLabel(t("Loop"))}
+                <TableHeaderHint
+                  hint={t("The collateral you supply and the asset you borrow against it to build leverage.")}
+                >
+                  {formatTableHeaderLabel(t("Loop"))}
+                </TableHeaderHint>
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Your wallet balance of this token, ready to use.")}>
+                  {formatTableHeaderLabel(t("Available"))}
+                </TableHeaderHint>
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Estimated net yield at maximum leverage, after borrow costs.")}>
+                  {formatTableHeaderLabel(t("APY"))}
+                </TableHeaderHint>
+              </th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                 <span className="sr-only">{t("Multiply")}</span>
               </th>

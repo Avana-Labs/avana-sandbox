@@ -2,7 +2,7 @@
 
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { useRouter } from "next/navigation"
-import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   DesktopTableSurface,
@@ -190,10 +190,9 @@ export function MultiplyCollateralTable({
 
 function MetricHeader({ label, help, align = "left" }: { label: string; help: string; align?: "left" | "right" }) {
   return (
-    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+    <TableHeaderHint hint={help} className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
       {label}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 

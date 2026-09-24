@@ -1767,6 +1767,34 @@ const dict: TranslationDictionary = {
   "Send report": "Raporu gönder",
   "Thanks! Your report was sent.": "Teşekkürler! Raporun gönderildi.",
   "Capacity Filled": "Kullanılan kapasite",
+  "A token in your wallet you can put to work here.": "Cüzdanında burada değerlendirebileceğin bir token.",
+  "Amount still available to borrow from this market.": "Bu piyasada hâlâ borç alınabilecek miktar.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Borç aldığın fonlar için ödediğin yıllık faiz oranı. Kullanım oranına göre değişir.",
+  "Annual percentage yield you earn by supplying this asset.": "Bu varlığı sağlayarak kazandığın yıllık getiri oranı.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Bu likidite havuzunun işlem ücretlerinden elde ettiği yıllık getiri.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Teminat faktörü: teminatının her doları başına ne kadar borç alabileceğin. LT, likidasyon eşiğidir.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Borçlanma maliyetleri sonrası, maksimum kaldıraçta tahmini net getiri.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Şu anda borç verilmemiş, çekilebilecek veya borç alınabilecek fonlar.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Sağlanan fonların şu anda borç verilen payı. Yüksek kullanım faizleri artırır ve çekimleri geciktirebilir.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "Borç almak için teminat olarak yatırabileceğin likidite havuzu.",
+  "The maximum leverage available on this loop.": "Bu döngüde kullanılabilecek maksimum kaldıraç.",
+  "The most you can borrow as a share of your collateral value.":
+    "Teminat değerinin payı olarak alabileceğin en yüksek borç.",
+  "The token you can borrow against your collateral.": "Teminatına karşılık borç alabileceğin token.",
+  "The token you can supply to earn yield.": "Getiri kazanmak için sağlayabileceğin token.",
+  "Total amount currently borrowed from this market by all users.":
+    "Tüm kullanıcıların bu piyasadan şu anda borç aldığı toplam miktar.",
+  "Total amount supplied to this market by all users.": "Tüm kullanıcıların bu piyasaya sağladığı toplam miktar.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Tüm kullanıcıların bu piyasaya teminat olarak yatırdığı LP pozisyonlarının toplam değeri.",
+  "Your wallet balance of this token, ready to use.": "Bu tokenin cüzdanındaki bakiyesi, kullanıma hazır.",
 }
 
 export default dict

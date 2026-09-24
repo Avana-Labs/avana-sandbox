@@ -269,8 +269,8 @@ function CollateralDesktopTable({
     })
   }, [rows, sortDirection, sortKey])
 
-  const sortHeader = (key: typeof sortKey, label: string) => (
-    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  const sortHeader = (key: typeof sortKey, label: string, hint?: string) => (
+    <SortHeaderButton label={label} hint={hint} active={sortKey === key} onClick={() => toggleSort(key)} />
   )
 
   const table = (
@@ -279,13 +279,35 @@ function CollateralDesktopTable({
         <tr className={TABLE_HEADER_ROW}>
           <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
           <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-            {sortHeader("asset", t("Asset"))}
+            {sortHeader("asset", t("Asset"), t("The liquidity pool you can pledge as collateral to borrow against."))}
           </th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("LP APR"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("deposits", t("Total Deposits"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("Max LTV"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("risk", t("Premium"))}</th>
-          <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader("apy", t("LP APR"), t("Annual trading-fee yield earned by this liquidity pool."))}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "deposits",
+              t("Total Deposits"),
+              t("Total value of LP positions pledged to this market by all users."),
+            )}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader("cf", t("Max LTV"), t("The most you can borrow as a share of your collateral value."))}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "risk",
+              t("Premium"),
+              t("An additional cost on your borrow rate based on the riskiness of your collateral"),
+            )}
+          </th>
+          <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+            {sortHeader(
+              "capacityFilled",
+              t("Capacity Filled"),
+              t("Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals."),
+            )}
+          </th>
           <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
             <span className="sr-only">{t("Quick actions")}</span>
           </th>

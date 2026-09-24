@@ -1780,6 +1780,27 @@ const dict: TranslationDictionary = {
   "Send report": "发送报告",
   "Thanks! Your report was sent.": "谢谢！你的报告已发送。",
   "Capacity Filled": "容量使用率",
+  "A token in your wallet you can put to work here.": "你钱包中可在此投入使用的代币。",
+  "Amount still available to borrow from this market.": "此市场中仍可借出的金额。",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "你为借入资金支付的年利率，随资金利用率变动。",
+  "Annual percentage yield you earn by supplying this asset.": "供应此资产可获得的年化收益率。",
+  "Annual trading-fee yield earned by this liquidity pool.": "此流动性池从交易手续费中获得的年化收益。",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "抵押系数：每一美元抵押品可借入的金额。LT 为清算阈值。",
+  "Estimated net yield at maximum leverage, after borrow costs.": "扣除借款成本后，最大杠杆下的预估净收益率。",
+  "Funds not currently borrowed, available to withdraw or borrow.": "当前未被借出、可提取或借入的资金。",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "已供应资金中当前被借出的比例。利用率越高，利率越高，提款也可能延迟。",
+  "The liquidity pool you can pledge as collateral to borrow against.": "可作为抵押品质押以借款的流动性池。",
+  "The maximum leverage available on this loop.": "此循环可用的最大杠杆。",
+  "The most you can borrow as a share of your collateral value.": "可借入金额占抵押品价值的最高比例。",
+  "The token you can borrow against your collateral.": "可用你的抵押品借入的代币。",
+  "The token you can supply to earn yield.": "可供应以赚取收益的代币。",
+  "Total amount currently borrowed from this market by all users.": "所有用户当前从此市场借出的总额。",
+  "Total amount supplied to this market by all users.": "所有用户向此市场供应的总额。",
+  "Total value of LP positions pledged to this market by all users.": "所有用户在此市场质押的 LP 头寸总价值。",
+  "Your wallet balance of this token, ready to use.": "你钱包中此代币的余额，可随时使用。",
 }
 
 export default dict

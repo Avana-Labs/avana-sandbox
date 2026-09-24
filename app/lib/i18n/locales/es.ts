@@ -1879,6 +1879,36 @@ const dict: TranslationDictionary = {
   "Send report": "Enviar informe",
   "Thanks! Your report was sent.": "¡Gracias! Tu informe se ha enviado.",
   "Capacity Filled": "Capacidad utilizada",
+  "A token in your wallet you can put to work here.": "Un token de tu billetera que puedes poner a trabajar aquí.",
+  "Amount still available to borrow from this market.": "Cantidad aún disponible para pedir prestado en este mercado.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Tasa de interés anual que pagas por los fondos prestados. Varía según la utilización.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Rendimiento porcentual anual que obtienes al suministrar este activo.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Rendimiento anual por comisiones de trading generado por este pool de liquidez.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Factor de colateral: cuánto puedes pedir prestado por cada dólar de colateral. LT es el umbral de liquidación.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Rendimiento neto estimado con el apalancamiento máximo, tras los costos de préstamo.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Fondos no prestados actualmente, disponibles para retirar o pedir prestado.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Proporción de los fondos suministrados que está prestada. Un mayor uso sube las tasas y puede retrasar los retiros.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "El pool de liquidez que puedes aportar como colateral para pedir prestado.",
+  "The maximum leverage available on this loop.": "El apalancamiento máximo disponible en este loop.",
+  "The most you can borrow as a share of your collateral value.":
+    "Lo máximo que puedes pedir prestado como proporción del valor de tu colateral.",
+  "The token you can borrow against your collateral.": "El token que puedes pedir prestado contra tu colateral.",
+  "The token you can supply to earn yield.": "El token que puedes suministrar para obtener rendimiento.",
+  "Total amount currently borrowed from this market by all users.":
+    "Cantidad total prestada actualmente en este mercado por todos los usuarios.",
+  "Total amount supplied to this market by all users.":
+    "Cantidad total suministrada a este mercado por todos los usuarios.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Valor total de las posiciones LP aportadas a este mercado por todos los usuarios.",
+  "Your wallet balance of this token, ready to use.": "El saldo de este token en tu billetera, listo para usar.",
 }
 
 export default dict

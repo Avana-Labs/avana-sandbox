@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -73,10 +74,9 @@ function SuppliesMetricHeader({
   align?: "left" | "right"
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+    <TableHeaderHint hint={help} className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
       {formatTableHeaderLabel(label)}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 

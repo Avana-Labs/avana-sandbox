@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
@@ -88,10 +89,12 @@ function WalletMetricHeader({
   align?: "left" | "right"
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap", align === "right" && "justify-end")}>
+    <TableHeaderHint
+      hint={help}
+      className={cn("inline-flex items-center gap-1 whitespace-nowrap", align === "right" && "justify-end")}
+    >
       {formatTableHeaderLabel(label)}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 
