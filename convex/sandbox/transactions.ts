@@ -1524,6 +1524,13 @@ export const recordTransaction = mutation({
           // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
           // liquid row with enough USD value. Never fail open when the row is absent: clamping that
           // nonexistent source to zero while crediting the product bucket mints net worth.
+          if (
+            args.product === "lend" &&
+            args.kind === "deposit" &&
+            (!liquid || liquid.amount + 1e-9 < (lendTokenMove?.tokens ?? tokenAmount))
+          ) {
+            throw codedError("INSUFFICIENT_BALANCE: not enough liquid tokens for this deposit.")
+          }
           if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
             throw codedError("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
           }
