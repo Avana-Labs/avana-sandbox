@@ -203,9 +203,7 @@ describe("useBorrowSession", () => {
     act(() => {
       result.current.hydrateWalletData({
         balances: [],
-        borrowBalances: [
-          { marketId: marketSlug, symbol: "LP", amount: 1.0375, valueUsd: 43_750, state: "collateral" },
-        ],
+        borrowBalances: [{ marketId: marketSlug, symbol: "LP", amount: 1.0375, valueUsd: 43_750, state: "collateral" }],
         positions: [
           {
             product: "borrow",

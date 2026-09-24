@@ -111,9 +111,7 @@ describe("useLendSession", () => {
     act(() => {
       result.current.hydrateWalletData({
         balances: [],
-        lendBalances: [
-          { marketId, assetId: marketId, symbol: "X", amount: 7, valueUsd: 37_500, state: "deposited" },
-        ],
+        lendBalances: [{ marketId, assetId: marketId, symbol: "X", amount: 7, valueUsd: 37_500, state: "deposited" }],
         positions: [
           {
             _id: "p1",
