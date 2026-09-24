@@ -104,6 +104,30 @@ export function mapMultiplyPreviewToActionUi(
     metricValue("target-leverage", "Target leverage", `${options.multiplier.toFixed(2)}x`),
     metricValue("looped-exposure", "Looped exposure", formatActionUsd(addedExposureUsd)),
     metricValue("borrowed-amount", `${options.borrowSymbol} borrowed`, formatActionUsd(addedDebtUsd)),
+    // With an open loop the HF / LTV / APY below are for the combined position, so show that
+    // position too; otherwise "Target leverage 1.10x" sat next to a ~2x projected result.
+    ...(hasExistingPosition
+      ? [
+          metricBeforeAfter(
+            "position-exposure",
+            "Position exposure",
+            formatActionUsd(scaleUsd(preview.before.collateralValueUsd)),
+            formatActionUsd(scaleUsd(preview.after.collateralValueUsd)),
+          ),
+          metricBeforeAfter(
+            "position-debt",
+            "Position debt",
+            formatActionUsd(scaleUsd(preview.before.debtValueUsd)),
+            formatActionUsd(scaleUsd(preview.after.debtValueUsd)),
+          ),
+          metricBeforeAfter(
+            "position-leverage",
+            "Position leverage",
+            `${preview.before.multiplier.toFixed(2)}x`,
+            `${preview.after.multiplier.toFixed(2)}x`,
+          ),
+        ]
+      : []),
     metricValue("borrow-capacity", "Borrow capacity remaining", formatActionUsd(borrowCapacityUsd), borrowCapacityTone),
     metricValue("ltv", hasExistingPosition ? "Projected LTV" : "LTV", formatActionRatioPercent(preview.after.ltv)),
     metricValue(
