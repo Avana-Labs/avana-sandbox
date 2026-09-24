@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { LANGUAGE_HTML_LANG, isRtlLanguage } from "@/app/lib/i18n/language-html-lang"
 import { setActiveCurrency, setActiveLocale } from "@/app/lib/currency/active-rate"
 import { applyCachedLiveRates, fetchLiveRates } from "@/app/lib/currency/exchange-rates"
-import { applyLiveRates, FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
+import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
 const LANGUAGE_STORAGE_KEY = "avana-language"
@@ -69,23 +69,11 @@ type LocaleDisplayPreferences = Omit<DisplayPreferencesContextValue, keyof Amoun
 const AmountDisplayPreferencesContext = createContext<AmountDisplayPreferences | null>(null)
 const LocaleDisplayPreferencesContext = createContext<LocaleDisplayPreferences | null>(null)
 
-export function DisplayPreferencesProvider({
-  children,
-  initialFxRates,
-}: {
-  children: ReactNode
-  initialFxRates?: Partial<Record<CurrencyCode, number>>
-}) {
+export function DisplayPreferencesProvider({ children }: { children: ReactNode }) {
   const [showDollarAmounts, setShowDollarAmountsState] = useState(true)
   const [language, setLanguageState] = useState<LanguageCode>("EN")
   const [currency, setCurrencyState] = useState<CurrencyCode>("USD")
-  const [ratesVersion, setRatesVersion] = useState(() => {
-    if (initialFxRates && Object.keys(initialFxRates).length > 0) {
-      applyLiveRates(initialFxRates)
-      return 1
-    }
-    return 0
-  })
+  const [ratesVersion, setRatesVersion] = useState(0)
   const hydratedRef = useRef(false)
   // Mirrors the current currency for the async live-rate callback, which resolves
   // after the user may have switched again.
@@ -123,20 +111,18 @@ export function DisplayPreferencesProvider({
 
     hydratedRef.current = true
 
-    // Skip the /api/fx-rates fetch when the server already seeded live rates — first
-    // paint does not wait on a client round trip. Convex (signed-in) can still overlay.
+    // Refresh live rates in the browser; the server always renders USD. Convex (signed-in)
+    // can still overlay via FX_RATES_UPDATED_EVENT.
     let cancelled = false
-    if (!initialFxRates || Object.keys(initialFxRates).length === 0) {
-      fetchLiveRates().then((updated) => {
-        if (cancelled || !updated) return
-        setActiveCurrency(currencyRef.current)
-        setRatesVersion((version) => version + 1)
-      })
-    }
+    fetchLiveRates().then((updated) => {
+      if (cancelled || !updated) return
+      setActiveCurrency(currencyRef.current)
+      setRatesVersion((version) => version + 1)
+    })
     return () => {
       cancelled = true
     }
-  }, [initialFxRates])
+  }, [])
 
   // Re-render currency consumers when live FX rates are applied from ANY source — the client poll
   // above or the validated Convex FX subscription (which dispatches FX_RATES_UPDATED_EVENT).

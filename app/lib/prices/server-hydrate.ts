@@ -1,6 +1,6 @@
 import "server-only"
 import { unstable_cache } from "next/cache"
-import { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
+import { fetchTokenPrices } from "./server-snapshot"
 import { setCanonicalPrices } from "./canonical"
 import { waitForServerSeed } from "@/app/lib/performance/server-seed"
 import { reportServerFetchFailure } from "@/app/lib/detail-page/report-server-fetch-failure"

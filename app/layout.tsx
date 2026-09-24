@@ -25,7 +25,6 @@ import { isLighthouseAuditMode } from "./lib/test-mode"
 import { SITE_URL } from "./lib/site-url"
 import { SchemaMarkup, buildOrganizationSchema, buildWebSiteSchema } from "./components/seo/schema"
 import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
-import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -138,12 +137,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // Fetch the live oracle prices once on the server: this hydrates the server-side canonical
   // store (server-computed price surfaces render live) AND yields the seed handed to the client
-  // TokenPricesContext, so CLIENT-rendered prices (lend list, borrow table, action pages) are
-  // live from SSR without depending on the realtime subscription (which only mounts on
-  // authenticated product routes). Each seed falls back after a 250ms cold-cache wait;
-  // slow optional data must not hold up the entire document. Cached requests continue in the
-  // background, so a slow first fetch still seeds later visitors.
-  const [initialTokenPrices, initialFxRates] = await Promise.all([loadServerTokenPrices(), loadServerFxRates()])
+  // TokenPricesContext, so CLIENT-rendered prices are live from SSR. FX is intentionally not
+  // fetched here: DisplayPreferencesProvider applies its local cache and refreshes in the browser,
+  // while the server always renders USD. A root-level FX request only delayed every route.
+  // Awaited here rather than behind a Suspense boundary: streaming the page body after the shell
+  // turns notFound()/redirect() into soft 200s. The seed's 250ms cold-cache cap bounds the wait.
+  const initialTokenPrices = await loadServerTokenPrices()
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined
   // Server-owned HttpOnly SIWE session. Re-verifying it here (signature + expiry, no network)
@@ -172,6 +171,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="/avana-wordmark-220.png"
           imageSrcSet="/avana-wordmark-220.png 220w, /avana-wordmark-440.png 440w"
           imageSizes="220px"
+          fetchPriority="high"
+          media="(min-width: 1280px)"
         />
         <link rel="preload" as="image" href="/avana-icon-64.png" />
         {/* Inline so theme/color-scheme apply before first paint — external src added a
@@ -183,7 +184,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <DisplayPreferencesProvider initialFxRates={initialFxRates}>
+          <DisplayPreferencesProvider>
             <SiweServerSessionProvider session={serverSession}>
               <WalletGateProvider>
                 <Web3ProviderBoundary>

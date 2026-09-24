@@ -1,31 +1,15 @@
 import "server-only"
-import {
-  publicMetadataCache,
-  publicMetadataKey,
-  fetchWithReadDeadline,
-} from "@/app/lib/detail-page/public-metadata-cache"
-import { ConvexHttpClient } from "convex/browser"
+import type { ConvexHttpClient } from "convex/browser"
+import { publicMetadataCache, publicMetadataKey } from "@/app/lib/detail-page/public-metadata-cache"
 import { api } from "@/convex/_generated/api"
-import { validatedConvexPriceMap } from "@/app/lib/prices/validated-convex-price"
+import { publicConvexClient as convexClient } from "@/app/lib/convex/server-client"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
 import type { AllocationRow } from "@/app/lib/borrow-detail/types"
-import { requestCache } from "@/app/lib/detail-page/request-cache"
 import { reportServerFetchFailure, reportServerFetchSuccess } from "@/app/lib/detail-page/report-server-fetch-failure"
 
-// One client per request instead of one per fetch* helper. Request-scoped via React.cache;
-// falls back to a fresh client per call in the non-RSC test runtime.
-const convexClient = requestCache((): ConvexHttpClient | null => {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL
-  if (!url || !/^https?:\/\//.test(url)) return null
-  try {
-    return new ConvexHttpClient(url, { fetch: fetchWithReadDeadline })
-  } catch (error) {
-    reportServerFetchFailure("convexClient", error)
-    return null
-  }
-})
+export { fetchTokenPrices } from "@/app/lib/prices/server-snapshot"
 
 export async function fetchBorrowPoolDetailHydration(slug: string, route?: string) {
   const client = convexClient()
@@ -313,23 +297,6 @@ export async function fetchBorrowMarket(slug: string) {
     return await client.query(api.borrow.markets.getMarket, { slug })
   } catch (error) {
     reportServerFetchFailure("fetchBorrowMarket", error)
-    return null
-  }
-}
-
-/** Real token prices (base symbol → USD) from the canonical Convex price snapshot. */
-export async function fetchTokenPrices(): Promise<Record<string, number> | null> {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const snapshot = await client.query(api.prices.getPriceSnapshot, {})
-    const rows = snapshot?.prices
-    if (!rows || rows.length === 0) return null
-    const map = validatedConvexPriceMap(rows)
-    if (Object.keys(map).length === 0) return null
-    return map
-  } catch (error) {
-    reportServerFetchFailure("fetchTokenPrices", error)
     return null
   }
 }

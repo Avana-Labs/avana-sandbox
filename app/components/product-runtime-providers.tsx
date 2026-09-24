@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 import { PreferencesProfileSync } from "@/app/components/preferences-profile-sync"
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 
 const AvanaSessionProviders = dynamic(() =>
   import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
@@ -25,8 +26,8 @@ const PRODUCT_RUNTIME_ROUTES = [
 ]
 
 function needsProductRuntime(pathname: string) {
-  // `/` is the Express workspace: guests trade quotes against the same live runtime.
-  if (pathname === "/") return true
+  // The guest Express workspace owns a swap-only session and activates the full
+  // runtime on demand. Signed-in visitors still take the full runtime below.
   return PRODUCT_RUNTIME_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
@@ -51,10 +52,10 @@ export function ProductRuntimeProviders({
     )
   }
 
-  if (!isSignedIn && !needsProductRuntime(pathname)) {
+  if (!isSignedIn && !needsProductRuntime(pathname) && !(pathname === "/" && shouldUseOpenGateSession())) {
     // Still provide the server-seeded prices so any price consumer rendered outside the product
     // runtime resolves live values instead of the fixture. No Convex session is mounted on this
-    // branch (guest, non-product route like `/support-center`), so realtime={false} avoids lazy-loading
+    // branch (guest Express or a route like `/support-center`), so realtime={false} avoids lazy-loading
     // convex/react for a subscription that would only throw for lack of a provider and fall back
     // to this same seed. Mirrors the guest `/ask` branch above.
     return (
