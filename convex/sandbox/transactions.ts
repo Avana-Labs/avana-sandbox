@@ -1366,7 +1366,8 @@ export const recordTransaction = mutation({
             const lastWriteAt = position?.lastUpdatedAt ?? Math.max(...deposited.map((row) => row.updatedAt ?? now), 0)
             const years = Math.max(0, now - lastWriteAt) / (365 * 24 * 3600 * 1000)
             const storedApyPct = position?.supplyApyPct
-            const apy = typeof storedApyPct === "number" && Number.isFinite(storedApyPct) ? Math.max(0, storedApyPct) : 0
+            const apy =
+              typeof storedApyPct === "number" && Number.isFinite(storedApyPct) ? Math.max(0, storedApyPct) : 0
             const maxTokens = depositedAmount * Math.pow(1 + apy / 100, years) * (1 + 1e-6) + 1e-9
             if (tokens > maxTokens) {
               throw codedError("INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount.")

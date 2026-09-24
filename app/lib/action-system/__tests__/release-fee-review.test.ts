@@ -9,8 +9,15 @@ test("Multiply review fee agrees with the success receipt fee", () => {
     after: { collateralValueUsd: 3000, debtValueUsd: 2000, multiplier: 3, ltv: 2 / 3, healthFactor: 1.2, netApy: 0.05 },
   })
   const ui = mapMultiplyPreviewToActionUi(preview, {
-    collateralSymbol: "ETH", borrowSymbol: "USDC", collateralAmount: 1, collateralPriceUsd: 1000,
-    marketLabel: "ETH / USDC", collateralApy: 0.05, borrowApy: 0.03, multiplier: 3, maxLtv: 0.8,
+    collateralSymbol: "ETH",
+    borrowSymbol: "USDC",
+    collateralAmount: 1,
+    collateralPriceUsd: 1000,
+    marketLabel: "ETH / USDC",
+    collateralApy: 0.05,
+    borrowApy: 0.03,
+    multiplier: 3,
+    maxLtv: 0.8,
   })
   expect(ui.networkFeeLabel).toBe(formatActionFeeSummary(ui.amountUsd!))
 })
