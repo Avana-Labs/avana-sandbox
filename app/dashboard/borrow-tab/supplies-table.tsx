@@ -189,8 +189,16 @@ export function SuppliesPanel({
                       </td>
                       <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                         <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                        {/* With no debt in scope (HF ∞) there is nothing to liquidate; the collateral's
+                            liquidation value next to "∞" read like a liquidation price. */}
                         <div className={TABLE_CELL_CAPTION}>
-                          {t("Liq.")} {m(exact(row.liquidationThresholdUsd))}
+                          {Number.isFinite(row.healthFactor) ? (
+                            <>
+                              {t("Liq.")} {m(exact(row.liquidationThresholdUsd))}
+                            </>
+                          ) : (
+                            t("No debt")
+                          )}
                         </div>
                       </td>
                       <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>

@@ -38,6 +38,18 @@ const tinyRow: SupplyRowContext = {
 }
 
 describe("SuppliesPanel column scope", () => {
+  it("shows No debt instead of a liquidation value when nothing in scope is borrowed", () => {
+    const { container } = render(
+      <SuppliesPanel
+        rows={[{ ...tinyRow, healthFactor: Number.POSITIVE_INFINITY }]}
+        totals={{ collateral: 2, borrowed: 0, available: 0, fees: 0, averageHf: null }}
+        showSummary={false}
+      />,
+    )
+    expect(container.textContent).toMatch(/No debt/)
+    expect(container.textContent).not.toMatch(/Liq\./)
+  })
+
   afterEach(() => {
     cleanup()
   })
