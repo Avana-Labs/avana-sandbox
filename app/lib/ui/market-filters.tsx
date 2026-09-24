@@ -303,8 +303,12 @@ function FacetPopover({
   // Radix mounts the portaled panel a render after `open` flips, so measure it when its node
   // attaches: clamp it inside the viewport gutter using its REAL width (content-sized panels are
   // narrower than their max), which keeps it under its pill.
+  // An inline ref runs again on every re-render (each option toggle), so position and scroll only
+  // on the first attach of each opening — toggling an option must never move the page.
+  const measuredRef = useRef(false)
   const measurePanel = (node: HTMLDivElement | null) => {
-    if (!node?.offsetWidth) return
+    if (!node?.offsetWidth || measuredRef.current) return
+    measuredRef.current = true
     setAlignOffset(horizontalOffset(anchorRef.current, node.offsetWidth))
     // Make room below only once the panel exists: a smooth scroll started during the click is
     // cancelled by the mount, which left the panel open short for a beat.
@@ -329,6 +333,7 @@ function FacetPopover({
       open={open}
       onOpenChange={(next) => {
         if (next) {
+          measuredRef.current = false
           revealInRail(anchorRef.current)
           setAlignOffset(horizontalOffset(anchorRef.current, panelWidth))
         }

@@ -300,7 +300,9 @@ export function ExploreLoopsMarketsTable({
         searchPlaceholder={t("Search loops")}
       />
 
-      <div className="mt-[68px] space-y-14">
+      {/* At least one screen tall, so narrowing the filters never shortens the page enough to
+          force the browser to pull the scroll position back. */}
+      <div className="mt-[68px] min-h-[100svh] space-y-14">
         {groupedSections.length > 0 ? (
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">

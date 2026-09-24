@@ -206,7 +206,9 @@ export function BorrowWorkspace({ pageData, initialIsDesktop = true }: BorrowWor
         onSearchChange={setSearch}
       />
 
-      <div className="pt-3 pb-6">
+      {/* At least one screen tall, so narrowing the filters never shortens the page enough to
+          force the browser to pull the scroll position back. */}
+      <div className="min-h-[100svh] pt-3 pb-6">
         {/* Prices come from the global seeded TokenPricesProvider (ProductRuntimeProviders); a
             local provider here would shadow that seed with an empty context → fixture prices. */}
         {visiblePools.length === 0 ? (

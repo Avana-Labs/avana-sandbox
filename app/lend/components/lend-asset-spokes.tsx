@@ -468,7 +468,9 @@ export function LendAssetSpokes({
         />
       </div>
 
-      <div className="space-y-14">
+      {/* At least one screen tall, so narrowing the filters never shortens the page enough to
+          force the browser to pull the scroll position back. */}
+      <div className="min-h-[100svh] space-y-14">
         {revealedGroups.length > 0 ? (
           revealedGroups.map((group, index) => (
             <div key={group.title} className="space-y-8">
