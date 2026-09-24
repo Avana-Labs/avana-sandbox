@@ -1731,3 +1731,59 @@ describe("backfillBorrowLpTokenAmounts", () => {
     expect(rerun.planned).toEqual([])
   })
 })
+
+describe("alignBorrowLpTokensToPledgedLegs", () => {
+  test("sets the owned LP tokens to the open position's pledged leg tokens", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      const wallet = WALLET.toLowerCase()
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "borrow",
+        marketSlug: "lp-btc",
+        status: "open",
+        collateralValueUsd6: "43750000000",
+        debtValueUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet,
+        positionId,
+        marketSlug: "lp-btc",
+        collateralShares: "1152636000000000000",
+        principalTokenAmount: "1152636000000000000",
+        collateralEnabled: true,
+        collateralValueUsd6: "44055875486",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet,
+        marketId: "lp-btc",
+        poolId: "lp-btc",
+        symbol: "LP",
+        amount: 1.036829,
+        valueUsd: 43_750,
+        state: "collateral",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet,
+        marketId: "lp-btc",
+        poolId: "lp-btc",
+        symbol: "LP",
+        amount: 0.5,
+        valueUsd: 21_875,
+        state: "poolAvailable",
+        updatedAt: 1,
+      })
+    })
+    const { internal } = await import("./_generated/api")
+    await t.mutation(internal.sandbox.migrations.alignBorrowLpTokensToPledgedLegs, { dryRun: false })
+    const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(rows.find((row) => row.state === "collateral")?.amount).toBeCloseTo(1.152636, 9)
+    expect(rows.find((row) => row.state === "poolAvailable")?.amount).toBeCloseTo(0.576318, 9)
+    const rerun = await t.mutation(internal.sandbox.migrations.alignBorrowLpTokensToPledgedLegs, { dryRun: true })
+    expect(rerun.planned).toEqual([])
+  })
+})

@@ -294,3 +294,44 @@ export const backfillBorrowLpTokenAmounts = internalMutation({
     return { dryRun, scanned: page.page.length, planned, isDone: page.isDone, continueCursor: page.continueCursor }
   },
 })
+
+/**
+ * One-off, idempotent follow-up to `backfillBorrowLpTokenAmounts`: an open borrow position whose
+ * collateral leg already carries an LP token count (written by the client at its own LP price)
+ * is the real count for that pool: the client derived it from the collateral row's USD. Set the
+ * collateral row's `amount` to exactly those tokens and the poolAvailable row's at the same claim
+ * price (collateral USD ÷ leg tokens). `valueUsd` is untouched.
+ */
+export const alignBorrowLpTokensToPledgedLegs = internalMutation({
+  args: { dryRun: v.boolean() },
+  handler: async (ctx, { dryRun }) => {
+    const now = Date.now()
+    const legs = await ctx.db.query("positionCollateral").collect()
+    const planned: Array<{ marketId: string; state: string; fromAmount: number; toAmount: number }> = []
+    for (const leg of legs) {
+      const principal = BigInt(leg.principalTokenAmount)
+      const raw = principal > 0n ? principal : BigInt(leg.collateralShares)
+      if (raw < 10n ** 12n) continue
+      const position = await ctx.db.get(leg.positionId)
+      if (!position || position.product !== "borrow" || position.status !== "open") continue
+      const legTokens = Number(raw / 10n ** 6n) / 1e12
+      const rows = (
+        await ctx.db
+          .query("walletBorrowBalances")
+          .withIndex("by_wallet", (q) => q.eq("wallet", leg.wallet))
+          .collect()
+      ).filter((row) => row.marketId === leg.marketSlug)
+      const collateralRow = rows.find((row) => row.state === "collateral")
+      if (!collateralRow || !(collateralRow.valueUsd > 0) || !(legTokens > 0)) continue
+      const claimPriceUsd = collateralRow.valueUsd / legTokens
+      for (const row of rows) {
+        if (row.state !== "collateral" && row.state !== "poolAvailable") continue
+        const toAmount = row === collateralRow ? legTokens : row.valueUsd / claimPriceUsd
+        if (Math.abs(toAmount - row.amount) <= Math.max(1e-12, toAmount * 1e-9)) continue
+        planned.push({ marketId: leg.marketSlug, state: row.state, fromAmount: row.amount, toAmount })
+        if (!dryRun) await ctx.db.patch(row._id, { amount: toAmount, updatedAt: now })
+      }
+    }
+    return { dryRun, planned }
+  },
+})
