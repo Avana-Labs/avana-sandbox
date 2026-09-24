@@ -1355,10 +1355,19 @@ export const recordTransaction = mutation({
           lendTokenMove = { tokens, priceUsd: tokens > 0 && args.amountUsd > 0 ? args.amountUsd / tokens : priceUsd }
           if (depositedAmount > 0) lendSuppliedBeforeUsd = depositedAmount * priceUsd
           if (args.kind === "withdraw") {
-            // Interest accrues client-side between writes; allow at most a 50% APY on the balance.
-            const lastWriteAt = Math.max(...deposited.map((row) => row.updatedAt ?? now), 0)
+            // Accrual is bounded by the persisted position's last rate and checkpoint. The
+            // incoming client payload is not authoritative, and a blanket rate can mint yield.
+            const position = await ctx.db
+              .query("positions")
+              .withIndex("by_wallet_product_market", (q) =>
+                q.eq("wallet", wallet).eq("product", "lend").eq("marketSlug", marketSlug),
+              )
+              .unique()
+            const lastWriteAt = position?.lastUpdatedAt ?? Math.max(...deposited.map((row) => row.updatedAt ?? now), 0)
             const years = Math.max(0, now - lastWriteAt) / (365 * 24 * 3600 * 1000)
-            const maxTokens = depositedAmount * (1 + 0.5 * years) * (1 + 1e-6) + 1e-9
+            const storedApyPct = position?.supplyApyPct
+            const apy = typeof storedApyPct === "number" && Number.isFinite(storedApyPct) ? Math.max(0, storedApyPct) : 0
+            const maxTokens = depositedAmount * Math.pow(1 + apy / 100, years) * (1 + 1e-6) + 1e-9
             if (tokens > maxTokens) {
               throw codedError("INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount.")
             }
