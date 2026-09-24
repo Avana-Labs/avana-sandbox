@@ -93,6 +93,13 @@ describe("AskAIPageClient rich parts", () => {
       loadMore: vi.fn(),
       results: [
         {
+          id: "u1",
+          role: "user",
+          text: "Show all my positions, Umbrella included",
+          _creationTime: 1,
+          status: "success",
+        },
+        {
           id: "a1",
           role: "assistant",
           text: "Here is your portfolio.",
@@ -140,6 +147,54 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("gho")).toBeInTheDocument()
     expect(screen.getAllByText("$250.00").length).toBeGreaterThan(0)
     expect(screen.getByText(/Cooling until/)).toBeInTheDocument()
+  })
+
+  const portfolioPayload = {
+    walletRequired: false,
+    dataProvenance: "sandbox",
+    totals: {
+      lendNetValueUsd: 300152.89,
+      borrowNetValueUsd: 346584.5,
+      multiplyNetValueUsd: 209040.26,
+      liquidNetValueUsd: 106950.48,
+      netValueUsd: 962728.13,
+      umbrellaUsd: 18269.51,
+    },
+    umbrella: [{ marketSlug: "gho", suppliedUsd6: "5000000000", cooldownAmountUsd6: "2500000000" }],
+    asOf: 0,
+  }
+  const renderPortfolioAnswer = (question: string) => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: question, _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "Your net value is $962,728.13.", _creationTime: 2, status: "success" },
+      ],
+    })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: { financialResults: [{ kind: "portfolio", dataProvenance: "sandbox", payload: portfolioPayload }] },
+      },
+    ])
+    render(<AskAIPageClient />)
+  }
+
+  it("answers a plain portfolio question in text only, with no portfolio card", () => {
+    renderPortfolioAnswer(
+      "What is my exact net value and the four canonical component values? Show the numbers that reconcile to the total.",
+    )
+    expect(screen.getByText("Your net value is $962,728.13.")).toBeInTheDocument()
+    expect(screen.queryByRole("region", { name: "Your Avana portfolio" })).toBeNull()
+  })
+
+  it("shows a compact product table, without Umbrella rows, when asked to see the portfolio", () => {
+    renderPortfolioAnswer("Show me my portfolio")
+    expect(screen.getByRole("region", { name: "Your Avana portfolio" })).toBeInTheDocument()
+    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["Product", "Value"])
+    expect(screen.getByText("$300,152.89")).toBeInTheDocument()
+    expect(screen.queryByText("gho")).toBeNull()
   })
 
   it("renders a compact price chart without a redundant one-row market table", () => {

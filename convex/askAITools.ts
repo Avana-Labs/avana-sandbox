@@ -19,6 +19,25 @@ import { getAuthedWallet } from "./sandbox/auth"
 import { computePortfolioNetApyPct } from "./sandbox/transactions"
 import type { Id } from "./_generated/dataModel"
 
+/** Money is shown to the cent, so the model is handed cents (not 962728.1321171904). */
+const toCents = (usd: number) => Math.round(usd * 100) / 100
+
+/**
+ * Rounds every `*Usd` total to the cent, then rebuilds Net Value from the ROUNDED components so
+ * "Lend + Borrow + Liquid + Multiply = Net value" still adds up exactly in what the user reads.
+ */
+export function toCentsTotals<T extends Record<string, unknown>>(totals: T): T {
+  const rounded: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(totals)) {
+    rounded[key] = key.endsWith("Usd") && typeof value === "number" && Number.isFinite(value) ? toCents(value) : value
+  }
+  const parts = ["lendNetValueUsd", "borrowNetValueUsd", "multiplyNetValueUsd", "liquidNetValueUsd"] as const
+  if (parts.every((key) => typeof rounded[key] === "number")) {
+    rounded.netValueUsd = toCents(parts.reduce((sum, key) => sum + (rounded[key] as number), 0))
+  }
+  return rounded as T
+}
+
 type PortfolioReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
 
 function withTurnWallet(ctx: Pick<QueryCtx, "db">, wallet?: string): PortfolioReadCtx {
@@ -179,7 +198,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
-    totals: {
+    totals: toCentsTotals({
       // Gross exposure per product (collateral + debt), for callers wanting position size.
       lendUsd: sumUsd(lend),
       borrowUsd: sumUsd(borrow),
@@ -220,7 +239,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       umbrellaSlashedUsd: umbrellaPositions.reduce((sum, position) => sum + position.slashedUsd, 0),
       largestPositionUsd: largest?.valueUsd ?? 0,
       largestPositionLabel: largest?.label ?? null,
-    },
+    }),
     lend,
     borrow,
     multiply,
@@ -229,11 +248,11 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     umbrellaCooldowns,
     umbrellaCooldownSummary: {
       coolingCount: cooling.length,
-      coolingUsd: cooling.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      coolingUsd: toCents(cooling.reduce((sum, tranche) => sum + tranche.amountUsd, 0)),
       readyCount: ready.length,
-      readyUsd: ready.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      readyUsd: toCents(ready.reduce((sum, tranche) => sum + tranche.amountUsd, 0)),
       expiredCount: expired.length,
-      expiredUsd: expired.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      expiredUsd: toCents(expired.reduce((sum, tranche) => sum + tranche.amountUsd, 0)),
       nextCooldownEndsAt: cooling.length > 0 ? Math.min(...cooling.map((tranche) => tranche.endsAt)) : null,
       nextWithdrawalWindowEndsAt: ready.length > 0 ? Math.min(...ready.map((tranche) => tranche.windowEndsAt)) : null,
     },
