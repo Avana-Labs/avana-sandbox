@@ -69,21 +69,30 @@ export function formatActionNetworkFee(value: number) {
  */
 export const SANDBOX_NETWORK_FEE_USD = 0.03
 
+/** Avana interface fee: 15 bps of the transaction's USD value (see the fee tooltip). */
+export const AVANA_PLATFORM_FEE_BPS = 15
+
+export function avanaPlatformFeeUsd(amountUsd: number) {
+  if (!Number.isFinite(amountUsd) || amountUsd <= 0) return 0
+  return (amountUsd * AVANA_PLATFORM_FEE_BPS) / 10_000
+}
+
 /**
- * The sandbox engines deduct no protocol fee, so the network fee is the only cost. Params are
- * kept for call-site compatibility but unused.
+ * The "Avana Platform Fee" row: 15 bps of the action's USD amount. It read a flat "~$0.03" for
+ * $100 and $5,000 alike. The extra params are kept for call-site compatibility.
  */
-export function formatActionFeeSummary(_amountUsd: number, _networkFeeUsd = SANDBOX_NETWORK_FEE_USD, _bps = 30) {
-  return formatActionNetworkFee(SANDBOX_NETWORK_FEE_USD)
+export function formatActionFeeSummary(amountUsd: number, _networkFeeUsd?: number, _bps?: number) {
+  return formatActionNetworkFee(avanaPlatformFeeUsd(amountUsd))
 }
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
-  // Strip trailing zeros in both branches so whole amounts read "12500" not
-  // "12500.00" while fractional amounts keep their significant digits.
-  const rounded =
-    assetAmount >= 100
-      ? assetAmount.toFixed(2).replace(/\.?0+$/, "")
-      : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
+  // Trailing zeros drop in both branches ("12,500", not "12,500.00") while fractional amounts
+  // keep their significant digits. Thousands are grouped: "13099.82" and "78102749.86" were
+  // hard to read next to the grouped USD figures.
+  const rounded = assetAmount.toLocaleString("en-US", {
+    maximumFractionDigits: assetAmount >= 100 ? 2 : Math.min(digits, 6),
+    minimumFractionDigits: 0,
+  })
   return `${rounded} ${symbol}`
 }

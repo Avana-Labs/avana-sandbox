@@ -1,4 +1,4 @@
-import { render, cleanup } from "@testing-library/react"
+import { render, cleanup, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { BorrowableAssetsPanel } from "../borrowable-assets-table"
 import type { BorrowableAsset } from "@/app/lib/data/borrow-domain"
@@ -25,9 +25,7 @@ describe("BorrowableAssetsPanel loan variant", () => {
   })
 
   it("labels TOTAL BORROWS and LIQUIDITY as USD, never as a token quantity", () => {
-    const { container, getAllByText } = render(
-      <BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
-    )
+    const { container, getAllByText } = render(<BorrowableAssetsPanel rows={[wbtc]} onBorrow={vi.fn()} />)
 
     // USD figures render as currency, not as a bare number with a token symbol.
     expect(getAllByText("$9.6M").length).toBeGreaterThan(0)
@@ -36,15 +34,28 @@ describe("BorrowableAssetsPanel loan variant", () => {
     // No cell mixes a USD magnitude with a token symbol (e.g. "9.6M WBTC").
     expect(container.textContent).not.toMatch(/9\.6M\s+WBTC/)
     expect(container.textContent).not.toMatch(/4\.2M\s+WBTC/)
+
+    const capacityHeading = [...container.querySelectorAll("thead th button")].find((button) =>
+      button.textContent?.includes("Capacity Filled"),
+    )
+    expect(capacityHeading).toBeDefined()
+    // Shared SortHeaderButton: CSS uppercase on the button, never wraps.
+    expect(capacityHeading).toHaveClass("!uppercase", "whitespace-nowrap")
+
+    const borrowableRow = container.querySelector("tbody tr")
+    expect(borrowableRow).not.toBeNull()
+    const cells = within(borrowableRow as HTMLElement).getAllByRole("cell")
+    expect(cells[3]).toHaveTextContent("$9.6M")
+    expect(within(cells[3]).queryByRole("img")).not.toBeInTheDocument()
+    expect(within(cells[4]).getByRole("img", { name: "Capacity filled 62%" })).toBeInTheDocument()
   })
 
-  it("rounds a raw unrounded utilization float to 2dp on the mobile card", () => {
+  it("renders capacity filled as the rounded utilization gauge with the Borrow row action", () => {
     const raw: BorrowableAsset = { ...wbtc, utilization: 69.68000215736105 }
-    const { container } = render(
-      <BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} groupByCategory={false} variant="loan" />,
-    )
+    const { getAllByRole, queryAllByRole } = render(<BorrowableAssetsPanel rows={[raw]} onBorrow={vi.fn()} />)
 
-    expect(container.textContent).toContain("69.68%")
-    expect(container.textContent).not.toContain("69.68000215736105%")
+    expect(getAllByRole("img", { name: "Capacity filled 70%" }).length).toBeGreaterThan(0)
+    expect(queryAllByRole("button", { name: "Deposit" })).toHaveLength(0)
+    expect(getAllByRole("button", { name: "Borrow" }).length).toBeGreaterThan(0)
   })
 })

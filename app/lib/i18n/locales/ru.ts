@@ -57,6 +57,10 @@ const dict: TranslationDictionary = {
   Today: "Сегодня",
   Yesterday: "Вчера",
   "Choose collateral": "Выберите залог",
+  "Cooldown expired": "Период ожидания истёк",
+  Closed: "Закрыто",
+  "Show more": "Показать ещё",
+  "Shared credit": "Общий кредит",
   "Choose asset to borrow": "Выберите актив для займа",
   "Choose collateral first": "Сначала выберите залог",
   "No borrowable assets for this collateral.": "Нет активов для займа под этот залог.",
@@ -389,6 +393,11 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Открыть портфель",
   Portfolio: "Портфель",
   "Quick actions": "Быстрые действия",
+  "My Deposits": "Мои депозиты",
+  "My Loops": "Мои лупы",
+  "Available to loop": "Доступно для лупа",
+  "Scroll table left": "Прокрутить таблицу влево",
+  "Scroll table right": "Прокрутить таблицу вправо",
   "Total Fees earned": "Всего заработанных комиссий",
   "Claimable Fees": "Комиссии к получению",
   "Claim Fees": "Получить комиссии",
@@ -578,7 +587,6 @@ const dict: TranslationDictionary = {
   "Lending Performance": "Показатели депозитов",
   "Lend Rewards": "Награды по депозитам",
   "Multiply Overview": "Обзор мультипликатора",
-  "Multiply Positions": "Позиции мультипликатора",
   "Debt & Risk": "Долг и риск",
   "Position size, multiplier, and current net yield": "Размер позиции, мультипликатор и текущая чистая доходность",
   "Borrowed balance, health factor, and liquidation threshold": "Заёмный баланс, фактор здоровья и порог ликвидации",
@@ -1388,7 +1396,6 @@ const dict: TranslationDictionary = {
   "Utilization Rate": "Уровень утилизации",
   "Borrow amount to reach {value} Util.": "Сумма займа для достижения утилизации {value}.",
   "Large price difference": "Большая разница в цене",
-  "Lend Assets": "Активы для депозита",
   "Lend Balance": "Баланс депозита",
   "Lend Opportunity": "Возможность депозита",
   "Lend TVL": "TVL депозитов",
@@ -1405,6 +1412,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY ЦИКЛА",
   "Loop market": "Циклический рынок",
   "LP APR": "LP APR",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Текущая стоимость этого залога и торговые комиссии LP, которые он приносит.",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Активность ликвидаций по всему рынку и позиции у грани ликвидации за последние 24 часа.",
@@ -1505,6 +1514,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Попробуйте символ токена, пару пула или действие, например заём.",
   TVL: "TVL",
+  Testnet: "Тестовая сеть",
   Txn: "Транз.",
   "Unable to refresh the expired quote.": "Не удалось обновить истёкшую котировку.",
   Unavailable: "Недоступно",
@@ -1579,7 +1589,6 @@ const dict: TranslationDictionary = {
   "How it works": "Как это работает",
   "Learn Avana": "Знакомство с Avana",
   "Dashboard Positions": "Позиции дашборда",
-  "Available to use": "Доступно для использования",
   "Available to deposit": "Доступно для депозита",
   "against {pool}": "против {pool}",
   Locked: "Заблокировано",
@@ -1761,6 +1770,7 @@ const dict: TranslationDictionary = {
   "(required)": "(обязательно)",
   "Send report": "Отправить отчёт",
   "Thanks! Your report was sent.": "Спасибо! Ваш отчёт отправлен.",
+  "Capacity Filled": "Использованная емкость",
 }
 
 export default dict

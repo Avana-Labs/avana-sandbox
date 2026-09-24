@@ -105,6 +105,7 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     ],
     collateralFactor: market.risk.collateralFactor,
     liquidationThreshold: market.risk.liquidationThreshold,
+    capacityFilledPct: market.economics.utilizationPct,
   }
 }
 

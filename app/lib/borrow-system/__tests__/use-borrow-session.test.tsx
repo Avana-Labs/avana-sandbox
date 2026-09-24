@@ -192,6 +192,46 @@ describe("useBorrowSession", () => {
     })
   })
 
+  it("hydrates onboarding LP collateral with the server's token count, not USD at the browser price", async () => {
+    const walletId = "convex-wallet"
+    const sessionSeed = buildBorrowSessionSeed(walletId)
+    const { result } = renderHook(() => useBorrowSession({ walletId, sessionSeed }))
+    const marketSlug = Object.values(result.current.state.markets).find(
+      (market) => market.snapshot.lpTokenPriceUsd6 > 1_000_000_000n,
+    )!.id
+
+    act(() => {
+      result.current.hydrateWalletData({
+        balances: [],
+        borrowBalances: [{ marketId: marketSlug, symbol: "LP", amount: 1.0375, valueUsd: 43_750, state: "collateral" }],
+        positions: [
+          {
+            product: "borrow",
+            marketSlug,
+            lastUpdatedAt: 1,
+            collateral: [
+              {
+                _id: "c1",
+                marketSlug,
+                collateralShares: "0",
+                principalTokenAmount: "0",
+                collateralEnabled: true,
+                collateralValueUsd6: "43750000000",
+              },
+            ],
+            debt: [],
+          },
+        ],
+        transactions: [],
+      })
+    })
+
+    await waitFor(() => {
+      const leg = result.current.state.accounts[walletId].collateralPositions.find((p) => p.marketId === marketSlug)
+      expect(leg?.principalTokenAmount).toBe(parseFixed("1.0375", 18))
+    })
+  })
+
   it("anchors the engine clock to the last persisted moment, not wall-clock, on hydration", async () => {
     const walletId = "convex-wallet"
     const sessionSeed = buildBorrowSessionSeed(walletId)

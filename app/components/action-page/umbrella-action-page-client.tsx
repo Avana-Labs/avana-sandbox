@@ -1,5 +1,6 @@
 "use client"
 
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
@@ -176,7 +177,7 @@ function previewFor({
     maxAmount,
     assetSymbol: market.symbol,
     metrics,
-    networkFeeLabel: formatActionFeeSummary(0, 0.03),
+    networkFeeLabel: formatActionFeeSummary(amountUsd),
     risk:
       kind === "stake" || kind === "cooldown"
         ? {
@@ -340,7 +341,7 @@ export function UmbrellaActionPageClient({
       })
       setStage("success")
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Umbrella action failed"
+      const message = actionErrorMessage(error, "Umbrella action failed")
       setOutcome({ tone: "error", title: "Something went wrong", message })
       setStage("error")
     } finally {

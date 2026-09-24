@@ -14,6 +14,7 @@
  * exactly once. It is scheduled only past `COMPACTION_DIRTY_THRESHOLD`, so idle hours run no jobs.
  */
 
+import { codedError } from "./codedError"
 import { v } from "convex/values"
 import { internal } from "./_generated/api"
 import { internalMutation, query } from "./_generated/server"
@@ -42,7 +43,7 @@ type FoldedDelta = { marketSlug: string; borrowedDeltaUsd: number; suppliedDelta
 async function requireLiquidityReader(ctx: QueryCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) {
-    throw new Error("UNAUTHENTICATED: sign in to read live liquidity deltas.")
+    throw codedError("UNAUTHENTICATED: sign in to read live liquidity deltas.")
   }
 }
 

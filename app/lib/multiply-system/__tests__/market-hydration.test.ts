@@ -37,6 +37,7 @@ describe("mergeConvexMultiplySnapshots", () => {
     expect(market.economics.estimatedMaxApy).toBe(expected)
     expect(market.economics.supplyApy).toBe(0.045)
     expect(market.economics.borrowApy).toBe(0.062)
+    expect(market.economics.utilizationPct).toBe(55)
     expect(market.collateralAsset.symbol).toBe("WETH")
     expect(market.borrowAsset.symbol).toBe("USDC")
   })
@@ -83,6 +84,7 @@ describe("mergeConvexMultiplySnapshots", () => {
 
     expect(listAvailable).toBe(snap.availableUsd)
     expect(row?.availableSecondary).toBe(formatCompactUsd(snap.availableUsd))
+    expect(row?.capacityFilledPct).toBe(snap.utilizationPct)
     expect(multiplyAvailableLiquidityUsd(snap)).toBe(snap.availableUsd)
 
     const detailStats = injectAvailableUsdQuickStat(

@@ -1,4 +1,5 @@
 import {
+  accrueBorrowSystemState,
   calculateSpokeCreditMetrics,
   currentCollateralValueUsd6,
   currentDebtValueUsd6,
@@ -72,11 +73,14 @@ export function buildBorrowPreviewModel(
 }
 
 export function buildRepayPreviewModel(
-  state: BorrowSystemState,
+  sessionState: BorrowSystemState,
   walletId: string,
   debtPositionId: string | null,
   amountUsd: number,
+  now = Date.now(),
 ) {
+  // Owed includes interest accrued since the last write, matching the repay intent (at: now).
+  const state = accrueBorrowSystemState(sessionState, now)
   const debtPosition = debtPositionId
     ? (state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPositionId) ?? null)
     : null

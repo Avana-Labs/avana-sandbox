@@ -13,6 +13,7 @@
 
 import { useMemo } from "react"
 import { useQuery } from "convex/react"
+import { useAuthedQueryArgs } from "@/app/lib/convex/use-authed-query-args"
 import { api } from "@/convex/_generated/api"
 import type { UserAssetBalance } from "./contracts"
 
@@ -24,7 +25,10 @@ import type { UserAssetBalance } from "./contracts"
  * `undefined` while loading; `{}` when the wallet has no recorded basket.
  */
 export function useConvexClaimBasis(walletId: string | null | undefined): Record<string, number> | undefined {
-  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, walletId ? { wallet: walletId } : "skip")
+  const state = useQuery(
+    api.sandbox.onboarding.getWalletOnboardingState,
+    useAuthedQueryArgs(walletId ? { wallet: walletId } : null),
+  )
   return useMemo(() => {
     if (state === undefined) return undefined
     const basket = state?.profile?.basketSnapshot
@@ -49,7 +53,10 @@ export function useConvexClaimBasis(walletId: string | null | undefined): Record
 export function useConvexWalletOnboardingSummary(
   walletId: string | null | undefined,
 ): { sinceMs: number | null; boost: number | null } | undefined {
-  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, walletId ? { wallet: walletId } : "skip")
+  const state = useQuery(
+    api.sandbox.onboarding.getWalletOnboardingState,
+    useAuthedQueryArgs(walletId ? { wallet: walletId } : null),
+  )
   return useMemo(() => {
     if (state === undefined) return undefined
     const profile = state?.profile
@@ -62,7 +69,10 @@ export function useConvexWalletOnboardingSummary(
 }
 
 export function useConvexProductWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
-  const buckets = useQuery(api.wallet.productBalances.listForWallet, walletId ? { wallet: walletId } : "skip")
+  const buckets = useQuery(
+    api.wallet.productBalances.listForWallet,
+    useAuthedQueryArgs(walletId ? { wallet: walletId } : null),
+  )
   if (!buckets) return buckets === undefined ? undefined : []
   const resolvedWalletId = walletId ?? ""
 

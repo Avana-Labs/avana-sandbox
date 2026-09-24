@@ -11,6 +11,8 @@ export default tseslint.config(
       // Every alternate dist dir (AVANA_NEXT_DIST_DIR: .next-dev, .next-prod, .next-dev-real, …).
       ".next-*/**",
       "node_modules/**",
+      // Local Vercel build output contains compiled server bundles, not project source.
+      ".vercel/**",
       ".reports/**",
       ".artifacts/**",
       "**/.artifacts/**",

@@ -104,13 +104,14 @@ export function TokenPairCell({
         : "text-[13px] font-medium"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-[13px] font-normal tracking-normal"
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center">
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex shrink-0 items-center">
         <TokenBubble visual={visuals[0]} size={bubbleSize} />
         <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("leading-tight text-foreground dark:text-white", nameCls)}>{name}</div>
+        {/* One line: a pair name wrapping to two lines breaks the table's 72px row rhythm. */}
+        <div className={cn("truncate leading-tight text-foreground dark:text-white", nameCls)}>{name}</div>
         {subtitle ? (
           <div className={cn("mt-0.5 text-muted-foreground", subtitleTruncate && "truncate", subtitleCls)}>
             {subtitle}

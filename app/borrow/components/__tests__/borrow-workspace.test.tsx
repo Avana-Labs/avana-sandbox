@@ -77,8 +77,9 @@ vi.mock("@/app/lib/page-loading", () => ({
   triggerPageLoading: vi.fn(),
 }))
 
+let isDesktopViewport = false
 vi.mock("@/app/lib/use-media-query", () => ({
-  useMediaQuery: () => true,
+  useMediaQuery: () => isDesktopViewport,
 }))
 
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
@@ -119,11 +120,11 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
   CollateralPoolsTable: ({
     groups,
     onUseAsCollateral,
-    onBorrowAssetMobile,
+    onBorrowAsset,
   }: {
     groups: Array<{ spokes: Array<{ rows: Array<typeof market> }> }>
     onUseAsCollateral: (pool: typeof market) => void
-    onBorrowAssetMobile: (asset: typeof asset) => void
+    onBorrowAsset: (asset: typeof asset) => void
   }) => (
     <div>
       <span data-testid="rendered-market">
@@ -132,18 +133,19 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
       <button type="button" onClick={() => onUseAsCollateral(market)}>
         open-supply
       </button>
-      <button type="button" onClick={() => onBorrowAssetMobile(borrowAssetToLaunch)}>
+      <button type="button" onClick={() => onBorrowAsset(borrowAssetToLaunch)}>
         open-borrow
       </button>
     </div>
   ),
-  CollateralPoolsList: () => null,
 }))
 
 describe("BorrowWorkspace", () => {
   beforeEach(() => {
     push.mockClear()
     borrowAssetToLaunch = asset
+    // Phone viewport by default: the Borrow row action goes straight into the borrow flow.
+    isDesktopViewport = false
   })
 
   afterEach(() => {
@@ -180,6 +182,37 @@ describe("BorrowWorkspace", () => {
     expect(push).toHaveBeenCalledWith(
       "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&asset=uni-v3-bluechip%3Ausdc",
     )
+  })
+
+  it("sends the desktop Borrow row action to the asset detail page", () => {
+    isDesktopViewport = true
+    render(
+      <BorrowWorkspace
+        pageData={{
+          walletId: "wallet-1",
+          borrowSessionSeed: "{}",
+          poolCatalog: [market],
+          borrowableAssets: [asset],
+          pendingRows: [],
+          dexes: [],
+          collateralPools: [],
+          initialDebts: {},
+          borrowSnapshot: {
+            totalBorrowedUsd: 0,
+            availableCreditUsd: 0,
+            totalCollateralUsd: 0,
+            liquidationValueUsd: 0,
+            healthFactor: null,
+          },
+        }}
+      />,
+    )
+
+    fireEvent.click(screen.getByText("open-supply"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc")
+
+    fireEvent.click(screen.getByText("open-borrow"))
+    expect(push).toHaveBeenLastCalledWith(borrowAssetDetailPath(asset.id))
   })
 
   it("keeps rendering the server market snapshot when the wallet session differs", () => {

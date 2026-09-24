@@ -18,7 +18,7 @@ import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, isSubmittingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -165,7 +165,7 @@ export function RewardsActionPageClient({
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Unable to claim rewards",
+        message: actionErrorMessage(error, "Unable to claim rewards"),
       })
       setStage("error")
     } finally {

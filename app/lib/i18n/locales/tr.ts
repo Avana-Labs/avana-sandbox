@@ -66,6 +66,10 @@ const dict: TranslationDictionary = {
   Today: "Bugün",
   Yesterday: "Dün",
   "Choose collateral": "Teminat seçin",
+  "Cooldown expired": "Bekleme süresi doldu",
+  Closed: "Kapandı",
+  "Show more": "Daha fazla göster",
+  "Shared credit": "Ortak kredi",
   "Choose asset to borrow": "Borç alınacak varlığı seçin",
   "Choose collateral first": "Önce teminat seçin",
   "No borrowable assets for this collateral.": "Bu teminat için borç alınabilir varlık yok.",
@@ -397,6 +401,11 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Portföyü aç",
   Portfolio: "Portföy",
   "Quick actions": "Hızlı işlemler",
+  "My Deposits": "Mevduatlarım",
+  "My Loops": "Döngülerim",
+  "Available to loop": "Döngü için kullanılabilir",
+  "Scroll table left": "Tabloyu sola kaydır",
+  "Scroll table right": "Tabloyu sağa kaydır",
   "Total Fees earned": "Kazanılan toplam ücret",
   "Claimable Fees": "Talep edilebilir ücretler",
   "Claim Fees": "Ücretleri talep et",
@@ -586,7 +595,6 @@ const dict: TranslationDictionary = {
   "Lending Performance": "Borç Verme Performansı",
   "Lend Rewards": "Borç Verme Ödülleri",
   "Multiply Overview": "Multiply Genel Bakışı",
-  "Multiply Positions": "Multiply Pozisyonları",
   "Debt & Risk": "Borç ve Risk",
   "Position size, multiplier, and current net yield": "Pozisyon büyüklüğü, çarpan ve mevcut net getiri",
   "Borrowed balance, health factor, and liquidation threshold": "Borç bakiyesi, sağlık faktörü ve likidasyon eşiği",
@@ -1382,7 +1390,6 @@ const dict: TranslationDictionary = {
   "Utilization Rate": "Kullanım oranı",
   "Borrow amount to reach {value} Util.": "{value} kullanıma ulaşmak için borç tutarı.",
   "Large price difference": "Büyük fiyat farkı",
-  "Lend Assets": "Ödünç Verme Varlıkları",
   "Lend Balance": "Ödünç Verme Bakiyesi",
   "Lend Opportunity": "Ödünç Verme Fırsatı",
   "Lend TVL": "Ödünç Verme TVL",
@@ -1399,6 +1406,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "LOOP APY",
   "Loop market": "Loop pazarı",
   "LP APR": "LP APR",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Bu teminatın canlı değeri ve kazandırdığı LP işlem ücretleri.",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Son 24 saatteki pazar genelindeki likidasyon etkinliği ve likidasyona yakın maruziyet.",
@@ -1503,6 +1512,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Bir token sembolü, havuz çifti veya borç alma gibi bir işlem deneyin.",
   TVL: "TVL",
+  Testnet: "Test ağı",
   Txn: "İşlem",
   "Unable to refresh the expired quote.": "Süresi dolmuş teklif yenilenemedi.",
   Unavailable: "Kullanılamıyor",
@@ -1579,7 +1589,6 @@ const dict: TranslationDictionary = {
   "How it works": "Nasıl çalışır",
   "Learn Avana": "Avana'yı öğren",
   "Dashboard Positions": "Panel pozisyonları",
-  "Available to use": "Kullanıma hazır",
   "Available to deposit": "Yatırmaya hazır",
   "against {pool}": "{pool} karşılığında",
   Locked: "Kilitli",
@@ -1757,6 +1766,7 @@ const dict: TranslationDictionary = {
   "(required)": "(zorunlu)",
   "Send report": "Raporu gönder",
   "Thanks! Your report was sent.": "Teşekkürler! Raporun gönderildi.",
+  "Capacity Filled": "Kullanılan kapasite",
 }
 
 export default dict

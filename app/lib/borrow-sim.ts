@@ -85,6 +85,7 @@ export type BorrowPoolRow = {
   aprMin: number
   aprMax: number
   availableUsd: number
+  capacityFilledPct?: number
   riskPremiumBps: number
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
   /**

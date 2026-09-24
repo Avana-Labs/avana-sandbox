@@ -1,3 +1,4 @@
+import { codedError } from "../codedError"
 /**
  * Server-authoritative rewards catalog. Mirrors the id → reward-amount slice of
  * `app/lib/rewards-engine/catalog.ts`; the client owns the presentation catalog
@@ -85,10 +86,10 @@ export function deriveClaimAmountUsd(taskIds: readonly string[]): number {
   for (const id of taskIds) {
     const amount = REWARDS_CATALOG_AVA[id]
     if (amount === undefined) {
-      throw new Error(`UNKNOWN_TASK_ID: ${id}`)
+      throw codedError(`UNKNOWN_TASK_ID: ${id}`)
     }
     if (!ACTIVE_REWARDS_TASK_IDS.has(id)) {
-      throw new Error(`INACTIVE_TASK_ID: ${id}`)
+      throw codedError(`INACTIVE_TASK_ID: ${id}`)
     }
     totalAva += amount
   }

@@ -2,40 +2,43 @@
 
 import Image from "next/image"
 import { ActionIcon } from "@/app/components/action-icon"
+import { CapacityFilled } from "@/app/components/capacity-filled"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
-import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
-  MarketMobileCard,
-  MarketMobileActionFooter,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-} from "@/app/components/market-card-primitives"
+  DesktopTableSurface,
+  HoverActionGroup,
+  ScrollableTable,
+  SortHeaderButton,
+} from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 import {
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
+  TABLE_CELL_INDEX,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_LEADING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
+  TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
+  TABLE_INDEX_PHONE_HIDDEN,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, matchesCategory, type CategoryChip } from "@/app/lib/markets/category"
-import { useMediaQuery } from "@/app/lib/use-media-query"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
@@ -94,20 +97,6 @@ export function paginateLendAssetGroups(groups: AssetGroup[], page: number, page
 }
 const DEFAULT_ASSET_GROUPS: AssetGroup[] = LEND_ASSET_GROUPS
 
-function SortIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 12 16"
-      fill="none"
-      className="size-[14px] text-muted-foreground/70 dark:text-white/60"
-    >
-      <path d="M4 5 6 3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 11 6 13l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
   if (row.logoSrc) {
     return (
@@ -135,228 +124,110 @@ function AssetRowView({
   index,
   delay,
   onDeposit,
-  canWithdraw,
 }: {
   row: AssetRow
   index: number
   delay: number
   onDeposit?: (marketId: string) => void
-  canWithdraw: boolean
 }) {
   const { t } = useTranslation()
   const { ctx } = useCurrency()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
-  const detailReturn = detailHref
   return (
     <tr
       className={`${TABLE_BODY_ROW} asset-swap group cursor-pointer transition-colors`}
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => router.push(detailHref)}
     >
-      <td
-        className={`py-3 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-      >
+      <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_INDEX_PHONE_HIDDEN, TABLE_ROW_HOVER_BG)}>
         {index + 1}
       </td>
-      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+      <td className={cn(TABLE_CELL_PADDING, tableStickyCell("body"))}>
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} eager={index < 2} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
-              {row.name}
-            </div>
-            <div className="mt-0.5 text-[13px] font-normal tracking-normal text-muted-foreground md:text-[13px]">
+            <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+            <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
               <AssetSubLabel symbol={row.symbol} />
             </div>
           </div>
         </div>
       </td>
 
-      <td
-        className={`py-3 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
-      >
-        <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
+        {row.supplyApyLabel ?? row.apy}
       </td>
 
-      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
-          <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
-        </div>
-        <div className="mt-0.5 text-[13px] tracking-normal text-muted-foreground">
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <div className={TABLE_CELL_NUMERIC}>{row.totalDepositsLabel ?? row.totalDepositsPrimary}</div>
+        <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
           {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
         </div>
       </td>
 
-      <td
-        className={`py-3 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
-      >
-        <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <CapacityFilled value={row.utilizationValue === undefined ? undefined : row.utilizationValue * 100} />
       </td>
 
-      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]">
-          <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
-        </div>
-        <div className="mt-0.5 text-[13px] tracking-normal text-muted-foreground">
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <div className={TABLE_CELL_NUMERIC}>{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</div>
+        <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
           {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
         </div>
       </td>
 
-      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`} onClick={(event) => event.stopPropagation()}>
+      <td
+        className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}
+        onClick={(event) => event.stopPropagation()}
+      >
         {onDeposit ? (
-          <div className="relative z-10 flex justify-end">
-            <HoverActionGroup className="gap-2">
-              <Button
-                type="button"
-                size="table"
-                variant="table-primary"
-                className="w-auto"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDeposit(marketId)
-                }}
-              >
-                <ActionIcon label="Deposit" />
-                {t("Deposit")}
-              </Button>
-              <Button
-                type="button"
-                size="table"
-                variant="table-secondary"
-                className="w-auto"
-                disabled={!canWithdraw}
-                title={canWithdraw ? undefined : t("No supplied position to withdraw")}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (!canWithdraw) return
-                  router.push(
-                    actionPagePath("lend", "withdraw", {
-                      market: marketId,
-                      return: detailReturn,
-                    }),
-                  )
-                }}
-              >
-                <ActionIcon label="Withdraw" />
-                {t("Withdraw")}
-              </Button>
-            </HoverActionGroup>
-          </div>
+          <HoverActionGroup className="gap-2">
+            <Button
+              type="button"
+              size="table"
+              variant="table-primary"
+              className={TABLE_ACTION_BUTTON}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeposit(marketId)
+              }}
+            >
+              <ActionIcon label="Deposit" />
+              {t("Deposit")}
+            </Button>
+          </HoverActionGroup>
         ) : null}
       </td>
     </tr>
   )
 }
 
-function AssetCardView({
-  row,
-  index,
-  onDeposit,
-  canWithdraw,
-}: {
-  row: AssetRow
-  index: number
-  onDeposit?: (marketId: string) => void
-  canWithdraw: boolean
-}) {
-  const { t } = useTranslation()
-  const { ctx } = useCurrency()
-  const router = useRouter()
-  const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
-  const detailHref = row.href ?? `/lend/markets/${marketId}`
-  const detailReturn = detailHref
-  return (
-    <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
-      <MarketMobileCardHeader
-        identity={
-          <div className="flex min-w-0 items-center gap-3">
-            <AssetIcon row={row} eager={index < 2} />
-            <MarketMobileIdentityText title={row.name} subtitle={<AssetSubLabel symbol={row.symbol} />} />
-          </div>
-        }
-        metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}
-      />
-      <MarketMobileStatList className="mt-4">
-        <MarketMobileStatRow
-          label={t("Total Deposits")}
-          value={
-            <span>
-              {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-              <MarketMobileSupportingValue>
-                {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
-              </MarketMobileSupportingValue>
-            </span>
-          }
-        />
-        <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
-        <MarketMobileStatRow
-          label={t("Available")}
-          value={
-            <span>
-              {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-              <MarketMobileSupportingValue>
-                {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
-              </MarketMobileSupportingValue>
-            </span>
-          }
-        />
-      </MarketMobileStatList>
-      {onDeposit ? (
-        <MarketMobileActionFooter>
-          <MarketMobilePrimaryAction
-            className="mt-0 flex-1"
-            onClick={(event) => {
-              event.stopPropagation()
-              onDeposit(marketId)
-            }}
-          >
-            <ActionIcon label="Deposit" />
-            {t("Deposit")}
-          </MarketMobilePrimaryAction>
-          <MarketMobileSecondaryAction
-            disabled={!canWithdraw}
-            title={canWithdraw ? undefined : t("No supplied position to withdraw")}
-            onClick={(event) => {
-              event.stopPropagation()
-              if (!canWithdraw) return
-              router.push(
-                actionPagePath("lend", "withdraw", {
-                  market: marketId,
-                  return: detailReturn,
-                }),
-              )
-            }}
-          >
-            <ActionIcon label="Withdraw" />
-            {t("Withdraw")}
-          </MarketMobileSecondaryAction>
-        </MarketMobileActionFooter>
-      ) : null}
-    </MarketMobileCard>
-  )
-}
+const LEND_TABLE_LAYOUT = tableColumnLayout([
+  "index",
+  "identity",
+  "compact", // APY
+  "metric", // Total deposits
+  "gauge", // Capacity filled
+  "metric", // Available
+  "action",
+])
 
 function AssetSection({
   title,
   subtitle,
   rows,
   onDeposit,
-  withdrawableMarketIds,
-  initialIsDesktop,
   deferContent,
 }: {
   title: string
   subtitle?: string
   rows: AssetRow[]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds: ReadonlySet<string>
-  initialIsDesktop: boolean
   deferContent: boolean
 }) {
   const { t } = useTranslation()
-  const isDesktop = useMediaQuery("(min-width: 768px)", initialIsDesktop, true)
   const sectionRef = useRef<HTMLElement | null>(null)
   const [contentMounted, setContentMounted] = useState(!deferContent || process.env.NODE_ENV === "test")
   const [sortKey, setSortKey] = useState<
@@ -402,6 +273,10 @@ function AssetSection({
     })
   }, [rows, sortDirection, sortKey])
 
+  const sortHeader = (key: typeof sortKey, label: string) => (
+    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  )
+
   useEffect(() => {
     if (contentMounted) return
     const section = sectionRef.current
@@ -443,151 +318,40 @@ function AssetSection({
         <div aria-hidden className="min-h-[640px] rounded-radius-md bg-table-row" />
       ) : (
         <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-          {!isDesktop ? (
-            <div className="space-y-4">
+          <ScrollableTable layout={LEND_TABLE_LAYOUT}>
+            <thead>
+              <tr className={TABLE_HEADER_ROW}>
+                <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                  {sortHeader("asset", t("Asset"))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("supplyApy", t("APY"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("totalDeposits", t("Total Deposits"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("utilization", t("Capacity Filled"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("availableLiquidity", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                  {/* Names the action column for screen readers (an empty <th> isn't a header). */}
+                  <span className="sr-only">{t("Quick actions")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
               {sortedRows.length > 0 ? (
                 sortedRows.map((row, index) => (
-                  <AssetCardView
-                    key={row.symbol}
-                    row={row}
-                    index={index}
-                    onDeposit={onDeposit}
-                    canWithdraw={withdrawableMarketIds.has(
-                      "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase(),
-                    )}
-                  />
+                  <AssetRowView key={row.symbol} row={row} index={index} delay={index * 40} onDeposit={onDeposit} />
                 ))
               ) : (
-                <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
-                  {t("No assets match these filters.")}
-                </div>
+                <tr>
+                  <td
+                    className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60"
+                    colSpan={LEND_TABLE_LAYOUT.widths.length}
+                  >
+                    {t("No assets match these filters.")}
+                  </td>
+                </tr>
               )}
-            </div>
-          ) : null}
-          {isDesktop ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
-                <colgroup>
-                  <col className="w-[4%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[24%]" />
-                </colgroup>
-                <thead>
-                  <tr className={TABLE_HEADER_ROW}>
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      #
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("asset")}
-                        className={cn(
-                          "flex items-center gap-2 transition-colors",
-                          sortKey === "asset"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("ASSET")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("supplyApy")}
-                        className={cn(
-                          "flex items-center gap-2 transition-colors",
-                          sortKey === "supplyApy"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("APY")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("totalDeposits")}
-                        className={cn(
-                          "flex items-center gap-2 transition-colors",
-                          sortKey === "totalDeposits"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("TOTAL DEPOSITS")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("utilization")}
-                        className={cn(
-                          "flex items-center gap-2 transition-colors",
-                          sortKey === "utilization"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("UTILIZATION")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("availableLiquidity")}
-                        className={cn(
-                          "flex w-full items-center gap-2 transition-colors",
-                          sortKey === "availableLiquidity"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("AVAILABLE")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      {/* Names the action column for screen readers (an empty <th> isn't a header). */}
-                      <span className="sr-only">{t("Quick actions")}</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody
-                  key={`${title}-${sortKey}-${sortDirection}`}
-                  className="divide-y divide-border dark:divide-white/6"
-                >
-                  {sortedRows.length > 0 ? (
-                    sortedRows.map((row, index) => (
-                      <AssetRowView
-                        key={row.symbol}
-                        row={row}
-                        index={index}
-                        delay={index * 40}
-                        onDeposit={onDeposit}
-                        canWithdraw={withdrawableMarketIds.has(row.marketId ?? row.symbol.toLowerCase())}
-                      />
-                    ))
-                  ) : (
-                    <tr>
-                      <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={7}>
-                        {t("No assets match these filters.")}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
+            </tbody>
+          </ScrollableTable>
         </DesktopTableSurface>
       )}
     </section>
@@ -597,13 +361,9 @@ function AssetSection({
 export function LendAssetSpokes({
   groups = DEFAULT_ASSET_GROUPS,
   onDeposit,
-  withdrawableMarketIds = new Set<string>(),
-  initialIsDesktop = true,
 }: {
   groups?: LendPageData["assetGroups"]
   onDeposit?: (marketId: string) => void
-  withdrawableMarketIds?: ReadonlySet<string>
-  initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
   const searchParams = useSearchParams()
@@ -680,8 +440,6 @@ export function LendAssetSpokes({
                 subtitle={group.subtitle}
                 rows={group.rows}
                 onDeposit={onDeposit}
-                withdrawableMarketIds={withdrawableMarketIds}
-                initialIsDesktop={initialIsDesktop}
                 deferContent={index > 0}
               />
               {group.title === "Ethereum-Based" ? (

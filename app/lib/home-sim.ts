@@ -16,6 +16,8 @@ export type HomeCollateralPool = {
   venue: string
   category: string
   collateralUsd: number
+  /** This pool's own pledged LP; `collateralUsd` is the credit shared across its group. */
+  ownCollateralUsd?: number
   maxLtv: number
   borrowPowerUsd: number
   liquidationUsd: number

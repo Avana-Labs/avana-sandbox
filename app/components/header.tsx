@@ -14,15 +14,14 @@ import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-trigger"
 import { cn } from "@/lib/utils"
-import { shouldPrefetchNavigation } from "./navigation-prefetch"
+import { useNavigationPrefetch } from "./navigation-prefetch"
 
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
-  // Guests can't reach product routes (SandboxGate routes them to onboarding), so don't prefetch
-  // those routes for them. Signed-in users prefetch the full dynamic page payload;
-  // automatic prefetch does not reliably warm these routes without loading boundaries.
+  // Warm eligible routes only after the current page loads and the connection allows it.
   const { isSignedIn } = useSiweAuth()
+  const prefetchNavigation = useNavigationPrefetch(isSignedIn)
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
@@ -106,7 +105,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
+          prefetch={prefetchNavigation(link.href)}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${
@@ -132,7 +131,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={shouldPrefetchNavigation(link.href, isSignedIn)}
+          prefetch={prefetchNavigation(link.href)}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`group inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${

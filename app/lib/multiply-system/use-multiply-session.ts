@@ -80,6 +80,7 @@ type ConvexMultiplyWalletData = {
   balances?: Array<{
     symbol: string
     valueUsd: number
+    amount?: number
   }>
 }
 

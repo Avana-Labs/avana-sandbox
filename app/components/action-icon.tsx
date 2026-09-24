@@ -1,6 +1,8 @@
 import type { LucideIcon } from "@/app/components/icons"
 import {
+  AlertTriangle,
   ArrowShrink,
+  ArrowUpRight,
   ArrowUpRightStack,
   Circle,
   CircleArrowUp,
@@ -32,6 +34,10 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   cooldown: Circle,
   unstake: Unlock,
   remove: LayerSendBackward,
+  // Opens the market/position detail page.
+  manage: ArrowUpRight,
+  // Negative-APY loop: same pill as Multiply, so it needs an icon to keep the same shape.
+  "review risk": AlertTriangle,
 }
 
 /** Renders the directional icon for an action label, or nothing if unmapped.

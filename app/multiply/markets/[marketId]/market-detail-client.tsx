@@ -97,7 +97,12 @@ export function MarketDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} product="multiply" columns={4} />
+                        <QuickStatsGrid
+                          detail={detail}
+                          product="multiply"
+                          columns={4}
+                          priceSymbol={detail.hero.visuals[0].symbol}
+                        />
                       </section>
                       <section aria-label={t("Market Rates")} className="space-y-6">
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">

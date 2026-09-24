@@ -19,7 +19,7 @@ import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-
 import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
-import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
+import { CollateralPoolsTable } from "./collateral-pools-table"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { categorizeMarket, CATEGORY_CHIPS, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -233,25 +233,16 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
         {isPoolTab(currentTab) ? (
           visiblePools.length === 0 ? (
             <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
-          ) : isDesktop ? (
+          ) : (
             <CollateralPoolsTable
               groups={poolGroups}
               borrowAssetsBySpoke={borrowAssetsBySpoke}
               pending={pendingRows}
               onViewMarket={handleMarketDetail}
               onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-          ) : (
-            <CollateralPoolsList
-              groups={poolGroups}
-              borrowAssetsBySpoke={borrowAssetsBySpoke}
-              pending={pendingRows}
-              onViewMarket={handleMarketDetail}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
+              // Desktop Borrow opens the asset page; on phones it jumps straight into the
+              // borrow flow against the healthiest same-spoke collateral.
+              onBorrowAsset={isDesktop ? handleAssetBorrowDesktop : handleAssetBorrowMobile}
             />
           )
         ) : null}

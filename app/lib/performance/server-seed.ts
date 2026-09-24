@@ -1,5 +1,5 @@
 /** Maximum cold-cache wait for optional display data before SSR uses its fallback. */
-export const SERVER_SEED_WAIT_MS = 800
+export const SERVER_SEED_WAIT_MS = 250
 
 /**
  * Bound the render wait, not the cached request: a slow successful request can still

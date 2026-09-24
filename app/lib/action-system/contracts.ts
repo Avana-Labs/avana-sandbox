@@ -103,7 +103,7 @@ export type ActionSuccessUi = {
     /**
      * Real network fee (USD) for this receipt. Set by swaps to their quote fee so
      * the inline receipt matches the estimate and permalink. Left undefined for
-     * non-swap actions, which fall back to the canonical SANDBOX_NETWORK_FEE_USD.
+     * non-swap actions, which fall back to the 15 bps platform fee on the amount.
      */
     networkFeeUsd?: number
   }

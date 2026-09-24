@@ -116,6 +116,12 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
       aprMin: Math.max(0, feeApyPct - 0.6),
       aprMax: feeApyPct + 0.6,
       availableUsd: fixedToNumber(market.snapshot.availableUsd6, 6),
+      capacityFilledPct:
+        market.snapshot.totalLiquidityUsd6 > 0n
+          ? (fixedToNumber(market.snapshot.totalBorrowedUsd6, 6) /
+              fixedToNumber(market.snapshot.totalLiquidityUsd6, 6)) *
+            100
+          : 0,
       riskPremiumBps,
       visuals: toPairVisuals(market.display.visuals.map(visualToUi)),
       // Equal-weight fallback from the display pair until Convex markets carry authoritative
@@ -225,12 +231,16 @@ export function selectAllAvailableCollateralPools(state: BorrowSystemState, wall
     // $0.00 while a borrow against that scope is allowed.
     const metrics = account ? metricsForPosition(state, walletId, market.id) : null
     const collateralUsd = metrics ? fixedToNumber(metrics.poolCollateralValueUsd6, 6) : 0
+    const ownCollateralUsd = (account?.collateralPositions ?? [])
+      .filter((position) => position.marketId === market.id)
+      .reduce((sum, position) => sum + fixedToNumber(currentCollateralValueUsd6(position, market), 6), 0)
     return {
       id: market.id,
       name: market.display.name,
       venue: market.display.venue,
       category: `${market.display.venue} ${market.display.feeTier}`,
       collateralUsd,
+      ownCollateralUsd,
       maxLtv: Math.round(fixedToNumber(market.riskConfig.collateralFactorWad, 18) * 1000) / 10,
       borrowPowerUsd: metrics ? fixedToNumber(metrics.creditLimitUsd6, 6) : 0,
       liquidationUsd: metrics ? fixedToNumber(metrics.liquidationValueUsd6, 6) : 0,

@@ -3,12 +3,11 @@ import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { ACTION_INFO_TOOLTIPS } from "@/app/lib/action-system/metric-tooltips"
 
 describe("one honest fee story (#30)", () => {
-  it("surfaces only the network fee — no fabricated protocol fee — since none is deducted", () => {
-    // The engines don't deduct an Avana/protocol fee, so the summary is the network fee
-    // alone — the single canonical estimate that the receipt also records (#F1).
-    expect(formatActionFeeSummary(1000, 0.24)).toBe("~ $0.03")
-    expect(formatActionFeeSummary(0, 0.24)).toBe("~ $0.03")
-    expect(formatActionFeeSummary(1000, 0.24)).not.toMatch(/bps|basis points/)
+  it("states the 15 bps Avana platform fee on the action amount, as the tooltip discloses", () => {
+    // A flat "~$0.03" read the same for $100 and $5,000; the fee is 0.15% of the amount.
+    expect(formatActionFeeSummary(1000, 0.24)).toBe("~ $1.50")
+    expect(formatActionFeeSummary(5000)).toBe("~ $7.50")
+    expect(formatActionFeeSummary(0, 0.24)).toBe("~ $0.00")
   })
 
   it("tooltip discloses the real 15 bps upfront Avana interface fee", () => {

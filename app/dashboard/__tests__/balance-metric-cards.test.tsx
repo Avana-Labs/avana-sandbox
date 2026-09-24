@@ -100,7 +100,7 @@ describe("Multiply Balance metric cards", () => {
     ]) {
       expect(screen.getByText(label)).toBeTruthy()
     }
-    expect(screen.getByText("2.70×")).toBeTruthy()
+    expect(screen.getByText("2.70x")).toBeTruthy()
     expect(screen.getByText("1.85")).toBeTruthy()
   })
 })
@@ -141,7 +141,7 @@ describe("Lend Balance metric cards", () => {
     expect(screen.getByText("6.50%")).toBeTruthy()
     // Interest Earned + Yield Generated now accrue live from the recorded base interest
     // ($2,500 of $100,000 = 2.50%); the extra decimals mark them as live counters.
-    expect(screen.getByText("$2,500.0000")).toBeTruthy()
+    expect(screen.getByText("$2,500.00")).toBeTruthy()
     expect(screen.getByText("2.50%")).toBeTruthy()
     expect(screen.queryByText("Rewards Earned")).toBeNull()
   })

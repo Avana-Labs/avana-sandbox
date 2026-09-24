@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage, humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 describe("humanizeBlockedReason", () => {
   it("maps 'available credit in spoke' to plain copy without the spoke id", () => {
@@ -63,5 +63,36 @@ describe("humanizeBlockedReason", () => {
   it("returns null for empty input", () => {
     expect(humanizeBlockedReason(null)).toBeNull()
     expect(humanizeBlockedReason(undefined)).toBeNull()
+  })
+})
+
+// Prod 2026-09-23: a failed borrow showed "[CONVEX M(sandbox/transactions:recordTransaction)]
+// [Request ID: 14e5d54127067663] Server Error Called by client" on the action page.
+describe("actionErrorMessage", () => {
+  it("never shows the raw Convex failure string", () => {
+    const error = new Error(
+      "[CONVEX M(sandbox/transactions:recordTransaction)] [Request ID: 14e5d54127067663] Server Error Called by client",
+    )
+    const out = actionErrorMessage(error, "Transaction was cancelled")
+    expect(out).not.toMatch(/CONVEX|Request ID|Server Error/)
+    expect(out).toMatch(/nothing was changed/)
+  })
+
+  it("maps the ConvexError code in error.data to plain copy", () => {
+    const error = Object.assign(new Error("[CONVEX M(x)] Server Error"), {
+      data: { code: "INSUFFICIENT_BALANCE", message: "INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount." },
+    })
+    expect(actionErrorMessage(error, "fallback")).toBe(
+      "You don't have enough balance for this amount. Lower the amount.",
+    )
+  })
+
+  it("maps a stale write to a reload hint", () => {
+    const error = Object.assign(new Error("x"), { data: { code: "STALE_WRITE", message: "STALE_WRITE: changed" } })
+    expect(actionErrorMessage(error, "fallback")).toMatch(/Reload the page/)
+  })
+
+  it("keeps the fallback for a non-error value", () => {
+    expect(actionErrorMessage(undefined, "Swap failed.")).toBe("Swap failed.")
   })
 })

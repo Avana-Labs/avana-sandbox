@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSpeculativeLoading } from "@/app/lib/performance/speculative-loading"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -18,6 +19,7 @@ const AskAIPageClient = dynamic(loadAskAIPage, { ssr: false, loading: AskAILoadi
 /** The original focused `/ask` chrome, now containing the assistant-ui runtime. */
 export function AskPageClient() {
   const router = useRouter()
+  const allowPrefetch = useSpeculativeLoading()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
   // Blank → "Ask AI"; once a thread has a subject, show it here (summarized by CSS truncation).
@@ -63,8 +65,8 @@ export function AskPageClient() {
   }, [router, searchParams])
 
   useEffect(() => {
-    router.prefetch(resolveAskAICloseHref(searchParams.get("return")))
-  }, [router, searchParams])
+    if (allowPrefetch) router.prefetch(resolveAskAICloseHref(searchParams.get("return")))
+  }, [allowPrefetch, router, searchParams])
 
   // Keyboard shortcuts: Esc closes /ask, "/" focuses the composer — but only when
   // the user is not already typing in a field, so a draft is never lost.

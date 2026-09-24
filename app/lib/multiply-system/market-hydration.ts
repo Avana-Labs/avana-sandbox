@@ -59,6 +59,9 @@ export function mergeConvexMultiplySnapshots(
     if (!existing) continue
 
     const availableLiquidityUsd = multiplyAvailableLiquidityUsd(snap)
+    const utilizationPct = Number.isFinite(snap.utilizationPct)
+      ? Math.max(0, snap.utilizationPct)
+      : existing.economics.utilizationPct
     const supplyApy = snap.supplyApyPct / 100
     const borrowApy = snap.borrowAprPct / 100
     const estimatedMaxApy = calculateMaxLeverageApy({
@@ -97,6 +100,7 @@ export function mergeConvexMultiplySnapshots(
     const e = existing.economics
     if (
       e.availableLiquidityUsd === availableLiquidityUsd &&
+      e.utilizationPct === utilizationPct &&
       e.supplyApy === supplyApy &&
       e.borrowApy === borrowApy &&
       e.estimatedMaxApy === estimatedMaxApy &&
@@ -118,6 +122,7 @@ export function mergeConvexMultiplySnapshots(
       economics: {
         ...existing.economics,
         availableLiquidityUsd,
+        utilizationPct,
         supplyApy,
         borrowApy,
         estimatedMaxApy,

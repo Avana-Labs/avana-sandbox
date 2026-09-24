@@ -10,6 +10,7 @@
  * linked-wallet claim, a SIWE JWT on `subject` (or a `wallet` claim).
  */
 
+import { codedError } from "../codedError"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 
 type AnyCtx = Pick<QueryCtx | MutationCtx, "auth">
@@ -31,10 +32,10 @@ export async function getAuthSubject(ctx: AnyCtx): Promise<string | null> {
 export async function requireSandboxWallet(ctx: AnyCtx, requestedWallet: string): Promise<string> {
   const authed = await getAuthedWallet(ctx)
   if (!authed) {
-    throw new Error("UNAUTHENTICATED: connect a wallet and sign in to use the sandbox.")
+    throw codedError("UNAUTHENTICATED: connect a wallet and sign in to use the sandbox.")
   }
   if (authed !== requestedWallet.toLowerCase()) {
-    throw new Error("WALLET_MISMATCH: cannot read or mutate a wallet you do not control.")
+    throw codedError("WALLET_MISMATCH: cannot read or mutate a wallet you do not control.")
   }
   return authed
 }

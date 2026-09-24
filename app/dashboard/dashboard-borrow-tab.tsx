@@ -67,37 +67,9 @@ export function DashboardBorrowTab({
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
-  const handleSupplyClaimFees = useCallback(
-    (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "claim", { market: context.pool.id, ...returnParams }))
-    },
-    [returnParams, router],
-  )
-
-  const handleSupplyAddCollateral = useCallback(
-    (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "supply", { market: context.pool.id, ...returnParams }))
-    },
-    [returnParams, router],
-  )
-
-  const handleSupplyRemove = useCallback(
-    (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "remove", { market: context.pool.id, ...returnParams }))
-    },
-    [returnParams, router],
-  )
-
   const handleDebtRepay = useCallback(
     (context: DebtRowContext) => {
       router.push(actionPagePath("borrow", "repay", { market: context.pool.id, ...returnParams }))
-    },
-    [returnParams, router],
-  )
-
-  const handleDebtManage = useCallback(
-    (context: DebtRowContext) => {
-      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id, ...returnParams }))
     },
     [returnParams, router],
   )
@@ -124,16 +96,12 @@ export function DashboardBorrowTab({
               rows={sortedDebts}
               totals={debtTotals}
               onRepay={handleDebtRepay}
-              onManage={handleDebtManage}
               showBalance={showDollarAmounts}
               showSummary={false}
             />
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
-              onClaimFees={handleSupplyClaimFees}
-              onAddCollateral={handleSupplyAddCollateral}
-              onRemove={handleSupplyRemove}
               showBalance={showDollarAmounts}
               showSummary={false}
             />
@@ -145,9 +113,6 @@ export function DashboardBorrowTab({
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
-              onClaimFees={handleSupplyClaimFees}
-              onAddCollateral={handleSupplyAddCollateral}
-              onRemove={handleSupplyRemove}
               showBalance={showDollarAmounts}
               showSummary={showSummary}
             />
@@ -157,7 +122,6 @@ export function DashboardBorrowTab({
               rows={sortedDebts}
               totals={debtTotals}
               onRepay={handleDebtRepay}
-              onManage={handleDebtManage}
               showBalance={showDollarAmounts}
               showSummary={showSummary}
             />

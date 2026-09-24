@@ -2,7 +2,13 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { parseFixed, currentDebtValueUsd6, usd6ToNumber, wadToPercent } from "@/app/lib/credit-engine"
+import {
+  accrueBorrowSystemState,
+  parseFixed,
+  currentDebtValueUsd6,
+  usd6ToNumber,
+  wadToPercent,
+} from "@/app/lib/credit-engine"
 import {
   buildClaimBorrowAction,
   buildHomeClaimPreview,
@@ -37,10 +43,10 @@ import {
   ActionSessionLoading,
   shouldShowActionSessionLoading,
 } from "@/app/components/action-page/action-session-loading"
-import { formatActionUsd } from "@/app/lib/action-system/formatters"
+import { formatActionAmount, formatActionUsd } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { actionErrorMessage, humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { formatBorrowLpSymbolLabel, formatBorrowMarketLabel } from "@/app/lib/borrow-system/market-labels"
 import {
@@ -177,9 +183,11 @@ export function BorrowActionPageClient({
   const lastInitialAssetIdRef = useRef(initialAssetId)
   const lastInitialMarketIdRef = useRef(initialMarketId)
 
+  // Accrued to now so Outstanding debt and Max include the interest since the last write (the
+  // dashboard figure); the stored index made a "full" repay leave that interest behind.
   const debtPositions = useMemo(
-    () => session.state.accounts[walletId]?.debtPositions ?? [],
-    [session.state.accounts, walletId],
+    () => accrueBorrowSystemState(session.state, Date.now()).accounts[walletId]?.debtPositions ?? [],
+    [session.state, walletId],
   )
   const [debtPositionId, setDebtPositionId] = useState(initialDebtId ?? "")
 
@@ -355,10 +363,14 @@ export function BorrowActionPageClient({
     if (kind !== "repay" || !debtPosition) return null
     const priceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
     const debtUsd = usd6ToNumber(currentDebtValueUsd6(debtPosition))
+    const maxTokens = priceUsd > 0 ? debtUsd / priceUsd : debtUsd
+    const symbol = session.state.assets[debtPosition.assetId]?.symbol
     return {
       debtUsd,
-      valueLabel: formatActionUsd(debtUsd, { exact: true }),
-      maxTokens: priceUsd > 0 ? debtUsd / priceUsd : debtUsd,
+      // In the debt token, the unit typed into the field ("944.83 USDC", not "$944.70").
+      valueLabel:
+        priceUsd > 0 && symbol ? formatActionAmount(maxTokens, symbol, 4) : formatActionUsd(debtUsd, { exact: true }),
+      maxTokens,
     }
   }, [kind, debtPosition, session.state.assets])
 
@@ -654,6 +666,7 @@ export function BorrowActionPageClient({
             debtPositionId: debtPosition.id,
             assetId: debtPosition.assetId,
             amountUsd6: parseFixed(repayAmountUsd.toFixed(6), 6),
+            at: Date.now(),
           }),
         )
         .then((preview) => {
@@ -934,6 +947,8 @@ export function BorrowActionPageClient({
           debtPositionId: debtPosition.id,
           assetId: debtPosition.assetId,
           amountUsd6: parseFixed(repay.amountUsd.toFixed(6), 6),
+          // Accrue to now so a full repay covers the interest since the last write.
+          at: Date.now(),
         })
       } else if (kind === "claim") {
         const positions = resolveClaimPositions(session, walletId, marketId)
@@ -1067,7 +1082,7 @@ export function BorrowActionPageClient({
       setOutcome({
         tone: "error",
         title: "Something went wrong",
-        message: humanizeBlockedReason(rawMessage) ?? "Transaction was cancelled",
+        message: actionErrorMessage(error, "Transaction was cancelled"),
       })
       setStage("error")
     } finally {
@@ -1237,7 +1252,7 @@ export function BorrowActionPageClient({
           }}
           variant="inset"
           amountField={stackedAmountField}
-          switchable={!initialMarketId && Boolean(supplyAssetOptions)}
+          switchable={!initialMarketId && Boolean(supplyAssetOptions) && (stage === "configure" || stage === "error")}
         />
       ) : showCollateralContextBar ? (
         <ActionBorrowContextBar
@@ -1249,7 +1264,9 @@ export function BorrowActionPageClient({
           variant={useWorkspaceFields ? "inset" : "card"}
           workspace={useWorkspaceFields}
           amountField={stackedAmountField}
-          switchable={!(sidebar && kind === "claim")}
+          // Locked from Review on: the quote was built for this collateral, and switching it there
+          // left Review showing a quote for the old pool.
+          switchable={!(sidebar && kind === "claim") && (stage === "configure" || stage === "error")}
         />
       ) : null}
 

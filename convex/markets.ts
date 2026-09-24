@@ -334,7 +334,33 @@ async function listMarketSnapshotRows(ctx: QueryCtx) {
     .withIndex("by_singleton", (q) => q.eq("singleton", SNAPSHOTS_SINGLETON))
     .unique()
   const rows = cache ? cache.rows : await computeMarketSnapshots(ctx)
-  return withLiveLiquidityDeltas(ctx, rows)
+  return withLivePoolLpPrices(ctx, await withLiveLiquidityDeltas(ctx, rows))
+}
+
+/**
+ * Overlay each pool's live LP unit price (`markets.priceUsd`, refreshed from the oracle every
+ * 10 minutes). The server values pledged LP at this price; the browser valued the same tokens at
+ * its build-time price ($32.5K vs $42.2K for cbBTC/USDC), so the dashboard and the server's
+ * borrow checks disagreed. The cached rows are rebuilt rarely, so read it live.
+ */
+async function withLivePoolLpPrices<T extends SnapshotRow>(
+  ctx: QueryCtx,
+  rows: T[],
+): Promise<Array<T & { lpPriceUsd?: number }>> {
+  const pools = await ctx.db
+    .query("markets")
+    .withIndex("by_scope_slug", (q) => q.eq("scope", "pool"))
+    .collect()
+  const priceBySlug = new Map<string, number>()
+  for (const pool of pools) {
+    if (typeof pool.priceUsd === "number" && Number.isFinite(pool.priceUsd) && pool.priceUsd > 0) {
+      priceBySlug.set(pool.slug, pool.priceUsd)
+    }
+  }
+  return rows.map((row) => {
+    const lpPriceUsd = row.scope === "pool" ? priceBySlug.get(row.slug) : undefined
+    return lpPriceUsd === undefined ? row : { ...row, lpPriceUsd }
+  })
 }
 
 /**

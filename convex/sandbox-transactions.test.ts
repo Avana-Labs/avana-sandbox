@@ -839,6 +839,91 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
   })
 
+  // Prod 2026-09-23: both wallets holding LP collateral could not borrow or repay once the pool's
+  // live LP price rose above the price at claim (cbBTC/USDC $43,750 claimed, pledge valued $48,668).
+  describe("LP collateral conservation is measured in LP tokens, not frozen USD", () => {
+    const LP_SLUG = "uni-v3-bluechip-weth-usdc"
+    const ONE_LP = 10n ** 18n
+
+    async function seedOwnedLp(t: ReturnType<typeof convexTest>, liveLpPriceUsd: number) {
+      await t.run(async (ctx) => {
+        await ctx.db.insert("markets", {
+          scope: "pool",
+          slug: LP_SLUG,
+          chainId: 1,
+          name: "WETH / USDC",
+          symbol: "WETH/USDC",
+          priceUsd: liveLpPriceUsd,
+          createdAt: 0,
+        })
+        // 1 LP token claimed at $40,000.
+        await ctx.db.insert("walletBorrowBalances", {
+          wallet: WALLET.toLowerCase(),
+          marketId: LP_SLUG,
+          poolId: LP_SLUG,
+          symbol: "WETH/USDC",
+          amount: 1,
+          valueUsd: 40_000,
+          state: "collateral",
+          updatedAt: 1,
+        })
+      })
+    }
+
+    function pledge(intentId: string, lpTokens: bigint, kind = "borrow") {
+      return borrowIntent(intentId, {
+        kind,
+        marketSlug: LP_SLUG,
+        position: {
+          status: "open",
+          marketSlug: LP_SLUG,
+          debtValueUsd6: "1000000000",
+          collateral: [
+            {
+              marketSlug: LP_SLUG,
+              collateralShares: lpTokens.toString(),
+              principalTokenAmount: lpTokens.toString(),
+              collateralEnabled: true,
+            },
+          ],
+        },
+      })
+    }
+
+    test("borrowing against the LP tokens a wallet owns succeeds after the LP price rises", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 44_000)
+      await expect(
+        t
+          .withIdentity({ subject: WALLET })
+          .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-up", ONE_LP)),
+      ).resolves.toBeDefined()
+    })
+
+    test("a write keeps the stored LP token count exact", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 44_000)
+      await t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-keep", (ONE_LP * 3n) / 4n, "withdraw"))
+      const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+      const byState = Object.fromEntries(rows.filter((r) => r.marketId === LP_SLUG).map((r) => [r.state, r]))
+      expect(byState.collateral?.amount).toBeCloseTo(0.75, 9)
+      expect(byState.poolAvailable?.amount).toBeCloseTo(0.25, 9)
+      expect(byState.collateral?.valueUsd).toBeCloseTo(30_000, 6)
+    })
+
+    test("pledging more LP tokens than the wallet owns is still rejected", async () => {
+      const t = convexTest(schema, modules)
+      await seedOwnedLp(t, 40_000)
+      await expect(
+        t
+          .withIdentity({ subject: WALLET })
+          .mutation(api.sandbox.transactions.recordTransaction, pledge("lp-over", (ONE_LP * 12n) / 10n)),
+      ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
+    })
+  })
+
   test("rejects a Multiply position without authenticated-wallet collateral", async () => {
     const t = convexTest(schema, modules)
     await expect(
@@ -1594,5 +1679,398 @@ describe("liquid credits convert USD to tokens at a real price, not $1/token", (
     )
     // $1,000 of WETH ≈ 0.3638 WETH, not 1,000 WETH.
     expect((await liquidRow(t, "weth"))?.amount).toBeCloseTo(1000 / 2749.05, 6)
+  })
+})
+
+describe("backfillBorrowLpTokenAmounts", () => {
+  test("converts USD-in-amount LP rows to token counts at the live LP price and is idempotent", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "lp-btc",
+        chainId: 1,
+        name: "BTC LP",
+        symbol: "BTC-LP",
+        priceUsd: 42_000,
+        createdAt: 0,
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "lp-stable",
+        chainId: 1,
+        name: "Stable LP",
+        symbol: "S-LP",
+        priceUsd: 1.0006,
+        createdAt: 0,
+      })
+      for (const marketId of ["lp-btc", "lp-stable"]) {
+        await ctx.db.insert("walletBorrowBalances", {
+          wallet: WALLET.toLowerCase(),
+          marketId,
+          poolId: marketId,
+          symbol: marketId,
+          amount: 42_000,
+          valueUsd: 42_000,
+          state: "collateral",
+          updatedAt: 1,
+        })
+      }
+    })
+    const { internal } = await import("./_generated/api")
+    const dry = await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: true })
+    expect(dry.planned).toEqual([expect.objectContaining({ marketId: "lp-btc", toAmount: 1 })])
+    const unchanged = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(unchanged.every((row) => row.amount === 42_000)).toBe(true)
+
+    await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: false })
+    const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(rows.find((row) => row.marketId === "lp-btc")).toMatchObject({ amount: 1, valueUsd: 42_000 })
+    expect(rows.find((row) => row.marketId === "lp-stable")?.amount).toBe(42_000)
+    const rerun = await t.mutation(internal.sandbox.migrations.backfillBorrowLpTokenAmounts, { dryRun: false })
+    expect(rerun.planned).toEqual([])
+  })
+})
+
+describe("alignBorrowLpTokensToPledgedLegs", () => {
+  test("sets the owned LP tokens to the open position's pledged leg tokens", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      const wallet = WALLET.toLowerCase()
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "borrow",
+        marketSlug: "lp-btc",
+        status: "open",
+        collateralValueUsd6: "43750000000",
+        debtValueUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet,
+        positionId,
+        marketSlug: "lp-btc",
+        collateralShares: "1152636000000000000",
+        principalTokenAmount: "1152636000000000000",
+        collateralEnabled: true,
+        collateralValueUsd6: "44055875486",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet,
+        marketId: "lp-btc",
+        poolId: "lp-btc",
+        symbol: "LP",
+        amount: 1.036829,
+        valueUsd: 43_750,
+        state: "collateral",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet,
+        marketId: "lp-btc",
+        poolId: "lp-btc",
+        symbol: "LP",
+        amount: 0.5,
+        valueUsd: 21_875,
+        state: "poolAvailable",
+        updatedAt: 1,
+      })
+    })
+    const { internal } = await import("./_generated/api")
+    await t.mutation(internal.sandbox.migrations.alignBorrowLpTokensToPledgedLegs, { dryRun: false })
+    const rows = await t.run((ctx) => ctx.db.query("walletBorrowBalances").collect())
+    expect(rows.find((row) => row.state === "collateral")?.amount).toBeCloseTo(1.152636, 9)
+    expect(rows.find((row) => row.state === "poolAvailable")?.amount).toBeCloseTo(0.576318, 9)
+    const rerun = await t.mutation(internal.sandbox.migrations.alignBorrowLpTokensToPledgedLegs, { dryRun: true })
+    expect(rerun.planned).toEqual([])
+  })
+})
+
+// Prod 2026-09-23: the dev wallet's 25,685 OP deposit (USD at deposit $37,500, OP now $0.1237)
+// showed "305,012 OP supplied" on Withdraw and the review accepted a 300,000 OP withdraw.
+describe("lend withdraw is bounded by the deposited tokens", () => {
+  const OP_PRICE = 0.1237
+  const DEPOSITED_OP = 25_684.93
+
+  async function seedOpDeposit(t: ReturnType<typeof convexTest>) {
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "op",
+        llamaId: "test:op",
+        priceUsd: OP_PRICE,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("positions", {
+        wallet: w,
+        product: "lend",
+        marketSlug: "op",
+        status: "open",
+        suppliedUsd6: "37500000000",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: Date.now(),
+        revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w,
+        marketId: "op",
+        assetId: "op",
+        symbol: "OP",
+        amount: DEPOSITED_OP,
+        valueUsd: 37_500,
+        state: "deposited",
+        updatedAt: Date.now(),
+      })
+    })
+  }
+
+  function withdrawIntent(intentId: string, amountUsd: number, afterUsd: number) {
+    return {
+      wallet: WALLET,
+      intentId,
+      product: "lend" as const,
+      kind: "withdraw",
+      marketSlug: "op",
+      assetId: "op",
+      requestedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      executedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      amountUsd: Math.round(amountUsd * 1e6) / 1e6,
+      simulated: true,
+      expectedRevision: 0,
+      position: {
+        status: afterUsd > 0 ? ("open" as const) : ("closed" as const),
+        marketSlug: "op",
+        suppliedUsd6: String(Math.round(afterUsd * 1e6)),
+        earnedUsd6: "0",
+      },
+    }
+  }
+
+  test("rejects withdrawing more OP than was deposited", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    await expect(
+      t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-over", 300_000 * OP_PRICE, 0)),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").collect())
+    expect(liquid).toHaveLength(0)
+  })
+
+  test("a full withdraw pays out exactly the deposited OP", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    const res = await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-full", DEPOSITED_OP * OP_PRICE, 0))
+    expect(res.receipt.status).toBe("success")
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(DEPOSITED_OP, 3)
+    const deposited = await t.run(async (ctx) =>
+      (await ctx.db.query("walletLendBalances").collect()).find((row) => row.state === "deposited"),
+    )
+    expect(deposited?.amount).toBeCloseTo(0, 6)
+  })
+
+  test("a partial withdraw leaves the remaining tokens and a proportional cost basis", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    const half = DEPOSITED_OP / 2
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-half", half * OP_PRICE, half * OP_PRICE))
+    const deposited = await t.run(async (ctx) =>
+      (await ctx.db.query("walletLendBalances").collect()).find((row) => row.state === "deposited"),
+    )
+    expect(deposited?.amount).toBeCloseTo(half, 3)
+    expect(deposited?.valueUsd).toBeCloseTo(18_750, 1)
+  })
+})
+
+describe("multiply open/add never shrinks an existing loop", () => {
+  test("rejects a multiply write that would replace a larger open loop", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: WALLET.toLowerCase(),
+        product: "multiply",
+        marketSlug: "aave-gho",
+        status: "open",
+        assetId: "aave",
+        collateralAmount: 793,
+        collateralValueUsd: 83_333,
+        debtValueUsd: 41_667,
+        multiplier: 2,
+        ltv: 0.5,
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+    })
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("mult-replace", {
+          product: "multiply",
+          kind: "multiply",
+          marketSlug: "aave-gho",
+          requestedAmountUsd6: "207450000",
+          executedAmountUsd6: "207450000",
+          amountUsd: 207.45,
+          expectedRevision: 0,
+          position: {
+            status: "open",
+            marketSlug: "aave-gho",
+            assetId: "aave",
+            collateralAmount: 1.5,
+            collateralValueUsd: 207.45,
+            debtValueUsd: 69.15,
+            multiplier: 207.45 / (207.45 - 69.15),
+            ltv: 69.15 / 207.45,
+          },
+        }),
+      ),
+    ).rejects.toThrow(/STALE_WRITE/)
+  })
+})
+
+describe("wallet-funded Multiply debits tokens at today's price", () => {
+  test("a $138 top-up debits 1 AAVE, not the cost-basis 1.31 AAVE", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "aave",
+        llamaId: "test:aave",
+        priceUsd: 138,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "aave-gho",
+        name: "AAVE / GHO",
+        symbol: "AAVE",
+        chainId: 1,
+        createdAt: 0,
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 119.05,
+        valueUsd: 12_499.88,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("aave-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "aave-gho",
+        requestedAmountUsd6: "138000000",
+        executedAmountUsd6: "138000000",
+        amountUsd: 138,
+        position: {
+          status: "open",
+          marketSlug: "aave-gho",
+          assetId: "aave",
+          collateralAmount: 1,
+          collateralValueUsd: 138,
+          debtValueUsd: 0,
+          multiplier: 1,
+          ltv: 0,
+        },
+      }),
+    )
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(118.05, 6)
+  })
+})
+
+describe("lend books the typed token quantity", () => {
+  test("a 0.5 AAVE deposit priced 0.4% off the oracle moves exactly 0.5 AAVE", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "aave",
+        llamaId: "test:aave",
+        priceUsd: 137.3,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "aave",
+        symbol: "AAVE",
+        amount: 10,
+        valueUsd: 1_373,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
+    const amountUsd = 0.5 * 137.85
+    await t.withIdentity({ subject: WALLET }).mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "aave-typed",
+      product: "lend" as const,
+      kind: "deposit",
+      marketSlug: "aave",
+      assetId: "aave",
+      requestedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      executedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      amountUsd: Math.round(amountUsd * 1e6) / 1e6,
+      tokenAmount: 0.5,
+      simulated: true,
+      position: {
+        status: "open" as const,
+        marketSlug: "aave",
+        suppliedUsd6: String(Math.round(amountUsd * 1e6)),
+        earnedUsd6: "0",
+      },
+    })
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(9.5, 9)
+    const tx = await t.run((ctx) => ctx.db.query("transactions").unique())
+    expect(tx?.tokenAmount).toBe(0.5)
+  })
+})
+
+// Prod 2026-09-23: 100 unauthenticated wallet-balance polls each returned a bare
+// "[Request ID: …] Server Error"; the client could not tell sign-in from any other failure.
+describe("blocked states carry stable ConvexError codes", () => {
+  test("an unauthenticated wallet read fails with code UNAUTHENTICATED", async () => {
+    const t = convexTest(schema, modules)
+    const error = await t.query(api.wallet.productBalances.listForWallet, { wallet: WALLET }).then(
+      () => null,
+      (caught: unknown) => caught,
+    )
+    expect((error as { data?: { code?: string } } | null)?.data?.code).toBe("UNAUTHENTICATED")
+  })
+
+  test("a read of another wallet fails with code WALLET_MISMATCH", async () => {
+    const t = convexTest(schema, modules)
+    const error = await t
+      .withIdentity({ subject: WALLET })
+      .query(api.wallet.productBalances.listForWallet, { wallet: OTHER })
+      .then(
+        () => null,
+        (caught: unknown) => caught,
+      )
+    expect((error as { data?: { code?: string } } | null)?.data?.code).toBe("WALLET_MISMATCH")
   })
 })

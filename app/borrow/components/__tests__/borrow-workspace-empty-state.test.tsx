@@ -70,7 +70,6 @@ vi.mock("@/app/borrow/components/tabs-bar", () => ({
 
 vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
   CollateralPoolsTable: () => <div data-testid="pools-table" />,
-  CollateralPoolsList: () => null,
 }))
 
 const pageData = {

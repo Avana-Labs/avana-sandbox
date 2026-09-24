@@ -29,7 +29,7 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   // Wallet tab — Tokens + Pools table column (i) help text.
   // Lend investments table — column (i) help text.
   // Borrow "My Collaterals" table — column (i) help text.
-  // Multiply Positions table — redesigned column (i) help text + Value caption.
+  // My Loops (Multiply positions) table — redesigned column (i) help text + Value caption.
   "Exp.",
   // Dashboard loading status — new copy awaiting the locale backfill.
   "Loading dashboard…",

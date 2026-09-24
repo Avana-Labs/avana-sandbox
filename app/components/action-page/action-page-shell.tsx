@@ -16,6 +16,8 @@ type ActionPageShellProps = {
   hideTitle?: boolean
   hideClose?: boolean
   flowHeaderStage?: ActionStage
+  /** False for flows with no Select stage, so the header reads "Step 1 of 3". */
+  flowHeaderHasSelectStep?: boolean
   flowHeaderMobileOnly?: boolean
   onClose?: () => void
   closeHref?: string
@@ -32,6 +34,7 @@ export function ActionPageShell({
   hideTitle = false,
   hideClose = false,
   flowHeaderStage,
+  flowHeaderHasSelectStep = true,
   flowHeaderMobileOnly = false,
   onClose,
   closeHref,
@@ -80,7 +83,12 @@ export function ActionPageShell({
       data-mode={mode}
     >
       {showFlowHeader ? (
-        <ActionFlowHeader stage={flowHeaderStage} onClose={handleClose} mobileOnly={flowHeaderMobileOnly} />
+        <ActionFlowHeader
+          stage={flowHeaderStage}
+          onClose={handleClose}
+          mobileOnly={flowHeaderMobileOnly}
+          hasSelectStep={flowHeaderHasSelectStep}
+        />
       ) : null}
 
       {showChrome && !hideClose && !showFlowHeader ? (

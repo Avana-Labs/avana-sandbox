@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { SwapPageClient } from "@/app/swap/swap-page-client"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { TransactAccessContext } from "@/app/lib/transact-access"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -26,16 +27,29 @@ function renderSwap() {
 }
 
 describe("SwapPageClient", () => {
-  it("starts with no assets selected on the standalone swap route", () => {
+  // Prod 2026-09-23: a guest on /swap saw only a disabled "Select assets" button.
+  it("sends a guest to connect a wallet instead of a disabled button", () => {
+    render(
+      <TransactAccessContext.Provider value="guest">
+        <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
+          <SwapPageClient />
+        </AvanaSessionsProvider>
+      </TransactAccessContext.Provider>,
+    )
+    expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/dashboard")
+  })
+
+  it("starts Sell on ETH like the homepage, with Buy empty, on the standalone swap route", () => {
     render(
       <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
         <SwapPageClient />
       </AvanaSessionsProvider>,
     )
 
-    expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveTextContent("ETH")
     expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("Select asset")
     expect(screen.getByRole("button", { name: "Select assets" })).toBeDisabled()
+    expect(screen.getByText(/Step 1 of 3/)).toBeInTheDocument()
   })
 
   it("renders the canonical swap page", () => {
@@ -70,11 +84,11 @@ describe("SwapPageClient", () => {
     expect(screen.getByRole("button", { name: "Swap unavailable" })).toBeDisabled()
   })
 
-  it("searches supported assets in the receive picker", () => {
+  it("searches supported assets in the receive picker", async () => {
     renderSwap()
 
     fireEvent.click(screen.getByRole("button", { name: /^Buy asset/ }))
-    fireEvent.change(screen.getByLabelText("Find an asset"), { target: { value: "chain" } })
+    fireEvent.change(await screen.findByLabelText("Find an asset"), { target: { value: "chain" } })
     fireEvent.click(screen.getByText("ChainLink Token").closest("button")!)
 
     expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveTextContent("LINK")
@@ -87,7 +101,7 @@ describe("SwapPageClient", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled())
 
     fireEvent.click(screen.getByRole("button", { name: "Review swap" }))
-    expect(screen.getByRole("heading", { name: "Review swap" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Review swap" })).toBeInTheDocument()
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("$1.93")
 
     fireEvent.click(screen.getByRole("button", { name: "Swap" }))

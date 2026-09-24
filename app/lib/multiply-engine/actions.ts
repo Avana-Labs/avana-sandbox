@@ -35,7 +35,23 @@ function positionId(walletId: string, marketId: string) {
   return `${walletId}:${marketId}`
 }
 
+/**
+ * The wallet's open loop on a market. Loops hydrated from Convex are keyed by their Convex id,
+ * not `wallet:market`, so an id-only lookup missed every persisted loop: adding to one built a
+ * fresh position that the server wrote over the real loop.
+ */
+function findWalletMarketPosition(state: MultiplySystemState, walletId: string, marketId: string) {
+  return (
+    state.positions[positionId(walletId, marketId)] ??
+    Object.values(state.positions).find(
+      (position) => position.walletId === walletId && position.marketId === marketId,
+    ) ??
+    null
+  )
+}
+
 function buildPosition(params: {
+  id?: string
   walletId: string
   marketId: string
   simulation: ReturnType<typeof simulateMultiply>
@@ -43,7 +59,7 @@ function buildPosition(params: {
   openedAt?: number
 }): MultiplyPosition {
   return {
-    id: positionId(params.walletId, params.marketId),
+    id: params.id ?? positionId(params.walletId, params.marketId),
     walletId: params.walletId,
     marketId: params.marketId,
     collateralAmount: params.simulation.after.collateralAmount,
@@ -86,7 +102,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     const market = next.markets[action.marketId]
     if (!market) throw new Error(`Unknown market ${action.marketId}`)
 
-    const existing = next.positions[positionId(action.walletId, action.marketId)] ?? null
+    const existing = findWalletMarketPosition(next, action.walletId, action.marketId)
     const simulation = simulateMultiply({
       market,
       collateralAmount: action.collateralAmount,
@@ -101,6 +117,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     }
 
     const position = buildPosition({
+      id: existing?.id,
       walletId: action.walletId,
       marketId: action.marketId,
       simulation,

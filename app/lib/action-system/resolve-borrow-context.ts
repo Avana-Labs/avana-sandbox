@@ -1,10 +1,16 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { currentCollateralValueUsd6, currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
+import {
+  accrueBorrowSystemState,
+  currentCollateralValueUsd6,
+  currentDebtValueUsd6,
+  formatFixed,
+} from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
+import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 
 function normalizeBorrowAssetKey(value: string) {
   return value.trim().toLowerCase()
@@ -234,13 +240,17 @@ export function borrowSelectItemsForMarket(
     // asset) and is surfaced separately in the configure step, so pinning it here
     // made every row read the same "$X available".
     const liquidityUsd = assetAvailableUsd(session.state, asset.id)
+    // The same asset is borrowable in several spokes (USD Coin appeared twice for guests), so
+    // name the spoke. "liquidity" because "available" read as the wallet's own borrow limit.
+    const spokeId = session.state.assets[asset.id]?.spokeId ?? asset.id.split(":")[0]
     return {
       id: asset.id,
       name: asset.name,
       symbol: asset.symbol,
+      sublabel: (spokeId && getBorrowSpoke(spokeId)?.label) || asset.symbol,
       trailingLabel:
         liquidityUsd != null
-          ? `${formatActionUsd(liquidityUsd, { compact: true })} available`
+          ? `${formatActionUsd(liquidityUsd, { compact: true })} liquidity`
           : `${asset.borrowApr.toFixed(2)}% APR`,
     }
   })
@@ -273,8 +283,9 @@ export function resolveClaimMarketId(marketOrPoolId: string) {
   return HOME_POOL_TO_MARKET_ID[marketOrPoolId] ?? marketOrPoolId
 }
 
-export function repaySelectItemsForWallet(session: BorrowContextSession, walletId: string) {
-  const account = session.state.accounts[walletId]
+export function repaySelectItemsForWallet(session: BorrowContextSession, walletId: string, now = Date.now()) {
+  // Owed = principal plus interest accrued since the last write, the figure the dashboard shows.
+  const account = accrueBorrowSystemState(session.state, now).accounts[walletId]
   if (!account) return []
 
   return account.debtPositions.map((position) => {

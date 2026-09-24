@@ -195,7 +195,7 @@ describe("MultiplyActionPageClient", () => {
     // Scope to the amount card's balance shortcut (clicking the balance fills the
     // balance-cap amount), distinct from the leverage ruler below it.
     const amountCard = within(screen.getByTestId("action-amount-card"))
-    fireEvent.click(amountCard.getByRole("button", { name: /Balance:/ }))
+    fireEvent.click(amountCard.getByRole("button", { name: /Available to loop:/ }))
 
     // Max fills the wallet's spendable balance ($12,500 budget / ETH price), not the
     // pool's multi-million liquidity; the filled value must be within the cap so it

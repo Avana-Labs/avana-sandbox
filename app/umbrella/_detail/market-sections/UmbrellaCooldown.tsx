@@ -50,7 +50,7 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
         ? t("{time} left").replace("{time}", withdrawal.remainingLabel)
         : card.removesInFallback
       : card.cooldownStatus === "expired"
-        ? t("Restart")
+        ? t("Closed")
         : card.cooldownEndsAt
           ? cooldown.remainingLabel
           : card.removesInFallback
@@ -91,7 +91,10 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
           <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums">{cooldownLabel}</div>
         </div>
         <div>
-          <div className="text-[13px] text-muted-foreground">{t("Removes in")}</div>
+          {/* Expired: the unstake window has passed ("Removes in: Restart" read wrong). */}
+          <div className="text-[13px] text-muted-foreground">
+            {card.cooldownStatus === "expired" ? t("Unstake window") : t("Removes in")}
+          </div>
           <div className={cn("mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums", removesTone)}>
             {removesLabel}
           </div>

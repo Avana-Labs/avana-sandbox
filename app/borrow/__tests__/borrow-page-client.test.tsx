@@ -88,7 +88,7 @@ describe("BorrowPageHero", () => {
     expect(screen.getAllByText("$92.7M").length).toBeGreaterThan(0)
     expect(screen.getAllByText("$159.8M").length).toBeGreaterThan(0)
     expect(screen.getByText("WETH / USDC")).toBeInTheDocument()
-    expect(screen.getByText("5.30% Fees")).toBeInTheDocument()
+    expect(screen.getByText("5.30% LP APR")).toBeInTheDocument()
     expect(screen.getByText("78% LTV")).toBeInTheDocument()
   })
 

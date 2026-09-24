@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { fetchLendPage } from "@/app/lib/data/providers/lend"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -31,13 +30,7 @@ export default async function LendPage() {
     )
   }
 
-  const [pageData, requestHeaders, { LendClient }] = await Promise.all([
-    fetchLendPage(),
-    headers(),
-    import("./lend-client"),
-  ])
-  const userAgent = requestHeaders.get("user-agent") ?? ""
-  const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
+  const [pageData, { LendClient }] = await Promise.all([fetchLendPage(), import("./lend-client")])
 
   return (
     <>
@@ -48,7 +41,7 @@ export default async function LendPage() {
           url: `${SITE_URL}/lend`,
         })}
       />
-      <LendClient pageData={pageData} initialIsDesktop={initialIsDesktop} />
+      <LendClient pageData={pageData} />
     </>
   )
 }

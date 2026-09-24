@@ -1,3 +1,5 @@
+import { renderToString } from "react-dom/server"
+import { SearchTrigger } from "../search-trigger"
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -45,6 +47,13 @@ describe("SearchCommand keyboard navigation", () => {
     vi.unstubAllGlobals()
   })
 
+  it("keeps the server-rendered search trigger disabled until hydration", () => {
+    const html = renderToString(<SearchTrigger iconOnly />)
+    expect(html).toContain('disabled=""')
+    render(<SearchTrigger iconOnly />)
+    expect(screen.getByRole("button", { name: "Search Avana" })).toBeEnabled()
+  })
+
   const openAndLoad = async () => {
     render(<SearchCommand />)
     fireEvent.click(screen.getByRole("button", { name: "Search Avana" }))
@@ -69,14 +78,21 @@ describe("SearchCommand keyboard navigation", () => {
     expect(screen.queryByText("Loading results")).not.toBeInTheDocument()
   })
 
-  it("publishes result rows with eagerly loaded icons", async () => {
+  it("publishes result rows with non-blocking icons", async () => {
     await openAndLoad()
 
     const icon = screen.getAllByRole("option")[0].querySelector("img")
     expect(icon).not.toBeNull()
-    expect(icon).toHaveAttribute("loading", "eager")
-    expect(icon).toHaveAttribute("decoding", "sync")
-    expect(icon).toHaveAttribute("fetchpriority", "high")
+    expect(icon).toHaveAttribute("loading", "lazy")
+    expect(icon).toHaveAttribute("decoding", "async")
+    expect(icon).not.toHaveAttribute("fetchpriority", "high")
+  })
+
+  it("shows usable results even when image requests never finish", async () => {
+    vi.stubGlobal("Image", class PendingImage {})
+    const input = await openAndLoad()
+    fireEvent.keyDown(input, { key: "Enter" })
+    expect(push).toHaveBeenCalledTimes(1)
   })
 
   it("navigates results with ArrowDown/ArrowUp and opens with Enter", async () => {

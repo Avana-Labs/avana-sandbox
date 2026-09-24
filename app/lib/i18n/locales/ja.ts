@@ -57,6 +57,10 @@ const dict: TranslationDictionary = {
   Today: "今日",
   Yesterday: "昨日",
   "Choose collateral": "担保を選択",
+  "Cooldown expired": "クールダウン期限切れ",
+  Closed: "終了",
+  "Show more": "さらに表示",
+  "Shared credit": "共有クレジット",
   "Choose asset to borrow": "借り入れる資産を選択",
   "Choose collateral first": "先に担保を選択してください",
   "No borrowable assets for this collateral.": "この担保で借り入れ可能な資産はありません。",
@@ -383,6 +387,11 @@ const dict: TranslationDictionary = {
   "Open portfolio": "ポートフォリオを開く",
   Portfolio: "ポートフォリオ",
   "Quick actions": "クイックアクション",
+  "My Deposits": "マイ預入",
+  "My Loops": "マイループ",
+  "Available to loop": "ループに使用可能",
+  "Scroll table left": "表を左にスクロール",
+  "Scroll table right": "表を右にスクロール",
   "Total Fees earned": "獲得手数料合計",
   "Claimable Fees": "請求可能な手数料",
   "Claim Fees": "手数料を請求",
@@ -571,7 +580,6 @@ const dict: TranslationDictionary = {
   "Lending Performance": "貸出パフォーマンス",
   "Lend Rewards": "貸出リワード",
   "Multiply Overview": "ループ概要",
-  "Multiply Positions": "ループポジション",
   "Debt & Risk": "債務とリスク",
   "Position size, multiplier, and current net yield": "ポジション規模、倍率、現在の純利回り",
   "Borrowed balance, health factor, and liquidation threshold": "借入残高、ヘルスファクター、清算しきい値",
@@ -1426,7 +1434,6 @@ const dict: TranslationDictionary = {
   "Utilization Rate": "稼働率",
   "Borrow amount to reach {value} Util.": "{value}の稼働率に達するための借入額。",
   "Large price difference": "価格差が大きい",
-  "Lend Assets": "貸出資産",
   "Lend Balance": "貸出残高",
   "Lend Opportunity": "貸出機会",
   "Lend TVL": "貸出 TVL",
@@ -1443,6 +1450,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "ループ APY",
   "Loop market": "ループ市場",
   "LP APR": "LP APR",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "この担保のリアルタイム評価額と、得られるLP取引手数料。",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "過去 24 時間の市場全体の清算活動と清算間近のエクスポージャー。",
@@ -1541,6 +1550,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "トークンシンボル、プールペア、または借入などのアクションをお試しください。",
   TVL: "TVL",
+  Testnet: "テストネット",
   Txn: "取引",
   "Unable to refresh the expired quote.": "期限切れの見積もりを更新できません。",
   Unavailable: "利用不可",
@@ -1615,7 +1625,6 @@ const dict: TranslationDictionary = {
   "How it works": "仕組み",
   "Learn Avana": "Avana を学ぶ",
   "Dashboard Positions": "ダッシュボードのポジション",
-  "Available to use": "利用可能",
   "Available to deposit": "預入可能",
   "against {pool}": "{pool} に対して",
   Locked: "ロック中",
@@ -1787,6 +1796,7 @@ const dict: TranslationDictionary = {
   "(required)": "（必須）",
   "Send report": "レポートを送信",
   "Thanks! Your report was sent.": "ありがとうございます。レポートを送信しました。",
+  "Capacity Filled": "使用済み容量",
 }
 
 export default dict

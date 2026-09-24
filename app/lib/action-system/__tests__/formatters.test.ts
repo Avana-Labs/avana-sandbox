@@ -32,12 +32,10 @@ describe("action formatters", () => {
     expect(formatActionNetworkFee(0.04)).toBe("~ $0.04")
   })
 
-  it("fee summary is the single canonical network fee — no fabricated protocol fee (#30, #F1)", () => {
-    // Every preview reads the one SANDBOX_NETWORK_FEE_USD constant, so the estimate
-    // matches the recorded receipt fee regardless of the (now-ignored) call args.
-    expect(formatActionFeeSummary(1000, 0.04)).toBe("~ $0.03")
-    expect(formatActionFeeSummary(100, 0.24)).toBe("~ $0.03")
-    expect(formatActionFeeSummary(0)).toBe("~ $0.03")
+  it("fee summary is 15 bps of the action amount (#30, #F1)", () => {
+    expect(formatActionFeeSummary(1000, 0.04)).toBe("~ $1.50")
+    expect(formatActionFeeSummary(100, 0.24)).toBe("~ $0.15")
+    expect(formatActionFeeSummary(0)).toBe("~ $0.00")
   })
 
   it("formats approx usd under amount input", () => {

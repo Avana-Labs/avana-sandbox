@@ -46,6 +46,21 @@ export function deriveLendPositionAmounts(
   }
 }
 
+/** Position amounts from the ledger's deposited token count (earned interest is included in it). */
+export function lendAmountsFromTokens(
+  depositedTokens: number,
+  earnedUsd: number,
+  assetPriceUsd: number | undefined,
+): { suppliedAmount: number; principalAmount: number; interestEarnedAmount: number } {
+  const interestEarnedAmount =
+    assetPriceUsd && assetPriceUsd > 0 ? Math.min(depositedTokens, earnedUsd / assetPriceUsd) : 0
+  return {
+    suppliedAmount: depositedTokens,
+    interestEarnedAmount,
+    principalAmount: Math.max(0, depositedTokens - interestEarnedAmount),
+  }
+}
+
 function mergeHistory(nextItem: LendTransactionHistoryItem, history: LendTransactionHistoryItem[]) {
   return [nextItem, ...history.filter((item) => item.id !== nextItem.id)]
 }
@@ -89,6 +104,8 @@ type ConvexLendWalletData = {
     status: "success" | "failed" | "pending"
     marketSlug?: string
     amountUsd: number
+    /** Tokens moved, recorded by the server for lend deposits and withdrawals. */
+    tokenAmount?: number
     syntheticTxHash: string
     simulated: boolean
     at: number
@@ -287,12 +304,28 @@ export function useLendSession({
   const hydrateWalletData = useCallback(
     (data: ConvexLendWalletData) => {
       const positions: Record<string, LendSystemState["positions"][string]> = {}
+      // Deposited token counts from the server ledger. Dividing the stored USD by whichever
+      // price had loaded made the same OP deposit read 25,685 OP on the dashboard and
+      // 305,012 OP on Withdraw, and Withdraw let the user take the larger figure.
+      const depositedTokensByMarket = new Map<string, number>()
+      for (const row of data.lendBalances ?? []) {
+        if (row.state !== "deposited" || !(row.amount > 0)) continue
+        depositedTokensByMarket.set(row.marketId, (depositedTokensByMarket.get(row.marketId) ?? 0) + row.amount)
+      }
       for (const position of data.positions) {
         if (position.product !== "lend") continue
         const market = stateRef.current.markets[position.marketSlug]
-        const suppliedValueUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
+        const ledgerSuppliedUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
+        const depositedTokens =
+          position.status === "open" ? depositedTokensByMarket.get(position.marketSlug) : undefined
+        const priceUsd = market?.assetPriceUsd && market.assetPriceUsd > 0 ? market.assetPriceUsd : undefined
+        const suppliedValueUsd =
+          depositedTokens !== undefined && priceUsd !== undefined ? depositedTokens * priceUsd : ledgerSuppliedUsd
         const earnedUsd = Number(BigInt(position.earnedUsd6 ?? "0")) / 1_000_000
-        const amounts = deriveLendPositionAmounts(suppliedValueUsd, earnedUsd, market?.assetPriceUsd)
+        const amounts =
+          depositedTokens !== undefined
+            ? lendAmountsFromTokens(depositedTokens, earnedUsd, priceUsd)
+            : deriveLendPositionAmounts(suppliedValueUsd, earnedUsd, market?.assetPriceUsd)
         const id = String(position._id)
         positions[id] = {
           positionId: id,
@@ -359,7 +392,11 @@ export function useLendSession({
             // `amount` is a TOKEN quantity (the read-model multiplies it by assetPriceUsd) but the
             // Convex row records USD, so convert back here. Claims are USD and pass through.
             amount:
-              kind === "claim" || !(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd,
+              kind === "claim"
+                ? transaction.amountUsd
+                : (transaction.tokenAmount ??
+                  (!(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd)),
+            amountUsd: transaction.amountUsd,
             simulated: transaction.simulated,
             timestamp: transaction.at,
             hash: transaction.syntheticTxHash,

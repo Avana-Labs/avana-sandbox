@@ -71,15 +71,16 @@ function creditScopeMetric(scopeLabel?: string) {
   return [
     {
       id: "credit-scope",
-      label: "Credit scope",
+      label: "Spoke",
       value: scopeLabel,
-      tooltip: `Borrowing power, collateral, and health metrics below are scoped to ${scopeLabel}.`,
+      tooltip: `Like an Aave v4 spoke, ${scopeLabel} pools credit: collateral anywhere in the spoke backs borrowing across it. Borrowing power, collateral and health below are for this spoke.`,
     },
   ]
 }
 
+// "in spoke" (Aave v4's term for the shared credit group); "in scope" read as jargon.
 function scopedMetricLabel(label: string, scopeLabel?: string) {
-  return scopeLabel ? `${label} in scope` : label
+  return scopeLabel ? `${label} in spoke` : label
 }
 
 export function mapBorrowTransactionPreviewToActionUi(
@@ -235,12 +236,15 @@ export function mapBorrowRepayPreviewToActionUi(
     amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
+    // In the debt token, like the amount typed; the USD equivalent sits under the input.
     rateLabel: "Repay amount",
-    rateValue: formatActionUsd(options.amountUsd),
+    rateValue: formatActionAmount(amountTokens, options.symbol),
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Outstanding debt",
-    balanceValue: formatActionUsd(beforeDebt, { exact: true }),
+    balanceValue: price
+      ? formatActionAmount(beforeDebt / price, options.symbol, 4)
+      : formatActionUsd(beforeDebt, { exact: true }),
     maxAmount: price ? beforeDebt / price : beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
@@ -271,7 +275,7 @@ export function mapBorrowRepayPreviewToActionUi(
     blockedReason: allowed
       ? null
       : exceedsDebt
-        ? `Amount exceeds outstanding debt. Maximum repay is ${formatActionUsd(beforeDebt, { exact: true })}.`
+        ? `Amount exceeds outstanding debt. Maximum repay is ${price ? formatActionAmount(beforeDebt / price, options.symbol, 4) : formatActionUsd(beforeDebt, { exact: true })}.`
         : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,

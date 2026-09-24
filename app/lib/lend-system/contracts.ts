@@ -56,6 +56,8 @@ export type LendTransactionHistoryItem = {
   status: LendTransactionStatus
   asset: string
   amount: number
+  /** USD recorded with the transaction; absent until the server row is hydrated. */
+  amountUsd?: number
   simulated: boolean
   timestamp: number
   hash: string

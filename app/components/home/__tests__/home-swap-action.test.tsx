@@ -110,5 +110,7 @@ it("names each asset picker with its visible text, so voice control can target i
       <HomeSwapAction />
     </AvanaSessionsProvider>,
   )
-  expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveAccessibleName(/^Sell asset:\s*Select Asset$/)
+  // Sell starts on ETH; Buy starts empty.
+  expect(screen.getByRole("button", { name: /^Sell asset/ })).toHaveAccessibleName(/^Sell asset:\s*ETH$/)
+  expect(screen.getByRole("button", { name: /^Buy asset/ })).toHaveAccessibleName(/^Buy asset:\s*Select Asset$/)
 })

@@ -18,6 +18,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: () => undefined,
+  useConvexAuth: () => ({ isAuthenticated: false, isLoading: false }),
 }))
 
 function makeRow(overrides: Partial<PortfolioActivityRow> & { id: string; txHash: string }): PortfolioActivityRow {

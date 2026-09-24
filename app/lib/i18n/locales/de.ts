@@ -66,6 +66,10 @@ const dict: TranslationDictionary = {
   Today: "Heute",
   Yesterday: "Gestern",
   "Choose collateral": "Sicherheit auswählen",
+  "Cooldown expired": "Abkühlphase abgelaufen",
+  Closed: "Geschlossen",
+  "Show more": "Mehr anzeigen",
+  "Shared credit": "Geteiltes Kreditlimit",
   "Choose asset to borrow": "Zu leihenden Vermögenswert auswählen",
   "Choose collateral first": "Zuerst Sicherheit auswählen",
   "No borrowable assets for this collateral.": "Keine leihbaren Vermögenswerte für diese Sicherheit.",
@@ -398,6 +402,11 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Portfolio öffnen",
   Portfolio: "Anlagen",
   "Quick actions": "Schnellaktionen",
+  "My Deposits": "Meine Einlagen",
+  "My Loops": "Meine Loops",
+  "Available to loop": "Verfügbar zum Loopen",
+  "Scroll table left": "Tabelle nach links scrollen",
+  "Scroll table right": "Tabelle nach rechts scrollen",
   "Total Fees earned": "Verdiente Gebühren gesamt",
   "Claimable Fees": "Beanspruchbare Gebühren",
   "Claim Fees": "Gebühren beanspruchen",
@@ -588,7 +597,6 @@ const dict: TranslationDictionary = {
   "Lending Performance": "Verleih-Performance",
   "Lend Rewards": "Verleih-Prämien",
   "Multiply Overview": "Multiply-Übersicht",
-  "Multiply Positions": "Multiply-Positionen",
   "Debt & Risk": "Schulden & Risiko",
   "Position size, multiplier, and current net yield": "Positionsgröße, Multiplikator und aktuelle Nettorendite",
   "Borrowed balance, health factor, and liquidation threshold":
@@ -1435,7 +1443,6 @@ const dict: TranslationDictionary = {
   "Utilization Rate": "Auslastungsrate",
   "Borrow amount to reach {value} Util.": "Kreditbetrag, um {value} Auslastung zu erreichen.",
   "Large price difference": "Große Preisdifferenz",
-  "Lend Assets": "Assets verleihen",
   "Lend Balance": "Verleih-Saldo",
   "Lend Opportunity": "Verleih-Gelegenheit",
   "Lend TVL": "Verleih-TVL",
@@ -1451,6 +1458,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "LOOP-APY",
   "Loop market": "Loop-Markt",
   "LP APR": "LP-APR",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Aktueller Wert dieser Sicherheit und die LP-Handelsgebühren, die sie verdient.",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Marktweite Liquidationsaktivität und liquidationsnahe Exposure der letzten 24 Stunden.",
   "Minimum received": "Mindestens erhalten",
@@ -1584,6 +1593,7 @@ const dict: TranslationDictionary = {
   Swap: "Tauschen",
   Tokens: "Tokens",
   TVL: "TVL",
+  Testnet: "Testnetz",
   Txn: "Txn",
   X: "X",
   "1 year": "1 Jahr",
@@ -1637,7 +1647,6 @@ const dict: TranslationDictionary = {
   "How it works": "So funktioniert's",
   "Learn Avana": "Avana kennenlernen",
   "Dashboard Positions": "Dashboard-Positionen",
-  "Available to use": "Verfügbar zur Nutzung",
   "Available to deposit": "Verfügbar zum Einzahlen",
   "against {pool}": "gegen {pool}",
   Locked: "Gesperrt",
@@ -1815,6 +1824,7 @@ const dict: TranslationDictionary = {
   "(required)": "(erforderlich)",
   "Send report": "Bericht senden",
   "Thanks! Your report was sent.": "Danke! Dein Bericht wurde gesendet.",
+  "Capacity Filled": "Genutzte Kapazität",
 }
 
 export default dict

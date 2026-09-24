@@ -99,6 +99,40 @@ describe("useLendSession", () => {
     expect(result.current.state.walletBalances[walletId]?.eth).toBeCloseTo(beforeBalance - 0.5, 6)
   })
 
+  it("hydrates a lend position's supplied tokens from the deposited ledger, not USD at today's price", () => {
+    const walletId = "convex-wallet"
+    const sessionSeed = buildLendSessionSeed(walletId)
+    const { result } = renderHook(() => useLendSession({ walletId, sessionSeed }))
+    const marketId = Object.keys(result.current.state.markets).find(
+      (id) => (result.current.state.markets[id]?.assetPriceUsd ?? 0) > 10,
+    )!
+    const priceUsd = result.current.state.markets[marketId]!.assetPriceUsd
+
+    act(() => {
+      result.current.hydrateWalletData({
+        balances: [],
+        lendBalances: [{ marketId, assetId: marketId, symbol: "X", amount: 7, valueUsd: 37_500, state: "deposited" }],
+        positions: [
+          {
+            _id: "p1",
+            product: "lend",
+            marketSlug: marketId,
+            status: "open",
+            suppliedUsd6: "37500000000",
+            earnedUsd6: "0",
+            openedAt: 1,
+            lastUpdatedAt: 1,
+          },
+        ],
+        transactions: [],
+      })
+    })
+
+    const position = result.current.state.positions.p1
+    expect(position?.currentSuppliedAmount).toBe(7)
+    expect(position?.suppliedValueUsd).toBeCloseTo(7 * priceUsd, 6)
+  })
+
   it("hydrates depositable wallet assets from the canonical liquid balance rows", () => {
     const walletId = "convex-wallet"
     const sessionSeed = buildLendSessionSeed(walletId)

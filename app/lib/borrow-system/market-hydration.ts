@@ -19,6 +19,8 @@ export type ConvexMarketSnapshot = {
   tvlUsd: number
   volumeUsd: number
   feesUsd: number
+  /** Pools: the live LP unit price the server values pledged LP tokens at. */
+  lpPriceUsd?: number
 }
 
 function usd6(value: number) {
@@ -56,6 +58,11 @@ export function mergeConvexMarketSnapshots(
         volume24hUsd6: usd6(snap.volumeUsd),
         fees24hUsd6: usd6(snap.feesUsd),
         feeApyWad: wadFromPct(snap.supplyApyPct),
+        // The server's live LP price; the catalog price is a build-time estimate.
+        lpTokenPriceUsd6:
+          snap.lpPriceUsd !== undefined && Number.isFinite(snap.lpPriceUsd) && snap.lpPriceUsd > 0
+            ? usd6(snap.lpPriceUsd)
+            : market.snapshot.lpTokenPriceUsd6,
       }
       let nextCf: bigint
       if (snap.maxLtvPct !== undefined && Number.isFinite(snap.maxLtvPct)) {
@@ -87,6 +94,7 @@ export function mergeConvexMarketSnapshots(
         s.volume24hUsd6 === nextSnapshot.volume24hUsd6 &&
         s.fees24hUsd6 === nextSnapshot.fees24hUsd6 &&
         s.feeApyWad === nextSnapshot.feeApyWad &&
+        s.lpTokenPriceUsd6 === nextSnapshot.lpTokenPriceUsd6 &&
         market.riskConfig.collateralFactorWad === nextCf &&
         market.display.name === nextName &&
         market.listPremiumBps === nextPremium &&

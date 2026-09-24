@@ -372,8 +372,12 @@ export function buildLendActivityHistory(
             ? ("withdraw" as const)
             : ("claim" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
+      // The recorded USD when known: tokens × the price that happened to be loaded read the same
+      // deposit as -$68.82 and then -$52.70.
       amountUsd:
-        item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
+        item.kind === "claim"
+          ? item.amount
+          : (item.amountUsd ?? item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0)),
       primaryLabel: item.asset,
       secondaryLabel:
         item.kind === "claim"

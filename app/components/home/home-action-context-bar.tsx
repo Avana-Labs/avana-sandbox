@@ -90,6 +90,7 @@ export function HomeActionContextBar({
       collateralSymbol={collateralSymbol ?? "LP"}
       borrowSymbol={borrowSymbol}
       onClick={onOpenPool}
+      switchable={switchable}
       workspace={workspace}
     />
   )

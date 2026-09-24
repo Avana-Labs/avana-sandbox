@@ -26,14 +26,14 @@ describe("borrow preview mappers", () => {
     expect(ui.quoteId).toBe(preview.intent.id)
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Credit scope",
+      "Spoke",
       "Position APY",
-      "LTV in scope",
+      "LTV in spoke",
       "Liquidation threshold",
-      "Borrowing power in scope",
-      "Position equity in scope",
-      "Net collateral in scope",
-      "Health factor in scope",
+      "Borrowing power in spoke",
+      "Position equity in spoke",
+      "Net collateral in spoke",
+      "Health factor in spoke",
     ])
     // LTV live-updates from before → after (0.25 → 0.35 in the fixture). Percentages now use
     // fixed 2dp everywhere (formatActionPercent unified with formatActionRatioPercent).
@@ -70,9 +70,9 @@ describe("borrow preview mappers", () => {
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Credit scope",
+      "Spoke",
       "Remaining debt",
-      "Health factor after in scope",
+      "Health factor after in spoke",
       "Interest saved (est. yearly)",
     ])
   })
@@ -104,6 +104,22 @@ describe("borrow preview mappers", () => {
 
     expect(ui.allowed).toBe(false)
     expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is $2,500.00.")
+  })
+
+  // The repay field is typed in the debt token; the limit read in USD ("Maximum repay is $899.70").
+  it("states the over-repay limit and outstanding debt in the debt token when priced", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "USDC",
+      amountUsd: 5000,
+      priceUsd: 1,
+      marketLabel: "USDC · Core",
+      remainingDebtUsd: 0,
+      yearlyInterestSavedUsd: 0,
+      exceedsDebt: true,
+    })
+    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is 2,500 USDC.")
+    expect(ui.balanceValue).toBe("2,500 USDC")
+    expect(ui.rateValue).toBe("5,000 USDC")
   })
 
   it("allows a repay within the outstanding debt", () => {
@@ -140,12 +156,12 @@ describe("borrow preview mappers", () => {
     expect(ui.borrowSymbol).toBe("USDC")
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Credit scope",
+      "Spoke",
       "Collateral factor",
       "Collateral risk",
       "Borrowable assets",
-      "Borrowing power in scope",
-      "Health factor in scope",
+      "Borrowing power in spoke",
+      "Health factor in spoke",
     ])
     expect(ui.metrics.find((row) => row.id === "borrowable-assets")?.tokenSymbols).toEqual(["USDC", "GHO"])
   })
@@ -243,12 +259,12 @@ describe("borrow preview mappers", () => {
     })
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
-      "Credit scope",
+      "Spoke",
       "Annual earnings",
-      "Borrowing power in scope",
-      "Position equity in scope",
-      "Net collateral in scope",
-      "Health factor in scope",
+      "Borrowing power in spoke",
+      "Position equity in spoke",
+      "Net collateral in spoke",
+      "Health factor in spoke",
     ])
     expect(ui.amountUsd).toBe(2500)
     expect(ui.amountValue).toBe("25")

@@ -7,24 +7,15 @@ import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileIdentityText,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MarketMobileSupportingValue,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
-import { DesktopTableSurface } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, ScrollableTable } from "@/app/components/market-table-primitives"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { useBorrowSessionContextOptional } from "@/app/lib/avana-session/avana-sessions-context"
 import {
-  TABLE_BASE,
+  DASHBOARD_TABLE_REFERENCE_PX,
+  TABLE_ACTION_BUTTON,
   TABLE_BODY_ROW,
   TABLE_CELL_CAPTION_UNCOLORED,
   TABLE_CELL_NUMERIC,
@@ -35,11 +26,31 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
   formatTableHeaderLabel,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+
+const WALLET_TOKENS_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact",
+    "metric", // Balance
+    "metricWide", // Value over P/L
+    "actionCompact", // Swap
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
+const WALLET_POOLS_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact",
+    "compact", // LTV
+    "compact", // Risk premium
+    "metric", // Balance
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
 import {
   buildDashboardWalletBalanceRows,
   selectDashboardWalletValueRows,
@@ -183,15 +194,13 @@ function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; market
           <div className={cn("truncate", TABLE_CELL_PRIMARY)} title={row.name}>
             {row.name}
           </div>
-          <div className={TABLE_CELL_SECONDARY}>{detail.protocol}</div>
+          <div className={cn("truncate", TABLE_CELL_SECONDARY)}>{detail.protocol}</div>
         </div>
       </div>
     )
   }
 
-  return (
-    <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" subtitleTruncate={false} />
-  )
+  return <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" />
 }
 
 function poolDetailHref(row: DashboardWalletBalanceRow) {
@@ -222,7 +231,7 @@ export function resolvePoolRiskPremiumBps(
 
 function TokenUsdCell({ token, usd }: { token: string; usd?: string }) {
   return (
-    <div className="flex flex-col items-end">
+    <div className="flex flex-col items-start">
       <span className={cn(TABLE_CELL_NUMERIC)}>{token}</span>
       {usd ? <span className={TABLE_CELL_SECONDARY}>{usd}</span> : null}
     </div>
@@ -339,7 +348,7 @@ function ValueWithPnl({
   showBalance: boolean
 }) {
   return (
-    <div className="flex flex-col items-end gap-0.5">
+    <div className="flex flex-col items-start gap-0.5">
       <span className={TABLE_CELL_NUMERIC}>{showBalance ? exact(row.valueUsd) : MASK}</span>
       <PnlLine row={row} priceUsdAtClaim={priceUsdAtClaim} exact={exact} showBalance={showBalance} />
     </div>
@@ -351,7 +360,7 @@ function ValueWithPnl({
 function SwapAction({ assetId, label }: { assetId: string; label: string }) {
   return (
     <div className="flex justify-end">
-      <Button asChild size="table" variant="table-secondary" className="w-auto">
+      <Button asChild size="table" variant="table-secondary" className={TABLE_ACTION_BUTTON}>
         <Link href={`/swap?from=${encodeURIComponent(assetId)}`} aria-label={label}>
           <ActionIcon label="swap" />
           {label}
@@ -424,7 +433,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
           />
           <WalletMetric
             label={t("Avana Boost")}
-            value={boost != null ? `${boost.toFixed(2)}×` : DASH}
+            value={boost != null ? `${boost.toFixed(2)}x` : DASH}
             description="Your Avana rank — a per-wallet standing that boosts your edge across Lend, Borrow, and Swap. The higher it climbs, the more it unlocks."
           />
           <WalletMetric
@@ -481,40 +490,28 @@ function WalletBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "token", "tokens")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-          <colgroup>
-            <col className="w-[33%]" />
-            <col className="w-[19%]" />
-            <col className="w-[26%]" />
-            <col className="w-[22%]" />
-          </colgroup>
+      <DesktopTableSurface className="!rounded-none">
+        <ScrollableTable layout={WALLET_TOKENS_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+              <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
                 <WalletMetricHeader label={t("Asset")} help={t("A token held directly in your connected wallet.")} />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                <WalletMetricHeader
-                  label={t("Balance")}
-                  help={t("The amount of this token in your wallet.")}
-                  align="right"
-                />
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <WalletMetricHeader label={t("Balance")} help={t("The amount of this token in your wallet.")} />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                <WalletMetricHeader
-                  label={t("Value")}
-                  help={t("The token balance valued at its live price.")}
-                  align="right"
-                />
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <WalletMetricHeader label={t("Value")} help={t("The token balance valued at its live price.")} />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Swap")} />
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                <span className="sr-only">{t("Swap")}</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => (
               <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
-                <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
+                <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
@@ -527,10 +524,10 @@ function WalletBalanceSection({
                     </div>
                   </div>
                 </td>
-                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
-                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                   <ValueWithPnl
                     row={row}
                     priceUsdAtClaim={basisFor(row.assetId)}
@@ -545,66 +542,14 @@ function WalletBalanceSection({
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={4} className="px-6 py-8 text-center text-[14px] text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => {
-          const pnl = tokenPnl(row, basisFor(row.assetId))
-          return (
-            <MarketMobileCard key={row.id} className="space-y-2">
-              <MarketMobileCardHeader
-                identity={
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <TokenIcon symbol={row.symbol} size="table" />
-                    <MarketMobileIdentityText
-                      title={row.name}
-                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
-                    />
-                  </div>
-                }
-                metric={<MarketMobileMetric value={m(exact(row.valueUsd))} label={t("Value")} />}
-              />
-              <MarketMobileStatList>
-                <MarketMobileStatRow label={t("Balance")} value={m(formatAssetAmount(row.amount, row.symbol))} />
-                {pnl && showBalance ? (
-                  <MarketMobileStatRow
-                    label={t("P/L")}
-                    value={
-                      <PnlLine
-                        row={row}
-                        priceUsdAtClaim={basisFor(row.assetId)}
-                        exact={exact}
-                        showBalance={showBalance}
-                        variant="value"
-                      />
-                    }
-                  />
-                ) : null}
-              </MarketMobileStatList>
-              <MarketMobileActionFooter columns={1}>
-                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                  <Link href={`/swap?from=${encodeURIComponent(row.assetId)}`}>
-                    <ActionIcon label="swap" />
-                    {t("Swap")}
-                  </Link>
-                </Button>
-              </MarketMobileActionFooter>
-            </MarketMobileCard>
-          )
-        })}
-        {rows.length === 0 ? (
-          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
-            {t("No wallet balances found.")}
-          </MarketMobileCard>
-        ) : null}
-      </div>
     </section>
   )
 }
@@ -632,42 +577,30 @@ function PoolsBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-          <colgroup>
-            <col className="w-[36%]" />
-            <col className="w-[21%]" />
-            <col className="w-[21%]" />
-            <col className="w-[22%]" />
-          </colgroup>
+      <DesktopTableSurface className="!rounded-none">
+        <ScrollableTable layout={WALLET_POOLS_LAYOUT}>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+              <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
                 <WalletMetricHeader
                   label={t("Pool")}
                   help={t("A liquidity-pool position you hold, paired tokens supplied to a DEX.")}
                 />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
                 <WalletMetricHeader
                   label={t("LTV")}
                   help={t("The maximum loan-to-value ratio allowed against this pool as collateral.")}
-                  align="right"
                 />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
                 <WalletMetricHeader
                   label={t("Risk Premium")}
                   help={t("An additional cost on your borrow rate based on the riskiness of your collateral")}
-                  align="right"
                 />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                <WalletMetricHeader
-                  label={t("Balance")}
-                  help={t("The current value of your pooled tokens.")}
-                  align="right"
-                />
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <WalletMetricHeader label={t("Balance")} help={t("The current value of your pooled tokens.")} />
               </th>
             </tr>
           </thead>
@@ -676,23 +609,23 @@ function PoolsBalanceSection({
               const href = poolDetailHref(row)
               return (
                 <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
-                  <td className={cn(TABLE_ROW_HOVER_LEFT)}>
-                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "pl-5")}>
+                  <td className={tableStickyCell("body")}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "pl-6")}>
                       <PoolIdentity row={row} markets={markets} />
                     </Link>
                   </td>
                   <td className={cn(TABLE_ROW_HOVER_BG)}>
-                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING)}>
                       <PoolLtvCell row={row} mask={m} />
                     </Link>
                   </td>
                   <td className={cn(TABLE_ROW_HOVER_BG)}>
-                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING)}>
                       <PoolRiskPremiumCell row={row} markets={markets} mask={m} />
                     </Link>
                   </td>
                   <td className={cn(TABLE_ROW_HOVER_BG)}>
-                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING)}>
                       <PoolBalanceCell row={row} exact={exact} mask={m} />
                     </Link>
                   </td>
@@ -701,57 +634,14 @@ function PoolsBalanceSection({
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={4} className="px-6 py-8 text-center text-[14px] text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </ScrollableTable>
       </DesktopTableSurface>
-
-      <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
-          <Link key={row.id} href={poolDetailHref(row)} className="block">
-            <MarketMobileCard className="space-y-2">
-              <MarketMobileCardHeader identity={<PoolIdentity row={row} markets={markets} />} />
-              <MarketMobileStatList>
-                <MarketMobileStatRow
-                  label={t("LTV")}
-                  value={m(row.ltvPct != null && Number.isFinite(row.ltvPct) ? formatLtvPct(row.ltvPct) : DASH)}
-                />
-                <MarketMobileStatRow
-                  label={t("Risk Premium")}
-                  value={m(
-                    (() => {
-                      const bps = resolvePoolRiskPremiumBps(row, markets)
-                      return bps != null ? formatRiskPremium(bps) : DASH
-                    })(),
-                  )}
-                />
-                <MarketMobileStatRow
-                  label={t("Balance")}
-                  value={
-                    <span>
-                      {row.unitPriceUsd && row.unitPriceUsd > 0
-                        ? m(`${formatPoolAmount(row.amount)} LP`)
-                        : m(exact(row.valueUsd))}
-                      {row.unitPriceUsd && row.unitPriceUsd > 0 ? (
-                        <MarketMobileSupportingValue>{m(exact(row.valueUsd))}</MarketMobileSupportingValue>
-                      ) : null}
-                    </span>
-                  }
-                />
-              </MarketMobileStatList>
-            </MarketMobileCard>
-          </Link>
-        ))}
-        {rows.length === 0 ? (
-          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
-            {t("No wallet balances found.")}
-          </MarketMobileCard>
-        ) : null}
-      </div>
     </section>
   )
 }

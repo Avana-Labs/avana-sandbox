@@ -1,13 +1,15 @@
 "use client"
 
+import { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
+import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
+import dynamic from "next/dynamic"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SwapAssetIcon } from "@/app/swap/swap-asset-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
-import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import {
   NATIVE_GAS_RESERVE_ETH,
@@ -25,6 +27,20 @@ import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import type { SwapQuote } from "@/app/lib/swap-system"
+
+const ActionReviewStage = dynamic(
+  () => import("@/app/components/action-page/action-review-stage").then((mod) => mod.ActionReviewStage),
+  { loading: ActionSessionLoading },
+)
+
+const ActionSuccessStage = dynamic(
+  () => import("@/app/components/action-page/action-success-stage").then((mod) => mod.ActionSuccessStage),
+  { loading: ActionSessionLoading },
+)
+
+const SwapAssetPickerDialog = dynamic(() =>
+  import("./swap-asset-picker-dialog").then((mod) => mod.SwapAssetPickerDialog),
+)
 
 type SwapPageClientProps = {
   initialFrom?: string
@@ -81,7 +97,8 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const networkGuard = useActionNetworkGuard()
   const canonicalPriceFor = useCanonicalPriceFor()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "")
+  // Sell starts on ETH like the homepage swap; Buy stays empty until the user picks it.
+  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? DEFAULT_SELL_ASSET_ID)
   const [outputAssetId, setOutputAssetId] = useState(
     initialTo && initialTo !== initialFrom ? initialTo : initialFrom ? fallbackOutput(initialFrom) : "",
   )
@@ -342,6 +359,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
+  const accessLabel = transactAccessCtaLabel(useTransactAccess())
   const primaryLabel =
     !inputAsset || !outputAsset
       ? "Select assets"
@@ -373,6 +391,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
       closeHref={returnHref}
       flowHeaderStage={stage}
+      flowHeaderHasSelectStep={false}
       hideTitle={stage === "review" || stage === "success" || isTransactionStage}
     >
       {isTransactionStage ? (
@@ -429,7 +448,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               tone="inset"
             />
           </div>
-
           {amount.trim() && inputAsset && !validation.valid && validation.reason ? (
             <div
               className="rounded-radius-lg border border-danger/30 bg-danger/10 px-4 py-3 text-[14px] text-foreground"
@@ -438,7 +456,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               {swapValidationMessage(validation.reason, inputAsset)}
             </div>
           ) : null}
-
           {outcome ? (
             <div
               className={`rounded-radius-xl border p-4 text-[14px] ${
@@ -450,43 +467,54 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               {outcome.message}
             </div>
           ) : null}
-
-          <ActionFooter
-            primaryLabel={primaryLabel}
-            secondaryHref={returnHref}
-            primaryDisabled={
-              Boolean(networkGuard.blockedReason) ||
-              !validation.valid ||
-              quoteState === "loading" ||
-              (!quote && quoteState !== "error")
-            }
-            onPrimary={() => {
-              if (quoteState === "error") {
-                setQuoteRetry((current) => current + 1)
-                return
+          {/* A guest saw a disabled "Select assets" with no way forward; match the configure stage. */}
+          {accessLabel ? (
+            <ActionFooter
+              primaryLabel={t(accessLabel)}
+              primaryHref={TRANSACT_ACCESS_HREF}
+              secondaryHref={returnHref}
+              sticky
+            />
+          ) : (
+            <ActionFooter
+              primaryLabel={primaryLabel}
+              secondaryHref={returnHref}
+              primaryDisabled={
+                Boolean(networkGuard.blockedReason) ||
+                !validation.valid ||
+                quoteState === "loading" ||
+                (!quote && quoteState !== "error")
               }
-              if (previewUi) setStage("review")
-            }}
-            sticky
-          />
+              onPrimary={() => {
+                if (quoteState === "error") {
+                  setQuoteRetry((current) => current + 1)
+                  return
+                }
+                if (previewUi) setStage("review")
+              }}
+              sticky
+            />
+          )}
         </div>
       ) : null}
 
-      <SwapAssetPickerDialog
-        open={pickerSide !== null}
-        onOpenChange={(open) => {
-          if (!open) setPickerSide(null)
-        }}
-        title={pickerSide === "input" ? "Sell" : "Buy"}
-        assets={swappableAssets}
-        balances={swap.walletBalances}
-        selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
-        excludedAssetId={pickerSide === "input" ? outputAssetId : inputAssetId}
-        onSelect={(assetId) => {
-          if (pickerSide === "input") setInputAssetId(assetId)
-          if (pickerSide === "output") setOutputAssetId(assetId)
-        }}
-      />
+      {pickerSide !== null ? (
+        <SwapAssetPickerDialog
+          open={pickerSide !== null}
+          onOpenChange={(open) => {
+            if (!open) setPickerSide(null)
+          }}
+          title={pickerSide === "input" ? "Sell" : "Buy"}
+          assets={swappableAssets}
+          balances={swap.walletBalances}
+          selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
+          excludedAssetId={pickerSide === "input" ? outputAssetId : inputAssetId}
+          onSelect={(assetId) => {
+            if (pickerSide === "input") setInputAssetId(assetId)
+            if (pickerSide === "output") setOutputAssetId(assetId)
+          }}
+        />
+      ) : null}
     </ActionPageShell>
   )
 }

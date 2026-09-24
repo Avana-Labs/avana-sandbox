@@ -10,22 +10,16 @@ import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   HF_ZONES,
   activeHealthFactorZoneIndex,
-  healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
-import { Button } from "@/components/ui/button"
-import { DesktopTableSurface, ROW_OPEN_ARROW_CLASS, RowOpenArrowIcon } from "@/app/components/market-table-primitives"
-import { ActionIcon } from "@/app/components/action-icon"
 import {
-  MarketMobileActionFooter,
-  MarketMobileCard,
-  MarketMobileCardHeader,
-  MarketMobileMetric,
-  MarketMobileStatList,
-  MarketMobileStatRow,
-  MARKET_MOBILE_CTA_CLASS,
-} from "@/app/components/market-card-primitives"
+  DesktopTableSurface,
+  ROW_OPEN_ARROW_CLASS,
+  RowOpenArrowIcon,
+  ScrollableTable,
+} from "@/app/components/market-table-primitives"
+import {} from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
 import { liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
@@ -33,7 +27,7 @@ import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import {
-  TABLE_BASE,
+  DASHBOARD_TABLE_REFERENCE_PX,
   TABLE_BODY_ROW,
   TABLE_CELL_CAPTION,
   TABLE_CELL_NUMERIC,
@@ -42,17 +36,26 @@ import {
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
-  TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
   formatTableHeaderLabel,
+  tableColumnLayout,
+  tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
+
+const SUPPLIES_LAYOUT = tableColumnLayout(
+  [
+    "identityCompact", // LP pair + venue
+    "compact", // Value + LP APR
+    "metric", // Borrow power + % used
+    "metric", // HF + liquidation value
+    "arrow",
+  ],
+  { referenceWidth: DASHBOARD_TABLE_REFERENCE_PX },
+)
 
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
   totals: { collateral: number; borrowed: number; available: number; fees: number; averageHf: number | null }
-  onClaimFees?: (context: SupplyRowContext) => void
-  onAddCollateral?: (context: SupplyRowContext) => void
-  onRemove?: (context: SupplyRowContext) => void
   showBalance?: boolean
   showSummary?: boolean
   showHeading?: boolean
@@ -80,7 +83,6 @@ function SuppliesMetricHeader({
 export function SuppliesPanel({
   rows,
   totals,
-  onClaimFees,
   showBalance = true,
   showSummary = true,
   showHeading = true,
@@ -108,179 +110,120 @@ export function SuppliesPanel({
         </div>
       ) : (
         <>
-          <div className="hidden md:block">
-            <DesktopTableSurface className="!rounded-none">
-              <div className="overflow-x-auto">
-                <table className={`w-full min-w-[560px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
-                  {/* The action column held a "Manage" pill; the arrow that replaced it
-                  needs far less room, so the freed width goes back to the data columns. */}
-                  <colgroup>
-                    <col className="w-[40%]" />
-                    <col className="w-[24%]" />
-                    <col className="w-[26%]" />
-                    <col className="w-[10%]" />
-                  </colgroup>
-                  <thead>
-                    <tr className={TABLE_HEADER_ROW}>
-                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
-                        <SuppliesMetricHeader
-                          label={t("Collateral")}
-                          help={t("The collateral asset backing your borrowing, valued at its live price.")}
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "whitespace-nowrap px-4 text-right")}>
-                        <SuppliesMetricHeader
-                          label={t("Borrow Power")}
-                          help={t(
-                            "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.",
-                          )}
-                          align="right"
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                        <SuppliesMetricHeader
-                          label={t("Risk")}
-                          help={t(
-                            "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.",
-                          )}
-                          align="right"
-                        />
-                      </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border dark:divide-white/6">
-                    {rows.map((row) => {
-                      const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-                        ReturnType<typeof homeVisualToBorrowVisual>,
-                        ReturnType<typeof homeVisualToBorrowVisual>,
-                      ]
-                      const hfTone = healthFactorToneClass(row.healthFactor)
-                      const detailHref = `/borrow/markets/${row.pool.id}`
-                      // Per-collateral borrow-power utilization, computed the same way as the global
-                      // Borrow Health card (borrowed ÷ liquidation value) and tinted with its palette.
-                      const usedPct =
-                        row.liquidationThresholdUsd > 0
-                          ? Math.min(100, (row.borrowedUsd / row.liquidationThresholdUsd) * 100)
-                          : 0
-                      // Spoke/venue context distinguishes two positions on the same pair but
-                      // different spokes; reuse the borrow market-context helper.
-                      const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
-                      const valueLabel = m(`${t("Value")}: ${compact(row.pool.collateralUsd)}`)
-                      return (
-                        <tr
-                          key={row.pool.id}
-                          className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
-                          onClick={() => router.push(detailHref)}
-                        >
-                          <td className={`${TABLE_CELL_PADDING} pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                            {/* Collateral column: the LP pair over its spoke/venue and live collateral
-                            value, so two positions on the same pair but different spokes stay distinct. */}
-                            <TokenPairCell
-                              visuals={visuals}
-                              name={row.pool.name}
-                              subtitle={`${spokeLabel} · ${valueLabel}`}
-                              size="md"
-                            />
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                            <div className={TABLE_CELL_NUMERIC}>{m(compact(row.remainingBorrowPowerUsd))}</div>
-                            <div className={cn(TABLE_CELL_CAPTION, liqUtilizationPercentTextClass(usedPct))}>
-                              {m(`${usedPct.toFixed(0)}% ${t("used")}`)}
-                            </div>
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                            <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                            <div className={TABLE_CELL_CAPTION}>
+          <DesktopTableSurface className="!rounded-none">
+            <ScrollableTable layout={SUPPLIES_LAYOUT}>
+              <thead>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
+                    <SuppliesMetricHeader
+                      label={t("Collateral")}
+                      help={t("The collateral asset backing your borrowing, valued at its live price.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <SuppliesMetricHeader
+                      label={t("Value")}
+                      help={t("Live value of this collateral, and the LP trading fees it earns.")}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "whitespace-nowrap px-4")}>
+                    <SuppliesMetricHeader
+                      label={t("Borrow Power")}
+                      help={t(
+                        "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.",
+                      )}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                    <SuppliesMetricHeader
+                      label={t("Risk")}
+                      help={t(
+                        "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.",
+                      )}
+                    />
+                  </th>
+                  <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                    <span className="sr-only">{t("Manage")}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-white/6">
+                {rows.map((row) => {
+                  const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                    ReturnType<typeof homeVisualToBorrowVisual>,
+                  ]
+                  const hfTone = healthFactorToneClass(row.healthFactor)
+                  const detailHref = `/borrow/markets/${row.pool.id}`
+                  // Per-collateral borrow-power utilization, computed the same way as the global
+                  // Borrow Health card (borrowed ÷ liquidation value) and tinted with its palette.
+                  const usedPct =
+                    row.liquidationThresholdUsd > 0
+                      ? Math.min(100, (row.borrowedUsd / row.liquidationThresholdUsd) * 100)
+                      : 0
+                  // Spoke/venue context distinguishes two positions on the same pair but
+                  // different spokes; reuse the borrow market-context helper.
+                  const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
+                  return (
+                    <tr
+                      key={row.pool.id}
+                      className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+                      onClick={() => router.push(detailHref)}
+                    >
+                      <td className={cn(TABLE_CELL_PADDING, "pl-6", tableStickyCell("body"))}>
+                        {/* Collateral column: the LP pair over its spoke/venue, so two positions on
+                            the same pair but different spokes stay distinct. */}
+                        <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={spokeLabel} size="md" />
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>{m(compact(row.pool.collateralUsd))}</div>
+                        <div className={cn(TABLE_CELL_CAPTION, "tabular-nums")}>
+                          {formatApy(row.pairApr)} {t("LP APR")}
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <div className={TABLE_CELL_NUMERIC}>{m(compact(row.remainingBorrowPowerUsd))}</div>
+                        <div className={cn(TABLE_CELL_CAPTION, liqUtilizationPercentTextClass(usedPct))}>
+                          {m(`${usedPct.toFixed(0)}% ${t("used")}`)}
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                        <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                        {/* With no debt in scope (HF ∞) there is nothing to liquidate; the collateral's
+                            liquidation value next to "∞" read like a liquidation price. */}
+                        <div className={TABLE_CELL_CAPTION}>
+                          {Number.isFinite(row.healthFactor) ? (
+                            <>
                               {t("Liq.")} {m(exact(row.liquidationThresholdUsd))}
-                            </div>
-                          </td>
-                          <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                            {/* Desktop only — the mobile cards below keep their labelled
+                            </>
+                          ) : (
+                            t("No debt")
+                          )}
+                        </div>
+                      </td>
+                      <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                        {/* Desktop only — the mobile cards below keep their labelled
                             buttons. The row already opens detailHref on click, so the
                             arrow points at that rather than offering a rival control. */}
-                            <button
-                              type="button"
-                              aria-label={t("Manage")}
-                              title={t("Manage")}
-                              className={ROW_OPEN_ARROW_CLASS}
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                router.push(detailHref)
-                              }}
-                            >
-                              <RowOpenArrowIcon />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </DesktopTableSurface>
-          </div>
-
-          <ul className="space-y-5 md:hidden">
-            {rows.map((row) => {
-              const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-                ReturnType<typeof homeVisualToBorrowVisual>,
-                ReturnType<typeof homeVisualToBorrowVisual>,
-              ]
-              const hf = row.healthFactor
-              // Single-source the label through formatHealthFactor so the mobile card
-              // caps/formats health identically to the desktop table and the hero card.
-              const hfLabel = formatHealthFactor(hf)
-              const hfTone = healthFactorBarTone(hf)
-              // Spoke/venue context so same-pair positions on different spokes stay distinct.
-              const spokeLabel = formatBorrowMarketContext({ venue: row.pool.venue, feeTier: "" })
-              return (
-                <MarketMobileCard
-                  key={row.pool.id}
-                  clickable
-                  onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
-                >
-                  <MarketMobileCardHeader
-                    identity={<TokenPairCell visuals={visuals} name={row.pool.name} subtitle={spokeLabel} size="md" />}
-                    metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
-                  />
-                  <MarketMobileStatList className="mt-3">
-                    <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
-                    <MarketMobileStatRow label={t("Liq.")} value={m(exact(row.liquidationThresholdUsd))} />
-                    <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
-                    <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
-                    <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
-                  </MarketMobileStatList>
-                  <MarketMobileActionFooter>
-                    <Button
-                      type="button"
-                      variant="brand"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onClaimFees?.(row)
-                      }}
-                    >
-                      <ActionIcon label="Claim" />
-                      {t("Claim")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="brand-secondary"
-                      className={MARKET_MOBILE_CTA_CLASS}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        router.push(`/borrow/markets/${row.pool.id}`)
-                      }}
-                    >
-                      <ActionIcon label="Manage" />
-                      {t("Manage")}
-                    </Button>
-                  </MarketMobileActionFooter>
-                </MarketMobileCard>
-              )
-            })}
-          </ul>
+                        <button
+                          type="button"
+                          aria-label={t("Manage")}
+                          title={t("Manage")}
+                          className={ROW_OPEN_ARROW_CLASS}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            router.push(detailHref)
+                          }}
+                        >
+                          <RowOpenArrowIcon />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ScrollableTable>
+          </DesktopTableSurface>
         </>
       )}
     </section>

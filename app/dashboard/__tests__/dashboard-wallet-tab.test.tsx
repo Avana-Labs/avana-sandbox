@@ -67,7 +67,7 @@ describe("DashboardWalletTab", () => {
 
     const pool = BORROW_POOL_CATALOG.find((row) => row.id === "bal-weighted-80-20-aura-weth")
     expect(pool).toBeDefined()
-    expect(screen.getAllByText("Risk Premium").length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/^Risk Premium$/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(formatRiskPremium(pool!.riskPremiumBps)).length).toBeGreaterThan(0)
   })
 

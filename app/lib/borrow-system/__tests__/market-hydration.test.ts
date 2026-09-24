@@ -180,4 +180,27 @@ describe("mergeConvexMarketSnapshots", () => {
     const ltv = Number(next.markets[POOL_SLUG]!.riskConfig.collateralFactorWad) / 1e18
     expect(ltv).toBeCloseTo(0.775, 6)
   })
+
+  // Prod 2026-09-23: the browser valued the dev wallet's cbBTC/USDC LP at its build-time price
+  // ($32.5K) while the server valued pledges at the live $42.2K.
+  it("takes the pool's live LP price from the snapshot", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const hydrated = mergeConvexMarketSnapshots(state, [
+      {
+        slug: POOL_SLUG,
+        scope: "pool",
+        suppliedUsd: 1,
+        borrowedUsd: 0,
+        availableUsd: 1,
+        utilizationPct: 0,
+        supplyApyPct: 2,
+        borrowAprPct: 4,
+        tvlUsd: 1,
+        volumeUsd: 0,
+        feesUsd: 0,
+        lpPriceUsd: 42_120.87,
+      },
+    ])
+    expect(usd6ToNumber(hydrated.markets[POOL_SLUG]!.snapshot.lpTokenPriceUsd6)).toBeCloseTo(42_120.87, 6)
+  })
 })

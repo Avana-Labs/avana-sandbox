@@ -1,3 +1,4 @@
+import { codedError } from "../codedError"
 import { v } from "convex/values"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
@@ -23,13 +24,13 @@ function parseRewardsState(stateJson: string, wallet: string) {
   try {
     parsed = JSON.parse(stateJson)
   } catch {
-    throw new Error("INVALID_REWARDS_STATE")
+    throw codedError("INVALID_REWARDS_STATE")
   }
   if (!isRecord(parsed) || !Array.isArray(parsed.events) || !Array.isArray(parsed.claims)) {
-    throw new Error("INVALID_REWARDS_STATE")
+    throw codedError("INVALID_REWARDS_STATE")
   }
   if (parsed.events.length > MAX_REWARD_EVENTS || parsed.claims.length > MAX_REWARD_CLAIMS) {
-    throw new Error("REWARDS_STATE_TOO_LARGE")
+    throw codedError("REWARDS_STATE_TOO_LARGE")
   }
   for (const event of parsed.events) {
     if (
@@ -42,13 +43,13 @@ function parseRewardsState(stateJson: string, wallet: string) {
       typeof event.timestamp !== "number" ||
       !Number.isFinite(event.timestamp)
     ) {
-      throw new Error("INVALID_REWARDS_STATE")
+      throw codedError("INVALID_REWARDS_STATE")
     }
     if (event.amountUsd !== undefined && (typeof event.amountUsd !== "number" || !Number.isFinite(event.amountUsd))) {
-      throw new Error("INVALID_REWARDS_STATE")
+      throw codedError("INVALID_REWARDS_STATE")
     }
     for (const field of [event.marketId, event.referredWallet]) {
-      if (field !== undefined && !boundedText(field)) throw new Error("INVALID_REWARDS_STATE")
+      if (field !== undefined && !boundedText(field)) throw codedError("INVALID_REWARDS_STATE")
     }
   }
   for (const claim of parsed.claims) {
@@ -67,7 +68,7 @@ function parseRewardsState(stateJson: string, wallet: string) {
       typeof claim.claimedAt !== "number" ||
       !Number.isFinite(claim.claimedAt)
     ) {
-      throw new Error("INVALID_REWARDS_STATE")
+      throw codedError("INVALID_REWARDS_STATE")
     }
   }
   return parsed as JsonRecord & { events: JsonRecord[]; claims: JsonRecord[] }
@@ -92,7 +93,7 @@ export const saveState = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
-    if (args.stateJson.length > 1_000_000) throw new Error("REWARDS_STATE_TOO_LARGE")
+    if (args.stateJson.length > 1_000_000) throw codedError("REWARDS_STATE_TOO_LARGE")
     const parsed = parseRewardsState(args.stateJson, wallet)
     const existing = await ctx.db
       .query("sandboxRewards")
@@ -127,14 +128,14 @@ export const saveState = mutation({
         for (const taskId of transaction.claimedTaskIds ?? []) authorizedClaims.add(taskId)
       }
       for (const claim of unverifiedClaims) {
-        if (!authorizedClaims.has(claim.taskId as string)) throw new Error("UNAUTHORIZED_REWARD_CLAIM")
+        if (!authorizedClaims.has(claim.taskId as string)) throw codedError("UNAUTHORIZED_REWARD_CLAIM")
       }
     }
     const updatedAt = Date.now()
     if (existing) {
       const currentRevision = existing.revision ?? 0
       if (args.expectedRevision == null) {
-        throw new Error("REVISION_REQUIRED: rewards state already exists; reload it and submit its expectedRevision.")
+        throw codedError("REVISION_REQUIRED: rewards state already exists; reload it and submit its expectedRevision.")
       }
       if (args.expectedRevision !== currentRevision) {
         return { id: existing._id, revision: currentRevision, stale: true }

@@ -257,6 +257,12 @@ export const listForWallet = query({
       if (row.state !== "collateral" || !row.marketId) continue
       if (row.amount > 0 && row.valueUsd > 0) claimLpBySlug.set(row.marketId, row.valueUsd / row.amount)
     }
+    // A pool held but not pledged has no collateral row to anchor on; its poolAvailable row carries
+    // the same token count, so without this the dashboard showed it at the claim USD forever.
+    for (const row of rawBorrow) {
+      if (row.state !== "poolAvailable" || !row.marketId || claimLpBySlug.has(row.marketId)) continue
+      if (row.amount > 0 && row.valueUsd > 0) claimLpBySlug.set(row.marketId, row.valueUsd / row.amount)
+    }
 
     const borrow = rawBorrow.map((row) => {
       if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) {

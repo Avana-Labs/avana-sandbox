@@ -5,6 +5,7 @@
  * SYNTHETIC, never a source of truth.
  */
 
+import { codedError } from "../codedError"
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
@@ -424,7 +425,7 @@ export const startTweet = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
+    if (!profile) throw codedError("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
     if (profile.onboardingStep === "xConfirmed") return "xConfirmed" as const
     await ctx.db.patch(profile._id, { onboardingStep: "xPending" })
@@ -439,7 +440,7 @@ export const confirmTweet = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    if (!profile) throw new Error("NO_PROFILE: start onboarding before sharing.")
+    if (!profile) throw codedError("NO_PROFILE: start onboarding before sharing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
     await ctx.db.patch(profile._id, {
       onboardingStep: "xConfirmed",
@@ -457,7 +458,7 @@ export const skipTweet = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    if (!profile) throw new Error("NO_PROFILE: start onboarding before continuing.")
+    if (!profile) throw codedError("NO_PROFILE: start onboarding before continuing.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
     await ctx.db.patch(profile._id, { onboardingStep: "xConfirmed" })
     return "xConfirmed" as const
@@ -470,7 +471,7 @@ export const beginClaim = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWalletForWrite(ctx, args.wallet)
     const profile = await profileForWallet(ctx, wallet)
-    if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
+    if (!profile) throw codedError("NO_PROFILE: start onboarding before claiming.")
     if (profile.onboardingStep === "done" || profile.onboardingStep === "waitlisted") return profile.onboardingStep
     await ctx.db.patch(profile._id, { onboardingStep: "claimPending" })
     return "claimPending" as const
@@ -485,7 +486,7 @@ export const claim = mutation({
     const economy = await getOrSeedEconomy(ctx)
     await getOrSeedConfig(ctx)
     const profile = await profileForWallet(ctx, wallet)
-    if (!profile) throw new Error("NO_PROFILE: start onboarding before claiming.")
+    if (!profile) throw codedError("NO_PROFILE: start onboarding before claiming.")
     if (profile.onboardingStep === "done") return { status: "done" as const, allocatedUsd: profile.allocatedUsd ?? 0 }
 
     const allocatedUsd = STARTER_EQUITY_USD

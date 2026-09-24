@@ -360,6 +360,17 @@ export function useBorrowSession({
         }
         const debtOpenedAt = (marketSlug: string | undefined): number =>
           (marketSlug ? borrowOpenedAtByMarket.get(marketSlug) : undefined) ?? walletEarliestTxAt ?? hydrationNow
+        // LP token counts the server holds for each pledged pool. The server values a pledge in
+        // these tokens, so converting the seeded USD at the browser's own LP price instead made
+        // every borrow and repay exceed the wallet's balance once the two prices diverged.
+        const pledgedLpTokensByMarket = new Map<string, bigint>()
+        for (const row of data.borrowBalances ?? []) {
+          if (row.state !== "collateral" || !row.marketId || !(row.amount > 0) || !(row.valueUsd > 0)) continue
+          // A row still storing USD in `amount` (implied price ≈ $1 on a non-stable pool) is no count.
+          const clientPriceUsd6 = current.markets[row.marketId]?.snapshot.lpTokenPriceUsd6 ?? 0n
+          if (Math.abs(row.valueUsd / row.amount - 1) < 1e-3 && clientPriceUsd6 > 2_000_000n) continue
+          pledgedLpTokensByMarket.set(row.marketId, parseFixed(row.amount.toFixed(12), 18))
+        }
         const collateralPositions = []
         const debtPositions = []
         for (const position of borrowPositions) {
@@ -367,13 +378,14 @@ export function useBorrowSession({
             let collateralShares = BigInt(collateral.collateralShares)
             let principalTokenAmount = BigInt(collateral.principalTokenAmount)
             // Onboarding-seeded collateral carries 0 shares + a USD value (the seed has no LP
-            // prices), so derive shares from that USD at the live price. Real supplied positions
-            // already carry non-zero shares and skip this.
+            // prices). Use the server's LP token count when it has one; otherwise derive it from
+            // that USD at the live price. Real supplied positions carry non-zero shares and skip this.
             const market = current.markets[collateral.marketSlug]
             if (collateralShares === 0n && collateral.collateralValueUsd6 && market) {
               const priceUsd6 = market.snapshot.lpTokenPriceUsd6
               const tokenAmount =
-                priceUsd6 > 0n ? (BigInt(collateral.collateralValueUsd6) * TOKEN_SCALE) / priceUsd6 : 0n
+                pledgedLpTokensByMarket.get(collateral.marketSlug) ??
+                (priceUsd6 > 0n ? (BigInt(collateral.collateralValueUsd6) * TOKEN_SCALE) / priceUsd6 : 0n)
               collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
               principalTokenAmount = tokenAmount
             }

@@ -57,6 +57,10 @@ const dict: TranslationDictionary = {
   Today: "Hari ini",
   Yesterday: "Kemarin",
   "Choose collateral": "Pilih jaminan",
+  "Cooldown expired": "Cooldown berakhir",
+  Closed: "Ditutup",
+  "Show more": "Tampilkan lebih banyak",
+  "Shared credit": "Kredit bersama",
   "Choose asset to borrow": "Pilih aset untuk dipinjam",
   "Choose collateral first": "Pilih jaminan terlebih dahulu",
   "No borrowable assets for this collateral.": "Tidak ada aset yang bisa dipinjam untuk jaminan ini.",
@@ -389,6 +393,11 @@ const dict: TranslationDictionary = {
   "Open portfolio": "Buka portofolio",
   Portfolio: "Portofolio",
   "Quick actions": "Tindakan cepat",
+  "My Deposits": "Deposit saya",
+  "My Loops": "Loop saya",
+  "Available to loop": "Tersedia untuk loop",
+  "Scroll table left": "Gulir tabel ke kiri",
+  "Scroll table right": "Gulir tabel ke kanan",
   "Total Fees earned": "Total biaya yang diperoleh",
   "Claimable Fees": "Biaya yang dapat diklaim",
   "Claim Fees": "Klaim biaya",
@@ -578,7 +587,6 @@ const dict: TranslationDictionary = {
   "Lending Performance": "Kinerja Pinjaman",
   "Lend Rewards": "Hadiah Pinjaman",
   "Multiply Overview": "Ikhtisar Multiply",
-  "Multiply Positions": "Posisi Multiply",
   "Debt & Risk": "Utang & Risiko",
   "Position size, multiplier, and current net yield": "Ukuran posisi, pengali, dan imbal hasil bersih saat ini",
   "Borrowed balance, health factor, and liquidation threshold":
@@ -1381,7 +1389,6 @@ const dict: TranslationDictionary = {
   "Utilization Rate": "Tingkat utilisasi",
   "Borrow amount to reach {value} Util.": "Jumlah pinjaman untuk mencapai utilisasi {value}.",
   "Large price difference": "Perbedaan harga besar",
-  "Lend Assets": "Aset Simpanan",
   "Lend Balance": "Saldo Simpanan",
   "Lend Opportunity": "Peluang Simpanan",
   "Lend TVL": "TVL Simpanan",
@@ -1398,6 +1405,8 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY LOOP",
   "Loop market": "Pasar loop",
   "LP APR": "LP APR",
+  "Live value of this collateral, and the LP trading fees it earns.":
+    "Nilai langsung jaminan ini, dan biaya trading LP yang dihasilkannya.",
   LT: "LT",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
     "Aktivitas likuidasi seluruh pasar dan eksposur mendekati likuidasi selama 24 jam terakhir.",
@@ -1497,6 +1506,7 @@ const dict: TranslationDictionary = {
   "Try a token symbol, pool pair, or action like borrow.":
     "Coba simbol token, pasangan pool, atau aksi seperti pinjam.",
   TVL: "TVL",
+  Testnet: "Jaringan uji",
   Txn: "Txn",
   "Unable to refresh the expired quote.": "Tidak dapat menyegarkan kuotasi yang kedaluwarsa.",
   Unavailable: "Tidak tersedia",
@@ -1574,7 +1584,6 @@ const dict: TranslationDictionary = {
   "How it works": "Cara kerjanya",
   "Learn Avana": "Pelajari Avana",
   "Dashboard Positions": "Posisi Dasbor",
-  "Available to use": "Tersedia untuk digunakan",
   "Available to deposit": "Tersedia untuk disetor",
   "against {pool}": "terhadap {pool}",
   Locked: "Terkunci",
@@ -1752,6 +1761,7 @@ const dict: TranslationDictionary = {
   "(required)": "(wajib)",
   "Send report": "Kirim laporan",
   "Thanks! Your report was sent.": "Terima kasih! Laporanmu sudah terkirim.",
+  "Capacity Filled": "Kapasitas terpakai",
 }
 
 export default dict

@@ -15,7 +15,8 @@ const MASK = "••••"
 
 function formatLeverage(value: number) {
   if (!Number.isFinite(value) || value <= 0) return "—"
-  return `${value.toFixed(2)}×`
+  // "x" like every other leverage figure ("2.00x leverage", "Max 5.00x").
+  return `${value.toFixed(2)}x`
 }
 
 type MetricItem = {
@@ -221,6 +222,7 @@ export function DashboardMultiplyBalanceSection({
           anchorMs={metrics.accrualSinceMs}
           ratePerYearUsd={metrics.interestPerYearUsd}
           baseUsd={metrics.interestEarnedUsd}
+          fractionDigits={2}
         />
       ) : (
         MASK
@@ -281,6 +283,7 @@ export function DashboardLendPerformanceSection({
           anchorMs={metrics.accrualSinceMs}
           ratePerYearUsd={accrualRatePerYearUsd}
           baseUsd={metrics.interestEarnedUsd}
+          fractionDigits={2}
         />
       ) : (
         MASK

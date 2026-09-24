@@ -27,6 +27,7 @@ import {
 import { MULTIPLY_MARKET_ROWS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
+import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine/formulas"
 import { formatMultiplyLoopPairLabel } from "@/app/lib/multiply-system/market-labels"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
@@ -499,5 +500,57 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     about: buildAbout(row, resolvedId),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),
     row,
+  }
+}
+
+/**
+ * Rewrites the rate tiles from the live Convex market snapshot with the same math the Multiply
+ * list uses (mergeConvexMultiplySnapshots): Net APY and Profitability at the public max
+ * multiplier, and the collateral factor from the snapshot's max LTV. The catalog estimates made
+ * wstETH/ETH read 10.50% on the list and 9.70% on its page, and EURC/GHO CF 70% vs 75%.
+ */
+export function withLiveMultiplyRates(
+  detail: MultiplyMarketDetail,
+  snapshot: { supplyApyPct?: number; borrowAprPct?: number; maxLtvPct?: number } | null | undefined,
+): MultiplyMarketDetail {
+  const record = getMultiplyMarketById(detail.id)
+  if (!record || !snapshot) return detail
+  const supplyApyPct = Number.isFinite(snapshot.supplyApyPct) ? snapshot.supplyApyPct! : undefined
+  const borrowApyPct = Number.isFinite(snapshot.borrowAprPct) ? snapshot.borrowAprPct! : undefined
+  const cfPct = Number.isFinite(snapshot.maxLtvPct) ? snapshot.maxLtvPct! : undefined
+  const netApyPct =
+    supplyApyPct !== undefined && borrowApyPct !== undefined
+      ? calculateMaxLeverageApy({
+          supplyApy: supplyApyPct / 100,
+          borrowApy: borrowApyPct / 100,
+          safeMaxMultiplier: resolveMultiplyMarketDisplayMaxLeverage(record.risk.publicMaxMultiplier),
+        }) * 100
+      : undefined
+  const rewrite = (stat: QuickStat): QuickStat => {
+    if (stat.id === "supplyApy" && supplyApyPct !== undefined) return { ...stat, value: formatPct(supplyApyPct, 2) }
+    if (stat.id === "borrowApy" && borrowApyPct !== undefined) return { ...stat, value: formatPct(borrowApyPct, 2) }
+    if ((stat.id === "netApy" || stat.id === "profitability") && netApyPct !== undefined)
+      return { ...stat, value: formatPct(netApyPct, 2) }
+    if (stat.id === "collateralFactor" && cfPct !== undefined) return { ...stat, value: `${Math.round(cfPct)}%` }
+    return stat
+  }
+  const parameters = detail.about.governanceParameters?.parameters
+  return {
+    ...detail,
+    quickStats: detail.quickStats.map(rewrite),
+    marketRates: detail.marketRates.map(rewrite),
+    row: cfPct !== undefined ? { ...detail.row, collateralFactor: cfPct / 100 } : detail.row,
+    about:
+      parameters && cfPct !== undefined
+        ? {
+            ...detail.about,
+            governanceParameters: {
+              ...detail.about.governanceParameters!,
+              parameters: parameters.map((parameter) =>
+                parameter.id === "collateralFactor" ? { ...parameter, value: `${cfPct.toFixed(2)}%` } : parameter,
+              ),
+            },
+          }
+        : detail.about,
   }
 }

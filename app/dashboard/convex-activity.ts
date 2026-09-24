@@ -1,6 +1,7 @@
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import type { PortfolioActivityKind, PortfolioActivityProduct } from "@/app/lib/data/providers/portfolio/records"
 import { formatMultiplyActivityMarketLabel } from "@/app/lib/multiply-system/market-labels"
+import { buildDefaultRewardsCatalog } from "@/app/lib/rewards-engine/catalog"
 
 const PRODUCTS = new Set<PortfolioActivityProduct>([
   "borrow",
@@ -41,8 +42,19 @@ export type ConvexActivityItem = {
   status: string
   amountUsd: number
   marketSlug: string | null
+  /** Rewards claims: the task ids this claim paid out. */
+  claimedTaskIds?: string[] | null
   hash: string
   at: number
+}
+
+let rewardTaskTitles: Map<string, string> | null = null
+/** Task titles from the static catalog, so a claim row reads the same before the rewards session loads. */
+function rewardTaskTitle(taskIds: readonly string[] | null | undefined) {
+  const id = taskIds?.[0]
+  if (!id) return undefined
+  rewardTaskTitles ??= new Map(buildDefaultRewardsCatalog(0).map((task) => [task.id, task.title]))
+  return rewardTaskTitles.get(id)
 }
 
 function mapProduct(product: string): PortfolioActivityProduct {
@@ -95,15 +107,19 @@ export function mapConvexActivityItemsToRows(items: ConvexActivityItem[]): Portf
           : item.marketSlug
             ? item.marketSlug
             : product === "rewards"
-              ? "Avana rewards"
+              ? (rewardTaskTitle(item.claimedTaskIds) ?? "Avana rewards")
               : titleCase(legacyUmbrellaKind ?? item.kind)
+    // Same wording as the rewards-session row ("25 AVA claimed"), which replaces this one once
+    // loaded; "Claim · Claim" read as a duplicated label.
     const secondaryLabel = isOnboardingClaim
       ? "Onboarding grant"
       : isStarterAssetGrant
         ? "Sandbox funds received"
         : product === "multiply"
           ? (multiplyMarketLabel ?? "Multiply")
-          : titleCase(legacyUmbrellaKind ?? item.kind)
+          : product === "rewards" && item.kind === "claim"
+            ? `${item.amountUsd} AVA claimed`
+            : titleCase(legacyUmbrellaKind ?? item.kind)
     return {
       id: item.id,
       at: new Date(item.at).toISOString(),

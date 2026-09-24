@@ -42,7 +42,7 @@ describe("resolve borrow context", () => {
       borrowableAssets: [],
     }
 
-    const items = repaySelectItemsForWallet(session, "demo-wallet")
+    const items = repaySelectItemsForWallet(session, "demo-wallet", session.state.now)
     expect(items[0]?.trailingLabel).toContain("$1,250")
   })
 
@@ -69,7 +69,7 @@ describe("resolve borrow context", () => {
 
     const items = borrowSelectItemsForMarket(session, "uni-v3-bluechip", "demo-wallet")
 
-    expect(items.map((item) => item.trailingLabel)).toEqual(["$9.9M available", "$2.5M available"])
+    expect(items.map((item) => item.trailingLabel)).toEqual(["$9.9M liquidity", "$2.5M liquidity"])
     // The two rows must not read the same figure.
     expect(items[0]?.trailingLabel).not.toBe(items[1]?.trailingLabel)
   })

@@ -74,7 +74,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
       />,
     )
@@ -98,7 +97,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0.94,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
@@ -122,7 +120,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0.94,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
@@ -148,7 +145,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0.94,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
@@ -158,7 +154,6 @@ describe("DebtsPanel", () => {
     // Borrow + Repay as the dual CTA pair (same chrome as Lend Add / Withdraw).
     expect(container.textContent).toMatch(/6\.20K\s+USDT/)
     expect(getAllByRole("button", { name: /Repay/ }).length).toBeGreaterThan(0)
-    expect(getAllByRole("button", { name: /^Borrow$/ }).length).toBeGreaterThan(0)
   })
 
   it("renders a volatile debt as a token quantity over USD, not the USD amount as a token count", () => {
@@ -173,7 +168,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0.21,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,
@@ -200,7 +194,6 @@ describe("DebtsPanel", () => {
           dailyInterest: 0.94,
         }}
         onRepay={vi.fn()}
-        onManage={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,

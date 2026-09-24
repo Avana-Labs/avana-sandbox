@@ -7,6 +7,7 @@
  * server-side — never trust client-supplied lengths.
  */
 
+import { codedError } from "./codedError"
 import { v } from "convex/values"
 import { internalQuery, mutation } from "./_generated/server"
 import { getAuthedWallet } from "./sandbox/auth"
@@ -35,7 +36,7 @@ export const submitSupportRequest = mutation({
   handler: async (ctx, args) => {
     const wallet = await getAuthedWallet(ctx)
     if (!wallet) {
-      throw new Error("UNAUTHENTICATED: connect a wallet and sign in to contact support.")
+      throw codedError("UNAUTHENTICATED: connect a wallet and sign in to contact support.")
     }
 
     const message = args.message.trim()
@@ -57,7 +58,7 @@ export const submitSupportRequest = mutation({
       .withIndex("by_wallet_created", (q) => q.eq("wallet", wallet).gte("createdAt", windowStart))
       .take(MAX_REQUESTS_PER_HOUR)
     if (recent.length >= MAX_REQUESTS_PER_HOUR) {
-      throw new Error(`RATE_LIMITED: more than ${MAX_REQUESTS_PER_HOUR} support requests in the last hour.`)
+      throw codedError(`RATE_LIMITED: more than ${MAX_REQUESTS_PER_HOUR} support requests in the last hour.`)
     }
 
     const id = await ctx.db.insert("supportRequests", {

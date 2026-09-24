@@ -13,7 +13,7 @@ process.env.AVANA_GUEST_CLOSED_GATE_E2E = "1"
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /guest-browse\.spec\.ts|convex-handshake\.spec\.ts/,
+  testMatch: /guest-browse\.spec\.ts|convex-handshake\.spec\.ts|slow-network-guest\.spec\.ts/,
   timeout: 90_000,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"]],

@@ -7,6 +7,7 @@ import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getPoolHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { TestnetMetricsBadge } from "@/app/components/testnet-metrics-badge"
 import {
   buildFeedFromRangeSeries,
   isPlaceholderHeroContractAddress,
@@ -67,7 +68,10 @@ export function PoolHeroIdentity({
               </h1>
             </div>
             <div className="mt-0 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
-              <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
+              {/* Testnet: the network label is swapped for the Testnet badge until mainnet.
+                  Restore this line and delete the badge when testnet ends:
+                  <span className="leading-none text-foreground/75">{detail.hero.chain}</span> */}
+              <TestnetMetricsBadge label={t("Testnet")} />
               <span aria-hidden className="h-5 w-px bg-border" />
               {isPlaceholderContract ? (
                 <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">

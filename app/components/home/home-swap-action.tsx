@@ -1,14 +1,15 @@
 "use client"
 
+import { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
+import { actionErrorMessage } from "@/app/lib/action-system/blocked-reason"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -17,6 +18,16 @@ import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runti
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+
+const ActionReviewStage = dynamic(
+  () => import("@/app/components/action-page/action-review-stage").then((mod) => mod.ActionReviewStage),
+  { loading: ActionSessionLoading },
+)
+
+const ActionSuccessStage = dynamic(
+  () => import("@/app/components/action-page/action-success-stage").then((mod) => mod.ActionSuccessStage),
+  { loading: ActionSessionLoading },
+)
 
 const SwapAssetPickerDialog = dynamic(() =>
   import("@/app/swap/swap-asset-picker-dialog").then((mod) => mod.SwapAssetPickerDialog),
@@ -29,12 +40,16 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
+export { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
+
 export function HomeSwapAction() {
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState("")
+  // Sell starts on ETH as a neutral base (guests see a 0 amount; connected wallets see their
+  // ETH balance). Buy still starts empty so the user picks the destination.
+  const [inputAssetId, setInputAssetId] = useState(DEFAULT_SELL_ASSET_ID)
   const [outputAssetId, setOutputAssetId] = useState("")
   const [amount, setAmount] = useState("")
   const slippageBps = 50
@@ -244,7 +259,7 @@ export function HomeSwapAction() {
       })
       setStage("success")
     } catch (error) {
-      setOutcome({ tone: "error", message: error instanceof Error ? error.message : t("Swap failed.") })
+      setOutcome({ tone: "error", message: actionErrorMessage(error, t("Swap failed.")) })
       setStage("error")
     } finally {
       setIsPending(false)
@@ -278,12 +293,14 @@ export function HomeSwapAction() {
   // Guests keep the quote form but are sent to the dashboard onboarding instead of review.
   const accessLabel = transactAccessCtaLabel(useTransactAccess())
 
-  const primaryLabel = !inputBalance
-    ? inputAssetId
-      ? "Insufficient balance"
-      : "Select Asset"
-    : !outputAssetId
-      ? "Select Asset"
+  // With Sell prefilled, ask for the Buy asset first: a wallet without ETH should see
+  // "Select Asset", not "Insufficient balance", before it has picked anything.
+  const primaryLabel = !outputAssetId
+    ? "Select Asset"
+    : !inputBalance
+      ? inputAssetId
+        ? "Insufficient balance"
+        : "Select Asset"
       : !validation.valid
         ? validation.reason === "invalid_amount"
           ? "Enter an amount"
