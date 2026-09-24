@@ -66,6 +66,8 @@ const dict: TranslationDictionary = {
   Today: "Bugün",
   Yesterday: "Dün",
   "Choose collateral": "Teminat seçin",
+  "Cooldown expired": "Bekleme süresi doldu",
+  "Closed": "Kapandı",
   "Show more": "Daha fazla göster",
   "Shared credit": "Ortak kredi",
   "Choose asset to borrow": "Borç alınacak varlığı seçin",

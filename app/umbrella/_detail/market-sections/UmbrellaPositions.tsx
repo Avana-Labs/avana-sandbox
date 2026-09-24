@@ -90,10 +90,12 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       symbol: market.symbol,
       coverage: COVERED_RESERVE_LABELS[id],
       activeStakeUsd,
-      coolingUsd: position.cooldownValueUsd,
+      // An expired cooldown no longer counts as cooling (the "In cooldown" card reads $0 and the
+      // stake must restart it), so the row showed "In cooldown $2,497" against "$0" above.
+      coolingUsd: position.cooldownStatus === "expired" ? 0 : position.cooldownValueUsd,
       activeStakeAmountLabel: `${formatUnits(activeStake)} ${market.symbol}`,
       activeStakeUsdLabel: formatUsd(activeStakeUsd),
-      coolingLabel: formatUsd(position.cooldownValueUsd),
+      coolingLabel: formatUsd(position.cooldownStatus === "expired" ? 0 : position.cooldownValueUsd),
       apyTotal: `${formatPct(market.apy)}%`,
       apyReward: `${formatPct(market.rewardApy)}%`,
       rewardApyPct: market.rewardApy,
@@ -221,7 +223,9 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                         <span className={cn(TABLE_CELL_NUMERIC, row.coolingUsd > 0 && "text-warning")}>
                           {showDollarAmounts ? row.coolingLabel : MASK}
                         </span>
-                        {row.coolingUsd > 0 ? (
+                        {row.cooldownStatus === "expired" ? (
+                          <span className="mt-0.5 text-[12px] text-danger">{t("Cooldown expired")}</span>
+                        ) : row.coolingUsd > 0 ? (
                           <span className="mt-0.5 text-[12px] text-warning">{t("In cooldown")}</span>
                         ) : null}
                       </div>

@@ -57,6 +57,8 @@ const dict: TranslationDictionary = {
   Today: "Aujourd'hui",
   Yesterday: "Hier",
   "Choose collateral": "Choisir la garantie",
+  "Cooldown expired": "Délai de refroidissement expiré",
+  "Closed": "Fermée",
   "Show more": "Afficher plus",
   "Shared credit": "Crédit partagé",
   "Choose asset to borrow": "Choisir l'actif à emprunter",
