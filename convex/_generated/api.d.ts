@@ -31,6 +31,7 @@ import type * as borrow_riskAssessment from "../borrow/riskAssessment.js";
 import type * as borrow_riskParameters from "../borrow/riskParameters.js";
 import type * as borrow_spokes from "../borrow/spokes.js";
 import type * as cashflowHelpers from "../cashflowHelpers.js";
+import type * as codedError from "../codedError.js";
 import type * as contractAddresses from "../contractAddresses.js";
 import type * as crons from "../crons.js";
 import type * as detailHydration from "../detailHydration.js";
@@ -128,6 +129,7 @@ declare const fullApi: ApiFromModules<{
   "borrow/riskParameters": typeof borrow_riskParameters;
   "borrow/spokes": typeof borrow_spokes;
   cashflowHelpers: typeof cashflowHelpers;
+  codedError: typeof codedError;
   contractAddresses: typeof contractAddresses;
   crons: typeof crons;
   detailHydration: typeof detailHydration;
