@@ -71,15 +71,16 @@ function creditScopeMetric(scopeLabel?: string) {
   return [
     {
       id: "credit-scope",
-      label: "Credit scope",
+      label: "Spoke",
       value: scopeLabel,
-      tooltip: `Borrowing power, collateral, and health metrics below are scoped to ${scopeLabel}.`,
+      tooltip: `Like an Aave v4 spoke, ${scopeLabel} pools credit: collateral anywhere in the spoke backs borrowing across it. Borrowing power, collateral and health below are for this spoke.`,
     },
   ]
 }
 
+// "in spoke" (Aave v4's term for the shared credit group); "in scope" read as jargon.
 function scopedMetricLabel(label: string, scopeLabel?: string) {
-  return scopeLabel ? `${label} in scope` : label
+  return scopeLabel ? `${label} in spoke` : label
 }
 
 export function mapBorrowTransactionPreviewToActionUi(

@@ -83,7 +83,7 @@ describe("borrow system selectors", () => {
     expect(available.length).toBeGreaterThan(pledged.length)
   })
 
-  it("reports spoke-scoped in-scope collateral so the card matches 'Net collateral in scope' (#86)", () => {
+  it("reports spoke-scoped in-scope collateral so the card matches 'Net collateral in spoke' (#86)", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const available = selectAllAvailableCollateralPools(state, "demo-wallet")
 
