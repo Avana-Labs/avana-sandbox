@@ -85,11 +85,13 @@ export function resolveProductRuntimeScope(pathname: string | null | undefined):
   if (pathPrefix(pathname, "/dashboard")) {
     // Consolidated portfolio surface: hydrate B/L/M sessions + the Multiply market
     // snapshots used by the market-scoped Available card, plus rewards/umbrella remotes.
-    // Swap history remains off here.
+    // Borrow markets too: without the live LP price the Borrow tab valued collateral at the
+    // catalog estimate (cbBTC/USDC $37.5K vs $48.6K elsewhere). Swap history remains off here.
     return {
       ...IDLE,
       walletSession: true,
       marketSnapshots: true,
+      hydrateBorrowMarkets: true,
       hydrateMultiplyMarkets: true,
       rewards: true,
       umbrella: true,
