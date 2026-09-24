@@ -1540,7 +1540,11 @@ export const recordTransaction = mutation({
           ) {
             throw codedError("INSUFFICIENT_BALANCE: not enough liquid tokens for this deposit.")
           }
-          if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
+          if (
+            signed < 0 &&
+            !(args.product === "lend" && args.kind === "deposit") &&
+            (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)
+          ) {
             throw codedError("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
           }
           await applyLiquidAssetDelta(ctx, wallet, assetId, canonicalTokenSymbolOrUpper(assetId), signed, now, priceUsd)
