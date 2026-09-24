@@ -476,7 +476,10 @@ function validateTransactionTransition(
     const before = lendSuppliedBeforeUsd ?? usd6Number(existing?.suppliedUsd6)
     const after = usd6Number(args.position.suppliedUsd6)
     const expected = args.kind === "deposit" ? before + args.amountUsd : before - args.amountUsd
-    if (!Number.isFinite(after) || Math.abs(after - Math.max(0, expected)) > 0.02) {
+    // Client and server price the tokens from the same oracle but may read it moments apart, and
+    // interest accrues client-side; the ledger itself is written from the server's token math.
+    const tolerance = Math.max(0.02, before * 0.01)
+    if (!Number.isFinite(after) || Math.abs(after - Math.max(0, expected)) > tolerance) {
       throw new Error(
         `INVALID_TRANSITION: lend supplied balance does not match the server recomputation ` +
           `(before=${before}, after=${after}, amount=${args.amountUsd}, expected=${Math.max(0, expected)}).`,
@@ -1285,6 +1288,7 @@ export const recordTransaction = mutation({
     // Token price implied by the supplied ledger (token-denominated since #296): the conversion
     // fallback for a lend withdraw of an asset the oracle does not cover, such as stocks.
     let lendLedgerPriceUsd: number | undefined
+    let lendTokenMove: LendTokenMove | undefined
     if (args.product === "lend" && marketSlug && args.kind !== "claim") {
       const deposited = (
         await ctx.db
@@ -1295,6 +1299,25 @@ export const recordTransaction = mutation({
       lendSuppliedBeforeUsd = deposited.reduce((sum, row) => sum + row.valueUsd, 0)
       const depositedAmount = deposited.reduce((sum, row) => sum + row.amount, 0)
       if (depositedAmount > 0 && lendSuppliedBeforeUsd > 0) lendLedgerPriceUsd = lendSuppliedBeforeUsd / depositedAmount
+      // The deposited token count is the balance; `valueUsd` is the USD at deposit. Withdrawing
+      // by that USD paid out tokens at today's price: 25,685 OP deposited at $1.46 could be
+      // withdrawn as ~300,000 OP at $0.12. Price the action and the balance in tokens.
+      const priceUsd =
+        (await validatedTokenPriceUsd(ctx, liquidAssetIdFromArgs(args.assetId, marketSlug), now)) ?? lendLedgerPriceUsd
+      if (priceUsd && priceUsd > 0) {
+        const tokens = args.amountUsd / priceUsd
+        lendTokenMove = { tokens, priceUsd }
+        if (depositedAmount > 0) lendSuppliedBeforeUsd = depositedAmount * priceUsd
+        if (args.kind === "withdraw") {
+          // Interest accrues client-side between writes; allow at most a 50% APY on the balance.
+          const lastWriteAt = Math.max(...deposited.map((row) => row.updatedAt ?? now), 0)
+          const years = Math.max(0, now - lastWriteAt) / (365 * 24 * 3600 * 1000)
+          const maxTokens = depositedAmount * (1 + 0.5 * years) * (1 + 1e-6) + 1e-9
+          if (tokens > maxTokens) {
+            throw new Error("INSUFFICIENT_BALANCE: withdraw exceeds the deposited amount.")
+          }
+        }
+      }
     }
 
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
@@ -1444,7 +1467,11 @@ export const recordTransaction = mutation({
         const impliedPriceUsd =
           liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : null
         const oraclePriceUsd = await validatedTokenPriceUsd(ctx, assetId, now)
-        const priceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd) ?? lendLedgerPriceUsd ?? 1
+        const priceUsd =
+          (args.product === "lend" ? lendTokenMove?.priceUsd : undefined) ??
+          resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd) ??
+          lendLedgerPriceUsd ??
+          1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
@@ -1465,7 +1492,7 @@ export const recordTransaction = mutation({
           now,
         )
       }
-      await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)
+      await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition, lendTokenMove)
       await appendPortfolioSnapshot(ctx, wallet, now)
       if (args.product === "borrow") await appendServerRiskSnapshot(ctx, wallet, now, args.kind)
     }
@@ -1645,6 +1672,51 @@ export const recordRewardsClaim = mutation({
   },
 })
 
+type LendTokenMove = { tokens: number; priceUsd: number }
+
+/**
+ * Moves a token quantity on a lend ledger row. A credit adds its USD to the cost basis; a debit
+ * scales the basis by the tokens left, so `valueUsd` stays the USD paid for the tokens held.
+ */
+async function adjustLendTokenRow(
+  ctx: MutationCtx,
+  wallet: string,
+  match: { marketId: string; assetId: string; state: "available" | "deposited" },
+  symbol: string,
+  deltaTokens: number,
+  amountUsd: number,
+  now: number,
+) {
+  if (!Number.isFinite(deltaTokens) || deltaTokens === 0) return
+  const existing = (
+    await ctx.db
+      .query("walletLendBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect()
+  ).find((row) => row.state === match.state && row.marketId === match.marketId && row.assetId === match.assetId)
+  const amount = existing?.amount ?? 0
+  const nextAmount = Math.max(0, amount + deltaTokens)
+  const nextValueUsd =
+    deltaTokens > 0
+      ? (existing?.valueUsd ?? 0) + amountUsd
+      : amount > 0
+        ? (existing?.valueUsd ?? 0) * (nextAmount / amount)
+        : 0
+  if (existing) {
+    await ctx.db.patch(existing._id, { amount: nextAmount, valueUsd: nextValueUsd, updatedAt: now })
+    return
+  }
+  if (nextAmount <= 0) return
+  await ctx.db.insert("walletLendBalances", {
+    wallet,
+    ...match,
+    symbol,
+    amount: nextAmount,
+    valueUsd: nextValueUsd,
+    updatedAt: now,
+  })
+}
+
 async function applyProductBucketDelta(
   ctx: MutationCtx,
   wallet: string,
@@ -1660,8 +1732,32 @@ async function applyProductBucketDelta(
   marketSlug: string | undefined,
   now: number,
   priorPosition?: Doc<"positions">,
+  lendTokenMove?: LendTokenMove,
 ) {
   const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
+  if (args.product === "lend" && marketSlug && lendTokenMove && (args.kind === "deposit" || args.kind === "withdraw")) {
+    const sign = args.kind === "deposit" ? 1 : -1
+    const symbol = canonicalTokenSymbolOrUpper(assetId)
+    await adjustLendTokenRow(
+      ctx,
+      wallet,
+      { marketId: marketSlug, assetId, state: "deposited" },
+      symbol,
+      sign * lendTokenMove.tokens,
+      args.amountUsd,
+      now,
+    )
+    await adjustLendTokenRow(
+      ctx,
+      wallet,
+      { marketId: marketSlug, assetId, state: "available" },
+      symbol,
+      -sign * lendTokenMove.tokens,
+      args.amountUsd,
+      now,
+    )
+    return
+  }
   if (args.product === "lend" && marketSlug) {
     if (args.kind === "deposit") {
       await adjustProductBalanceUsd(

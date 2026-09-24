@@ -1787,3 +1787,109 @@ describe("alignBorrowLpTokensToPledgedLegs", () => {
     expect(rerun.planned).toEqual([])
   })
 })
+
+// Prod 2026-09-23: the dev wallet's 25,685 OP deposit (USD at deposit $37,500, OP now $0.1237)
+// showed "305,012 OP supplied" on Withdraw and the review accepted a 300,000 OP withdraw.
+describe("lend withdraw is bounded by the deposited tokens", () => {
+  const OP_PRICE = 0.1237
+  const DEPOSITED_OP = 25_684.93
+
+  async function seedOpDeposit(t: ReturnType<typeof convexTest>) {
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "op",
+        llamaId: "test:op",
+        priceUsd: OP_PRICE,
+        source: "baseline",
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("positions", {
+        wallet: w,
+        product: "lend",
+        marketSlug: "op",
+        status: "open",
+        suppliedUsd6: "37500000000",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: Date.now(),
+        revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w,
+        marketId: "op",
+        assetId: "op",
+        symbol: "OP",
+        amount: DEPOSITED_OP,
+        valueUsd: 37_500,
+        state: "deposited",
+        updatedAt: Date.now(),
+      })
+    })
+  }
+
+  function withdrawIntent(intentId: string, amountUsd: number, afterUsd: number) {
+    return {
+      wallet: WALLET,
+      intentId,
+      product: "lend" as const,
+      kind: "withdraw",
+      marketSlug: "op",
+      assetId: "op",
+      requestedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      executedAmountUsd6: String(Math.round(amountUsd * 1e6)),
+      amountUsd: Math.round(amountUsd * 1e6) / 1e6,
+      simulated: true,
+      expectedRevision: 0,
+      position: {
+        status: afterUsd > 0 ? ("open" as const) : ("closed" as const),
+        marketSlug: "op",
+        suppliedUsd6: String(Math.round(afterUsd * 1e6)),
+        earnedUsd6: "0",
+      },
+    }
+  }
+
+  test("rejects withdrawing more OP than was deposited", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    await expect(
+      t
+        .withIdentity({ subject: WALLET })
+        .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-over", 300_000 * OP_PRICE, 0)),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").collect())
+    expect(liquid).toHaveLength(0)
+  })
+
+  test("a full withdraw pays out exactly the deposited OP", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    const res = await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-full", DEPOSITED_OP * OP_PRICE, 0))
+    expect(res.receipt.status).toBe("success")
+    const liquid = await t.run((ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBeCloseTo(DEPOSITED_OP, 3)
+    const deposited = await t.run(async (ctx) =>
+      (await ctx.db.query("walletLendBalances").collect()).find((row) => row.state === "deposited"),
+    )
+    expect(deposited?.amount).toBeCloseTo(0, 6)
+  })
+
+  test("a partial withdraw leaves the remaining tokens and a proportional cost basis", async () => {
+    const t = convexTest(schema, modules)
+    await seedOpDeposit(t)
+    const half = DEPOSITED_OP / 2
+    await t
+      .withIdentity({ subject: WALLET })
+      .mutation(api.sandbox.transactions.recordTransaction, withdrawIntent("op-half", half * OP_PRICE, half * OP_PRICE))
+    const deposited = await t.run(async (ctx) =>
+      (await ctx.db.query("walletLendBalances").collect()).find((row) => row.state === "deposited"),
+    )
+    expect(deposited?.amount).toBeCloseTo(half, 3)
+    expect(deposited?.valueUsd).toBeCloseTo(18_750, 1)
+  })
+})
