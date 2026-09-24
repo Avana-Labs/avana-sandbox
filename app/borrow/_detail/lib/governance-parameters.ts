@@ -6,5 +6,6 @@ export {
   RISK_PARAMETER_LABELS,
   buildRiskParameterSet,
   normalizeGovernanceParameters,
+  withEngineLiquidationThreshold,
   withGovernanceParameterView,
 } from "@/app/lib/borrow-detail/risk-parameters"

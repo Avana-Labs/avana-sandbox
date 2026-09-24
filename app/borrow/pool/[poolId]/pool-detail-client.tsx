@@ -8,7 +8,10 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
+import {
+  withEngineLiquidationThreshold,
+  withGovernanceParameterView,
+} from "@/app/borrow/_detail/lib/governance-parameters"
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -47,7 +50,7 @@ export function PoolDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const { walletAddress } = useAvanaIdentity()
   const session = useBorrowSessionContext()
-  const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
+  const about = withEngineLiquidationThreshold(withGovernanceParameterView(detail.about, detail.protocolParameters))
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
   const sessionRows = React.useMemo(
     () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, undefined, "pool", walletAddress),

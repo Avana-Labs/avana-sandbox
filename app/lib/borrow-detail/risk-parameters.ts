@@ -305,3 +305,26 @@ export function buildRiskParameterSet(input: {
     },
   ]
 }
+
+/**
+ * LP collateral is liquidated at the engine's threshold (collateral factor + the fixed spread,
+ * see liquidation-threshold.ts), which the Borrow list shows as "LT". The seeded governance row
+ * carried collateral factor + 5, so the detail page read 70% where the list and the engine used
+ * 75%. Rewrite that row from the collateral factor so every Borrow surface shows one threshold.
+ */
+export function withEngineLiquidationThreshold(about: AboutCard): AboutCard {
+  const parameters = about.governanceParameters?.parameters
+  if (!parameters?.length) return about
+  const cf = parsePct(parameters.find((parameter) => parameter.id === "collateralFactor")?.value ?? "")
+  if (cf == null) return about
+  const lt = formatPctValue(Math.round(liquidationThresholdPctFromMaxLtvPct(cf) * 10) / 10)
+  return {
+    ...about,
+    governanceParameters: {
+      ...about.governanceParameters!,
+      parameters: parameters.map((parameter) =>
+        parameter.id === "liquidationThreshold" ? { ...parameter, value: lt } : parameter,
+      ),
+    },
+  }
+}
