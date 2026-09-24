@@ -177,9 +177,7 @@ export function mapMultiplyPreviewToActionUi(
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
     metrics,
-    networkFeeLabel: formatActionFeeSummary(
-      scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd)),
-    ),
+    networkFeeLabel: formatActionFeeSummary(options.collateralAmount * options.collateralPriceUsd),
     risk:
       preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < NEAR_LIQUIDATION_HF)
         ? {
