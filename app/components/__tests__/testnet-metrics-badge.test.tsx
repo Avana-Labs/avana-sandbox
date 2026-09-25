@@ -4,11 +4,13 @@ import { TestnetMetricsBadge } from "../testnet-metrics-badge"
 import styles from "../testnet-metrics-badge.module.css"
 
 describe("TestnetMetricsBadge", () => {
-  it("renders its label while keeping decorative sparkles hidden from assistive technology", () => {
+  it("renders its label while keeping the icon and sparkles hidden from assistive technology", () => {
     const { container } = render(<TestnetMetricsBadge label="Testnet" />)
 
     expect(screen.getByText("Testnet")).toBeInTheDocument()
-    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(3)
+    expect(container.querySelector("img")).toHaveAttribute("src", "/asset-icons/w64/testnet.webp")
+    // The Testnet icon plus three sparkles.
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4)
   })
 
   it("supports a compact size for the homepage action card", () => {

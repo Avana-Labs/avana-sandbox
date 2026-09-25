@@ -2,6 +2,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 0.34rem;
   flex: 0 0 auto;
   border: 1px solid rgb(0 117 138 / 72%);
   border-radius: 9999px;
@@ -22,9 +23,24 @@
 }
 
 .compact {
+  gap: 0.28rem;
   padding: 0.32rem 0.56rem;
   font-size: 0.66rem;
   letter-spacing: 0.035em;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-block: -2px;
+  border-radius: 9999px;
+  object-fit: contain;
+}
+
+.compact .icon {
+  width: 12px;
+  height: 12px;
 }
 
 :global(.dark) .badge {
