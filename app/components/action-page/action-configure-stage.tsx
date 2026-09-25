@@ -13,7 +13,7 @@ import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
+import { TRANSACT_ACCESS_HREF, useTransactAccessCta } from "@/app/lib/transact-access"
 import { isHealthFactorMetric, parseHealthFactorValue } from "@/app/lib/action-system/health-factor-ui"
 import {
   isConfigureVisibleStage,
@@ -302,7 +302,8 @@ export function ActionConfigureStage({
   }
   // A guest (or a wallet still onboarding) keeps the form to explore quotes, but the CTA sends
   // them to the dashboard onboarding instead of submitting.
-  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+  const accessCta = useTransactAccessCta()
+  const accessLabel = accessCta.label
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
   const walletStage = stage === "approve_allowance" || stage === "wallet_sign" ? stage : null
   const showStackedAmount = amountPlacement === "stacked"
@@ -478,6 +479,7 @@ export function ActionConfigureStage({
         accessLabel && (homeLayout || singlePrimaryCta) ? (
           <Link
             href={TRANSACT_ACCESS_HREF}
+            onClick={accessCta.onClick}
             className={primaryCtaClass({ className: "mt-1" })}
             data-testid="action-footer-primary"
           >
@@ -487,6 +489,7 @@ export function ActionConfigureStage({
           <ActionFooter
             primaryLabel={accessLabel}
             primaryHref={TRANSACT_ACCESS_HREF}
+            onPrimary={accessCta.onClick}
             secondaryLabel={secondaryLabel}
             onSecondary={onSecondary}
             secondaryHref={secondaryHref}

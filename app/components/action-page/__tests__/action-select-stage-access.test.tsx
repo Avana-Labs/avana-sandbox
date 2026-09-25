@@ -9,13 +9,13 @@ vi.mock("@/app/lib/i18n/use-translation", () => ({ useTranslation: () => ({ t: (
 describe("ActionSelectStage empty state access", () => {
   afterEach(() => cleanup())
 
-  it("offers Connect Wallet to a guest with an empty list", () => {
+  it("offers Get Started to a guest with an empty list", () => {
     render(
       <TransactAccessContext.Provider value="guest">
         <ActionSelectStage items={[]} onSelect={() => {}} emptyTitle="No assets in your wallet" />
       </TransactAccessContext.Provider>,
     )
-    expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/dashboard")
+    expect(screen.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/dashboard")
   })
 
   it("shows no CTA to a signed-in wallet", () => {

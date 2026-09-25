@@ -1,7 +1,7 @@
 "use client"
 
 import { DEFAULT_SELL_ASSET_ID } from "@/app/lib/swap-system/default-sell-asset"
-import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
+import { TRANSACT_ACCESS_HREF, useTransactAccessCta } from "@/app/lib/transact-access"
 import dynamic from "next/dynamic"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -359,7 +359,8 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
-  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+  const accessCta = useTransactAccessCta()
+  const accessLabel = accessCta.label
   const primaryLabel =
     !inputAsset || !outputAsset
       ? "Select assets"
@@ -472,6 +473,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
             <ActionFooter
               primaryLabel={t(accessLabel)}
               primaryHref={TRANSACT_ACCESS_HREF}
+              onPrimary={accessCta.onClick}
               secondaryHref={returnHref}
               sticky
             />

@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   gate: undefined as { onboardingStep: string; economy: object } | undefined,
 }))
 
-vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }))
+vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("next/dynamic", () => ({ default: () => () => <div data-testid="signed-in-host" /> }))
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({ useSiweAuth: () => state.auth }))
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({ hasConvexClient: true }))

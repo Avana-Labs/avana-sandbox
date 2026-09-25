@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
+import { useGetStarted } from "@/app/lib/web3/get-started-intent"
 import { useWalletSlotRef } from "@/app/lib/web3/wallet-slots"
 import { useSiweToken } from "@/app/lib/siwe/use-siwe-auth"
 import {
@@ -84,6 +85,7 @@ function DevWalletControl({ size }: { size: WalletControlSize }) {
 function IdleWalletControl({ size }: { size: WalletControlSize }) {
   const { t } = useTranslation()
   const { connect } = useWalletGate()
+  const getStarted = useGetStarted()
   const token = useSiweToken()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -113,7 +115,7 @@ function IdleWalletControl({ size }: { size: WalletControlSize }) {
   }
 
   return (
-    <button type="button" onClick={connect} className={brand} aria-label={t("Get Started")}>
+    <button type="button" onClick={getStarted} className={brand} aria-label={t("Get Started")}>
       {t("Get Started")}
     </button>
   )

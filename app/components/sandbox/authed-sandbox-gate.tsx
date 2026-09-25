@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
 import { requiresOnboarding } from "@/app/lib/route-access"
+import { clearGetStartedIntent, hasGetStartedIntent } from "@/app/lib/web3/get-started-intent"
 import { ONBOARDED_COOKIE } from "./onboarded-cookie"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
@@ -59,6 +60,7 @@ function CheckerBody({
   onVerdict: (verdict: GateVerdict) => void
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const isOpenRoute = !requiresOnboarding(pathname)
   // Wallet queries throw UNAUTHENTICATED until Convex has verified the SIWE JWT, so hold the
   // subscription (`"skip"`) instead of tripping the gate's error boundary on first render.
@@ -91,6 +93,15 @@ function CheckerBody({
     if (isDone) onVerdict("done")
     else if (blockedReady || offline) onVerdict("blocked")
   }, [isDone, blockedReady, offline, onVerdict])
+
+  // Signed in from a Get Started click: a wallet that still has to onboard goes to the dashboard
+  // (where the flow starts); an onboarded wallet stays on its page. A session restored on reload
+  // carries no intent and is never moved.
+  useEffect(() => {
+    if (walletState === undefined || !hasGetStartedIntent()) return
+    clearGetStartedIntent()
+    if (!isDone && isOpenRoute) router.push("/dashboard")
+  }, [walletState, isDone, isOpenRoute, router])
 
   if (isDone || walletState === undefined) return offline ? <OfflineGate /> : null
   // Open routes keep the page; the onboarding flow lives on the dashboard and umbrella.

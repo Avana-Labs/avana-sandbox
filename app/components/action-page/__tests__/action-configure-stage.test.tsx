@@ -269,18 +269,20 @@ describe("ActionConfigureStage without a transacting wallet", () => {
   it.each([
     ["footer", {}],
     ["home", { homeLayout: true }],
-  ])("sends a guest to the dashboard onboarding from the %s CTA", (_layout, props) => {
+  ])("starts Get Started for a guest from the %s CTA", (_layout, props) => {
+    window.sessionStorage.clear()
     const onPrimary = renderWith("guest", props)
     const cta = screen.getByTestId("action-footer-primary")
-    expect(cta).toHaveTextContent("Connect Wallet")
-    expect(cta).toHaveAttribute("href", "/dashboard")
+    expect(cta).toHaveTextContent("Get Started")
     fireEvent.click(cta)
+    // Records the intent (connect, then onboarding only if needed) instead of submitting.
+    expect(window.sessionStorage.getItem("avana_get_started_intent")).not.toBeNull()
     expect(onPrimary).not.toHaveBeenCalled()
   })
 
   it("keeps the guest CTA even when the preview is blocked", () => {
     renderWith("guest", { preview: { ...preview, allowed: false, blockedReason: "Insufficient balance" } })
-    expect(screen.getByTestId("action-footer-primary")).toHaveTextContent("Connect Wallet")
+    expect(screen.getByTestId("action-footer-primary")).toHaveTextContent("Get Started")
   })
 
   it("asks a signed-in wallet that has not onboarded to complete onboarding", () => {
