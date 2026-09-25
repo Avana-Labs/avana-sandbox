@@ -2,6 +2,7 @@
 
 import { useCallback } from "react"
 import { useOptionalWalletGate } from "@/app/lib/web3/wallet-gate"
+import { trackEvent } from "@/app/lib/analytics/track-event"
 
 /**
  * "Get Started" intent: set when a guest clicks any Get Started button (header, detail page,
@@ -14,6 +15,7 @@ const KEY = "avana_get_started_intent"
 const TTL_MS = 10 * 60 * 1000
 
 export function markGetStartedIntent() {
+  trackEvent("get_started_click", { path: window.location.pathname })
   try {
     window.sessionStorage.setItem(KEY, String(Date.now()))
   } catch {

@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api"
 import { SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
 import { requiresOnboarding } from "@/app/lib/route-access"
 import { clearGetStartedIntent, hasGetStartedIntent } from "@/app/lib/web3/get-started-intent"
+import { trackEvent } from "@/app/lib/analytics/track-event"
 import { ONBOARDED_COOKIE } from "./onboarded-cookie"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
@@ -100,6 +101,7 @@ function CheckerBody({
   useEffect(() => {
     if (walletState === undefined || !hasGetStartedIntent()) return
     clearGetStartedIntent()
+    trackEvent("get_started_signed_in", { onboarded: isDone })
     if (!isDone && isOpenRoute) router.push("/dashboard")
   }, [walletState, isDone, isOpenRoute, router])
 

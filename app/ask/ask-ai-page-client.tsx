@@ -1,5 +1,6 @@
 "use client"
 
+import { trackEvent } from "@/app/lib/analytics/track-event"
 import {
   AssistantRuntimeProvider,
   type AppendMessage,
@@ -714,6 +715,7 @@ export function AskAIPageClient({
           setDraftThread(false)
         }
         const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
+        trackEvent("ask_ai_question")
         setPendingTurn((current) =>
           current?.clientRequestId === clientRequestId
             ? { ...current, id: String(queued.turnId), promptMessageId: queued.promptMessageId }

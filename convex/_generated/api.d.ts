@@ -88,6 +88,7 @@ import type * as silo_riskAssessment from "../silo/riskAssessment.js";
 import type * as silo_riskParameters from "../silo/riskParameters.js";
 import type * as starterTestMarkets from "../starterTestMarkets.js";
 import type * as support from "../support.js";
+import type * as usageReport from "../usageReport.js";
 import type * as wallet_balances from "../wallet/balances.js";
 import type * as wallet_claimPositions from "../wallet/claimPositions.js";
 import type * as wallet_collateralPositions from "../wallet/collateralPositions.js";
@@ -186,6 +187,7 @@ declare const fullApi: ApiFromModules<{
   "silo/riskParameters": typeof silo_riskParameters;
   starterTestMarkets: typeof starterTestMarkets;
   support: typeof support;
+  usageReport: typeof usageReport;
   "wallet/balances": typeof wallet_balances;
   "wallet/claimPositions": typeof wallet_claimPositions;
   "wallet/collateralPositions": typeof wallet_collateralPositions;
