@@ -10,7 +10,6 @@ import {
   CircleHelp,
   Coins,
   Globe2,
-  Menu,
   Shield,
   SunMedium,
 } from "@/app/components/icons"
@@ -25,6 +24,7 @@ import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { useTheme } from "./theme-provider"
 import { OVERLAY_SCRIM_CLASS } from "./card-surface-tokens"
 import { useNavigationPrefetch } from "./navigation-prefetch"
+import { MenuToggleIcon } from "./menu-toggle-icon"
 
 const siteRoutes = {
   home: "/",
@@ -33,12 +33,15 @@ const siteRoutes = {
 type MobileMenuView = "root" | "language" | "currency" | "network"
 
 type MobileMenuProps = {
-  actions?: ReactNode
-  brand?: ReactNode
   initialOpen?: boolean
 }
 
-export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuProps) {
+/**
+ * Phone / tablet site menu. It opens BELOW the real header (which stays visible and live: search,
+ * Ask AI and the wallet control keep working), and this component's own toggle morphs from three
+ * bars to an X in place — there is no second header or separate close button.
+ */
+export function MobileMenu({ initialOpen = false }: MobileMenuProps) {
   const { isSignedIn } = useSiweAuth()
   const prefetchNavigation = useNavigationPrefetch(isSignedIn)
   const [open, setOpen] = useState(initialOpen)
@@ -51,7 +54,6 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
   const [sheetDragging, setSheetDragging] = useState(false)
   const selectorSheetRef = useRef<HTMLDivElement | null>(null)
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const sheetDragStateRef = useRef<{
     pointerId: number
@@ -98,7 +100,6 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
     setSettingsIntroActive(true)
     const frame = window.requestAnimationFrame(() => {
       setIsShown(true)
-      closeButtonRef.current?.focus()
     })
     const timer = window.setTimeout(() => {
       setSettingsIntroActive(false)
@@ -557,52 +558,23 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
           onOpen()
         }}
       >
-        <Menu className="h-7 w-7" strokeWidth={1.8} />
+        {/* Follows `isVisible` (a frame after mount), so a lazy first open still animates. */}
+        <MenuToggleIcon open={isVisible} />
         <span className="sr-only">{t("Toggle menu")}</span>
       </button>
 
       {renderMenu ? (
         <div
-          className={`fixed inset-0 z-[60] min-h-[100dvh] bg-background text-foreground transition-opacity duration-300 ease-out xl:hidden ${
+          className={`fixed inset-x-0 bottom-0 top-14 z-[60] bg-background text-foreground transition-opacity duration-300 ease-out xl:hidden ${
             isVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           role="dialog"
-          aria-modal="true"
           aria-label={t("Mobile menu")}
         >
-          <div className="flex h-14 items-center justify-between px-4 sm:px-6">
-            <div className="flex items-center gap-3">
-              <Link
-                href={siteRoutes.home}
-                prefetch={false}
-                aria-label="Avana"
-                className="inline-flex items-center"
-                onClick={onClose}
-              >
-                {brand}
-              </Link>
-
-              <button
-                ref={closeButtonRef}
-                type="button"
-                className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 [-webkit-tap-highlight-color:transparent]"
-                aria-label={t("Close menu")}
-                onClick={onClose}
-              >
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                  <path d="M5 5L17 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                  <path d="M17 5L5 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            {actions ? <div className="flex items-center gap-0.5">{actions}</div> : null}
-          </div>
-
           <nav
             id="mobile-site-nav"
             aria-label={t("Mobile navigation")}
-            className={`h-[calc(100dvh-3.5rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
+            className={`h-full overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
               isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
           >
