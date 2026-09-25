@@ -7,7 +7,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import Link from "next/link"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
-import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
+import { TRANSACT_ACCESS_HREF, useTransactAccessCta } from "@/app/lib/transact-access"
 
 type ActionSelectItem = {
   id: string
@@ -36,7 +36,8 @@ export function ActionSelectStage({
   const { t } = useTranslation()
   // A guest's empty list (no wallet, so no assets) was a dead end; offer the same CTA as the
   // configure stage and detail pages.
-  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+  const accessCta = useTransactAccessCta()
+  const accessLabel = accessCta.label
   const [query, setQuery] = useState("")
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -73,6 +74,7 @@ export function ActionSelectStage({
             {accessLabel && !query.trim() ? (
               <Link
                 href={TRANSACT_ACCESS_HREF}
+                onClick={accessCta.onClick}
                 className={primaryCtaClass({ size: "compact", className: "mt-4 inline-flex px-6 font-normal" })}
               >
                 {t(accessLabel)}

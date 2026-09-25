@@ -1,19 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { Copy, Globe, MessageSquare } from "@/app/components/icons"
+import { Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TestnetMetricsBadge } from "@/app/components/testnet-metrics-badge"
+import { HeroContractLine } from "@/app/components/hero-contract-line"
 import {
   buildFeedFromSeries,
   isPlaceholderHeroContractAddress,
+  contractExplorerHref,
   isSafeHeroLink,
   resolveHeroContractAddress,
-  resolveHeroContractLabel,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -41,7 +41,6 @@ export function MarketHeroIdentity({
   className?: string
 }) {
   const { t } = useTranslation()
-  const contractLabel = resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)
   // Suppress copy + Etherscan when the address is a synthetic placeholder that
   // points at no real contract.
   const isPlaceholderContract = isPlaceholderHeroContractAddress(
@@ -69,30 +68,12 @@ export function MarketHeroIdentity({
                 {detail.hero.name}
               </h1>
             </div>
-            <div className="mt-0 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
-              {/* Testnet: the network label is swapped for the Testnet badge until mainnet.
-                  Restore this line and delete the badge when testnet ends:
-                  <span className="leading-none text-foreground/75">{detail.hero.chain}</span> */}
-              <TestnetMetricsBadge label={t("Testnet")} />
-              <span aria-hidden className="h-5 w-px bg-border" />
-              {isPlaceholderContract ? (
-                <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
-                  {contractLabel}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(contractLabel)
-                  }}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
-                  aria-label={`${t("Copy")} ${contractLabel}`}
-                >
-                  <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                  <span>{contractLabel}</span>
-                </button>
-              )}
-            </div>
+            <HeroContractLine
+              contextLabel="Market on"
+              address={resolveHeroContractAddress(detail.id, detail.hero.explorerUrl)}
+              isPlaceholder={isPlaceholderContract}
+              explorerHref={contractExplorerHref(detail.hero.explorerUrl)}
+            />
           </div>
         </div>
 

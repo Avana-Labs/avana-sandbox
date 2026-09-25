@@ -1453,6 +1453,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY DU LOOP",
   "Loop market": "Marché loop",
   "LP APR": "APR LP",
+  "Pool APR": "APR du pool",
   "Live value of this collateral, and the LP trading fees it earns.":
     "Valeur en direct de ce collatéral et les frais de trading LP qu'il rapporte.",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
@@ -1819,6 +1820,58 @@ const dict: TranslationDictionary = {
   "Send report": "Envoyer le rapport",
   "Thanks! Your report was sent.": "Merci ! Votre rapport a été envoyé.",
   "Capacity Filled": "Capacité utilisée",
+  "A token in your wallet you can put to work here.": "Un token de ton portefeuille que tu peux faire travailler ici.",
+  "Amount still available to borrow from this market.": "Montant encore disponible à l'emprunt sur ce marché.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Taux d'intérêt annuel que tu paies sur les fonds empruntés. Il varie avec l'utilisation.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Rendement annuel que tu obtiens en fournissant cet actif.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Rendement annuel issu des frais de trading de ce pool de liquidité.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Facteur de collatéral : combien tu peux emprunter par dollar de collatéral. LT est le seuil de liquidation.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Rendement net estimé au levier maximal, après les coûts d'emprunt.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Fonds non empruntés actuellement, disponibles au retrait ou à l'emprunt.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Part des fonds fournis actuellement empruntée. Une utilisation élevée augmente les taux et peut retarder les retraits.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "Le pool de liquidité que tu peux déposer en collatéral pour emprunter.",
+  "The maximum leverage available on this loop.": "Le levier maximal disponible sur cette boucle.",
+  "The most you can borrow as a share of your collateral value.":
+    "Le maximum que tu peux emprunter en proportion de la valeur de ton collatéral.",
+  "The token you can borrow against your collateral.": "Le token que tu peux emprunter contre ton collatéral.",
+  "The token you can supply to earn yield.": "Le token que tu peux fournir pour obtenir du rendement.",
+  "Total amount currently borrowed from this market by all users.":
+    "Montant total actuellement emprunté sur ce marché par tous les utilisateurs.",
+  "Total amount supplied to this market by all users.": "Montant total fourni à ce marché par tous les utilisateurs.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Valeur totale des positions LP déposées sur ce marché par tous les utilisateurs.",
+  "Your wallet balance of this token, ready to use.": "Le solde de ce token dans ton portefeuille, prêt à l'emploi.",
+  "Asset on": "Actif sur",
+  "Market on": "Marché sur",
+  "View on explorer": "Voir dans l'explorateur",
+  "All Chains": "Toutes les chaînes",
+  "Asset type": "Type d'actif",
+  Clear: "Effacer",
+  "Clear all": "Tout effacer",
+  "Clear filters": "Effacer les filtres",
+  "Clear {facet} filter": "Effacer le filtre {facet}",
+  "Filter by": "Filtrer par",
+  Hubs: "Pôles",
+  "No loops match these filters.": "Aucune boucle ne correspond à ces filtres.",
+  "No matches": "Aucun résultat",
+  "Search chains": "Rechercher des chaînes",
+  "Search hubs": "Rechercher des hubs",
+  Soon: "Bientôt",
+  Stable: "Stable",
+  Correlated: "Corrélé",
+  Volatile: "Volatil",
+  Chains: "Chaînes",
+  Other: "Autres",
+  Stocks: "Actions",
+  "Filter markets": "Filtrer les marchés",
 }
 
 export default dict

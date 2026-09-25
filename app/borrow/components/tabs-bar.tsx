@@ -1,39 +1,36 @@
 "use client"
 
+import type { Dispatch, SetStateAction } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
-import { CATEGORY_CHIPS, type CategoryChip } from "@/app/lib/markets/category"
-
-// Category ids are the shared taxonomy (all / btc / eth / forex / utility / smart)
-// so Borrow, Lend and Multiply filter with one component and one id space.
-export const POOL_TAB_IDS = ["all", "btc", "eth", "forex", "utility", "smart"] as const
-
-export type PoolTabId = (typeof POOL_TAB_IDS)[number]
-
-export type BorrowTabId = PoolTabId
-
-export function isPoolTab(tab: BorrowTabId): tab is PoolTabId {
-  return POOL_TAB_IDS.includes(tab as PoolTabId)
-}
+import { MarketFiltersBar } from "@/app/lib/ui/market-filters"
+import {
+  BORROW_MARKET_OPTIONS,
+  type AssetOption,
+  type FilterableItem,
+  type MarketFilterState,
+} from "@/app/lib/markets/filters"
 
 type TabsBarProps = {
-  currentTab: BorrowTabId
-  onTabChange: (tab: BorrowTabId) => void
+  items: readonly FilterableItem[]
+  filters: MarketFilterState
+  onFiltersChange: Dispatch<SetStateAction<MarketFilterState>>
+  assetOptions: readonly AssetOption[]
   search: string
   onSearchChange: (value: string) => void
 }
 
-const CATEGORY_TABS: readonly CategoryChip[] = CATEGORY_CHIPS.borrow
-
-export function TabsBar({ currentTab, onTabChange, search, onSearchChange }: TabsBarProps) {
+/** Borrow's filter row: chains, hubs, DEX markets and LP assets, plus the market search. */
+export function TabsBar({ items, filters, onFiltersChange, assetOptions, search, onSearchChange }: TabsBarProps) {
   const { t } = useTranslation()
 
   return (
     <div className="z-30 py-7 md:py-7">
-      <MarketFilterBar
-        chips={CATEGORY_TABS}
-        tab={currentTab}
-        onTabChange={(id) => onTabChange(id as BorrowTabId)}
+      <MarketFiltersBar
+        items={items}
+        value={filters}
+        onChange={onFiltersChange}
+        marketOptions={BORROW_MARKET_OPTIONS}
+        assetOptions={assetOptions}
         search={search}
         onSearchChange={onSearchChange}
         searchPlaceholder={t("Filter markets")}

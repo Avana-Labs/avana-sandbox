@@ -14,8 +14,13 @@ import { scheduleIdle } from "./schedule-idle"
 type WalletGate = {
   /** Whether the wallet SDK is (being) mounted. When false, no wagmi context exists. */
   active: boolean
-  /** Mount the SDK and auto-open the connect modal once it is ready (used by "Connect"). */
+  /**
+   * Mount the SDK and auto-open the connect modal once it is ready (used by "Get Started"). When
+   * the SDK is already mounted, bumps `openRequest` so the mounted control opens the modal.
+   */
   connect: () => void
+  /** Increments on each `connect()` after the SDK mounted; the wallet control opens the modal. */
+  openRequest: number
   /** Mount the SDK without opening a modal (used to restore a persisted session). */
   activate: () => void
   /** One-shot read: did the last activation ask the modal to auto-open? Consumed once mounted. */
@@ -42,6 +47,7 @@ const preloadWeb3 = loadWeb3Module
 export function WalletGateProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [openRequest, setOpenRequest] = useState(0)
   const autoOpenRef = useRef(false)
   const activatedRef = useRef(false)
 
@@ -53,7 +59,10 @@ export function WalletGateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const activate = useCallback(() => goActive(false), [goActive])
-  const connect = useCallback(() => goActive(true), [goActive])
+  const connect = useCallback(() => {
+    if (activatedRef.current) setOpenRequest((count) => count + 1)
+    else goActive(true)
+  }, [goActive])
 
   const consumeAutoOpen = useCallback(() => {
     const value = autoOpenRef.current
@@ -92,11 +101,16 @@ export function WalletGateProvider({ children }: { children: ReactNode }) {
   }, [activate])
 
   const value = useMemo<WalletGate>(
-    () => ({ active, connect, activate, consumeAutoOpen, modalOpen, setModalOpen }),
-    [active, connect, activate, consumeAutoOpen, modalOpen],
+    () => ({ active, connect, openRequest, activate, consumeAutoOpen, modalOpen, setModalOpen }),
+    [active, connect, openRequest, activate, consumeAutoOpen, modalOpen],
   )
 
   return <WalletGateContext.Provider value={value}>{children}</WalletGateContext.Provider>
+}
+
+/** The gate, or null outside a provider (isolated component tests). */
+export function useOptionalWalletGate(): WalletGate | null {
+  return useContext(WalletGateContext)
 }
 
 export function useWalletGate(): WalletGate {

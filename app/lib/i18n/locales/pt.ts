@@ -1455,6 +1455,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY DO LOOP",
   "Loop market": "Mercado loop",
   "LP APR": "APR LP",
+  "Pool APR": "APR do pool",
   "Live value of this collateral, and the LP trading fees it earns.":
     "Valor ao vivo deste colateral e as taxas de negociação LP que ele rende.",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
@@ -1816,6 +1817,60 @@ const dict: TranslationDictionary = {
   "Send report": "Enviar relatório",
   "Thanks! Your report was sent.": "Obrigado! Seu relatório foi enviado.",
   "Capacity Filled": "Capacidade utilizada",
+  "A token in your wallet you can put to work here.":
+    "Um token da sua carteira que você pode colocar para render aqui.",
+  "Amount still available to borrow from this market.": "Valor ainda disponível para empréstimo neste mercado.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Taxa de juros anual que você paga sobre os fundos emprestados. Varia com a utilização.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Rendimento percentual anual que você ganha ao fornecer este ativo.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Rendimento anual de taxas de negociação gerado por este pool de liquidez.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Fator de colateral: quanto você pode tomar emprestado por dólar de colateral. LT é o limite de liquidação.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Rendimento líquido estimado na alavancagem máxima, após os custos de empréstimo.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Fundos não emprestados no momento, disponíveis para saque ou empréstimo.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Parcela dos fundos fornecidos que está emprestada. Uso maior eleva as taxas e pode atrasar saques.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "O pool de liquidez que você pode oferecer como colateral para tomar empréstimo.",
+  "The maximum leverage available on this loop.": "A alavancagem máxima disponível neste loop.",
+  "The most you can borrow as a share of your collateral value.":
+    "O máximo que você pode tomar emprestado como parcela do valor do seu colateral.",
+  "The token you can borrow against your collateral.": "O token que você pode tomar emprestado contra seu colateral.",
+  "The token you can supply to earn yield.": "O token que você pode fornecer para obter rendimento.",
+  "Total amount currently borrowed from this market by all users.":
+    "Valor total atualmente emprestado neste mercado por todos os usuários.",
+  "Total amount supplied to this market by all users.": "Valor total fornecido a este mercado por todos os usuários.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Valor total das posições LP oferecidas a este mercado por todos os usuários.",
+  "Your wallet balance of this token, ready to use.": "O saldo deste token na sua carteira, pronto para uso.",
+  "Asset on": "Ativo na",
+  "Market on": "Mercado na",
+  "View on explorer": "Ver no explorador",
+  "All Chains": "Todas as redes",
+  "Asset type": "Tipo de ativo",
+  Clear: "Limpar",
+  "Clear all": "Limpar tudo",
+  "Clear filters": "Limpar filtros",
+  "Clear {facet} filter": "Limpar filtro de {facet}",
+  "Filter by": "Filtrar por",
+  Hubs: "Centros",
+  Markets: "Mercados",
+  "No loops match these filters.": "Nenhum loop corresponde a estes filtros.",
+  "No matches": "Nenhum resultado",
+  "Search chains": "Buscar redes",
+  "Search hubs": "Buscar hubs",
+  Soon: "Em breve",
+  Stable: "Estável",
+  Correlated: "Correlacionado",
+  Volatile: "Volátil",
+  Chains: "Redes",
+  Other: "Outros",
+  Stocks: "Ações",
+  "Filter markets": "Filtrar mercados",
 }
 
 export default dict

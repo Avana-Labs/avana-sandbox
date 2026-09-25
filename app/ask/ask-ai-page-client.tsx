@@ -1,5 +1,6 @@
 "use client"
 
+import { trackEvent } from "@/app/lib/analytics/track-event"
 import {
   AssistantRuntimeProvider,
   type AppendMessage,
@@ -28,6 +29,7 @@ import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-
 import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
 import { askAiModeRunsEnabled } from "@/app/lib/ask-ai/config"
 import { shouldBuildModeRunForTurn, type AskAiRun } from "@/app/lib/ask-ai/mode-run"
+import { portfolioCardFor } from "@/app/lib/ask-ai/card-policy"
 
 type PendingTurn = {
   id: string
@@ -128,7 +130,11 @@ function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
 
 // Reshape a verbatim financial tool result into the display card, per tool kind.
 // Returns null (card hidden) when the figures are absent — never invents them.
-function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFinancialResult | null {
+function buildFinancialCard(
+  kind: string | undefined,
+  payload: unknown,
+  options: { includeUmbrella?: boolean } = {},
+): AskAIFinancialResult | null {
   if (kind?.startsWith("aave_")) return buildAaveCard(kind, payload)
   const shaped = toFinancialResultCard(payload)
   if (shaped) return shaped
@@ -154,6 +160,8 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
     case "portfolio": {
       const t = asObject(p.totals)
       const umbrellaFocused = p.focus === "umbrella"
+      // Umbrella rows (and their Cooldown / Status columns) only when the question is about Umbrella.
+      const showUmbrella = umbrellaFocused || options.includeUmbrella === true
       const rowsFor = (key: string) => (Array.isArray(p[key]) ? p[key].map(asObject) : null)
       const amountOf = (row: Record<string, unknown>) => {
         if (typeof row.valueUsd === "number" && Number.isFinite(row.valueUsd)) return row.valueUsd
@@ -206,45 +214,57 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
               ["Liquid", usd(t.liquidNetValueUsd ?? canonicalFromRows.liquid ?? t.liquidNetUsd ?? t.liquidUsd)],
             ]
       ).flatMap(([product, value], index) =>
-        value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value, "", ""] }] : [],
-      )
-      const umbrellaRows = Array.isArray(p.umbrella)
-        ? p.umbrella.flatMap((position, index) => {
-            const row = asObject(position)
-            const value = usd(
-              typeof row.suppliedUsd6 === "string" ? Number(row.suppliedUsd6) / 1_000_000 : row.suppliedUsd,
-            )
-            if (!value) return []
-            const cooldown = usd(
-              typeof row.cooldownAmountUsd6 === "string" ? Number(row.cooldownAmountUsd6) / 1_000_000 : row.cooldownUsd,
-            )
-            return [
+        value
+          ? [
               {
-                id: `umbrella-${index}`,
-                cells: umbrellaFocused
-                  ? [
-                      String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
-                      value,
-                      cooldown ?? "$0.00",
-                      umbrellaStatus(row),
-                    ]
-                  : [
-                      "Umbrella",
-                      String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
-                      value,
-                      cooldown ?? "$0.00",
-                      umbrellaStatus(row),
-                    ],
+                id: `product-${index}`,
+                cells: showUmbrella ? [product ?? "", "All positions", value, "", ""] : [product ?? "", value],
               },
             ]
-          })
-        : []
+          : [],
+      )
+      const umbrellaRows =
+        showUmbrella && Array.isArray(p.umbrella)
+          ? p.umbrella.flatMap((position, index) => {
+              const row = asObject(position)
+              const value = usd(
+                typeof row.suppliedUsd6 === "string" ? Number(row.suppliedUsd6) / 1_000_000 : row.suppliedUsd,
+              )
+              if (!value) return []
+              const cooldown = usd(
+                typeof row.cooldownAmountUsd6 === "string"
+                  ? Number(row.cooldownAmountUsd6) / 1_000_000
+                  : row.cooldownUsd,
+              )
+              return [
+                {
+                  id: `umbrella-${index}`,
+                  cells: umbrellaFocused
+                    ? [
+                        String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
+                        value,
+                        cooldown ?? "$0.00",
+                        umbrellaStatus(row),
+                      ]
+                    : [
+                        "Umbrella",
+                        String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
+                        value,
+                        cooldown ?? "$0.00",
+                        umbrellaStatus(row),
+                      ],
+                },
+              ]
+            })
+          : []
       return table(
         "portfolio",
         umbrellaFocused ? "Your Umbrella positions" : "Your Avana portfolio",
         umbrellaFocused
           ? ["Position", "Value", "Cooldown", "Status"]
-          : ["Product", "Position", "Value", "Cooldown", "Status"],
+          : showUmbrella
+            ? ["Product", "Position", "Value", "Cooldown", "Status"]
+            : ["Product", "Value"],
         [...productRows, ...umbrellaRows],
         (umbrellaFocused
           ? [
@@ -456,7 +476,7 @@ const assistantMetadata = () => ({
   steps: [],
   custom: {},
 })
-function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts) {
+function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts, question?: string) {
   const parts: ThreadAssistantMessagePart[] = [{ type: "text", text }]
   if (rich?.retrievalChunks?.length) {
     parts.push({
@@ -483,7 +503,11 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
     const isSingleTokenPrice =
       entry.kind === "market" && providerData.length === 1 && asObject(providerData[0]).kind === "token_price"
     if (rich?.visual && isSingleTokenPrice) continue
-    const card = buildFinancialCard(entry.kind, entry.payload)
+    // The portfolio table appears only when the question asks to see holdings; a plain
+    // question ("what is my net value") is answered in the text alone.
+    const portfolioCard = entry.kind === "portfolio" ? portfolioCardFor(question) : null
+    if (portfolioCard && !portfolioCard.show && asObject(entry.payload).focus !== "umbrella") continue
+    const card = buildFinancialCard(entry.kind, entry.payload, { includeUmbrella: portfolioCard?.includeUmbrella })
     if (card) parts.push({ type: "data", name: "financial-result", data: card })
   }
   // Deterministic mode-run cards render only when the flag is on, so a stray persisted
@@ -617,34 +641,42 @@ export function AskAIPageClient({
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
   }, [activeThreadId])
 
-  const persistedMessages = useMemo<ThreadMessage[]>(
-    () =>
-      messageResults.flatMap((message): ThreadMessage[] => {
-        const common = {
-          id: message.id,
-          content: [{ type: "text" as const, text: message.text }],
-          createdAt: new Date(message._creationTime),
-        }
-        if (message.role === "user") return [{ ...common, role: "user", attachments: [], metadata: { custom: {} } }]
-        if (message.role === "assistant")
-          return [
-            {
-              ...common,
-              content: persistedAssistantParts(message.id, message.text, richPartsByMessage.get(message.id)),
-              role: "assistant",
-              status:
-                message.status === "streaming" || message.status === "pending"
-                  ? { type: "running" }
-                  : message.status === "failed"
-                    ? { type: "incomplete", reason: "error" }
-                    : { type: "complete", reason: "stop" },
-              metadata: assistantMetadata(),
-            },
-          ]
-        return []
-      }),
-    [messageResults, richPartsByMessage],
-  )
+  const persistedMessages = useMemo<ThreadMessage[]>(() => {
+    // Each answer's cards depend on the question that prompted it (see portfolioCardFor).
+    let lastQuestion: string | undefined
+    return messageResults.flatMap((message): ThreadMessage[] => {
+      const common = {
+        id: message.id,
+        content: [{ type: "text" as const, text: message.text }],
+        createdAt: new Date(message._creationTime),
+      }
+      if (message.role === "user") {
+        lastQuestion = message.text
+        return [{ ...common, role: "user", attachments: [], metadata: { custom: {} } }]
+      }
+      if (message.role === "assistant")
+        return [
+          {
+            ...common,
+            content: persistedAssistantParts(
+              message.id,
+              message.text,
+              richPartsByMessage.get(message.id),
+              lastQuestion,
+            ),
+            role: "assistant",
+            status:
+              message.status === "streaming" || message.status === "pending"
+                ? { type: "running" }
+                : message.status === "failed"
+                  ? { type: "incomplete", reason: "error" }
+                  : { type: "complete", reason: "stop" },
+            metadata: assistantMetadata(),
+          },
+        ]
+      return []
+    })
+  }, [messageResults, richPartsByMessage])
 
   const handleNewThread = useCallback(() => {
     setPendingTurn(null)
@@ -683,6 +715,7 @@ export function AskAIPageClient({
           setDraftThread(false)
         }
         const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
+        trackEvent("ask_ai_question")
         setPendingTurn((current) =>
           current?.clientRequestId === clientRequestId
             ? { ...current, id: String(queued.turnId), promptMessageId: queued.promptMessageId }

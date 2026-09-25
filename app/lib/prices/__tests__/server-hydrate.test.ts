@@ -3,7 +3,7 @@ import { canonicalPriceUsd, resetCanonicalPrices } from "@/app/lib/prices/canoni
 
 // Control the server-side oracle fetch so the test never touches a real Convex deployment.
 const { fetchTokenPrices } = vi.hoisted(() => ({ fetchTokenPrices: vi.fn() }))
-vi.mock("@/app/lib/borrow-system/market-hydration-server", () => ({ fetchTokenPrices }))
+vi.mock("@/app/lib/prices/server-snapshot", () => ({ fetchTokenPrices }))
 
 // unstable_cache needs the Next server cache context, which is absent in a plain unit test; make it
 // a passthrough so the overlay logic under test runs against the mocked fetch directly. In the real

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
@@ -32,6 +33,7 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+import { TickerPriceFlip } from "@/app/lib/ui/token-ticker-price-label"
 
 const WALLET_TOKENS_LAYOUT = tableColumnLayout(
   [
@@ -88,10 +90,12 @@ function WalletMetricHeader({
   align?: "left" | "right"
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap", align === "right" && "justify-end")}>
+    <TableHeaderHint
+      hint={help}
+      className={cn("inline-flex items-center gap-1 whitespace-nowrap", align === "right" && "justify-end")}
+    >
       {formatTableHeaderLabel(label)}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 
@@ -519,7 +523,10 @@ function WalletBalanceSection({
                         {row.name}
                       </div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                        {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
+                        <TickerPriceFlip
+                          symbol={row.symbol}
+                          detail={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : undefined}
+                        />
                       </div>
                     </div>
                   </div>

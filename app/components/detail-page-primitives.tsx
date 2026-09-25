@@ -5,7 +5,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
+import { TRANSACT_ACCESS_HREF, useTransactAccessCta } from "@/app/lib/transact-access"
 
 const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
@@ -84,7 +84,8 @@ export function MobileDetailActionBar({ children, className }: { children: React
   const { t } = useTranslation()
   // A guest (or a wallet still onboarding) gets ONE CTA to the dashboard onboarding in place of
   // the product actions, matching the desktop sidebar.
-  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+  const accessCta = useTransactAccessCta()
+  const accessLabel = accessCta.label
   return (
     <div
       className={cn(
@@ -95,6 +96,7 @@ export function MobileDetailActionBar({ children, className }: { children: React
       {accessLabel ? (
         <Link
           href={TRANSACT_ACCESS_HREF}
+          onClick={accessCta.onClick}
           className={primaryCtaClass({ size: "compact", className: "w-full font-normal" })}
         >
           {t(accessLabel)}

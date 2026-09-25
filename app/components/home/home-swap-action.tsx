@@ -9,14 +9,14 @@ import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
-import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
-import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TRANSACT_ACCESS_HREF, transactAccessCtaLabel, useTransactAccess } from "@/app/lib/transact-access"
-import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { TRANSACT_ACCESS_HREF, useTransactAccessCta } from "@/app/lib/transact-access"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
-import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
+import { SWAP_ASSETS, SWAP_CHAIN_ID } from "@/app/lib/swap-system/catalog"
+import { validateSwapInputAmount } from "@/app/lib/swap-system/eligibility"
+import type { SwapQuote } from "@/app/lib/swap-system/quote-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 
 const ActionReviewStage = dynamic(
@@ -26,6 +26,11 @@ const ActionReviewStage = dynamic(
 
 const ActionSuccessStage = dynamic(
   () => import("@/app/components/action-page/action-success-stage").then((mod) => mod.ActionSuccessStage),
+  { loading: ActionSessionLoading },
+)
+
+const ActionProcessingStage = dynamic(
+  () => import("@/app/components/action-page/action-processing-stage").then((mod) => mod.ActionProcessingStage),
   { loading: ActionSessionLoading },
 )
 
@@ -210,6 +215,7 @@ export function HomeSwapAction() {
     setOutcome(null)
 
     try {
+      const { runActionSubmitFlow } = await import("@/app/lib/action-system/action-submit-runtime")
       const approvalRequired = swap.requiresApproval(inputAsset.id, validation.amount)
       const result = await runActionSubmitFlow({
         simulated: true,
@@ -291,7 +297,8 @@ export function HomeSwapAction() {
   }, [])
 
   // Guests keep the quote form but are sent to the dashboard onboarding instead of review.
-  const accessLabel = transactAccessCtaLabel(useTransactAccess())
+  const accessCta = useTransactAccessCta()
+  const accessLabel = accessCta.label
 
   // With Sell prefilled, ask for the Buy asset first: a wallet without ETH should see
   // "Select Asset", not "Insufficient balance", before it has picked anything.
@@ -400,6 +407,7 @@ export function HomeSwapAction() {
           {accessLabel ? (
             <Link
               href={TRANSACT_ACCESS_HREF}
+              onClick={accessCta.onClick}
               className={primaryCtaClass({ className: "mt-1" })}
               data-testid="action-footer-primary"
             >

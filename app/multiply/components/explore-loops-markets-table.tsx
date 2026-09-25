@@ -31,8 +31,18 @@ import {
   type HighlightCarouselHandle,
 } from "@/app/components/highlight-carousel"
 import { useCurrency } from "@/app/lib/currency/use-currency"
-import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
-import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
+import { MarketFiltersBar, MarketFiltersEmptyState } from "@/app/lib/ui/market-filters"
+import { categorizeMarket } from "@/app/lib/markets/category"
+import {
+  EMPTY_MARKET_FILTERS,
+  MULTIPLY_MARKET_OPTIONS,
+  activeFilterCount,
+  buildAssetOptions,
+  matchesMarketFilters,
+  multiplyFilterItem,
+  type FilterableItem,
+  type MarketFilterState,
+} from "@/app/lib/markets/filters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   translateMultiplyLoopBorrowLabel,
@@ -40,30 +50,7 @@ import {
 } from "@/app/lib/multiply-system/market-labels"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
-const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
-const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
-const FOREX_SYMBOLS = new Set([
-  "USDC",
-  "USDT",
-  "DAI",
-  "CRVUSD",
-  "GHO",
-  "EURC",
-  "USD+",
-  "SDAI",
-  "FRAX",
-  "USDE",
-  "USDS",
-  "USDP",
-  "LUSD",
-  "TUSD",
-  "MIM",
-  "PYUSD",
-  "EURS",
-])
-const UTILITY_SYMBOLS = new Set(["AAVE", "UNI", "CRV", "LDO", "BAL", "AURA", "GNO", "ARB", "OP", "LINK", "MKR"])
-
-const CATEGORY_TABS = CATEGORY_CHIPS.multiply
+const isMultiplyCategory = (value: string) => MULTIPLY_MARKET_OPTIONS.some((option) => option.id === value)
 
 // Loop markets are grouped by their collateral asset's family, mirroring the Lend
 // page's grouped asset tables (Stablecoins → Ethereum → Bitcoin → Other). Utility
@@ -132,8 +119,6 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 
-type MultiplyCategoryTabId = CategoryChip["id"]
-
 type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "capacityFilled" | "points"
 
 function formatTrendingLeverageLabel(maxLeverageLabel: string) {
@@ -182,21 +167,38 @@ export function ExploreLoopsMarketsTable({
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
-  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>(() => {
+  const [filters, setFilters] = React.useState<MarketFilterState>(() => {
     const param = searchParams?.get("category")
-    return param && CATEGORY_CHIPS.multiply.some((chip) => chip.id === param) ? (param as MultiplyCategoryTabId) : "all"
+    return { ...EMPTY_MARKET_FILTERS, markets: param && isMultiplyCategory(param) ? [param] : [] }
   })
   const [search, setSearch] = React.useState("")
   const searchQuery = search.trim().toLowerCase()
 
-  // Keep the chip in sync with the URL when a header mega-menu "View all" changes the category on
-  // this same page; the #markets hash on the link handles scrolling to this table.
+  // Keep the Markets filter in sync with the URL when a header mega-menu "View all" changes the
+  // category on this same page; the #markets hash on the link handles scrolling to this table.
   const categoryParam = searchParams?.get("category")
   React.useEffect(() => {
-    if (categoryParam && CATEGORY_CHIPS.multiply.some((chip) => chip.id === categoryParam)) {
-      setCurrentTab(categoryParam as MultiplyCategoryTabId)
+    if (categoryParam && isMultiplyCategory(categoryParam)) {
+      setFilters((current) => ({ ...current, markets: [categoryParam] }))
     }
   }, [categoryParam])
+
+  const filterItemByRow = React.useMemo(() => {
+    const map = new Map<(typeof rows)[number], FilterableItem>()
+    for (const row of rows) map.set(row, multiplyFilterItem(row.protocol, row.asset))
+    return map
+  }, [rows])
+  const filterItems = React.useMemo(() => [...filterItemByRow.values()], [filterItemByRow])
+  const assetOptions = React.useMemo(
+    () =>
+      buildAssetOptions(
+        rows.flatMap((row) => [
+          { symbol: row.protocol, name: row.protocolName },
+          { symbol: row.asset, name: row.assetName },
+        ]),
+      ),
+    [rows],
+  )
 
   // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
   // instead of rebuilding it for every row on every keystroke.
@@ -206,29 +208,15 @@ export function ExploreLoopsMarketsTable({
     return map
   }, [rows])
 
-  // Cheap category filter — recomputes only when the tab (or rows) change, so typing in
-  // search no longer re-runs it. The "all" tab short-circuits to the full list.
+  // Facet filter — recomputes only when the filters (or rows) change, so typing in search
+  // doesn't re-run it. No active facet short-circuits to the full list.
   const categoryFilteredRows = React.useMemo(() => {
-    if (currentTab === "all") return rows
-    const hasAnySymbol = (symbols: Set<string>, ...values: string[]) =>
-      values.some((value) => symbols.has(value.toUpperCase()))
+    if (activeFilterCount(filters) === 0) return rows
     return rows.filter((row) => {
-      const protocol = row.protocol.toUpperCase()
-      const asset = row.asset.toUpperCase()
-      if (currentTab === "btc") return hasAnySymbol(BTC_SYMBOLS, protocol, asset)
-      if (currentTab === "eth") return hasAnySymbol(ETH_SYMBOLS, protocol, asset)
-      if (currentTab === "forex") return hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)
-      if (currentTab === "utility") return hasAnySymbol(UTILITY_SYMBOLS, protocol, asset)
-      if (currentTab === "smart") {
-        return (
-          (hasAnySymbol(ETH_SYMBOLS, protocol) && hasAnySymbol(ETH_SYMBOLS, asset)) ||
-          (hasAnySymbol(FOREX_SYMBOLS, protocol) && hasAnySymbol(FOREX_SYMBOLS, asset)) ||
-          (hasAnySymbol(BTC_SYMBOLS, protocol) && hasAnySymbol(BTC_SYMBOLS, asset))
-        )
-      }
-      return true
+      const item = filterItemByRow.get(row)
+      return item ? matchesMarketFilters(item, filters) : false
     })
-  }, [currentTab, rows])
+  }, [filters, filterItemByRow, rows])
 
   // Search filter runs over the already-category-filtered set using the precomputed text —
   // the only work a keystroke triggers now.
@@ -244,7 +232,7 @@ export function ExploreLoopsMarketsTable({
   const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
     total: filteredRows.length,
     chunkSize: effectivePageSize,
-    resetKey: `${currentTab}|${searchQuery}`,
+    resetKey: `${JSON.stringify(filters)}|${searchQuery}`,
   })
   const orderedRows = React.useMemo(() => orderLoopRowsByGroup(filteredRows), [filteredRows])
   const revealedRows = React.useMemo(() => orderedRows.slice(0, visibleCount), [orderedRows, visibleCount])
@@ -300,17 +288,21 @@ export function ExploreLoopsMarketsTable({
         }
       />
 
-      <MarketFilterBar
+      <MarketFiltersBar
         className="mt-11"
-        chips={CATEGORY_TABS}
-        tab={currentTab}
-        onTabChange={setCurrentTab}
+        items={filterItems}
+        value={filters}
+        onChange={setFilters}
+        marketOptions={MULTIPLY_MARKET_OPTIONS}
+        assetOptions={assetOptions}
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder={t("Search loops")}
       />
 
-      <div className="mt-[68px] space-y-14">
+      {/* At least one screen tall, so narrowing the filters never shortens the page enough to
+          force the browser to pull the scroll position back. */}
+      <div className="mt-[68px] min-h-[100svh] space-y-14">
         {groupedSections.length > 0 ? (
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">
@@ -323,9 +315,13 @@ export function ExploreLoopsMarketsTable({
             </div>
           ))
         ) : (
-          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
-            {t("No loops in this category yet.")}
-          </div>
+          <MarketFiltersEmptyState
+            message={t("No loops match these filters.")}
+            onClear={() => {
+              setFilters(EMPTY_MARKET_FILTERS)
+              setSearch("")
+            }}
+          />
         )}
       </div>
 
@@ -399,8 +395,8 @@ function LoopMarketsSection({ title, rows }: { title: string; rows: MultiplyPage
     })
   }, [rows, sortDirection, sortKey])
 
-  const sortHeader = (key: LoopSortKey, label: string) => (
-    <SortHeaderButton label={label} active={sortKey === key} onClick={() => toggleSort(key)} />
+  const sortHeader = (key: LoopSortKey, label: string, hint?: string) => (
+    <SortHeaderButton label={label} hint={hint} active={sortKey === key} onClick={() => toggleSort(key)} />
   )
 
   return (
@@ -422,13 +418,39 @@ function LoopMarketsSection({ title, rows }: { title: string; rows: MultiplyPage
               <tr className={TABLE_HEADER_ROW}>
                 <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3", TABLE_INDEX_PHONE_HIDDEN)}>#</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                  {sortHeader("protocol", t("Loop"))}
+                  {sortHeader(
+                    "protocol",
+                    t("Loop"),
+                    t("The collateral you supply and the asset you borrow against it to build leverage."),
+                  )}
                 </th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("apy", t("APY"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("rewards", t("Leverage"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("cf", t("CF"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("capacityFilled", t("Capacity Filled"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{sortHeader("points", t("Available"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("apy", t("APY"), t("Estimated net yield at maximum leverage, after borrow costs."))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("rewards", t("Leverage"), t("The maximum leverage available on this loop."))}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "cf",
+                    t("CF"),
+                    t(
+                      "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.",
+                    ),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader(
+                    "capacityFilled",
+                    t("Capacity Filled"),
+                    t(
+                      "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.",
+                    ),
+                  )}
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  {sortHeader("points", t("Available"), t("Amount still available to borrow from this market."))}
+                </th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                   <span className="sr-only">{t("Quick actions")}</span>
                 </th>

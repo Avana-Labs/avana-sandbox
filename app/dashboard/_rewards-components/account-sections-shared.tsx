@@ -1,5 +1,6 @@
 "use client"
 
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { Suspense, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
@@ -13,7 +14,6 @@ import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {} from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
-import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
@@ -40,6 +40,7 @@ import {
   tableStickyCell,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
+import { TokenTickerPriceLabel } from "@/app/lib/ui/token-ticker-price-label"
 
 /** Adaptive token-amount precision so `amount × unit price` reconciles with the USD value. */
 function formatAvailableAmount(value: number, symbol: string) {
@@ -146,10 +147,6 @@ export function ProductAvailableCard({
   if (rows.length === 0) return null
   const total = rows.reduce((sum, row) => sum + row.valueUsd, 0)
   const m = (value: string) => (showDollarAmounts ? value : MASK)
-  const priceLabel = (symbol: string) => {
-    const price = priceFor(symbol)
-    return price !== undefined ? formatTokenPrice(price) : symbol
-  }
 
   return (
     <section className="min-w-0 space-y-3">
@@ -163,9 +160,15 @@ export function ProductAvailableCard({
           <thead>
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                {formatTableHeaderLabel(t("Asset"))}
+                <TableHeaderHint hint={t("A token in your wallet you can put to work here.")}>
+                  {formatTableHeaderLabel(t("Asset"))}
+                </TableHeaderHint>
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Your wallet balance of this token, ready to use.")}>
+                  {formatTableHeaderLabel(t("Available"))}
+                </TableHeaderHint>
+              </th>
               {action ? (
                 <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                   <span className="sr-only">{action.label}</span>
@@ -181,7 +184,9 @@ export function ProductAvailableCard({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
-                      <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>{priceLabel(row.symbol)}</div>
+                      <div className={cn("truncate tabular-nums", TABLE_CELL_SECONDARY)}>
+                        <TokenTickerPriceLabel symbol={row.symbol} />
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -297,10 +302,22 @@ export function MultiplyAvailableMarketsCard({
           <thead>
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-4", tableStickyCell("header"))}>
-                {formatTableHeaderLabel(t("Loop"))}
+                <TableHeaderHint
+                  hint={t("The collateral you supply and the asset you borrow against it to build leverage.")}
+                >
+                  {formatTableHeaderLabel(t("Loop"))}
+                </TableHeaderHint>
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Available"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Your wallet balance of this token, ready to use.")}>
+                  {formatTableHeaderLabel(t("Available"))}
+                </TableHeaderHint>
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                <TableHeaderHint hint={t("Estimated net yield at maximum leverage, after borrow costs.")}>
+                  {formatTableHeaderLabel(t("APY"))}
+                </TableHeaderHint>
+              </th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
                 <span className="sr-only">{t("Multiply")}</span>
               </th>

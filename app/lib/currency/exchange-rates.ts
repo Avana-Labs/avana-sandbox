@@ -23,7 +23,7 @@ const SUPPORTED = Object.keys(USD_PER_UNIT_BASELINE) as CurrencyCode[]
 type LiveRateMap = Partial<Record<CurrencyCode, number>>
 type CachedRates = { fetchedAt: number; rates: LiveRateMap }
 
-export function pickSupportedFxRates(raw: Record<string, unknown>): LiveRateMap {
+function pickSupportedFxRates(raw: Record<string, unknown>): LiveRateMap {
   const out: LiveRateMap = {}
   for (const code of SUPPORTED) {
     const value = raw[code]

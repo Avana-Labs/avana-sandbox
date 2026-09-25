@@ -1400,6 +1400,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "लूप APY",
   "Loop market": "लूप मार्केट",
   "LP APR": "LP APR",
+  "Pool APR": "पूल APR",
   "Live value of this collateral, and the LP trading fees it earns.":
     "इस संपार्श्विक का लाइव मूल्य, और इससे मिलने वाली LP ट्रेडिंग फीस।",
   LT: "LT",
@@ -1760,6 +1761,59 @@ const dict: TranslationDictionary = {
   "Send report": "रिपोर्ट भेजें",
   "Thanks! Your report was sent.": "धन्यवाद! आपकी रिपोर्ट भेज दी गई है।",
   "Capacity Filled": "उपयोग की गई क्षमता",
+  "A token in your wallet you can put to work here.": "आपके वॉलेट का एक टोकन जिसे आप यहाँ काम में ला सकते हैं।",
+  "Amount still available to borrow from this market.": "इस मार्केट से अभी भी उधार लेने के लिए उपलब्ध राशि।",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "उधार ली गई राशि पर आपके द्वारा चुकाई जाने वाली वार्षिक ब्याज दर। यह उपयोग के साथ बदलती है।",
+  "Annual percentage yield you earn by supplying this asset.":
+    "इस एसेट को सप्लाई करके आप जो वार्षिक प्रतिशत यील्ड कमाते हैं।",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "इस लिक्विडिटी पूल द्वारा ट्रेडिंग फ़ीस से अर्जित वार्षिक यील्ड।",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "कोलैटरल फ़ैक्टर: कोलैटरल के हर डॉलर पर आप कितना उधार ले सकते हैं। LT लिक्विडेशन थ्रेशोल्ड है।",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "उधार लागत के बाद, अधिकतम लीवरेज पर अनुमानित शुद्ध यील्ड।",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "वह फ़ंड जो अभी उधार नहीं दिया गया है, निकासी या उधार के लिए उपलब्ध।",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "सप्लाई किए गए फ़ंड का वह हिस्सा जो अभी उधार दिया गया है। अधिक उपयोग से दरें बढ़ती हैं और निकासी में देरी हो सकती है।",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "वह लिक्विडिटी पूल जिसे आप उधार लेने के लिए कोलैटरल के रूप में गिरवी रख सकते हैं।",
+  "The maximum leverage available on this loop.": "इस लूप पर उपलब्ध अधिकतम लीवरेज।",
+  "The most you can borrow as a share of your collateral value.":
+    "आपके कोलैटरल मूल्य के हिस्से के रूप में आप अधिकतम कितना उधार ले सकते हैं।",
+  "The token you can borrow against your collateral.": "वह टोकन जिसे आप अपने कोलैटरल के बदले उधार ले सकते हैं।",
+  "The token you can supply to earn yield.": "वह टोकन जिसे आप यील्ड कमाने के लिए सप्लाई कर सकते हैं।",
+  "Total amount currently borrowed from this market by all users.":
+    "सभी उपयोगकर्ताओं द्वारा इस मार्केट से अभी उधार ली गई कुल राशि।",
+  "Total amount supplied to this market by all users.": "सभी उपयोगकर्ताओं द्वारा इस मार्केट में सप्लाई की गई कुल राशि।",
+  "Total value of LP positions pledged to this market by all users.":
+    "सभी उपयोगकर्ताओं द्वारा इस मार्केट में गिरवी रखी गई LP पोज़िशन का कुल मूल्य।",
+  "Your wallet balance of this token, ready to use.": "आपके वॉलेट में इस टोकन का बैलेंस, उपयोग के लिए तैयार।",
+  "Asset on": "एसेट नेटवर्क",
+  "Market on": "मार्केट नेटवर्क",
+  "View on explorer": "एक्सप्लोरर में देखें",
+  "All Chains": "सभी चेन",
+  "Asset type": "एसेट प्रकार",
+  Clear: "साफ़ करें",
+  "Clear all": "सब साफ़ करें",
+  "Clear filters": "फ़िल्टर साफ़ करें",
+  "Clear {facet} filter": "{facet} फ़िल्टर साफ़ करें",
+  "Filter by": "इसके अनुसार फ़िल्टर करें",
+  Hubs: "हब",
+  Markets: "मार्केट",
+  "No loops match these filters.": "इन फ़िल्टर से कोई लूप मेल नहीं खाता।",
+  "No matches": "कोई परिणाम नहीं",
+  "Search chains": "चेन खोजें",
+  "Search hubs": "हब खोजें",
+  Soon: "जल्द",
+  Stable: "स्थिर",
+  Correlated: "सहसंबद्ध",
+  Volatile: "अस्थिर",
+  Chains: "चेन",
+  Other: "अन्य",
+  Stocks: "स्टॉक",
+  "Filter markets": "मार्केट फ़िल्टर करें",
 }
 
 export default dict

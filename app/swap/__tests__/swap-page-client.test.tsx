@@ -28,7 +28,7 @@ function renderSwap() {
 
 describe("SwapPageClient", () => {
   // Prod 2026-09-23: a guest on /swap saw only a disabled "Select assets" button.
-  it("sends a guest to connect a wallet instead of a disabled button", () => {
+  it("offers a guest Get Started instead of a disabled button", () => {
     render(
       <TransactAccessContext.Provider value="guest">
         <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
@@ -36,7 +36,7 @@ describe("SwapPageClient", () => {
         </AvanaSessionsProvider>
       </TransactAccessContext.Provider>,
     )
-    expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/dashboard")
+    expect(screen.getByRole("button", { name: "Get Started" })).toBeEnabled()
   })
 
   it("starts Sell on ETH like the homepage, with Buy empty, on the standalone swap route", () => {

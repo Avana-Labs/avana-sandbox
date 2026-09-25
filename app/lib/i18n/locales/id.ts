@@ -1405,6 +1405,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY LOOP",
   "Loop market": "Pasar loop",
   "LP APR": "LP APR",
+  "Pool APR": "APR Pool",
   "Live value of this collateral, and the LP trading fees it earns.":
     "Nilai langsung jaminan ini, dan biaya trading LP yang dihasilkannya.",
   LT: "LT",
@@ -1762,6 +1763,58 @@ const dict: TranslationDictionary = {
   "Send report": "Kirim laporan",
   "Thanks! Your report was sent.": "Terima kasih! Laporanmu sudah terkirim.",
   "Capacity Filled": "Kapasitas terpakai",
+  "A token in your wallet you can put to work here.": "Token di wallet kamu yang bisa kamu manfaatkan di sini.",
+  "Amount still available to borrow from this market.": "Jumlah yang masih tersedia untuk dipinjam dari pasar ini.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Suku bunga tahunan yang kamu bayar atas dana pinjaman. Berubah mengikuti utilisasi.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Imbal hasil persentase tahunan yang kamu peroleh dengan menyuplai aset ini.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Imbal hasil tahunan dari biaya trading yang diperoleh pool likuiditas ini.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Faktor kolateral: berapa banyak yang bisa kamu pinjam per dolar kolateral. LT adalah ambang likuidasi.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Estimasi imbal hasil bersih pada leverage maksimum, setelah biaya pinjaman.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Dana yang sedang tidak dipinjam, tersedia untuk ditarik atau dipinjam.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Porsi dana yang disuplai yang sedang dipinjam. Penggunaan lebih tinggi menaikkan suku bunga dan bisa menunda penarikan.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "Pool likuiditas yang bisa kamu jaminkan sebagai kolateral untuk meminjam.",
+  "The maximum leverage available on this loop.": "Leverage maksimum yang tersedia pada loop ini.",
+  "The most you can borrow as a share of your collateral value.":
+    "Jumlah maksimum yang bisa kamu pinjam sebagai porsi dari nilai kolateralmu.",
+  "The token you can borrow against your collateral.": "Token yang bisa kamu pinjam dengan jaminan kolateralmu.",
+  "The token you can supply to earn yield.": "Token yang bisa kamu suplai untuk memperoleh imbal hasil.",
+  "Total amount currently borrowed from this market by all users.":
+    "Total jumlah yang saat ini dipinjam dari pasar ini oleh semua pengguna.",
+  "Total amount supplied to this market by all users.": "Total jumlah yang disuplai ke pasar ini oleh semua pengguna.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Total nilai posisi LP yang dijaminkan ke pasar ini oleh semua pengguna.",
+  "Your wallet balance of this token, ready to use.": "Saldo token ini di wallet kamu, siap digunakan.",
+  "Asset on": "Aset di",
+  "Market on": "Pasar di",
+  "View on explorer": "Lihat di explorer",
+  "All Chains": "Semua jaringan",
+  "Asset type": "Jenis aset",
+  Clear: "Hapus",
+  "Clear all": "Hapus semua",
+  "Clear filters": "Hapus filter",
+  "Clear {facet} filter": "Hapus filter {facet}",
+  "Filter by": "Filter menurut",
+  Hubs: "Hub",
+  "No loops match these filters.": "Tidak ada loop yang cocok dengan filter ini.",
+  "No matches": "Tidak ada hasil",
+  "Search chains": "Cari jaringan",
+  "Search hubs": "Cari hub",
+  Soon: "Segera",
+  Stable: "Stabil",
+  Correlated: "Berkorelasi",
+  Volatile: "Volatil",
+  Chains: "Jaringan",
+  Other: "Lainnya",
+  Stocks: "Saham",
+  "Filter markets": "Filter pasar",
 }
 
 export default dict

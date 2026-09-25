@@ -1412,6 +1412,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "APY ЦИКЛА",
   "Loop market": "Циклический рынок",
   "LP APR": "LP APR",
+  "Pool APR": "APR пула",
   "Live value of this collateral, and the LP trading fees it earns.":
     "Текущая стоимость этого залога и торговые комиссии LP, которые он приносит.",
   LT: "LT",
@@ -1771,6 +1772,59 @@ const dict: TranslationDictionary = {
   "Send report": "Отправить отчёт",
   "Thanks! Your report was sent.": "Спасибо! Ваш отчёт отправлен.",
   "Capacity Filled": "Использованная емкость",
+  "A token in your wallet you can put to work here.": "Токен в вашем кошельке, который можно задействовать здесь.",
+  "Amount still available to borrow from this market.": "Сумма, которую ещё можно занять на этом рынке.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Годовая процентная ставка, которую вы платите за заёмные средства. Меняется вместе с использованием.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Годовая доходность, которую вы получаете, предоставляя этот актив.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Годовая доходность от торговых комиссий этого пула ликвидности.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Коэффициент залога: сколько можно занять на каждый доллар залога. LT — порог ликвидации.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Расчётная чистая доходность при максимальном плече после расходов на заём.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Средства, которые сейчас не заняты и доступны для вывода или займа.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Доля предоставленных средств, которая сейчас занята. Высокое использование повышает ставки и может задержать вывод.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "Пул ликвидности, который можно внести в залог, чтобы брать займы.",
+  "The maximum leverage available on this loop.": "Максимальное плечо, доступное для этой петли.",
+  "The most you can borrow as a share of your collateral value.":
+    "Максимум, который можно занять, как доля стоимости вашего залога.",
+  "The token you can borrow against your collateral.": "Токен, который можно занять под ваш залог.",
+  "The token you can supply to earn yield.": "Токен, который можно предоставить, чтобы получать доходность.",
+  "Total amount currently borrowed from this market by all users.":
+    "Общая сумма, которую все пользователи сейчас заняли на этом рынке.",
+  "Total amount supplied to this market by all users.":
+    "Общая сумма, которую все пользователи предоставили на этот рынок.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Общая стоимость LP-позиций, внесённых в залог на этот рынок всеми пользователями.",
+  "Your wallet balance of this token, ready to use.": "Баланс этого токена в вашем кошельке, готовый к использованию.",
+  "Asset on": "Актив в",
+  "Market on": "Рынок в",
+  "View on explorer": "Открыть в обозревателе",
+  "All Chains": "Все сети",
+  "Asset type": "Тип актива",
+  Clear: "Очистить",
+  "Clear all": "Очистить всё",
+  "Clear filters": "Сбросить фильтры",
+  "Clear {facet} filter": "Сбросить фильтр «{facet}»",
+  "Filter by": "Фильтр",
+  Hubs: "Хабы",
+  "No loops match these filters.": "Нет петель, подходящих под эти фильтры.",
+  "No matches": "Ничего не найдено",
+  "Search chains": "Поиск сетей",
+  "Search hubs": "Поиск хабов",
+  Soon: "Скоро",
+  Stable: "Стабильные",
+  Correlated: "Коррелированные",
+  Volatile: "Волатильные",
+  Chains: "Сети",
+  Other: "Другое",
+  Stocks: "Акции",
+  "Filter markets": "Фильтр рынков",
 }
 
 export default dict

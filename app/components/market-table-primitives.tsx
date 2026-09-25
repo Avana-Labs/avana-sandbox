@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowUpRightLong, ChevronLeft, ChevronRight } from "@/app/components/icons"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TABLE_BASE, TABLE_COLUMN_PHONE_CLASS, TABLE_FIXED, type TableColumnLayout } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
@@ -27,18 +28,20 @@ export function SortIcon() {
 /**
  * Sortable column header label. Uppercases in CSS (`!uppercase`: Tailwind preflight resets
  * `text-transform` on buttons, so the `<th>`'s uppercase would not reach the label) and never
- * wraps, so every table's header strip reads the same.
+ * wraps, so every table's header strip reads the same. `hint` explains the column on hover.
  */
 export function SortHeaderButton({
   label,
   active,
   onClick,
+  hint,
 }: {
   label: ReactNode
   active: boolean
   onClick: () => void
+  hint?: string
 }) {
-  return (
+  const button = (
     <button
       type="button"
       onClick={onClick}
@@ -51,6 +54,7 @@ export function SortHeaderButton({
       <SortIcon />
     </button>
   )
+  return hint ? <TableHeaderHint hint={hint}>{button}</TableHeaderHint> : button
 }
 
 const TABLE_SCROLL_ARROW_CLASS =

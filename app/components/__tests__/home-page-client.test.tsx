@@ -9,6 +9,12 @@ import { selectAllAvailableCollateralPools, selectBorrowCollateralPools } from "
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
 const runtimeProps: Array<{ walletId?: string }> = []
+const auth = vi.hoisted(() => ({ isSignedIn: true }))
+
+vi.mock("@/app/lib/test-mode", () => ({ shouldUseOpenGateSession: () => false }))
+vi.mock("@/app/components/home-page-guest-workspace", () => ({
+  HomePageGuestWorkspace: () => <div data-testid="guest-swap-workspace" />,
+}))
 
 vi.mock("next/dynamic", () => ({
   default: (loader: () => Promise<{ default: (props: Record<string, unknown>) => ReactNode }>) =>
@@ -92,7 +98,7 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
 }))
 
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({
-  useSiweAuth: () => ({ isSignedIn: false, address: null }),
+  useSiweAuth: () => ({ isSignedIn: auth.isSignedIn, address: null }),
 }))
 
 describe("HomePageClient", () => {
@@ -100,6 +106,7 @@ describe("HomePageClient", () => {
 
   beforeEach(() => {
     state = buildMockBorrowSystemState(walletId)
+    auth.isSignedIn = true
   })
 
   it("embeds borrow actions in the home workspace card", async () => {
@@ -111,11 +118,12 @@ describe("HomePageClient", () => {
     expect(borrowAction).toHaveAttribute("data-layout", "home")
   }, 10_000)
 
-  it("runs the guest workspace on the app-wide session, not an isolated demo wallet", async () => {
+  it("uses the swap-only workspace for guests without mounting the full runtime", async () => {
+    auth.isSignedIn = false
     runtimeProps.length = 0
     render(<HomePageClient />)
-    await screen.findByTestId("home-workspace-card")
-    expect(runtimeProps.every((props) => props.walletId === undefined)).toBe(true)
+    await screen.findByTestId("guest-swap-workspace")
+    expect(runtimeProps).toHaveLength(0)
   })
 
   it("switches tabs to embedded repay, claim, and remove actions", async () => {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { trackEvent } from "@/app/lib/analytics/track-event"
 import Link from "next/link"
 import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "@/app/components/icons"
 import { useMutation, useQuery } from "convex/react"
@@ -671,6 +672,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             // delay must live here, not in run()'s minimumMs.
             await sleep(CLAIM_STEPS.length * STEP_STAGGER_MS + 250)
             await claim({ wallet })
+            trackEvent("onboarding_completed")
           },
           0,
         )

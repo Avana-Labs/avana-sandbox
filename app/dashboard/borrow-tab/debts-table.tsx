@@ -5,6 +5,7 @@ import { LiveInterestOwedUsd } from "@/app/dashboard/live-accrual"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TableHeaderHint } from "@/app/components/table-header-hint"
 import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
@@ -58,10 +59,9 @@ const MASK = "••••"
 
 function DebtsMetricHeader({ label, help, align = "left" }: { label: string; help: string; align?: "left" | "right" }) {
   return (
-    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+    <TableHeaderHint hint={help} className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
       {formatTableHeaderLabel(label)}
-      <ActionMetricHelp topic={label} text={help} />
-    </span>
+    </TableHeaderHint>
   )
 }
 

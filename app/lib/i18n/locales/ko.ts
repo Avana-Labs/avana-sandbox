@@ -1385,6 +1385,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "루프 APY",
   "Loop market": "루프 마켓",
   "LP APR": "LP APR",
+  "Pool APR": "풀 APR",
   "Live value of this collateral, and the LP trading fees it earns.":
     "이 담보의 실시간 가치와 이 담보가 벌어들이는 LP 거래 수수료.",
   LT: "LT",
@@ -1728,6 +1729,53 @@ const dict: TranslationDictionary = {
   "Send report": "신고 보내기",
   "Thanks! Your report was sent.": "감사합니다! 신고가 전송되었습니다.",
   "Capacity Filled": "사용 중인 용량",
+  "A token in your wallet you can put to work here.": "여기에서 활용할 수 있는 지갑 속 토큰입니다.",
+  "Amount still available to borrow from this market.": "이 마켓에서 아직 빌릴 수 있는 금액입니다.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "빌린 자금에 대해 지불하는 연간 이자율입니다. 이용률에 따라 변동합니다.",
+  "Annual percentage yield you earn by supplying this asset.": "이 자산을 공급해 얻는 연간 수익률입니다.",
+  "Annual trading-fee yield earned by this liquidity pool.": "이 유동성 풀이 거래 수수료로 얻는 연간 수익률입니다.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "담보 계수: 담보 1달러당 빌릴 수 있는 금액입니다. LT는 청산 임계값입니다.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "차입 비용을 제외한 최대 레버리지 기준 예상 순수익률입니다.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "현재 대출되지 않아 출금하거나 빌릴 수 있는 자금입니다.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "공급된 자금 중 현재 대출된 비율입니다. 이용률이 높으면 금리가 오르고 출금이 지연될 수 있습니다.",
+  "The liquidity pool you can pledge as collateral to borrow against.": "담보로 맡기고 빌릴 수 있는 유동성 풀입니다.",
+  "The maximum leverage available on this loop.": "이 루프에서 사용할 수 있는 최대 레버리지입니다.",
+  "The most you can borrow as a share of your collateral value.": "담보 가치 대비 빌릴 수 있는 최대 비율입니다.",
+  "The token you can borrow against your collateral.": "담보로 빌릴 수 있는 토큰입니다.",
+  "The token you can supply to earn yield.": "공급해 수익을 얻을 수 있는 토큰입니다.",
+  "Total amount currently borrowed from this market by all users.": "모든 사용자가 이 마켓에서 현재 빌린 총액입니다.",
+  "Total amount supplied to this market by all users.": "모든 사용자가 이 마켓에 공급한 총액입니다.",
+  "Total value of LP positions pledged to this market by all users.":
+    "모든 사용자가 이 마켓에 담보로 맡긴 LP 포지션의 총 가치입니다.",
+  "Your wallet balance of this token, ready to use.": "지갑에 있는 이 토큰의 잔액으로, 바로 사용할 수 있습니다.",
+  "Asset on": "자산 네트워크",
+  "Market on": "마켓 네트워크",
+  "View on explorer": "익스플로러에서 보기",
+  "All Chains": "모든 체인",
+  "Asset type": "자산 유형",
+  Clear: "지우기",
+  "Clear all": "모두 지우기",
+  "Clear filters": "필터 지우기",
+  "Clear {facet} filter": "{facet} 필터 지우기",
+  "Filter by": "필터 기준",
+  Hubs: "허브",
+  "No loops match these filters.": "이 필터와 일치하는 루프가 없습니다.",
+  "No matches": "결과 없음",
+  "Search chains": "체인 검색",
+  "Search hubs": "허브 검색",
+  Soon: "출시 예정",
+  Stable: "스테이블",
+  Correlated: "상관",
+  Volatile: "변동성",
+  Chains: "체인",
+  Other: "기타",
+  Stocks: "주식",
+  "Filter markets": "마켓 필터",
 }
 
 export default dict

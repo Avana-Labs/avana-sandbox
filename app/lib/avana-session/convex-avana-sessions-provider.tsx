@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { trackEvent } from "@/app/lib/analytics/track-event"
 import { usePathname } from "next/navigation"
 import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
@@ -291,6 +292,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     async (result: SandboxActionResult) => {
       const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisions)
       const persisted = await recordTransaction(args)
+      if (persisted.receipt.status === "success") trackEvent("transaction_success", { product: "borrow" })
       if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
       else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
@@ -307,6 +309,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
       const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisions)
       const persisted = await recordTransaction(args)
+      if (persisted.receipt.status === "success") trackEvent("transaction_success", { product: "lend" })
       if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
       else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
@@ -324,6 +327,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
       const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisions)
       const persisted = await recordTransaction(args)
+      if (persisted.receipt.status === "success") trackEvent("transaction_success", { product: "multiply" })
       if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
       else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
@@ -347,6 +351,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       const args = swapRecordToRecordSwapArgs(record, walletId)
       if (!args) return
       await recordSwap(args)
+      trackEvent("transaction_success", { product: "swap" })
     },
     [recordSwap, walletId],
   )

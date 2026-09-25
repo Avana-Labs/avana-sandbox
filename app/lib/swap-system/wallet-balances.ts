@@ -2,6 +2,7 @@ import { SWAP_CHAIN_ID, getSwapAsset } from "./catalog"
 import { getSwapEligibility } from "./eligibility"
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
+import { extraTokenName } from "@/app/lib/markets/extra-token-names"
 import type { SwapContext, SwapRestrictionReason, UserAssetBalance } from "./contracts"
 
 export type DashboardWalletBalanceRow = {
@@ -173,11 +174,15 @@ export function buildDashboardWalletBalanceRows({
       const catalogPool = balance.sourcePositionId
         ? BORROW_POOL_CATALOG.find((pool) => pool.id === balance.sourcePositionId)
         : undefined
+      const symbol = asset?.symbol ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId)
+      // Tokens outside the swap catalog (e.g. OP from rewards) are stored with name = ticker;
+      // prefer the catalog-wide token name ("Optimism") over repeating the ticker.
+      const storedName = balance.name && balance.name.toUpperCase() !== symbol.toUpperCase() ? balance.name : undefined
       return {
         id: balance.id,
         assetId: balance.assetId,
-        symbol: asset?.symbol ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
-        name: asset?.name ?? balance.name ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
+        symbol,
+        name: asset?.name ?? storedName ?? extraTokenName(symbol) ?? balance.name ?? symbol,
         amount,
         valueUsd,
         sourceType: balance.sourceType,

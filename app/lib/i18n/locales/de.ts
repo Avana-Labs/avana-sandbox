@@ -1458,6 +1458,7 @@ const dict: TranslationDictionary = {
   "LOOP APY": "LOOP-APY",
   "Loop market": "Loop-Markt",
   "LP APR": "LP-APR",
+  "Pool APR": "Pool-APR",
   "Live value of this collateral, and the LP trading fees it earns.":
     "Aktueller Wert dieser Sicherheit und die LP-Handelsgebühren, die sie verdient.",
   "Market-wide liquidation activity and near-liquidation exposure over the last 24 hours.":
@@ -1825,6 +1826,59 @@ const dict: TranslationDictionary = {
   "Send report": "Bericht senden",
   "Thanks! Your report was sent.": "Danke! Dein Bericht wurde gesendet.",
   "Capacity Filled": "Genutzte Kapazität",
+  "A token in your wallet you can put to work here.": "Ein Token in deiner Wallet, das du hier einsetzen kannst.",
+  "Amount still available to borrow from this market.": "Betrag, der in diesem Markt noch zum Leihen verfügbar ist.",
+  "Annual interest rate you pay on borrowed funds. It moves with utilization.":
+    "Jährlicher Zinssatz, den du für geliehene Mittel zahlst. Er ändert sich mit der Auslastung.",
+  "Annual percentage yield you earn by supplying this asset.":
+    "Jährliche Rendite, die du durch das Bereitstellen dieses Assets erzielst.",
+  "Annual trading-fee yield earned by this liquidity pool.":
+    "Jährliche Rendite aus Handelsgebühren dieses Liquiditätspools.",
+  "Collateral factor: how much you can borrow per dollar of collateral. LT is the liquidation threshold.":
+    "Besicherungsfaktor: wie viel du pro Dollar Sicherheit leihen kannst. LT ist der Liquidationsschwellenwert.",
+  "Estimated net yield at maximum leverage, after borrow costs.":
+    "Geschätzte Nettorendite bei maximalem Hebel, nach Kreditkosten.",
+  "Funds not currently borrowed, available to withdraw or borrow.":
+    "Nicht verliehene Mittel, verfügbar zum Abheben oder Leihen.",
+  "Share of supplied funds currently borrowed. Higher usage raises rates and can delay withdrawals.":
+    "Anteil der bereitgestellten Mittel, der derzeit verliehen ist. Höhere Auslastung erhöht die Zinsen und kann Auszahlungen verzögern.",
+  "The liquidity pool you can pledge as collateral to borrow against.":
+    "Der Liquiditätspool, den du als Sicherheit hinterlegen kannst, um dagegen zu leihen.",
+  "The maximum leverage available on this loop.": "Der maximale Hebel, der für diesen Loop verfügbar ist.",
+  "The most you can borrow as a share of your collateral value.":
+    "Der Höchstbetrag, den du als Anteil deines Sicherheitenwerts leihen kannst.",
+  "The token you can borrow against your collateral.": "Das Token, das du gegen deine Sicherheiten leihen kannst.",
+  "The token you can supply to earn yield.": "Das Token, das du bereitstellen kannst, um Rendite zu erzielen.",
+  "Total amount currently borrowed from this market by all users.":
+    "Gesamtbetrag, der derzeit von allen Nutzern aus diesem Markt geliehen ist.",
+  "Total amount supplied to this market by all users.":
+    "Gesamtbetrag, den alle Nutzer in diesem Markt bereitgestellt haben.",
+  "Total value of LP positions pledged to this market by all users.":
+    "Gesamtwert der LP-Positionen, die alle Nutzer in diesem Markt hinterlegt haben.",
+  "Your wallet balance of this token, ready to use.": "Dein Wallet-Guthaben dieses Tokens, sofort einsetzbar.",
+  "Asset on": "Asset auf",
+  "Market on": "Markt auf",
+  "View on explorer": "Im Explorer ansehen",
+  "All Chains": "Alle Chains",
+  "Asset type": "Asset-Typ",
+  Clear: "Löschen",
+  "Clear all": "Alle löschen",
+  "Clear filters": "Filter löschen",
+  "Clear {facet} filter": "{facet}-Filter löschen",
+  "Filter by": "Filtern nach",
+  Hubs: "Knotenpunkte",
+  "No loops match these filters.": "Keine Loops entsprechen diesen Filtern.",
+  "No matches": "Keine Treffer",
+  "Search chains": "Chains suchen",
+  "Search hubs": "Hubs suchen",
+  Soon: "Bald",
+  Stable: "Stabil",
+  Correlated: "Korreliert",
+  Volatile: "Volatil",
+  Chains: "Chains",
+  Other: "Andere",
+  Stocks: "Aktien",
+  "Filter markets": "Märkte filtern",
 }
 
 export default dict

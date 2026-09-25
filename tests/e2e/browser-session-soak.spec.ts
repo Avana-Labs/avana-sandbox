@@ -20,9 +20,14 @@ for (let sessionIndex = 0; sessionIndex < SESSION_COUNT; sessionIndex += 1) {
       await page.waitForTimeout(INTERACTION_DELAY_MS)
     }
 
-    const targetTabName = route === "/multiply" ? "BTC Loops" : route === "/dashboard" ? "Borrow" : null
-    if (targetTabName) {
-      const target = page.getByRole("tab", { name: targetTabName, exact: true })
+    if (route === "/multiply") {
+      await page.locator("[data-facet='markets'] > button").click()
+      const btcLoops = page.getByRole("dialog").getByRole("checkbox", { name: /BTC Loops/ })
+      await btcLoops.click()
+      await expect(btcLoops).toHaveAttribute("aria-checked", "true")
+      await page.keyboard.press("Escape")
+    } else if (route === "/dashboard") {
+      const target = page.getByRole("tab", { name: "Borrow", exact: true })
       await target.click()
       await expect(target).toHaveAttribute("aria-selected", "true")
     }

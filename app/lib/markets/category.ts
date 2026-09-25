@@ -50,6 +50,9 @@ const FOREX_SYMBOLS = new Set([
   "GUSD",
   "LUSD",
   "3CRV",
+  "USDP",
+  "TUSD",
+  "MIM",
 ])
 const UTILITY_SYMBOLS = new Set([
   "UNI",
@@ -70,6 +73,9 @@ const UTILITY_SYMBOLS = new Set([
   "SUSHI",
   "1INCH",
   "ENS",
+  "ARB",
+  "OP",
+  "LINK",
 ])
 
 export function categorizeMarket(symbol: string | null | undefined): MarketCategory {

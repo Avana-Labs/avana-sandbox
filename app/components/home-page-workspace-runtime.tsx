@@ -20,22 +20,28 @@ const BorrowActionPageClient = dynamic(
   { loading: ActionSessionLoading },
 )
 
-export function HomePageWorkspaceRuntime({ walletId }: { walletId?: string }) {
+export function HomePageWorkspaceRuntime({
+  walletId,
+  initialMode = "swap",
+}: {
+  walletId?: string
+  initialMode?: HomeMode
+}) {
   if (walletId) {
     return (
       <AvanaSessionsProvider walletId={walletId}>
-        <HomePageWorkspace />
+        <HomePageWorkspace initialMode={initialMode} />
       </AvanaSessionsProvider>
     )
   }
 
-  return <HomePageWorkspace />
+  return <HomePageWorkspace initialMode={initialMode} />
 }
 
-function HomePageWorkspace() {
+function HomePageWorkspace({ initialMode }: { initialMode: HomeMode }) {
   const session = useBorrowSessionContext()
   const { applyReferralCode, hasHydratedStorage } = useRewardsSessionContext()
-  const [mode, setMode] = useState<HomeMode>("swap")
+  const [mode, setMode] = useState<HomeMode>(initialMode)
 
   // Referral links now land here (https://avana.cc/?ref=<code>). Capture the code the
   // same way the dashboard does — read it from the URL once storage has hydrated and

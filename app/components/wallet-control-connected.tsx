@@ -7,6 +7,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
+import { markGetStartedIntent } from "@/app/lib/web3/get-started-intent"
 import { walletButtonClasses, walletGradient, type WalletControlSize } from "@/app/components/wallet-control-shared"
 
 /** Wallets already auto-prompted this page load; the header mounts this control twice. */
@@ -32,7 +33,7 @@ export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
   const isSignedIn = Boolean(siwe?.isSignedIn)
   const signingIn = Boolean(siwe?.isLoading)
   const { isWrongNetwork, targetChainName, isSwitching, switchToTargetChain } = useWrongNetwork()
-  const { consumeAutoOpen } = useWalletGate()
+  const { consumeAutoOpen, openRequest } = useWalletGate()
   const { address: accountAddress, status: accountStatus } = useAccount()
 
   // A user-initiated connect goes "connecting" → "connected"; a session restored on reload goes
@@ -82,14 +83,33 @@ export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
     return () => clearInterval(id)
   }, [consumeAutoOpen])
 
+  // A Get Started click elsewhere on the page (detail pages, home box) while the SDK is already
+  // mounted bumps `openRequest`; open the modal for it. The value at mount is not a new request.
+  const seenOpenRequestRef = useRef(openRequest)
+  useEffect(() => {
+    if (openRequest === seenOpenRequestRef.current) return
+    seenOpenRequestRef.current = openRequest
+    if (accountStatus !== "connected") showRef.current?.()
+  }, [openRequest, accountStatus])
+
   return (
     <ConnectKitButton.Custom>
-      {({ isConnected, isConnecting, show, truncatedAddress, ensName, address }) => {
+      {({ isConnected, show, truncatedAddress, ensName, address }) => {
         showRef.current = show ?? null
         if (!isConnected) {
+          // Always "Get Started": a "Connecting…" label only resized the button (shifting the
+          // mobile header) without telling the user anything the open modal does not.
           return (
-            <button type="button" onClick={show} className={brand} aria-label={t("Get Started")}>
-              {isConnecting ? t("Connecting…") : t("Get Started")}
+            <button
+              type="button"
+              onClick={() => {
+                markGetStartedIntent()
+                show?.()
+              }}
+              className={brand}
+              aria-label={t("Get Started")}
+            >
+              {t("Get Started")}
             </button>
           )
         }
@@ -116,7 +136,10 @@ export function ConnectedWalletControl({ size }: { size: WalletControlSize }) {
           return (
             <button
               type="button"
-              onClick={() => void siwe?.signIn?.()}
+              onClick={() => {
+                markGetStartedIntent()
+                void siwe?.signIn?.()
+              }}
               disabled={signingIn}
               className={cn(brand, "disabled:opacity-70")}
               aria-label={t("Sign in")}

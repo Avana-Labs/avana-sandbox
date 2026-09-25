@@ -249,7 +249,7 @@ export function Header() {
               {renderMobileBrand()}
             </Link>
 
-            <LazyMobileMenu brand={renderMobileBrand()} />
+            <LazyMobileMenu />
           </div>
 
           <div className="flex items-center gap-0.5">{renderMobileActions()}</div>

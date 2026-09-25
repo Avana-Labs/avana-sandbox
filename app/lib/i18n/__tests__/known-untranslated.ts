@@ -64,8 +64,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Explorer",
   "Exposure",
   "Exposure · Net APY",
-  // Borrow market filter — relabelled from "Search markets" to distinguish it from global search.
-  "Filter markets",
   // Multiply tab — Gross Exposure tile + worst-position "Lowest Position Health" card
   // (title + tooltip) awaiting the locale backfill.
   "Gross Exposure",
