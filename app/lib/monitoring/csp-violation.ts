@@ -12,18 +12,19 @@ export function describeBlockedEval(event: CspViolation) {
     return null
   }
 
-  let sourceFile = "<anonymous>"
+  // Only a script the page loaded over http(s) is actionable. Browser extensions (e.g. the Backpack
+  // wallet) inject code with no source file or an extension URL; the bundle ships no eval, so those
+  // reports were pure noise in production.
+  let source: URL
   try {
-    const source = new URL(event.sourceFile)
-    // Never send script bodies, data URLs, credentials, query strings or fragments.
-    if (["http:", "https:", "chrome-extension:", "moz-extension:", "app:"].includes(source.protocol)) {
-      sourceFile = `${source.protocol}//${source.host}${source.pathname}`
-    }
+    source = new URL(event.sourceFile)
   } catch {
-    // Browsers may omit the source for injected scripts.
+    return null
   }
+  if (source.protocol !== "http:" && source.protocol !== "https:") return null
   return {
-    source_file: sourceFile,
+    // Never send credentials, query strings or fragments.
+    source_file: `${source.protocol}//${source.host}${source.pathname}`,
     line_number: event.lineNumber,
     column_number: event.columnNumber,
     directive: event.effectiveDirective,

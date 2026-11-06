@@ -20,18 +20,24 @@ describe("blocked eval diagnostics", () => {
     })
   })
 
-  it("preserves an extension source when the browser identifies it", () => {
-    expect(
-      describeBlockedEval({ ...violation, sourceFile: "chrome-extension://wallet/injected.js" })?.source_file,
-    ).toBe("chrome-extension://wallet/injected.js")
+  it("keeps third-party script hosts the page loaded", () => {
+    expect(describeBlockedEval({ ...violation, sourceFile: "https://cdn.example.com/sdk.js?v=1" })?.source_file).toBe(
+      "https://cdn.example.com/sdk.js",
+    )
   })
 
-  it.each(["", "<anonymous>", "data:text/javascript,private-code"])(
-    "does not send script contents: %s",
-    (sourceFile) => {
-      expect(describeBlockedEval({ ...violation, sourceFile })?.source_file).toBe("<anonymous>")
-    },
-  )
+  // Production showed every report here came from wallet extensions (e.g. Backpack) injecting
+  // code with no source file; the bundle ships no eval, so these are not actionable.
+  it.each([
+    "",
+    "<anonymous>",
+    "data:text/javascript,private-code",
+    "chrome-extension://wallet/injected.js",
+    "moz-extension://wallet/injected.js",
+    "safari-web-extension://wallet/injected.js",
+  ])("ignores evals without an http(s) script source: %s", (sourceFile) => {
+    expect(describeBlockedEval({ ...violation, sourceFile })).toBeNull()
+  })
 
   it("ignores report-only and unrelated policy events", () => {
     expect(describeBlockedEval({ ...violation, disposition: "report" })).toBeNull()
