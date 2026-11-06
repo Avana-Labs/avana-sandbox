@@ -24,8 +24,12 @@
     "@ai-sdk/provider-utils": "5.0.28",
     "@humanfs/node": "^0.16.8",
     "source-map-js": "^1.2.2",
-    "@assistant-ui/react": {
-      "zod": "^4.6.6"
+    "@walletconnect/ethereum-provider": "2.26.0",
+    "@reown/appkit-wallet": {
+      "zod": "$zod"
+    },
+    "@coinbase/cdp-sdk": {
+      "zod": "$zod"
     }
   },
   "optionalDependencies": {
@@ -120,7 +124,7 @@
     "viem": "^2.55.10",
     "wagmi": "^2.19.5",
     "web-vitals": "^4.2.4",
-    "zod": "3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
