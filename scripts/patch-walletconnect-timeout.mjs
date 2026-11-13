@@ -15,16 +15,23 @@ const edits = []
 
 for (const [packagePath, locked] of Object.entries(lock.packages)) {
   if (!packagePath.endsWith("node_modules/@walletconnect/utils")) continue
-  if (!["2.21.0", "2.21.1"].includes(locked.version)) {
-    throw new Error(`Review the WalletConnect timeout patch for utils ${locked.version}`)
-  }
   const directory = path.resolve(root, packagePath)
   if (!directory.startsWith(path.join(root, "node_modules") + path.sep)) {
     throw new Error(`Unexpected WalletConnect package path: ${packagePath}`)
   }
   const installed = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"))
   if (installed.version !== locked.version) throw new Error(`Install dependencies first: ${packagePath}`)
-  for (const entry of ["main", "module", "unpkg"]) {
+  const entries = ["main", "module", "unpkg"].filter((entry) => installed[entry])
+  if (!["2.21.0", "2.21.1"].includes(locked.version)) {
+    // Later releases dropped the orphan rejection upstream; fail only if one still carries it.
+    for (const entry of entries) {
+      if ([...fs.readFileSync(path.join(directory, installed[entry]), "utf8").matchAll(orphan)].length) {
+        throw new Error(`Review the WalletConnect timeout patch for utils ${locked.version}`)
+      }
+    }
+    continue
+  }
+  for (const entry of entries) {
     const filename = path.join(directory, installed[entry])
     const source = fs.readFileSync(filename, "utf8")
     if (source.includes(marker)) continue
